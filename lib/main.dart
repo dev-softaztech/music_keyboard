@@ -1,0 +1,33 @@
+import 'package:flutter/material.dart';
+import 'package:music_keyboard/src/providers/current_selected_note_provider.dart';
+import 'package:music_keyboard/src/providers/is_connected_provider.dart';
+import 'package:music_keyboard/src/providers/selected_number_provider.dart';
+import 'package:music_keyboard/src/providers/selected_unicode_provider.dart';
+import 'package:provider/provider.dart';
+
+import 'src/app.dart';
+import 'src/screens/settings/settings_controller.dart';
+import 'src/screens/settings/settings_service.dart';
+
+void main() async {
+  // Set up the SettingsController, which will glue user settings to multiple
+  // Flutter Widgets.
+  final settingsController = SettingsController(SettingsService());
+
+  // Load the user's preferred theme while the splash screen is displayed.
+  // This prevents a sudden theme change when the app is first displayed.
+  await settingsController.loadSettings();
+
+  // Run the app and pass in the SettingsController. The app listens to the
+  // SettingsController for changes, then passes it further down to the
+  // SettingsView.
+  runApp(MyApp(settingsController: settingsController));
+  runApp(
+    MultiProvider(providers: [
+      ChangeNotifierProvider(create: (_) => SelectedNumberProvider()),
+      ChangeNotifierProvider(create: (_) => SelectedUnicodeProvider()),
+      ChangeNotifierProvider(create: (_) => IsConnectedProvider()),
+      ChangeNotifierProvider(create: (_) => CurrentSelectedNoteProvider()),
+    ], child: MyApp(settingsController: settingsController)),
+  );
+}

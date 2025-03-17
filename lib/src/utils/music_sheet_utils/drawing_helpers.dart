@@ -1,0 +1,441 @@
+import 'package:flutter/material.dart';
+import 'package:music_keyboard/models/music_note.dart';
+import 'package:music_keyboard/src/utils/music_sheet_utils/note_position_calculator.dart';
+
+void drawNote(Canvas canvas, Paint paint, MusicalNote note, double lineSpacing,
+    double staffTop, double noteX, List<MusicalNote> notes, int index) {
+  if (note.type == NoteType.clef) {
+    drawClefKey(
+        canvas, paint, note, lineSpacing, staffTop, noteX, notes, index);
+    return;
+  }
+
+  final double noteY =
+      calculateNoteYMainSheet(note.pitch, note.octave, lineSpacing, staffTop);
+
+  if (note.type == NoteType.rest) {
+    drawRestAccidentalKey(
+        canvas, paint, note, lineSpacing, staffTop, noteX, notes, index, noteY);
+  } else if (note.type == NoteType.accidental) {
+    drawRestAccidentalKey(
+        canvas, paint, note, lineSpacing, staffTop, noteX, notes, index, noteY);
+  } else {
+    drawNoteKey(
+        canvas, paint, note, lineSpacing, staffTop, noteX, notes, index, noteY);
+  }
+}
+
+void drawClefKey(
+    Canvas canvas,
+    Paint paint,
+    MusicalNote note,
+    double lineSpacing,
+    double staffCenter,
+    double noteX,
+    List<MusicalNote> notes,
+    int index) {
+  final textPainter = TextPainter(
+    text: TextSpan(
+      text: note.unicodeCharacter, // Unicode character for whole note
+      style: const TextStyle(
+        fontFamily: 'Bravura', // Use Bravura font
+        fontSize: 40, // Adjust font size as needed
+        color: Colors.black,
+      ),
+    ),
+    textDirection: TextDirection.ltr,
+  );
+
+  textPainter.layout();
+  final offsetX = noteX - textPainter.width / 2;
+  double offsetY = staffCenter - (lineSpacing * 4) - 1;
+
+  if (note.unicodeCharacter == "\uf472") offsetY = offsetY - 10;
+  if (note.unicodeCharacter == "\uf474") offsetY = offsetY - 30;
+  if (note.unicodeCharacter == "\uf473") offsetY = offsetY - 20;
+  if (note.unicodeCharacter == "\ue08a" || note.unicodeCharacter == "\ue08b") {
+    offsetY = offsetY - 20;
+  }
+
+  textPainter.paint(canvas, Offset(offsetX, offsetY + 0.5));
+}
+
+void drawRestAccidentalKey(
+    Canvas canvas,
+    Paint paint,
+    MusicalNote note,
+    double lineSpacing,
+    double staffCenter,
+    double noteX,
+    List<MusicalNote> notes,
+    int index,
+    double noteY) {
+  double noteWidth = 10;
+
+  final textPainter = TextPainter(
+    text: TextSpan(
+      text: note.unicodeCharacter, // Unicode character for whole note
+      style: const TextStyle(
+        fontFamily: 'Bravura', // Use Bravura font
+        fontSize: 36, // Adjust font size as needed
+        color: Colors.black,
+      ),
+    ),
+    textDirection: TextDirection.ltr,
+  );
+
+  textPainter.layout();
+  final offsetX = noteX - textPainter.width / 2;
+  final offsetY = noteY - textPainter.height / 2;
+  textPainter.paint(canvas, Offset(offsetX, offsetY + 0.5));
+  noteWidth = textPainter.width;
+
+  drawLedgerLines(
+      canvas, paint, noteY, noteX, noteWidth, lineSpacing, staffCenter);
+}
+
+void drawNoteKey(
+    Canvas canvas,
+    Paint paint,
+    MusicalNote note,
+    double lineSpacing,
+    double staffTop,
+    double noteX,
+    List<MusicalNote> notes,
+    int index,
+    double noteY) {
+  final double noteRadius = 8.0; // Radius of the note head
+  double stemHeight = 35.0; // Stem height for all notes
+  double noteWidth = 10;
+  double connectedGroupHighestY = 0.0;
+  double connectedGroupLowestY = 0.0;
+  bool firstNoteUpsideDown = false;
+  List<MusicalNote> connectedNotesGroup = [];
+  bool isFirstNoteInGroupList = false;
+  bool isAConnectedNote = false;
+  bool doesGroupContain32ndOr64thNote = false;
+  final double sheetCenter = staffTop + (lineSpacing * 2);
+  final bool isUpsideDownNote = noteY < sheetCenter;
+
+  if (note.type == NoteType.eighth ||
+      note.type == NoteType.sixteenth ||
+      note.type == NoteType.thirtySecond ||
+      note.type == NoteType.sixtyFourth) {
+    isAConnectedNote = true;
+  }
+
+  if (isAConnectedNote && note.isConnected) {
+    ({bool isFirst, List<MusicalNote> notesGroup}) notesGroup =
+        getConnectedNotesGroup(index, notes);
+    connectedNotesGroup = notesGroup.notesGroup;
+    isFirstNoteInGroupList = notesGroup.isFirst;
+
+    ({
+      double highestY,
+      double lowestY,
+      double firstNoteY,
+      bool doesGroupContain32ndOr64thNote
+    }) notesGroupYs = getConnectedNotesGroupHighestY(
+        connectedNotesGroup, lineSpacing, staffTop);
+
+    connectedGroupHighestY = notesGroupYs.highestY;
+    connectedGroupLowestY = notesGroupYs.lowestY;
+    firstNoteUpsideDown = notesGroupYs.firstNoteY < sheetCenter;
+    doesGroupContain32ndOr64thNote =
+        notesGroupYs.doesGroupContain32ndOr64thNote;
+  }
+
+  // Draw note head
+  if (note.type == NoteType.whole) {
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: '\uE1D2', // Unicode character for whole note
+        style: const TextStyle(
+          fontFamily: 'Bravura', // Use Bravura font
+          fontSize: 35, // Adjust font size as needed
+          color: Colors.black,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+
+    textPainter.layout();
+    final offsetX = noteX - textPainter.width / 2;
+    final offsetY = noteY - textPainter.height / 2;
+    textPainter.paint(canvas, Offset(offsetX, offsetY));
+    noteWidth = textPainter.width;
+  } else {
+    final String noteHeadCharacter =
+        (note.type == NoteType.half) ? '\uF4BD' : '\uf4be';
+
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: noteHeadCharacter,
+        style: const TextStyle(
+          fontFamily: 'Bravura',
+          fontSize: 36,
+          color: Colors.black,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+
+    textPainter.layout();
+    final offsetX = noteX - textPainter.width / 2;
+    final offsetY = noteY - textPainter.height / 2;
+    textPainter.paint(canvas, Offset(offsetX, offsetY));
+    noteWidth = textPainter.width;
+
+    if (note.isConnected && doesGroupContain32ndOr64thNote) {
+      stemHeight = stemHeight + 10;
+    }
+
+    if (isAConnectedNote && note.isConnected) {
+      //if (!firstNoteUpsideDown &&
+      //(!isUpsideDownNote && noteY > connectedGroupHighestY)) {
+      if (!firstNoteUpsideDown) {
+        stemHeight = (noteY - connectedGroupHighestY) + stemHeight;
+      }
+      //if (firstNoteUpsideDown ||
+      //    (isUpsideDownNote && noteY < connectedGroupLowestY)) {
+      if (firstNoteUpsideDown) {
+        stemHeight = (connectedGroupLowestY - noteY) + stemHeight;
+      }
+    }
+
+    double stemX = 0.0;
+
+    if ((note.isConnected && !firstNoteUpsideDown) ||
+        (!isUpsideDownNote && !(note.isConnected && firstNoteUpsideDown))) {
+      stemX = noteX + 5.0;
+      canvas.drawLine(
+        Offset(stemX, noteY - 1),
+        Offset(stemX, noteY - stemHeight + 1),
+        paint..strokeWidth = 1.50,
+      );
+    } else {
+      stemX = noteX - 5.0;
+      canvas.drawLine(
+        Offset(stemX, noteY + 1),
+        Offset(stemX, noteY + stemHeight - 1),
+        paint..strokeWidth = 1.50,
+      );
+    }
+
+    if (isAConnectedNote &&
+        connectedNotesGroup.length > 1 &&
+        !isFirstNoteInGroupList) {
+      var stemTopY =
+          firstNoteUpsideDown ? noteY + stemHeight - 3 : noteY - stemHeight + 3;
+      drawConnectedNotes(
+          canvas, paint, note, stemX, stemTopY, firstNoteUpsideDown);
+    }
+  }
+
+  if ((note.type == NoteType.eighth ||
+          note.type == NoteType.sixteenth ||
+          note.type == NoteType.thirtySecond ||
+          note.type == NoteType.sixtyFourth) &&
+      connectedNotesGroup.length <= 1) {
+    String flagCharacter = "";
+    double flagY = !isUpsideDownNote
+        ? (noteY - stemHeight - 64)
+        : (noteY + stemHeight - 68);
+
+    switch (note.type) {
+      case NoteType.eighth:
+        flagCharacter = !isUpsideDownNote ? '\uE240' : '\uE241';
+        break;
+      case NoteType.sixteenth:
+        flagCharacter = !isUpsideDownNote ? '\uE242' : '\uE243';
+        break;
+      case NoteType.thirtySecond:
+        flagCharacter = !isUpsideDownNote ? '\ue244' : '\uE245';
+        break;
+      case NoteType.sixtyFourth:
+        flagCharacter = !isUpsideDownNote ? '\ue246' : '\uE247';
+        break;
+      default:
+        flagCharacter = !isUpsideDownNote ? '\uE240' : '\uE241';
+    }
+
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: flagCharacter,
+        style: const TextStyle(
+          fontFamily: 'Bravura',
+          fontSize: 34.0,
+          color: Colors.black,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+
+    textPainter.layout();
+
+    double flagX =
+        !isUpsideDownNote ? (noteX + noteRadius - 4) : (noteX - noteRadius + 2);
+
+    textPainter.paint(canvas, Offset(flagX, flagY));
+  }
+
+  drawLedgerLines(
+      canvas, paint, noteY, noteX, noteWidth, lineSpacing, staffTop);
+}
+
+void drawConnectedNotes(Canvas canvas, Paint paint, MusicalNote note,
+    double stemX, double stemTopY, bool firstNoteUpsideDown) {
+  canvas.drawLine(
+    Offset(stemX, stemTopY),
+    Offset(stemX - 26, stemTopY),
+    paint..strokeWidth = 4.0,
+  );
+
+  if (note.type == NoteType.sixteenth ||
+      note.type == NoteType.thirtySecond ||
+      note.type == NoteType.sixtyFourth) {
+    double y = firstNoteUpsideDown ? stemTopY - 7 : stemTopY + 7;
+
+    canvas.drawLine(
+      Offset(stemX, y),
+      Offset(stemX - 26, y),
+      paint..strokeWidth = 4.0,
+    );
+  }
+
+  if (note.type == NoteType.thirtySecond || note.type == NoteType.sixtyFourth) {
+    double y = firstNoteUpsideDown ? stemTopY - 14 : stemTopY + 14;
+
+    canvas.drawLine(
+      Offset(stemX, y),
+      Offset(stemX - 26, y),
+      paint..strokeWidth = 4.0,
+    );
+  }
+  if (note.type == NoteType.sixtyFourth) {
+    double y = firstNoteUpsideDown ? stemTopY - 21 : stemTopY + 21;
+
+    canvas.drawLine(
+      Offset(stemX, y),
+      Offset(stemX - 26, y),
+      paint..strokeWidth = 4.0,
+    );
+  }
+}
+
+({List<MusicalNote> notesGroup, bool isFirst}) getConnectedNotesGroup(
+    int index, List<MusicalNote> notes) {
+  MusicalNote firstNote = notes[index];
+  List<MusicalNote> connectedNotesGroup = [firstNote];
+
+  // Traverse backwards to find connected notes before the index
+  for (int i = index - 1; i >= 0; i--) {
+    if (notes[i].isConnected &&
+        (notes[i].type == NoteType.eighth ||
+            notes[i].type == NoteType.sixteenth ||
+            notes[i].type == NoteType.thirtySecond ||
+            notes[i].type == NoteType.sixtyFourth)) {
+      // && notes[i].type == firstNote.type) {
+      connectedNotesGroup.insert(0, notes[i]); // Insert at the beginning
+    } else {
+      break;
+    }
+  }
+
+  // Traverse forwards to find connected notes after the index
+  for (int i = index + 1; i < notes.length; i++) {
+    if (notes[i].isConnected &&
+        (notes[i].type == NoteType.eighth ||
+            notes[i].type == NoteType.sixteenth ||
+            notes[i].type == NoteType.thirtySecond ||
+            notes[i].type == NoteType.sixtyFourth)) {
+      // && notes[i].type == firstNote.type) {
+      connectedNotesGroup.add(notes[i]); // Append normally
+    } else {
+      break;
+    }
+  }
+/*
+  // **New logic to split into groups of 4**
+  int totalNotes = connectedNotesGroup.length;
+  int groupIndex =
+      connectedNotesGroup.indexOf(firstNote) ~/ 4; // Get group index
+  int startIndex = groupIndex * 4; // Start of this sub-group
+  int endIndex = startIndex + 4; // End of this sub-group
+
+  if (endIndex > totalNotes) endIndex = totalNotes; // Avoid overflow
+
+  // Extract only the sub-group of 4
+  List<MusicalNote> subGroup =
+      connectedNotesGroup.sublist(startIndex, endIndex);
+*/
+  // Check if this note is the last in the **sub-group**
+
+  bool isFirst = connectedNotesGroup.first == firstNote;
+
+  return (notesGroup: connectedNotesGroup, isFirst: isFirst);
+}
+
+({
+  double highestY,
+  double lowestY,
+  double firstNoteY,
+  bool doesGroupContain32ndOr64thNote
+}) getConnectedNotesGroupHighestY(
+    List<MusicalNote> notes, double lineSpacing, double staffCenter) {
+  double highestY = 0;
+  double lowestY = 0;
+  bool doesGroupContain32ndOr64thNote = false;
+
+  for (final note in notes) {
+    final double noteY = calculateNoteYMainSheet(
+        note.pitch, note.octave, lineSpacing, staffCenter);
+
+    if (highestY == 0) highestY = noteY;
+    if (noteY < highestY) highestY = noteY;
+
+    if (lowestY == 0) lowestY = noteY;
+    if (noteY > lowestY) lowestY = noteY;
+
+    if (note.type == NoteType.thirtySecond ||
+        note.type == NoteType.sixtyFourth) {
+      doesGroupContain32ndOr64thNote = true;
+    }
+  }
+
+  final double firstNoteY = calculateNoteYMainSheet(
+      notes[0].pitch, notes[0].octave, lineSpacing, staffCenter);
+
+  return (
+    highestY: highestY,
+    lowestY: lowestY,
+    firstNoteY: firstNoteY,
+    doesGroupContain32ndOr64thNote: doesGroupContain32ndOr64thNote
+  );
+}
+
+void drawLedgerLines(Canvas canvas, Paint paint, double noteY, double noteX,
+    double noteWidth, double lineSpacing, double staffTop) {
+  final double staffBottom = staffTop + (4 * lineSpacing); // Bottom staff line
+
+  // Determine if the note is above or below the staff
+  if (noteY < staffTop) {
+    // Draw ledger lines **above** the staff
+    for (double y = staffTop - lineSpacing; y >= noteY; y -= lineSpacing) {
+      canvas.drawLine(
+        Offset(noteX - (noteWidth / 2) - 7, y), // Extend by 5 pixels each side
+        Offset(noteX + (noteWidth / 2) + 7, y),
+        paint..strokeWidth = 1.0,
+      );
+    }
+  } else if (noteY > staffBottom) {
+    // Draw ledger lines **below** the staff
+    for (double y = staffBottom + lineSpacing; y <= noteY; y += lineSpacing) {
+      canvas.drawLine(
+        Offset(noteX - (noteWidth / 2) - 7, y), // Extend by 5 pixels each side
+        Offset(noteX + (noteWidth / 2) + 7, y),
+        paint..strokeWidth = 1.0,
+      );
+    }
+  }
+}
