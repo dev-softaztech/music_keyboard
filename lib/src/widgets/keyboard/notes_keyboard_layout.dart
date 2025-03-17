@@ -89,14 +89,6 @@ class NotesKeyboardLayout extends StatelessWidget {
 
     return Container(
       height: 280, // Fixed height for the keyboard area
-      decoration: const BoxDecoration(
-        border: Border(
-          top: BorderSide(
-            color: Colors.orange, // Set the border color
-            width: 2.0, // Set the border width
-          ),
-        ),
-      ),
       padding: const EdgeInsets.fromLTRB(0, 5, 0, 0),
       child: Column(
         children: [

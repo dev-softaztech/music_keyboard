@@ -64,10 +64,13 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
           // do I just make it always go onto next line and only overflowif no next line
           var overflowCount = 0;
 
-          if (sheetNoteRows[selectedNoteProvider.selectedRow].length >
-                  selectedNoteProvider.selectedRow &&
-              sheetNoteRows[selectedNoteProvider.selectedRow + 1].length - 1 >=
-                  maxNotesPerRow) {
+          if (sheetNoteRows.length - 1 > selectedNoteProvider.selectedRow) {
+            if (sheetNoteRows[selectedNoteProvider.selectedRow + 1].length -
+                    1 >=
+                maxNotesPerRow) {
+              sheetNoteRows.insert(selectedNoteProvider.selectedRow + 1, []);
+            }
+          } else {
             sheetNoteRows.insert(selectedNoteProvider.selectedRow + 1, []);
           }
 
@@ -255,14 +258,14 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
               right: 0,
               child: Container(
                 height: 370, // Fixed height for the keyboard area
-                decoration: const BoxDecoration(
+                /*decoration: const BoxDecoration(
                   border: Border(
                     top: BorderSide(
                       color: Colors.orange, // Set the border color
                       width: 2.0, // Set the border width
                     ),
                   ),
-                ),
+                ),*/
                 padding: const EdgeInsets.fromLTRB(0, 5, 0, 0),
                 child: Column(
                   children: [
