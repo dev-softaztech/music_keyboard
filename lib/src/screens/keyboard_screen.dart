@@ -63,14 +63,21 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
           //line is being added for every overflowed note, what can be done about this?
           // do I just make it always go onto next line and only overflowif no next line
           var overflowCount = 0;
-          sheetNoteRows.insert(selectedNoteProvider.selectedRow + 1, []);
+
+          if (sheetNoteRows[selectedNoteProvider.selectedRow].length >
+                  selectedNoteProvider.selectedRow &&
+              sheetNoteRows[selectedNoteProvider.selectedRow + 1].length - 1 >=
+                  maxNotesPerRow) {
+            sheetNoteRows.insert(selectedNoteProvider.selectedRow + 1, []);
+          }
 
           for (int index = 0;
               index < sheetNoteRows[selectedNoteProvider.selectedRow].length;
               index++) {
             if (index > maxNotesPerRow) {
               var note = sheetNoteRows[selectedNoteProvider.selectedRow][index];
-              sheetNoteRows[selectedNoteProvider.selectedRow + 1].add(note);
+              sheetNoteRows[selectedNoteProvider.selectedRow + 1]
+                  .insert(0, note);
               sheetNoteRows[selectedNoteProvider.selectedRow].remove(
                   sheetNoteRows[selectedNoteProvider.selectedRow][index]);
 
@@ -124,9 +131,12 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                 : sheetNoteRows[selectedNoteProvider.selectedRow - 1].length);
       }
 
-      if (sheetNoteRows[selectedNoteProvider.selectedRow].isNotEmpty &&
-          selectedNoteProvider.selectedRow != 0 &&
-          selectedNoteProvider.selectedIndex != 0) {
+      if (sheetNoteRows[selectedNoteProvider.selectedRow].isNotEmpty) {
+        if (selectedNoteProvider.selectedRow == 0 &&
+            selectedNoteProvider.selectedIndex == 0) {
+          return;
+        }
+
         selectedNoteProvider.updateInsertionPoint(
             selectedNoteProvider.selectedRow,
             sheetNoteRows[selectedNoteProvider.selectedRow].indexOf(
