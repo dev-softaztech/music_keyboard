@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:music_keyboard/src/providers/current_selected_note_provider.dart';
 import 'package:music_keyboard/src/providers/is_connected_provider.dart';
+import 'package:music_keyboard/src/providers/list_of_spacing_for_each_row.dart';
 import 'package:music_keyboard/src/providers/selected_number_provider.dart';
 import 'package:music_keyboard/src/providers/selected_unicode_provider.dart';
 import 'package:provider/provider.dart';
@@ -28,6 +29,7 @@ void main() async {
       ChangeNotifierProvider(create: (_) => SelectedUnicodeProvider()),
       ChangeNotifierProvider(create: (_) => IsConnectedProvider()),
       ChangeNotifierProvider(create: (_) => CurrentSelectedNoteProvider()),
+      ChangeNotifierProvider(create: (_) => ListOfSpacingForEachRow()),
     ], child: MyApp(settingsController: settingsController)),
   );
 }

@@ -2,8 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/note_position_calculator.dart';
 
-void drawNote(Canvas canvas, Paint paint, MusicalNote note, double lineSpacing,
-    double staffTop, double noteX, List<MusicalNote> notes, int index) {
+void drawNote(
+    Canvas canvas,
+    Paint paint,
+    MusicalNote note,
+    double lineSpacing,
+    double staffTop,
+    double noteX,
+    List<MusicalNote> notes,
+    int index,
+    int noteSpacing) {
   if (note.type == NoteType.clef) {
     drawClefKey(
         canvas, paint, note, lineSpacing, staffTop, noteX, notes, index);
@@ -20,8 +28,8 @@ void drawNote(Canvas canvas, Paint paint, MusicalNote note, double lineSpacing,
     drawRestAccidentalKey(
         canvas, paint, note, lineSpacing, staffTop, noteX, notes, index, noteY);
   } else {
-    drawNoteKey(
-        canvas, paint, note, lineSpacing, staffTop, noteX, notes, index, noteY);
+    drawNoteKey(canvas, paint, note, lineSpacing, staffTop, noteX, notes, index,
+        noteY, noteSpacing);
   }
 }
 
@@ -103,7 +111,8 @@ void drawNoteKey(
     double noteX,
     List<MusicalNote> notes,
     int index,
-    double noteY) {
+    double noteY,
+    int noteSpacing) {
   final double noteRadius = 8.0; // Radius of the note head
   double stemHeight = 35.0; // Stem height for all notes
   double noteWidth = 10;
@@ -191,13 +200,9 @@ void drawNoteKey(
     }
 
     if (isAConnectedNote && note.isConnected) {
-      //if (!firstNoteUpsideDown &&
-      //(!isUpsideDownNote && noteY > connectedGroupHighestY)) {
       if (!firstNoteUpsideDown) {
         stemHeight = (noteY - connectedGroupHighestY) + stemHeight;
       }
-      //if (firstNoteUpsideDown ||
-      //    (isUpsideDownNote && noteY < connectedGroupLowestY)) {
       if (firstNoteUpsideDown) {
         stemHeight = (connectedGroupLowestY - noteY) + stemHeight;
       }
@@ -227,8 +232,8 @@ void drawNoteKey(
         !isFirstNoteInGroupList) {
       var stemTopY =
           firstNoteUpsideDown ? noteY + stemHeight - 3 : noteY - stemHeight + 3;
-      drawConnectedNotes(
-          canvas, paint, note, stemX, stemTopY, firstNoteUpsideDown);
+      drawConnectedNotes(canvas, paint, note, stemX, stemTopY,
+          firstNoteUpsideDown, noteSpacing);
     }
   }
 
@@ -284,10 +289,10 @@ void drawNoteKey(
 }
 
 void drawConnectedNotes(Canvas canvas, Paint paint, MusicalNote note,
-    double stemX, double stemTopY, bool firstNoteUpsideDown) {
+    double stemX, double stemTopY, bool firstNoteUpsideDown, int noteSpacing) {
   canvas.drawLine(
     Offset(stemX, stemTopY),
-    Offset(stemX - 26, stemTopY),
+    Offset(stemX - noteSpacing, stemTopY),
     paint..strokeWidth = 4.0,
   );
 
@@ -298,7 +303,7 @@ void drawConnectedNotes(Canvas canvas, Paint paint, MusicalNote note,
 
     canvas.drawLine(
       Offset(stemX, y),
-      Offset(stemX - 26, y),
+      Offset(stemX - noteSpacing, y),
       paint..strokeWidth = 4.0,
     );
   }
@@ -308,7 +313,7 @@ void drawConnectedNotes(Canvas canvas, Paint paint, MusicalNote note,
 
     canvas.drawLine(
       Offset(stemX, y),
-      Offset(stemX - 26, y),
+      Offset(stemX - noteSpacing, y),
       paint..strokeWidth = 4.0,
     );
   }
@@ -317,7 +322,7 @@ void drawConnectedNotes(Canvas canvas, Paint paint, MusicalNote note,
 
     canvas.drawLine(
       Offset(stemX, y),
-      Offset(stemX - 26, y),
+      Offset(stemX - noteSpacing, y),
       paint..strokeWidth = 4.0,
     );
   }

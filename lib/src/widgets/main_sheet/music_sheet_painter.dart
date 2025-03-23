@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/music_note.dart';
+import 'package:music_keyboard/src/utils/music_sheet_utils/cursor_calculation.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/drawing_helpers.dart';
+import 'package:music_keyboard/src/utils/music_sheet_utils/note_position_calculator.dart';
 
 class MusicSheetPainter extends CustomPainter {
   final List<List<MusicalNote>> sheetNoteRows;
   final int selectedRow; // Row where the cursor is placed
   final int selectedIndex; // Index within the row
   final bool showCursor;
+  final List<int> rowSpacingList;
 
   MusicSheetPainter(this.sheetNoteRows, this.selectedRow, this.selectedIndex,
-      this.showCursor);
+      this.showCursor, this.rowSpacingList);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -32,22 +35,31 @@ class MusicSheetPainter extends CustomPainter {
       drawStaffLines(canvas, paint, staffTop, lineSpacing, sheetHeight, size);
 
       double x = 25.0;
+      int currentRowSpacing = rowSpacingList[rowIndex];
 
       for (int i = 0; i < sheetNoteRows[rowIndex].length; i++) {
         MusicalNote note = sheetNoteRows[rowIndex][i];
 
         drawNote(canvas, paint, note, lineSpacing, staffTop, x,
-            sheetNoteRows[rowIndex], i);
+            sheetNoteRows[rowIndex], i, currentRowSpacing);
 
         if (note.isTiedToNext && i < sheetNoteRows[rowIndex].length - 1) {
-          drawTie(canvas, paint, x, staffTop, x + 26); // Tie to the next note
+          double y = calculateNoteYMainSheet(
+              note.pitch, note.octave, lineSpacing, staffTop);
+          drawTie(canvas, paint, x, staffTop + (lineSpacing * 2),
+              x + currentRowSpacing, y); // Tie to the next note
         }
 
-        x += 26;
+        x += note.type == NoteType.clef ? 26 : currentRowSpacing; //26;
       }
 
       if (showCursor && rowIndex == selectedRow) {
-        drawInsertionCursor(canvas, paint, staffTop, selectedIndex, size);
+        int clefCount = sheetNoteRows[rowIndex]
+            .where((x) => x.type == NoteType.clef)
+            .length;
+
+        drawInsertionCursor(canvas, paint, staffTop, selectedIndex - 1, size,
+            currentRowSpacing, clefCount, sheetNoteRows[rowIndex], lineSpacing);
       }
     }
   }
@@ -77,27 +89,39 @@ class MusicSheetPainter extends CustomPainter {
   }
 
   void drawInsertionCursor(
-      Canvas canvas, Paint paint, double staffTop, int index, Size size) {
-    //if (!showCursor) return;
+      Canvas canvas,
+      Paint paint,
+      double staffTop,
+      int index,
+      Size size,
+      int rowSpacing,
+      int clefCount,
+      List<MusicalNote> notes,
+      double lineSpacing) {
+    double cursorX =
+        calculateCursorPosition(notes[index], rowSpacing, clefCount, index);
+
+    double cursorY = staffTop + (lineSpacing * 2); // Center on staff
 
     final Paint cursorPaint = Paint()..color = Colors.blue.withOpacity(0.8);
-    double cursorX = 25.0 + (index * 26); // Offset for insertion
-    double cursorY = staffTop + (10 * 2); // Center on staff
 
     canvas.drawLine(
-      Offset(cursorX - 12, cursorY - 35),
-      Offset(cursorX - 12, cursorY + 35),
+      Offset(cursorX - 12, cursorY - 45),
+      Offset(cursorX - 12, cursorY + 45),
       cursorPaint..strokeWidth = 2.0,
     );
   }
 
-  void drawTie(
-      Canvas canvas, Paint paint, double startX, double staffTop, double endX) {
+  void drawTie(Canvas canvas, Paint paint, double startX, double staffCentre,
+      double endX, double y) {
     Path path = Path();
-    double controlY = staffTop + 20; // Adjust height of curve
+    double controlY =
+        y >= staffCentre ? y + 30 : y - 30; // Adjust height of curve
 
-    path.moveTo(startX, staffTop + 30);
-    path.quadraticBezierTo((startX + endX) / 2, controlY, endX, staffTop + 30);
+    y = y >= staffCentre ? y + 10 : y - 10;
+
+    path.moveTo(startX + 5, y);
+    path.quadraticBezierTo((startX + endX) / 2, controlY, endX - 5, y);
 
     paint.style = PaintingStyle.stroke;
     paint.strokeWidth = 2.0;

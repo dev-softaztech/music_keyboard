@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/src/providers/current_selected_note_provider.dart';
+import 'package:music_keyboard/src/providers/list_of_spacing_for_each_row.dart';
 import 'package:music_keyboard/src/widgets/keyboard/clefs_keyboard_layout.dart';
 import 'package:music_keyboard/src/widgets/keyboard/notes_keyboard_layout.dart';
 import 'package:music_keyboard/src/widgets/main_sheet/music_sheet_container.dart';
@@ -32,6 +33,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   //List<MusicalNote> notes = [];
   List<List<MusicalNote>> sheetNoteRows = [[]]; // Each sublist represents a row
   int maxNotesPerRow = 29;
+  int defaultNoteSpacing = 26;
 
   bool showClefs = true;
   bool showTimeSignatures = false;
@@ -49,6 +51,8 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   void handleKeyPress(MusicalNote note) {
     try {
       final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+      final rowSpacingProvider = context.read<ListOfSpacingForEachRow>();
+      var rowSpacingList = rowSpacingProvider.rowSpacingList;
 
       setState(() {
         sheetNoteRows[selectedNoteProvider.selectedRow]
@@ -60,19 +64,24 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
           if (selectedNoteProvider.selectedIndex == maxNotesPerRow) {
             isNoteEndOfRow = true;
           }
-          //line is being added for every overflowed note, what can be done about this?
-          // do I just make it always go onto next line and only overflowif no next line
-          var overflowCount = 0;
 
           if (sheetNoteRows.length - 1 > selectedNoteProvider.selectedRow) {
             if (sheetNoteRows[selectedNoteProvider.selectedRow + 1].length -
                     1 >=
                 maxNotesPerRow) {
               sheetNoteRows.insert(selectedNoteProvider.selectedRow + 1, []);
+
+              rowSpacingList.insert(rowSpacingList.length, defaultNoteSpacing);
+              rowSpacingProvider.updateRowSpacingList(rowSpacingList);
             }
           } else {
             sheetNoteRows.insert(selectedNoteProvider.selectedRow + 1, []);
+
+            rowSpacingList.insert(rowSpacingList.length, defaultNoteSpacing);
+            rowSpacingProvider.updateRowSpacingList(rowSpacingList);
           }
+
+          var overflowCount = 0;
 
           for (int index = 0;
               index < sheetNoteRows[selectedNoteProvider.selectedRow].length;
@@ -81,6 +90,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
               var note = sheetNoteRows[selectedNoteProvider.selectedRow][index];
               sheetNoteRows[selectedNoteProvider.selectedRow + 1]
                   .insert(0, note);
+
               sheetNoteRows[selectedNoteProvider.selectedRow].remove(
                   sheetNoteRows[selectedNoteProvider.selectedRow][index]);
 
@@ -102,10 +112,35 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
               selectedNoteProvider.selectedRow,
               selectedNoteProvider.selectedIndex + 1);
         }
+
+        updateRowSpacing(selectedNoteProvider.selectedRow);
       });
     } catch (e) {
       print("Error adding note: $e");
     }
+  }
+
+  void updateRowSpacing(int rowIndex) {
+    final rowSpacingProvider = context.read<ListOfSpacingForEachRow>();
+    var rowSpacingList = rowSpacingProvider.rowSpacingList;
+
+    //here work out how many clefs/time signatures and affect the spacing in some way based on this?
+
+    if (sheetNoteRows[rowIndex].length < 12) {
+      rowSpacingList[rowIndex] = 70;
+    } else if (sheetNoteRows[rowIndex].length < 15) {
+      rowSpacingList[rowIndex] = 55;
+    } else if (sheetNoteRows[rowIndex].length < 18) {
+      rowSpacingList[rowIndex] = 45;
+    } else if (sheetNoteRows[rowIndex].length < 21) {
+      rowSpacingList[rowIndex] = 38;
+    } else if (sheetNoteRows[rowIndex].length < 24) {
+      rowSpacingList[rowIndex] = 34;
+    } else if (sheetNoteRows[rowIndex].length < 30) {
+      rowSpacingList[rowIndex] = 26;
+    }
+
+    rowSpacingProvider.updateRowSpacingList(rowSpacingList);
   }
 
   void forceNewRow() {
@@ -113,8 +148,12 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
       if (sheetNoteRows.isNotEmpty) {
         final selectedNoteProvider =
             context.read<CurrentSelectedNoteProvider>();
+        final rowSpacingProvider = context.read<ListOfSpacingForEachRow>();
+        var rowSpacingList = rowSpacingProvider.rowSpacingList;
 
         sheetNoteRows.insert(selectedNoteProvider.selectedRow + 1, []);
+        rowSpacingList.insert(rowSpacingList.length, defaultNoteSpacing);
+        rowSpacingProvider.updateRowSpacingList(rowSpacingList);
       }
     });
   }
@@ -123,9 +162,14 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   void handleBackspacePress() {
     setState(() {
       final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+      final rowSpacingProvider = context.read<ListOfSpacingForEachRow>();
+      var rowSpacingList = rowSpacingProvider.rowSpacingList;
 
       if (sheetNoteRows[selectedNoteProvider.selectedRow].isEmpty) {
         sheetNoteRows.remove(sheetNoteRows[selectedNoteProvider.selectedRow]);
+
+        rowSpacingList.remove(rowSpacingList[selectedNoteProvider.selectedRow]);
+        rowSpacingProvider.updateRowSpacingList(rowSpacingList);
 
         selectedNoteProvider.updateInsertionPoint(
             selectedNoteProvider.selectedRow - 1,
@@ -150,6 +194,8 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
             sheetNoteRows[selectedNoteProvider.selectedRow]
                 [selectedNoteProvider.selectedIndex]);
       }
+
+      updateRowSpacing(selectedNoteProvider.selectedRow);
     });
   }
 

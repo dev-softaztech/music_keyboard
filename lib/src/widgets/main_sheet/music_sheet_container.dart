@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/src/providers/current_selected_note_provider.dart';
+import 'package:music_keyboard/src/providers/list_of_spacing_for_each_row.dart';
+import 'package:music_keyboard/src/utils/music_sheet_utils/cursor_calculation.dart';
 import 'package:music_keyboard/src/widgets/main_sheet/music_sheet_painter.dart';
 import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
@@ -47,16 +49,6 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     // Listen for zoom changes
     _transformationController.addListener(_onZoomChanged);
 
-    /*
-    // Start blinking cursor without triggering full repaint
-    Timer.periodic(const Duration(milliseconds: 500), (timer) {
-      if (mounted) {
-        setState(() {
-          _cursorVisible = !_cursorVisible;
-        });
-      }
-    });*/
-
     // Ensure cursor blinks every 500ms without full app rebuild
     _cursorTimer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
       setState(() {
@@ -96,28 +88,28 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     final RenderBox renderBox = context.findRenderObject() as RenderBox;
     final Offset localOffset = renderBox.globalToLocal(details.globalPosition);
 
-    // 🎯 Get the TransformationController from InteractiveViewer
+    //  Get the TransformationController from InteractiveViewer
     final Matrix4 transformMatrix = _transformationController.value;
 
-    // 🎯 Apply inverse transformation to adjust for zoom/pan
+    //  Apply inverse transformation to adjust for zoom/pan
     final Matrix4 inverseMatrix = Matrix4.inverted(transformMatrix);
     final vector_math.Vector3 transformedPosition = inverseMatrix
         .transform3(vector_math.Vector3(localOffset.dx, localOffset.dy, 0));
 
-    // ✅ Now, transformedPosition.x and transformedPosition.y are the correct values
+    //  Now, transformedPosition.x and transformedPosition.y are the correct values
     final double tapX = transformedPosition.x;
     final double tapY = transformedPosition.y;
 
     int closestRowIndex = findClosestRow(widget.sheetNoteRows, tapY);
-    int closestNoteIndex =
-        findClosestNoteIndex(widget.sheetNoteRows[closestRowIndex], tapX);
+    int closestNoteIndex = findClosestNoteIndex(
+        widget.sheetNoteRows[closestRowIndex], tapX, closestRowIndex);
 
     if (context.read<CurrentSelectedNoteProvider>().isBeaming) {
-      // ✅ Handle beaming mode
+      //  Handle beaming mode
       context.read<CurrentSelectedNoteProvider>().handleBeamSelection(
           closestRowIndex, closestNoteIndex, widget.sheetNoteRows);
     } else if (context.read<CurrentSelectedNoteProvider>().isTying) {
-      // ✅ Handle beaming mode
+      //  Handle beaming mode
       context.read<CurrentSelectedNoteProvider>().handleTieSelection(
           closestRowIndex, closestNoteIndex, widget.sheetNoteRows);
     } else {
@@ -144,12 +136,19 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     return rowIndex.clamp(0, rows.length - 1);
   }
 
-  int findClosestNoteIndex(List<MusicalNote> notes, double tapX) {
+  int findClosestNoteIndex(
+      List<MusicalNote> notes, double tapX, int selectedRow) {
     if (notes.isEmpty) return 0; // If row is empty, insert at start
 
-    // 🔹 Loop through the notes and calculate x position dynamically
+    var rowSpacingList = context.read<ListOfSpacingForEachRow>().rowSpacingList;
+    var currentRowSpacing = rowSpacingList[selectedRow];
+
+    int clefCount = notes.where((x) => x.type == NoteType.clef).length;
+
+    // Loop through the notes and calculate x position dynamically
     for (int i = 0; i < notes.length; i++) {
-      double noteX = 26.0 * i + 10; // Calculate x position based on index
+      double noteX =
+          calculateCursorPosition(notes[i], currentRowSpacing, clefCount, i);
 
       if (noteX >= tapX) {
         return i; // Return the first index where noteX is greater
@@ -163,6 +162,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
   Widget build(BuildContext context) {
     final selectedNoteProvider =
         Provider.of<CurrentSelectedNoteProvider>(context);
+    final rowSpacingProvider = Provider.of<ListOfSpacingForEachRow>(context);
 
     return Stack(children: [
       GestureDetector(
@@ -188,12 +188,13 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                     child: Stack(children: [
                       CustomPaint(
                         painter: MusicSheetPainter(
-                          widget.sheetNoteRows,
-                          selectedNoteProvider.selectedRow, // Pass selected row
-                          selectedNoteProvider
-                              .selectedIndex, // Pass selected index
-                          _showCursor,
-                        ),
+                            widget.sheetNoteRows,
+                            selectedNoteProvider
+                                .selectedRow, // Pass selected row
+                            selectedNoteProvider
+                                .selectedIndex, // Pass selected index
+                            _showCursor,
+                            rowSpacingProvider.rowSpacingList),
                         size: Size(widget.musicSheetWidth,
                             300), // Ensure proper rendering
                       ),
@@ -202,13 +203,13 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                           controller: widget.screenshotController,
                           child: CustomPaint(
                             painter: MusicSheetPainter(
-                              widget.sheetNoteRows,
-                              selectedNoteProvider
-                                  .selectedRow, // Pass selected row
-                              selectedNoteProvider
-                                  .selectedIndex, // Pass selected index
-                              _showCursor,
-                            ),
+                                widget.sheetNoteRows,
+                                selectedNoteProvider
+                                    .selectedRow, // Pass selected row
+                                selectedNoteProvider
+                                    .selectedIndex, // Pass selected index
+                                _showCursor,
+                                rowSpacingProvider.rowSpacingList),
                             size: Size(widget.musicSheetWidth,
                                 300), // Ensure proper rendering
                           ),
@@ -218,17 +219,6 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
               ),
             ),
           )),
-      /*if (_cursorVisible)
-        Positioned(
-          left: 25.0 + (selectedNoteProvider.selectedIndex * 26) - 12,
-          top: (selectedNoteProvider.selectedRow * 200) +
-              85, // Adjust for staff lines
-          child: Container(
-            width: 2,
-            height: 70,
-            color: Colors.blue.withOpacity(0.8),
-          ),
-        ),*/
       // Floating Reset Button (Only Shows When Zoomed)
       if (isZoomed)
         Positioned(
