@@ -104,19 +104,20 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     int closestNoteIndex = findClosestNoteIndex(
         widget.sheetNoteRows[closestRowIndex], tapX, closestRowIndex);
 
-    if (context.read<CurrentSelectedNoteProvider>().isBeaming) {
+    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+
+    if (selectedNoteProvider.isBeaming) {
       //  Handle beaming mode
-      context.read<CurrentSelectedNoteProvider>().handleBeamSelection(
+      selectedNoteProvider.handleBeamSelection(
           closestRowIndex, closestNoteIndex, widget.sheetNoteRows);
-    } else if (context.read<CurrentSelectedNoteProvider>().isTying) {
+    } else if (selectedNoteProvider.isTying) {
       //  Handle beaming mode
-      context.read<CurrentSelectedNoteProvider>().handleTieSelection(
+      selectedNoteProvider.handleTieSelection(
           closestRowIndex, closestNoteIndex, widget.sheetNoteRows);
     } else {
       // 🔹 Update provider with new insertion point
-      context
-          .read<CurrentSelectedNoteProvider>()
-          .updateInsertionPoint(closestRowIndex, closestNoteIndex);
+      selectedNoteProvider.updateInsertionPoint(
+          closestRowIndex, closestNoteIndex);
     }
   }
 
@@ -239,6 +240,9 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
             ElevatedButton(
               onPressed: () {
                 context.read<CurrentSelectedNoteProvider>().enableTying();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Select a second note to tie")),
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color.fromARGB(255, 255, 255, 255),
@@ -254,6 +258,10 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                 setState(() {
                   //isBeaming = !isBeaming;
                   context.read<CurrentSelectedNoteProvider>().enableBeaming();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text("Select a second note to beam")),
+                  );
                 });
               },
               style: ElevatedButton.styleFrom(
