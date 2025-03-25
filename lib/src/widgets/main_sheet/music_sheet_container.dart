@@ -164,44 +164,32 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
         Provider.of<CurrentSelectedNoteProvider>(context);
     final rowSpacingProvider = Provider.of<ListOfSpacingForEachRow>(context);
 
-    return Stack(children: [
-      GestureDetector(
-          onTapDown: _handleTap, // Handle user tap
-          child: Container(
-            width: widget.screenSize.width,
-            height: widget.screenSize.height - 450, // Adjust height as needed
-            color: Colors.white, // Background color
-            child: InteractiveViewer(
-              transformationController: _transformationController,
-              minScale:
-                  initialScale * 0.5, // Allows zooming out further if needed
-              maxScale: 3.0, // Allow zooming in up to 3x
-              boundaryMargin: EdgeInsets.fromLTRB(
-                  20, 0, 20, 9999), // Allow scrolling outside bounds
-              constrained: false,
-              child: Align(
-                // Ensures content is aligned properly
-                alignment: Alignment.topLeft,
-                child: SizedBox(
-                    width: widget.musicSheetWidth, // Force width
-                    height: 300, // Adjust height as needed
-                    child: Stack(children: [
-                      CustomPaint(
-                        painter: MusicSheetPainter(
-                            widget.sheetNoteRows,
-                            selectedNoteProvider
-                                .selectedRow, // Pass selected row
-                            selectedNoteProvider
-                                .selectedIndex, // Pass selected index
-                            _showCursor,
-                            rowSpacingProvider.rowSpacingList),
-                        size: Size(widget.musicSheetWidth,
-                            300), // Ensure proper rendering
-                      ),
-                      Positioned.fill(
-                        child: Screenshot(
-                          controller: widget.screenshotController,
-                          child: CustomPaint(
+    return Column(
+      children: [
+        Stack(children: [
+          GestureDetector(
+              onTapDown: _handleTap, // Handle user tap
+              child: Container(
+                width: widget.screenSize.width,
+                height:
+                    widget.screenSize.height - 490, // Adjust height as needed
+                color: Colors.white, // Background color
+                child: InteractiveViewer(
+                  transformationController: _transformationController,
+                  minScale: initialScale *
+                      0.5, // Allows zooming out further if needed
+                  maxScale: 3.0, // Allow zooming in up to 3x
+                  boundaryMargin: EdgeInsets.fromLTRB(
+                      20, 0, 20, 9999), // Allow scrolling outside bounds
+                  constrained: false,
+                  child: Align(
+                    // Ensures content is aligned properly
+                    alignment: Alignment.topLeft,
+                    child: SizedBox(
+                        width: widget.musicSheetWidth, // Force width
+                        height: 300, // Adjust height as needed
+                        child: Stack(children: [
+                          CustomPaint(
                             painter: MusicSheetPainter(
                                 widget.sheetNoteRows,
                                 selectedNoteProvider
@@ -213,23 +201,88 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                             size: Size(widget.musicSheetWidth,
                                 300), // Ensure proper rendering
                           ),
-                        ),
-                      )
-                    ])),
+                          Positioned.fill(
+                            child: Screenshot(
+                              controller: widget.screenshotController,
+                              child: CustomPaint(
+                                painter: MusicSheetPainter(
+                                    widget.sheetNoteRows,
+                                    selectedNoteProvider
+                                        .selectedRow, // Pass selected row
+                                    selectedNoteProvider
+                                        .selectedIndex, // Pass selected index
+                                    _showCursor,
+                                    rowSpacingProvider.rowSpacingList),
+                                size: Size(widget.musicSheetWidth,
+                                    300), // Ensure proper rendering
+                              ),
+                            ),
+                          )
+                        ])),
+                  ),
+                ),
+              )),
+          // Floating Reset Button (Only Shows When Zoomed)
+          if (isZoomed)
+            Positioned(
+              bottom: 20,
+              right: 20,
+              child: FloatingActionButton(
+                onPressed: _resetZoom,
+                backgroundColor: const Color.fromARGB(255, 18, 17, 16),
+                child: Icon(Icons.zoom_out_map, color: Colors.white),
               ),
             ),
-          )),
-      // Floating Reset Button (Only Shows When Zoomed)
-      if (isZoomed)
-        Positioned(
-          bottom: 20,
-          right: 20,
-          child: FloatingActionButton(
-            onPressed: _resetZoom,
-            backgroundColor: const Color.fromARGB(255, 18, 17, 16),
-            child: Icon(Icons.zoom_out_map, color: Colors.white),
-          ),
-        ),
-    ]);
+        ]),
+        Row(
+          children: [
+            ElevatedButton(
+              onPressed: () {
+                context.read<CurrentSelectedNoteProvider>().enableTying();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: EdgeInsets.zero,
+              ),
+              child: const Text("Tie Notes"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  //isBeaming = !isBeaming;
+                  context.read<CurrentSelectedNoteProvider>().enableBeaming();
+                });
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: EdgeInsets.zero,
+              ),
+              child: const Text("Beam Notes"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                context
+                    .read<CurrentSelectedNoteProvider>()
+                    .undo(widget.sheetNoteRows);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: EdgeInsets.zero,
+              ),
+              child: const Text("Undo"),
+            ),
+          ],
+        )
+      ],
+    );
   }
 }

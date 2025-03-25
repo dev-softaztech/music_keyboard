@@ -227,48 +227,6 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
             icon: const Icon(Icons.add),
             onPressed: forceNewRow,
           ),
-          ElevatedButton(
-            onPressed: () {
-              context.read<CurrentSelectedNoteProvider>().enableTying();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              padding: EdgeInsets.zero,
-            ),
-            child: const Text("Tie Notes"),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                //isBeaming = !isBeaming;
-                context.read<CurrentSelectedNoteProvider>().enableBeaming();
-              });
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              padding: EdgeInsets.zero,
-            ),
-            child: const Text("Beam Notes"),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              context.read<CurrentSelectedNoteProvider>().undo(sheetNoteRows);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              padding: EdgeInsets.zero,
-            ),
-            child: const Text("Undo"),
-          ),
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(2.0), // Border thickness
@@ -278,29 +236,29 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
           ),
         ),
       ),
-      body: ColoredBox(
-        color: const Color(0xFFF7ECE1),
-        child: Stack(
-          children: [
-            // Music Sheet taking full available height above the keyboard
-            Positioned.fill(
-              child: Column(
-                children: [
-                  MusicSheetContainer(
-                      screenSize: screenSize,
-                      screenshotController: screenshotController,
-                      sheetNoteRows: sheetNoteRows,
-                      musicSheetWidth: musicSheetWidth),
-                  const Spacer(), // Pushes the keyboard container to the bottom
-                ],
-              ),
+      body: Stack(
+        children: [
+          // Music Sheet taking full available height above the keyboard
+          Positioned.fill(
+            child: Column(
+              children: [
+                MusicSheetContainer(
+                    screenSize: screenSize,
+                    screenshotController: screenshotController,
+                    sheetNoteRows: sheetNoteRows,
+                    musicSheetWidth: musicSheetWidth),
+                const Spacer(), // Pushes the keyboard container to the bottom
+              ],
             ),
+          ),
 
-            // Keyboard Section Pinned to Bottom
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
+          // Keyboard Section Pinned to Bottom
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: ColoredBox(
+              color: const Color(0xFFF7ECE1),
               child: Container(
                 height: 370, // Fixed height for the keyboard area
                 /*decoration: const BoxDecoration(
@@ -395,8 +353,8 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                 ),
               ),
             ),
-          ],
-        ),
+          )
+        ],
       ),
     );
   }
