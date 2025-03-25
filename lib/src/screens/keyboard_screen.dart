@@ -162,6 +162,12 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   void handleBackspacePress() {
     setState(() {
       final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+
+      if (selectedNoteProvider.selectedRow == 0 &&
+          selectedNoteProvider.selectedIndex == 0) {
+        return;
+      }
+
       final rowSpacingProvider = context.read<ListOfSpacingForEachRow>();
       var rowSpacingList = rowSpacingProvider.rowSpacingList;
 
@@ -176,14 +182,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
             sheetNoteRows[selectedNoteProvider.selectedRow - 1].isEmpty
                 ? 0
                 : sheetNoteRows[selectedNoteProvider.selectedRow - 1].length);
-      }
-
-      if (sheetNoteRows[selectedNoteProvider.selectedRow].isNotEmpty) {
-        if (selectedNoteProvider.selectedRow == 0 &&
-            selectedNoteProvider.selectedIndex == 0) {
-          return;
-        }
-
+      } else if (sheetNoteRows[selectedNoteProvider.selectedRow].isNotEmpty) {
         selectedNoteProvider.updateInsertionPoint(
             selectedNoteProvider.selectedRow,
             sheetNoteRows[selectedNoteProvider.selectedRow].indexOf(

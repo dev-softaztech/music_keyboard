@@ -98,16 +98,17 @@ class MusicSheetPainter extends CustomPainter {
       int clefCount,
       List<MusicalNote> notes,
       double lineSpacing) {
-    double cursorX =
-        calculateCursorPosition(notes[index], rowSpacing, clefCount, index);
+    double cursorX = notes.isEmpty
+        ? 25
+        : calculateCursorPosition(notes[index], rowSpacing, clefCount, index);
 
     double cursorY = staffTop + (lineSpacing * 2); // Center on staff
 
     final Paint cursorPaint = Paint()..color = Colors.blue.withOpacity(0.8);
 
     canvas.drawLine(
-      Offset(cursorX - 12, cursorY - 45),
-      Offset(cursorX - 12, cursorY + 45),
+      Offset(cursorX, cursorY - 45),
+      Offset(cursorX, cursorY + 45),
       cursorPaint..strokeWidth = 2.0,
     );
   }
