@@ -20,7 +20,8 @@ class MusicSheetPainter extends CustomPainter {
     canvas.drawRect(
         Rect.fromLTWH(0, 0, size.width, size.height), backgroundPaint);
 
-    final paint = Paint()..color = Colors.black;
+    Paint paint = Paint()..color = Colors.black;
+    Color noteColour = Colors.black;
     const double lineSpacing = 10;
     const double sheetHeight = lineSpacing * 4;
     const double rowSpacing = 130.0;
@@ -39,15 +40,16 @@ class MusicSheetPainter extends CustomPainter {
       for (int i = 0; i < sheetNoteRows[rowIndex].length; i++) {
         MusicalNote note = sheetNoteRows[rowIndex][i];
 
-        if (rowIndex == selectedRow && i == selectedIndex - 1) {
-          final Paint highlightPaint = Paint()
-            ..color = Colors.blue.withOpacity(0.3);
-          canvas.drawRect(
-              Rect.fromLTWH(x - 13, staffTop - 10, 26, 50), highlightPaint);
+        if (rowIndex == selectedRow && i == selectedIndex) {
+          paint = Paint()..color = const Color.fromARGB(255, 222, 15, 0);
+          noteColour = const Color.fromARGB(255, 222, 15, 0);
+        } else {
+          paint = Paint()..color = Colors.black;
+          noteColour = Colors.black;
         }
 
         drawNote(canvas, paint, note, lineSpacing, staffTop, x,
-            sheetNoteRows[rowIndex], i, currentRowSpacing);
+            sheetNoteRows[rowIndex], i, currentRowSpacing, noteColour);
 
         if (note.isTiedToNext && i < sheetNoteRows[rowIndex].length - 1) {
           double y = calculateNoteYMainSheet(
@@ -64,9 +66,12 @@ class MusicSheetPainter extends CustomPainter {
             .where((x) => x.type == NoteType.clef)
             .length;
 
-        drawInsertionCursor(canvas, paint, staffTop, selectedIndex - 1, size,
+        drawInsertionCursor(canvas, paint, staffTop, selectedIndex, size,
             currentRowSpacing, clefCount, sheetNoteRows[rowIndex], lineSpacing);
       }
+
+      paint = Paint()..color = Colors.black;
+      noteColour = Colors.black;
     }
   }
 
@@ -110,9 +115,9 @@ class MusicSheetPainter extends CustomPainter {
     final Paint cursorPaint = Paint()..color = Colors.blue.withOpacity(0.8);
 
     canvas.drawLine(
-      Offset(cursorX, cursorY - 45),
-      Offset(cursorX, cursorY + 45),
-      cursorPaint..strokeWidth = 2.0,
+      Offset(cursorX, cursorY - 60),
+      Offset(cursorX, cursorY + 60),
+      cursorPaint..strokeWidth = 3.5,
     );
   }
 

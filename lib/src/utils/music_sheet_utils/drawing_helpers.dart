@@ -11,10 +11,11 @@ void drawNote(
     double noteX,
     List<MusicalNote> notes,
     int index,
-    int noteSpacing) {
+    int noteSpacing,
+    Color noteColour) {
   if (note.type == NoteType.clef) {
-    drawClefKey(
-        canvas, paint, note, lineSpacing, staffTop, noteX, notes, index);
+    drawClefKey(canvas, paint, note, lineSpacing, staffTop, noteX, notes, index,
+        noteColour);
     return;
   }
 
@@ -22,14 +23,14 @@ void drawNote(
       calculateNoteYMainSheet(note.pitch, note.octave, lineSpacing, staffTop);
 
   if (note.type == NoteType.rest) {
-    drawRestAccidentalKey(
-        canvas, paint, note, lineSpacing, staffTop, noteX, notes, index, noteY);
+    drawRestAccidentalKey(canvas, paint, note, lineSpacing, staffTop, noteX,
+        notes, index, noteY, noteColour);
   } else if (note.type == NoteType.accidental) {
-    drawRestAccidentalKey(
-        canvas, paint, note, lineSpacing, staffTop, noteX, notes, index, noteY);
+    drawRestAccidentalKey(canvas, paint, note, lineSpacing, staffTop, noteX,
+        notes, index, noteY, noteColour);
   } else {
     drawNoteKey(canvas, paint, note, lineSpacing, staffTop, noteX, notes, index,
-        noteY, noteSpacing);
+        noteY, noteSpacing, noteColour);
   }
 }
 
@@ -41,14 +42,15 @@ void drawClefKey(
     double staffCenter,
     double noteX,
     List<MusicalNote> notes,
-    int index) {
+    int index,
+    Color noteColour) {
   final textPainter = TextPainter(
     text: TextSpan(
       text: note.unicodeCharacter, // Unicode character for whole note
-      style: const TextStyle(
+      style: TextStyle(
         fontFamily: 'Bravura', // Use Bravura font
         fontSize: 40, // Adjust font size as needed
-        color: Colors.black,
+        color: noteColour,
       ),
     ),
     textDirection: TextDirection.ltr,
@@ -77,16 +79,17 @@ void drawRestAccidentalKey(
     double noteX,
     List<MusicalNote> notes,
     int index,
-    double noteY) {
+    double noteY,
+    Color noteColour) {
   double noteWidth = 10;
 
   final textPainter = TextPainter(
     text: TextSpan(
       text: note.unicodeCharacter, // Unicode character for whole note
-      style: const TextStyle(
+      style: TextStyle(
         fontFamily: 'Bravura', // Use Bravura font
         fontSize: 36, // Adjust font size as needed
-        color: Colors.black,
+        color: noteColour,
       ),
     ),
     textDirection: TextDirection.ltr,
@@ -112,7 +115,8 @@ void drawNoteKey(
     List<MusicalNote> notes,
     int index,
     double noteY,
-    int noteSpacing) {
+    int noteSpacing,
+    Color noteColour) {
   final double noteRadius = 8.0; // Radius of the note head
   double stemHeight = 35.0; // Stem height for all notes
   double noteWidth = 10;
@@ -159,10 +163,10 @@ void drawNoteKey(
     final textPainter = TextPainter(
       text: TextSpan(
         text: '\uE1D2', // Unicode character for whole note
-        style: const TextStyle(
+        style: TextStyle(
           fontFamily: 'Bravura', // Use Bravura font
           fontSize: 35, // Adjust font size as needed
-          color: Colors.black,
+          color: noteColour,
         ),
       ),
       textDirection: TextDirection.ltr,
@@ -180,10 +184,10 @@ void drawNoteKey(
     final textPainter = TextPainter(
       text: TextSpan(
         text: noteHeadCharacter,
-        style: const TextStyle(
+        style: TextStyle(
           fontFamily: 'Bravura',
           fontSize: 36,
-          color: Colors.black,
+          color: noteColour,
         ),
       ),
       textDirection: TextDirection.ltr,
@@ -267,10 +271,10 @@ void drawNoteKey(
     final textPainter = TextPainter(
       text: TextSpan(
         text: flagCharacter,
-        style: const TextStyle(
+        style: TextStyle(
           fontFamily: 'Bravura',
           fontSize: 34.0,
-          color: Colors.black,
+          color: noteColour,
         ),
       ),
       textDirection: TextDirection.ltr,

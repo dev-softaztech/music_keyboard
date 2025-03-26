@@ -30,8 +30,7 @@ class NoteInputScreen extends StatefulWidget {
 
 class _NoteInputScreenState extends State<NoteInputScreen> {
   final ScreenshotController screenshotController = ScreenshotController();
-  //List<MusicalNote> notes = [];
-  List<List<MusicalNote>> sheetNoteRows = [[]]; // Each sublist represents a row
+  List<List<MusicalNote>> sheetNoteRows = [[]];
   int maxNotesPerRow = 29;
   int defaultNoteSpacing = 26;
 
@@ -40,10 +39,8 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   bool showAccidentals = false;
   bool showNotes = false;
 
-  // State to control which keyboard to display
-  bool showNotesKeyboard = false; // Track if Notes is selected
-  bool showSymbolsKeyboard = false; // Track if Symbols2 is selected
-  //bool isBeaming = false;
+  bool showNotesKeyboard = false;
+  bool showSymbolsKeyboard = false;
   bool isTieing = false;
 
   String keyType = "clefs";
@@ -55,13 +52,22 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
       var rowSpacingList = rowSpacingProvider.rowSpacingList;
 
       setState(() {
-        sheetNoteRows[selectedNoteProvider.selectedRow]
-            .insert(selectedNoteProvider.selectedIndex, note);
+        if (note.type == NoteType.clef) {
+          var clefCount = sheetNoteRows[selectedNoteProvider.selectedRow]
+              .where((x) => x.type == NoteType.clef)
+              .length;
+
+          sheetNoteRows[selectedNoteProvider.selectedRow]
+              .insert(clefCount, note);
+        } else {
+          sheetNoteRows[selectedNoteProvider.selectedRow]
+              .insert(selectedNoteProvider.insertionIndex, note);
+        }
 
         if (sheetNoteRows[selectedNoteProvider.selectedRow].length - 1 >=
             maxNotesPerRow) {
           var isNoteEndOfRow = false;
-          if (selectedNoteProvider.selectedIndex == maxNotesPerRow) {
+          if (selectedNoteProvider.insertionIndex == maxNotesPerRow) {
             isNoteEndOfRow = true;
           }
 
@@ -103,14 +109,14 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
               : selectedNoteProvider.selectedRow;
           var selectedIndex = isNoteEndOfRow
               ? overflowCount
-              : selectedNoteProvider.selectedIndex;
+              : selectedNoteProvider.insertionIndex;
 
           selectedNoteProvider.updateInsertionPoint(selectedRow, selectedIndex);
         } else {
           // Move cursor forward
           selectedNoteProvider.updateInsertionPoint(
               selectedNoteProvider.selectedRow,
-              selectedNoteProvider.selectedIndex + 1);
+              selectedNoteProvider.insertionIndex + 1);
         }
 
         updateRowSpacing(selectedNoteProvider.selectedRow);
@@ -164,7 +170,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
       final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
 
       if (selectedNoteProvider.selectedRow == 0 &&
-          selectedNoteProvider.selectedIndex == 0) {
+          selectedNoteProvider.insertionIndex == 0) {
         return;
       }
 
@@ -187,11 +193,11 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
             selectedNoteProvider.selectedRow,
             sheetNoteRows[selectedNoteProvider.selectedRow].indexOf(
                 sheetNoteRows[selectedNoteProvider.selectedRow]
-                    [selectedNoteProvider.selectedIndex - 1]));
+                    [selectedNoteProvider.insertionIndex - 1]));
 
         sheetNoteRows[selectedNoteProvider.selectedRow].remove(
             sheetNoteRows[selectedNoteProvider.selectedRow]
-                [selectedNoteProvider.selectedIndex]);
+                [selectedNoteProvider.insertionIndex]);
       }
 
       updateRowSpacing(selectedNoteProvider.selectedRow);

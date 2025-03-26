@@ -145,14 +145,13 @@ class NotesKeyboardLayout extends StatelessWidget {
             ),
           ),
 
-          // Connect Notes Toggle & Keyboard Toggle
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
                 children: [
                   const Padding(padding: EdgeInsets.fromLTRB(5, 0, 0, 0)),
-                  const Text("Beam Notes", style: TextStyle(fontSize: 10)),
+                  const Text("Beam Lock", style: TextStyle(fontSize: 10)),
                   Consumer<IsConnectedProvider>(
                     builder: (context, provider, _) => Transform.scale(
                       scale: 0.7,

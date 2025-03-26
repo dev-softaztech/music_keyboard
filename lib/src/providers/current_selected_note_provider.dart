@@ -3,6 +3,7 @@ import 'package:music_keyboard/models/music_note.dart';
 
 class CurrentSelectedNoteProvider extends ChangeNotifier {
   int selectedRow = 0;
+  int insertionIndex = 0;
   int selectedIndex = 0;
   bool isBeaming = false;
   bool isTying = false;
@@ -12,7 +13,8 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
   /// **Updates the cursor & highlights the selected note**
   void updateInsertionPoint(int row, int index) {
     selectedRow = row;
-    selectedIndex = index;
+    insertionIndex = index;
+    selectedIndex = insertionIndex == 0 ? 0 : insertionIndex - 1;
     notifyListeners();
   }
 
@@ -28,7 +30,7 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
     _saveState(sheetNoteRows); // Save for undo
 
     int startRow = selectedRow;
-    int startIndex = selectedIndex - 1;
+    int startIndex = insertionIndex - 1;
     int endRow = row;
     int endIndex = index;
 
@@ -68,7 +70,7 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
     _saveState(sheetNoteRows); // Save for undo
 
     int startRow = selectedRow;
-    int startIndex = selectedIndex;
+    int startIndex = insertionIndex;
     int endRow = row;
     int endIndex = index;
 

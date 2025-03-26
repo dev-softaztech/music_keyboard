@@ -165,6 +165,10 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
         Provider.of<CurrentSelectedNoteProvider>(context);
     final rowSpacingProvider = Provider.of<ListOfSpacingForEachRow>(context);
 
+    MusicalNote selectedNote =
+        widget.sheetNoteRows[selectedNoteProvider.selectedRow]
+            [selectedNoteProvider.selectedIndex];
+
     return Column(
       children: [
         Stack(children: [
@@ -236,58 +240,146 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
             ),
         ]),
         Row(
+          spacing: 5,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            ElevatedButton(
-              onPressed: () {
-                context.read<CurrentSelectedNoteProvider>().enableTying();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Select a second note to tie")),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: EdgeInsets.zero,
-              ),
-              child: const Text("Tie Notes"),
+            Row(
+              spacing: 3,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text("Beam", style: TextStyle(fontSize: 10)),
+                Transform.scale(
+                    scale:
+                        0.6, // Adjust this value (0.7 = 70% of original size)
+                    child: Container(
+                      constraints:
+                          BoxConstraints.tight(Size(30, 20)), // Custom size
+                      child: Switch(
+                        inactiveThumbColor: const Color(0xFF242038),
+                        inactiveTrackColor: Colors.white,
+                        activeColor: const Color(0xFF242038),
+                        activeTrackColor: Colors.orange,
+                        value: selectedNote.isConnected,
+                        onChanged: (newValue) {
+                          setState(() {
+                            selectedNote.isConnected = newValue;
+                          });
+                        },
+                      ),
+                    ))
+              ],
             ),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  //isBeaming = !isBeaming;
-                  context.read<CurrentSelectedNoteProvider>().enableBeaming();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text("Select a second note to beam")),
-                  );
-                });
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: EdgeInsets.zero,
-              ),
-              child: const Text("Beam Notes"),
+            SizedBox(
+                width: 60,
+                height: 25,
+                child: ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      context
+                          .read<CurrentSelectedNoteProvider>()
+                          .enableBeaming();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text("Select a second note to beam")),
+                      );
+                    });
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: EdgeInsets.zero,
+                  ),
+                  child: const Text(
+                    "Beam Notes",
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                )),
+            //SizedBox(width: 5),
+            Row(
+              spacing: 3,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text("Tie", style: TextStyle(fontSize: 10)),
+                Transform.scale(
+                  scale: 0.6, // Adjust this value (0.7 = 70% of original size)
+                  child: Container(
+                      constraints:
+                          BoxConstraints.tight(Size(30, 20)), // Custom size
+                      child: Switch(
+                        inactiveThumbColor: const Color(0xFF242038),
+                        inactiveTrackColor: Colors.white,
+                        activeColor: const Color(0xFF242038),
+                        activeTrackColor: Colors.orange,
+                        value: selectedNote.isTiedToNext,
+                        onChanged: (newValue) {
+                          setState(() {
+                            selectedNote.isTiedToNext = newValue;
+                          });
+                        },
+                      )),
+                )
+              ],
             ),
-            ElevatedButton(
-              onPressed: () {
-                context
-                    .read<CurrentSelectedNoteProvider>()
-                    .undo(widget.sheetNoteRows);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+            SizedBox(
+                width: 60,
+                height: 25,
+                child: ElevatedButton(
+                  onPressed: () {
+                    context.read<CurrentSelectedNoteProvider>().enableTying();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text("Select a second note to tie")),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: EdgeInsets.zero,
+                  ),
+                  child: const Text(
+                    "Slur Notes",
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                )),
+            //SizedBox(width: 5),
+            SizedBox(
+              width: 60,
+              height: 25,
+              child: ElevatedButton(
+                onPressed: () {
+                  context
+                      .read<CurrentSelectedNoteProvider>()
+                      .undo(widget.sheetNoteRows);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: EdgeInsets.zero,
                 ),
-                padding: EdgeInsets.zero,
+                child: const Text(
+                  "Undo",
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
               ),
-              child: const Text("Undo"),
-            ),
+            )
           ],
         )
       ],
