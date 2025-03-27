@@ -5,6 +5,7 @@ class MusicalNote {
   bool isConnected; // Whether this note is connected to others
   bool isTiedToNext;
   final String unicodeCharacter;
+  int? slurEndIndex;
 
   MusicalNote(
       {required this.pitch,

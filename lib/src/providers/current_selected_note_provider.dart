@@ -6,7 +6,7 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
   int insertionIndex = 0;
   int selectedIndex = 0;
   bool isBeaming = false;
-  bool isTying = false;
+  bool isSlurring = false;
 
   final List<List<List<MusicalNote>>> _history = [];
 
@@ -59,41 +59,36 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
   }
 
   /// **Starts "Tie Notes" mode (first note is the selected note)**
-  void enableTying() {
-    isTying = true;
+  void enableSlurring() {
+    isSlurring = true;
     notifyListeners();
   }
 
-  /// **Handles "Tie Notes" when second note is tapped**
-  void handleTieSelection(
+  void handleSlurSelection(
       int row, int index, List<List<MusicalNote>> sheetNoteRows) {
-    _saveState(sheetNoteRows); // Save for undo
+    _saveState(sheetNoteRows);
 
     int startRow = selectedRow;
     int startIndex = insertionIndex;
     int endRow = row;
     int endIndex = index;
 
-    // Ensure left-to-right selection
-    if (startRow > endRow || (startRow == endRow && startIndex > endIndex)) {
-      int tempRow = startRow;
+    if (startRow != endRow) {
+      isSlurring = false;
+      return;
+    }
+
+    if (startIndex > endIndex) {
       int tempIndex = startIndex;
-      startRow = endRow;
       startIndex = endIndex;
-      endRow = tempRow;
       endIndex = tempIndex;
     }
 
-    // Ensure both notes have the same pitch before applying tie
     MusicalNote firstNote = sheetNoteRows[startRow][startIndex];
-    MusicalNote secondNote = sheetNoteRows[endRow][endIndex];
 
-    if (firstNote.pitch == secondNote.pitch) {
-      firstNote.isTiedToNext = true;
-    }
+    firstNote.slurEndIndex = endIndex;
 
-    // Exit tying mode
-    isTying = false;
+    isSlurring = false;
     notifyListeners();
   }
 

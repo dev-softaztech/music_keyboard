@@ -58,6 +58,21 @@ class MusicSheetPainter extends CustomPainter {
               x + currentRowSpacing, y);
         }
 
+        if (note.slurEndIndex != null) {
+          double startX = x;
+          double startY = calculateNoteYMainSheet(
+              note.pitch, note.octave, lineSpacing, staffTop);
+
+          double endX = 25.0 + (note.slurEndIndex! * currentRowSpacing);
+          double endY = calculateNoteYMainSheet(
+              sheetNoteRows[rowIndex][note.slurEndIndex!].pitch,
+              sheetNoteRows[rowIndex][note.slurEndIndex!].octave,
+              lineSpacing,
+              staffTop);
+
+          drawSlur(canvas, paint, startX, startY, endX, endY);
+        }
+
         x += note.type == NoteType.clef ? 26 : currentRowSpacing;
       }
 
@@ -129,6 +144,21 @@ class MusicSheetPainter extends CustomPainter {
 
     path.moveTo(startX + 5, y);
     path.quadraticBezierTo((startX + endX) / 2, controlY, endX - 5, y);
+
+    paint.style = PaintingStyle.stroke;
+    paint.strokeWidth = 2.0;
+
+    canvas.drawPath(path, paint);
+  }
+
+  void drawSlur(Canvas canvas, Paint paint, double startX, double startY,
+      double endX, double endY) {
+    Path path = Path();
+
+    double controlY = (startY < endY) ? startY - 20 : startY + 20;
+
+    path.moveTo(startX + 5, startY);
+    path.quadraticBezierTo((startX + endX) / 2, controlY, endX - 5, endY);
 
     paint.style = PaintingStyle.stroke;
     paint.strokeWidth = 2.0;

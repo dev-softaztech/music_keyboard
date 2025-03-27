@@ -200,6 +200,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                 [selectedNoteProvider.insertionIndex]);
       }
 
+      //Here check if slur index is below removed note index and take one away from all slurred note index
+      //for notes in row that have a slurred index
+
       updateRowSpacing(selectedNoteProvider.selectedRow);
     });
   }

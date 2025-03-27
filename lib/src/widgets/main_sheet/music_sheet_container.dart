@@ -110,9 +110,9 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
       //  Handle beaming mode
       selectedNoteProvider.handleBeamSelection(
           closestRowIndex, closestNoteIndex, widget.sheetNoteRows);
-    } else if (selectedNoteProvider.isTying) {
+    } else if (selectedNoteProvider.isSlurring) {
       //  Handle beaming mode
-      selectedNoteProvider.handleTieSelection(
+      selectedNoteProvider.handleSlurSelection(
           closestRowIndex, closestNoteIndex, widget.sheetNoteRows);
     } else {
       // 🔹 Update provider with new insertion point
@@ -177,7 +177,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
               child: Container(
                 width: widget.screenSize.width,
                 height:
-                    widget.screenSize.height - 490, // Adjust height as needed
+                    widget.screenSize.height - 480, // Adjust height as needed
                 color: Colors.white, // Background color
                 child: InteractiveViewer(
                   transformationController: _transformationController,
@@ -280,7 +280,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                           .enableBeaming();
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                            content: Text("Select a second note to beam")),
+                            content: Text("Select a second note to beam to.")),
                       );
                     });
                   },
@@ -302,12 +302,12 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                 )),
             //SizedBox(width: 5),
             Row(
-              spacing: 3,
+              spacing: 8,
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Text("Tie", style: TextStyle(fontSize: 10)),
                 Transform.scale(
-                  scale: 0.6, // Adjust this value (0.7 = 70% of original size)
+                  scale: 0.6,
                   child: Container(
                       constraints:
                           BoxConstraints.tight(Size(30, 20)), // Custom size
@@ -319,7 +319,19 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                         value: selectedNote.isTiedToNext,
                         onChanged: (newValue) {
                           setState(() {
-                            selectedNote.isTiedToNext = newValue;
+                            MusicalNote nextNote = widget.sheetNoteRows[
+                                    selectedNoteProvider.selectedRow]
+                                [selectedNoteProvider.selectedIndex + 1];
+
+                            if (selectedNote.pitch == nextNote.pitch) {
+                              selectedNote.isTiedToNext = newValue;
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text(
+                                        "Cannot Tie to a note with a different pitch.")),
+                              );
+                            }
                           });
                         },
                       )),
@@ -331,10 +343,12 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                 height: 25,
                 child: ElevatedButton(
                   onPressed: () {
-                    context.read<CurrentSelectedNoteProvider>().enableTying();
+                    context
+                        .read<CurrentSelectedNoteProvider>()
+                        .enableSlurring();
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                          content: Text("Select a second note to tie")),
+                          content: Text("Select a second note to add slur.")),
                     );
                   },
                   style: ElevatedButton.styleFrom(
