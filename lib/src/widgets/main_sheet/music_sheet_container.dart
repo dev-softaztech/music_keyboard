@@ -14,14 +14,15 @@ class MusicSheetContainer extends StatefulWidget {
   final ScreenshotController screenshotController;
   final List<List<MusicalNote>> sheetNoteRows;
   final double musicSheetWidth;
+  final double statusBarHeight;
 
-  const MusicSheetContainer({
-    super.key,
-    required this.screenSize,
-    required this.screenshotController,
-    required this.sheetNoteRows,
-    required this.musicSheetWidth,
-  });
+  const MusicSheetContainer(
+      {super.key,
+      required this.screenSize,
+      required this.screenshotController,
+      required this.sheetNoteRows,
+      required this.musicSheetWidth,
+      required this.statusBarHeight});
 
   @override
   _MusicSheetContainerState createState() => _MusicSheetContainerState();
@@ -166,8 +167,18 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     final rowSpacingProvider = Provider.of<ListOfSpacingForEachRow>(context);
 
     MusicalNote selectedNote =
-        widget.sheetNoteRows[selectedNoteProvider.selectedRow]
-            [selectedNoteProvider.selectedIndex];
+        MusicalNote(pitch: "", octave: 0, type: NoteType.clef);
+
+    if (widget.sheetNoteRows[selectedNoteProvider.selectedRow].isNotEmpty) {
+      selectedNote = widget.sheetNoteRows[selectedNoteProvider.selectedRow]
+          [selectedNoteProvider.selectedIndex];
+    }
+
+    var keyboardHeight = 400;
+    var canvasHeight = widget.screenSize.height -
+        AppBar().preferredSize.height -
+        keyboardHeight -
+        widget.statusBarHeight;
 
     return Column(
       children: [
@@ -176,8 +187,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
               onTapDown: _handleTap, // Handle user tap
               child: Container(
                 width: widget.screenSize.width,
-                height:
-                    widget.screenSize.height - 480, // Adjust height as needed
+                height: canvasHeight, // Adjust height as needed
                 color: Colors.white, // Background color
                 child: InteractiveViewer(
                   transformationController: _transformationController,

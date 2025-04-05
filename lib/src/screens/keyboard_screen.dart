@@ -195,6 +195,12 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                 sheetNoteRows[selectedNoteProvider.selectedRow]
                     [selectedNoteProvider.insertionIndex - 1]));
 
+        for (var note in sheetNoteRows[selectedNoteProvider.selectedRow]) {
+          if (note.slurEndIndex == selectedNoteProvider.insertionIndex) {
+            note.slurEndIndex = null;
+          }
+        }
+
         sheetNoteRows[selectedNoteProvider.selectedRow].remove(
             sheetNoteRows[selectedNoteProvider.selectedRow]
                 [selectedNoteProvider.insertionIndex]);
@@ -220,7 +226,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
     final screenSize = MediaQuery.of(context).size;
+    final statusBarHeight = mediaQuery.padding.top;
     const double noteWidth = 27.0;
     const int maxNotes = 30;
     const double musicSheetWidth = noteWidth * maxNotes;
@@ -255,7 +263,8 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                     screenSize: screenSize,
                     screenshotController: screenshotController,
                     sheetNoteRows: sheetNoteRows,
-                    musicSheetWidth: musicSheetWidth),
+                    musicSheetWidth: musicSheetWidth,
+                    statusBarHeight: statusBarHeight),
                 const Spacer(), // Pushes the keyboard container to the bottom
               ],
             ),

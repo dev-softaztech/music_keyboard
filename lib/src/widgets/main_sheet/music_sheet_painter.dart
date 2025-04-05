@@ -51,11 +51,12 @@ class MusicSheetPainter extends CustomPainter {
         drawNote(canvas, paint, note, lineSpacing, staffTop, x,
             sheetNoteRows[rowIndex], i, currentRowSpacing, noteColour);
 
+        var staffCenter = staffTop + (lineSpacing * 2);
+
         if (note.isTiedToNext && i < sheetNoteRows[rowIndex].length - 1) {
           double y = calculateNoteYMainSheet(
               note.pitch, note.octave, lineSpacing, staffTop);
-          drawTie(canvas, paint, x, staffTop + (lineSpacing * 2),
-              x + currentRowSpacing, y);
+          drawTie(canvas, paint, x, staffCenter, x + currentRowSpacing, y);
         }
 
         if (note.slurEndIndex != null) {
@@ -70,7 +71,7 @@ class MusicSheetPainter extends CustomPainter {
               lineSpacing,
               staffTop);
 
-          drawSlur(canvas, paint, startX, startY, endX, endY);
+          drawSlur(canvas, paint, startX, startY, endX, endY, staffCenter);
         }
 
         x += note.type == NoteType.clef ? 26 : currentRowSpacing;
@@ -152,10 +153,13 @@ class MusicSheetPainter extends CustomPainter {
   }
 
   void drawSlur(Canvas canvas, Paint paint, double startX, double startY,
-      double endX, double endY) {
+      double endX, double endY, double staffCentre) {
     Path path = Path();
+    //pass in start index and end index so I can work out how large to make the curve.
 
-    double controlY = (startY < endY) ? startY - 20 : startY + 20;
+    double controlY = (startY < endY) ? startY - 40 : startY + 40;
+    startY = startY >= staffCentre ? startY + 10 : startY - 10;
+    endY = startY >= staffCentre ? endY + 10 : endY - 10;
 
     path.moveTo(startX + 5, startY);
     path.quadraticBezierTo((startX + endX) / 2, controlY, endX - 5, endY);

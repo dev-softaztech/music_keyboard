@@ -69,9 +69,9 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
     _saveState(sheetNoteRows);
 
     int startRow = selectedRow;
-    int startIndex = insertionIndex;
+    int startIndex = insertionIndex == 0 ? insertionIndex : insertionIndex - 1;
     int endRow = row;
-    int endIndex = index;
+    int endIndex = index - 1;
 
     if (startRow != endRow) {
       isSlurring = false;
@@ -85,6 +85,10 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
     }
 
     MusicalNote firstNote = sheetNoteRows[startRow][startIndex];
+
+    if (sheetNoteRows[startRow].length < endIndex) {
+      endIndex = sheetNoteRows[startRow].length - 1;
+    }
 
     firstNote.slurEndIndex = endIndex;
 
