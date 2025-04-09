@@ -21,6 +21,7 @@ void drawNote(
 
   final double noteY =
       calculateNoteYMainSheet(note.pitch, note.octave, lineSpacing, staffTop);
+  note.noteY = noteY;
 
   if (note.type == NoteType.rest) {
     drawRestAccidentalKey(canvas, paint, note, lineSpacing, staffTop, noteX,

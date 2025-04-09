@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:vector_math/vector_math.dart' as vec;
 import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/cursor_calculation.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/drawing_helpers.dart';
@@ -71,7 +72,18 @@ class MusicSheetPainter extends CustomPainter {
               lineSpacing,
               staffTop);
 
-          drawSlur(canvas, paint, startX, startY, endX, endY, staffCenter);
+          drawSlurBetweenNotes(
+              canvas,
+              paint,
+              startX,
+              startY,
+              endX,
+              endY,
+              staffCenter,
+              i,
+              note.slurEndIndex!,
+              noteColour,
+              sheetNoteRows[rowIndex]);
         }
 
         x += note.type == NoteType.clef ? 26 : currentRowSpacing;
@@ -168,5 +180,130 @@ class MusicSheetPainter extends CustomPainter {
     paint.strokeWidth = 2.0;
 
     canvas.drawPath(path, paint);
+  }
+
+  void drawSlurBetweenNotes(
+    Canvas canvas,
+    Paint paint,
+    double startX,
+    double startY,
+    double endX,
+    double endY,
+    double staffCentre,
+    int startIndex,
+    int endIndex,
+    Color color,
+    List<MusicalNote> rowNotes,
+  ) {
+    // Slight vertical offset to keep slur above/below note heads
+    startY = startY >= staffCentre ? startY + 6 : startY - 6;
+    endY = startY >= staffCentre ? endY + 6 : endY - 6;
+
+    final Offset start = Offset(startX, startY);
+    final Offset end = Offset(endX, endY);
+
+    // Ensure left-to-right direction
+    final int minIndex = startIndex < endIndex ? startIndex : endIndex;
+    final int maxIndex = startIndex > endIndex ? startIndex : endIndex;
+
+    final bool isSlurAbove = startY < endY;
+
+    double curveHeight = 20;
+    double yDifference = endY - startY;
+    int noteSpan = (maxIndex - minIndex).clamp(1, rowNotes.length);
+    double stepY = yDifference / noteSpan;
+
+    double simulatedY = startY;
+
+    for (int i = minIndex + 1; i < maxIndex; i++) {
+      simulatedY += stepY;
+      final note = rowNotes[i];
+
+      // Check for overlap and increase height if needed
+      if (isSlurAbove && note.noteY < simulatedY) {
+        curveHeight += (simulatedY - note.noteY).abs() + 10;
+      } else if (!isSlurAbove && note.noteY > simulatedY) {
+        curveHeight += (note.noteY - simulatedY).abs() + 10;
+      }
+    }
+
+    curveHeight = curveHeight.clamp(20, 90);
+
+    double controlY = (start.dy + end.dy) / 2;
+    controlY += isSlurAbove ? -curveHeight : curveHeight;
+
+    final Offset control = Offset((startX + endX) / 2, controlY);
+
+    drawVariableThicknessBezier(
+      canvas: canvas,
+      start: start,
+      control: control,
+      end: end,
+      maxThickness: 3,
+      color: color,
+    );
+  }
+
+  void drawVariableThicknessBezier({
+    required Canvas canvas,
+    required Offset start,
+    required Offset control,
+    required Offset end,
+    required double maxThickness,
+    required Color color,
+  }) {
+    const int segments = 300; // More segments = smoother curve
+    final path = Path();
+
+    // Store left and right edge of the stroke
+    List<Offset> leftPoints = [];
+    List<Offset> rightPoints = [];
+
+    for (int i = 0; i <= segments; i++) {
+      double t = i / segments;
+
+      // Bézier curve formula
+      double x = (1 - t) * (1 - t) * start.dx +
+          2 * (1 - t) * t * control.dx +
+          t * t * end.dx;
+      double y = (1 - t) * (1 - t) * start.dy +
+          2 * (1 - t) * t * control.dy +
+          t * t * end.dy;
+      Offset point = Offset(x, y);
+
+      // Tangent vector
+      double dx =
+          2 * (1 - t) * (control.dx - start.dx) + 2 * t * (end.dx - control.dx);
+      double dy =
+          2 * (1 - t) * (control.dy - start.dy) + 2 * t * (end.dy - control.dy);
+      vec.Vector2 tangent = vec.Vector2(dx, dy).normalized();
+
+      // Normal vector (perpendicular to tangent)
+      vec.Vector2 normal = vec.Vector2(-tangent.y, tangent.x);
+
+      // Thickness tapers in and out toward center
+      double thickness =
+          maxThickness * (1 - ((t - 0.5) * 2).abs()); // triangle shape taper
+
+      vec.Vector2 offset = normal.scaled(thickness / 2);
+      Offset left = point + Offset(offset.x, offset.y);
+      Offset right = point - Offset(offset.x, offset.y);
+
+      leftPoints.add(left);
+      rightPoints.add(right);
+    }
+
+    // Draw thick curve as a filled path
+    path.addPolygon(leftPoints, false);
+    path.addPolygon(rightPoints.reversed.toList(), true); // Close the shape
+
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.fill
+        ..isAntiAlias = true
+        ..strokeWidth = 1.0,
+    );
   }
 }

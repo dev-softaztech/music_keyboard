@@ -6,6 +6,7 @@ class MusicalNote {
   bool isTiedToNext;
   final String unicodeCharacter;
   int? slurEndIndex;
+  double noteY;
 
   MusicalNote(
       {required this.pitch,
@@ -13,16 +14,17 @@ class MusicalNote {
       required this.type,
       this.isConnected = false,
       this.isTiedToNext = false,
-      this.unicodeCharacter = ""});
+      this.unicodeCharacter = "",
+      this.noteY = 0.0});
 
   MusicalNote copy() {
     return MusicalNote(
-      pitch: pitch,
-      octave: octave,
-      type: type,
-      isConnected: isConnected,
-      unicodeCharacter: unicodeCharacter,
-    );
+        pitch: pitch,
+        octave: octave,
+        type: type,
+        isConnected: isConnected,
+        unicodeCharacter: unicodeCharacter,
+        noteY: noteY);
   }
 }
 
