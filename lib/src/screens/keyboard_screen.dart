@@ -52,17 +52,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
       var rowSpacingList = rowSpacingProvider.rowSpacingList;
 
       setState(() {
-        if (note.type == NoteType.clef) {
-          var clefCount = sheetNoteRows[selectedNoteProvider.selectedRow]
-              .where((x) => x.type == NoteType.clef)
-              .length;
-
-          sheetNoteRows[selectedNoteProvider.selectedRow]
-              .insert(clefCount, note);
-        } else {
-          sheetNoteRows[selectedNoteProvider.selectedRow]
-              .insert(selectedNoteProvider.insertionIndex, note);
-        }
+        // Insert note at the current insertion index regardless of type
+        sheetNoteRows[selectedNoteProvider.selectedRow]
+            .insert(selectedNoteProvider.insertionIndex, note);
 
         if (sheetNoteRows[selectedNoteProvider.selectedRow].length - 1 >=
             maxNotesPerRow) {

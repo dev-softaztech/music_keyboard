@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:vector_math/vector_math.dart' as vec;
 import 'package:music_keyboard/models/music_note.dart';
-import 'package:music_keyboard/src/utils/music_sheet_utils/cursor_calculation.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/drawing_helpers.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/note_position_calculator.dart';
+import 'package:music_keyboard/src/utils/music_sheet_utils/note_width_calculator.dart';
 
 class MusicSheetPainter extends CustomPainter {
   final List<List<MusicalNote>> sheetNoteRows;
@@ -86,7 +86,8 @@ class MusicSheetPainter extends CustomPainter {
               sheetNoteRows[rowIndex]);
         }
 
-        x += note.type == NoteType.clef ? 26 : currentRowSpacing;
+        x +=
+            note.type == NoteType.clef ? getNoteWidth(note) : currentRowSpacing;
       }
 
       if (showCursor && rowIndex == selectedRow) {
@@ -135,9 +136,11 @@ class MusicSheetPainter extends CustomPainter {
       int clefCount,
       List<MusicalNote> notes,
       double lineSpacing) {
+    // Calculate cursor X position using the new note width calculator
     double cursorX = notes.isEmpty
-        ? 25
-        : calculateCursorPosition(notes[index], rowSpacing, clefCount, index);
+        ? 25.0
+        : calculateXPositionForIndex(index, notes, rowSpacing);
+
     double cursorY = staffTop + (lineSpacing * 2);
 
     final Paint cursorPaint = Paint()..color = Colors.blue.withOpacity(0.8);
@@ -218,7 +221,7 @@ class MusicSheetPainter extends CustomPainter {
     for (int i = minIndex + 1; i < maxIndex; i++) {
       simulatedY += stepY;
       final note = rowNotes[i];
-
+      //may need to equate for stem height
       // Check for overlap and increase height if needed
       if (isSlurAbove && note.noteY < simulatedY) {
         curveHeight += (simulatedY - note.noteY).abs() + 10;

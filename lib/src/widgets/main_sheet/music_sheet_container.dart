@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/src/providers/current_selected_note_provider.dart';
 import 'package:music_keyboard/src/providers/list_of_spacing_for_each_row.dart';
-import 'package:music_keyboard/src/utils/music_sheet_utils/cursor_calculation.dart';
+import 'package:music_keyboard/src/utils/music_sheet_utils/note_width_calculator.dart';
 import 'package:music_keyboard/src/widgets/main_sheet/music_sheet_painter.dart';
 import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
@@ -145,19 +145,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     var rowSpacingList = context.read<ListOfSpacingForEachRow>().rowSpacingList;
     var currentRowSpacing = rowSpacingList[selectedRow];
 
-    int clefCount = notes.where((x) => x.type == NoteType.clef).length;
-
-    // Loop through the notes and calculate x position dynamically
-    for (int i = 0; i < notes.length; i++) {
-      double noteX =
-          calculateCursorPosition(notes[i], currentRowSpacing, clefCount, i);
-
-      if (noteX >= tapX) {
-        return i; // Return the first index where noteX is greater
-      }
-    }
-
-    return notes.length; // If no note is greater, return the last index
+    // Use the new calculateInsertionIndex function to determine the insertion point
+    return calculateInsertionIndex(tapX, notes, currentRowSpacing);
   }
 
   @override
