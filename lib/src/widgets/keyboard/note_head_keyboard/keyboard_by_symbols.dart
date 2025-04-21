@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:music_keyboard/src/utils/keyboard_utils/unicode_mapper.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/note_position_calculator.dart';
 import 'package:provider/provider.dart';
+import 'package:music_keyboard/src/providers/selected_accidental_provider.dart';
 import 'package:music_keyboard/src/providers/selected_unicode_provider.dart';
 import 'package:music_keyboard/src/providers/is_connected_provider.dart';
 import 'package:music_keyboard/models/music_note.dart';
@@ -125,6 +126,10 @@ class _MusicKeyState extends State<MusicKey> {
 
   @override
   Widget build(BuildContext context) {
+    // Get the selected accidental from the provider
+    final selectedAccidental =
+        context.watch<SelectedAccidentalProvider>().selectedAccidental;
+
     return GestureDetector(
       onTap: _handleTap,
       child: AnimatedContainer(
@@ -133,18 +138,15 @@ class _MusicKeyState extends State<MusicKey> {
           color: isPressed ? Colors.grey[400] : Colors.white, // Darken on press
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: const Color.fromARGB(255, 130, 130, 130)),
-          boxShadow: [
-            BoxShadow(
-              color: Color.fromRGBO(0, 0, 0, 0.3), // Black with 30% opacity
-              blurRadius: 3, // Blurry effect
-              spreadRadius: 1, // Expands shadow
-              offset: const Offset(0, 4), // Moves shadow to bottom-right
-            ),
-          ],
         ),
         child: CustomPaint(
           painter: KeyboardSymbolsMusicStaffPainter(
-            unicodeCharacter: widget.unicodeCharacter,
+            unicodeCharacter: widget.type != NoteType.clef &&
+                    widget.type != NoteType.rest &&
+                    widget.type != NoteType.accidental &&
+                    selectedAccidental.isNotEmpty
+                ? selectedAccidental // Use the selected accidental for notes
+                : widget.unicodeCharacter,
             musicalNote: MusicalNote(
               pitch: widget.pitch,
               octave: widget.octave,
@@ -152,6 +154,7 @@ class _MusicKeyState extends State<MusicKey> {
               isConnected: widget.isConnected,
             ),
             index: widget.index,
+            context: context,
           ),
         ),
       ),
@@ -163,11 +166,14 @@ class KeyboardSymbolsMusicStaffPainter extends CustomPainter {
   final String unicodeCharacter; // Unicode character to draw
   final MusicalNote musicalNote; // Vertical position of the character
   final int index;
+  final BuildContext? context;
 
-  KeyboardSymbolsMusicStaffPainter(
-      {required this.unicodeCharacter,
-      required this.musicalNote,
-      required this.index});
+  KeyboardSymbolsMusicStaffPainter({
+    required this.unicodeCharacter,
+    required this.musicalNote,
+    required this.index,
+    this.context,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -201,29 +207,118 @@ class KeyboardSymbolsMusicStaffPainter extends CustomPainter {
           Offset(0, extraLineY), Offset(size.width, extraLineY), paint);
     }
 
-    // Draw the Unicode character at the given note position
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: unicodeCharacter,
-        style: TextStyle(
-          fontFamily: 'Bravura',
-          fontSize: size.height / 4.4, // Dynamically scale Unicode size
-          color: Colors.black,
+    // For notes with accidentals, we need to draw both the accidental and the note
+    bool isAccidental = unicodeCharacter == '\ue260' || // flat
+        unicodeCharacter == '\ue261' || // natural
+        unicodeCharacter == '\ue262' || // sharp
+        unicodeCharacter == '\ue263' || // flat
+        unicodeCharacter == '\ue264' || // sharp
+        unicodeCharacter == '\ue265' || // flat
+        unicodeCharacter == '\ue266' || // sharp
+        unicodeCharacter == '\ue267' || // flat
+        unicodeCharacter == '\ue268' || // sharp
+        unicodeCharacter == '\ue269'; // natural
+
+    if (musicalNote.type == NoteType.accidental ||
+        (musicalNote.type != NoteType.clef &&
+            musicalNote.type != NoteType.rest &&
+            isAccidental)) {
+      // Draw the accidental
+      final accidentalPainter = TextPainter(
+        text: TextSpan(
+          text: unicodeCharacter,
+          style: TextStyle(
+            fontFamily: 'Bravura',
+            fontSize: size.height / 5.0, // Slightly smaller than the note
+            color: Colors.black,
+          ),
         ),
-      ),
-      textDirection: TextDirection.ltr,
-    );
+        textDirection: TextDirection.ltr,
+      );
 
-    textPainter.layout();
-    final x = (size.width - textPainter.width) / 2; // Center horizontally
-    final y = (calculateNoteYVerticalKeyboard(
-            musicalNote.pitch, musicalNote.octave, lineSpacing, staffTop)) -
-        (textPainter.height / 2) +
-        0.5; // Position vertically
+      // Use the selected unicode character for the note symbol
+      String noteSymbol;
 
-    textPainter.paint(canvas, Offset(x, y));
+      // If it's an accidental, we need to use the note symbol from the selected unicode
+      if (isAccidental) {
+        // These are the note symbols
+        if (musicalNote.type == NoteType.whole) {
+          noteSymbol = '\ue1d2'; // Whole note
+        } else if (musicalNote.type == NoteType.half) {
+          noteSymbol = '\ue1d3'; // Half note
+        } else if (musicalNote.type == NoteType.quarter) {
+          noteSymbol = '\ue1d5'; // Quarter note
+        } else if (musicalNote.type == NoteType.eighth) {
+          noteSymbol = '\ue1d7'; // Eighth note
+        } else if (musicalNote.type == NoteType.sixteenth) {
+          noteSymbol = '\ue1d9'; // Sixteenth note
+        } else if (musicalNote.type == NoteType.thirtySecond) {
+          noteSymbol = '\ue1db'; // Thirty-second note
+        } else if (musicalNote.type == NoteType.sixtyFourth) {
+          noteSymbol = '\ue1dd'; // Sixty-fourth note
+        } else {
+          noteSymbol = '\ue1d5'; // Default to quarter note
+        }
+      } else {
+        // If it's not an accidental, use the selected unicode character
+        noteSymbol = unicodeCharacter;
+      }
+
+      final notePainter = TextPainter(
+        text: TextSpan(
+          text: noteSymbol,
+          style: TextStyle(
+            fontFamily: 'Bravura',
+            fontSize: size.height / 4.4,
+            color: Colors.black,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+
+      accidentalPainter.layout();
+      notePainter.layout();
+
+      // Calculate positions
+      final noteY = (calculateNoteYVerticalKeyboard(
+              musicalNote.pitch, musicalNote.octave, lineSpacing, staffTop)) -
+          (notePainter.height / 2) +
+          0.5;
+
+      // Position the accidental to the left of the note
+      final accidentalX =
+          (size.width - notePainter.width) / 2 - accidentalPainter.width * 0.8;
+      final noteX =
+          (size.width - notePainter.width) / 2 + accidentalPainter.width * 0.2;
+
+      // Draw the accidental and the note
+      accidentalPainter.paint(canvas, Offset(accidentalX, noteY));
+      notePainter.paint(canvas, Offset(noteX, noteY));
+    } else {
+      // For other types, just draw the unicode character
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: unicodeCharacter,
+          style: TextStyle(
+            fontFamily: 'Bravura',
+            fontSize: size.height / 4.4, // Dynamically scale Unicode size
+            color: Colors.black,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+
+      textPainter.layout();
+      final x = (size.width - textPainter.width) / 2; // Center horizontally
+      final y = (calculateNoteYVerticalKeyboard(
+              musicalNote.pitch, musicalNote.octave, lineSpacing, staffTop)) -
+          (textPainter.height / 2) +
+          0.5; // Position vertically
+
+      textPainter.paint(canvas, Offset(x, y));
+    }
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(CustomPainter oldDelegate) => true;
 }

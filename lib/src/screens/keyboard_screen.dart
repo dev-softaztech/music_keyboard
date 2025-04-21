@@ -36,7 +36,6 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
   bool showClefs = true;
   bool showTimeSignatures = false;
-  bool showAccidentals = false;
   bool showNotes = false;
 
   bool showNotesKeyboard = false;
@@ -270,7 +269,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
             child: ColoredBox(
               color: const Color(0xFFF7ECE1),
               child: Container(
-                height: 370, // Fixed height for the keyboard area
+                height: 400, // Fixed height for the keyboard area
                 /*decoration: const BoxDecoration(
                   border: Border(
                     top: BorderSide(
@@ -297,7 +296,6 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                 isSelected: [
                                   showClefs,
                                   showTimeSignatures,
-                                  showAccidentals,
                                   showNotes,
                                 ],
                                 onPressed: (int index) {
@@ -305,12 +303,10 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                     // Reset all selections first
                                     showClefs = index == 0;
                                     showTimeSignatures = index == 1;
-                                    showAccidentals = index == 2;
-                                    showNotes = index == 3;
+                                    showNotes = index == 2;
                                     if (index == 0) keyType = "clefs";
                                     if (index == 1) keyType = "rests";
-                                    if (index == 2) keyType = "accidentals";
-                                    if (index == 3) keyType = "notes";
+                                    if (index == 2) keyType = "notes";
                                   });
                                 },
                                 borderRadius: BorderRadius.circular(8.0),
@@ -324,7 +320,6 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                 children: const [
                                   Text("Clefs"),
                                   Text("Rests"),
-                                  Text("Accidentals"),
                                   Text("Notes"),
                                 ],
                               ))

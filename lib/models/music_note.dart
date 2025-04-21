@@ -38,5 +38,6 @@ enum NoteType {
   sixtyFourth,
   clef,
   rest,
-  accidental
+  accidental,
+  bar
 }
