@@ -5,6 +5,7 @@ class MusicalNote {
   bool isConnected; // Whether this note is connected to others
   bool isTiedToNext;
   final String unicodeCharacter;
+  final String accidentalCharacter; // Unicode character for the accidental
   int? slurEndIndex;
   double noteY;
 
@@ -15,6 +16,7 @@ class MusicalNote {
       this.isConnected = false,
       this.isTiedToNext = false,
       this.unicodeCharacter = "",
+      this.accidentalCharacter = "",
       this.noteY = 0.0});
 
   MusicalNote copy() {
@@ -24,6 +26,7 @@ class MusicalNote {
         type: type,
         isConnected: isConnected,
         unicodeCharacter: unicodeCharacter,
+        accidentalCharacter: accidentalCharacter,
         noteY: noteY);
   }
 }

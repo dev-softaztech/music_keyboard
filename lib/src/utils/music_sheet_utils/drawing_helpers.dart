@@ -159,6 +159,30 @@ void drawNoteKey(
         notesGroupYs.doesGroupContain32ndOr64thNote;
   }
 
+  // Draw accidental if present
+  double accidentalWidth = 0;
+  if (note.accidentalCharacter.isNotEmpty) {
+    final accidentalPainter = TextPainter(
+      text: TextSpan(
+        text: note.accidentalCharacter,
+        style: TextStyle(
+          fontFamily: 'Bravura',
+          fontSize: 30, // Slightly smaller than the note
+          color: noteColour,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+
+    accidentalPainter.layout();
+    accidentalWidth = accidentalPainter.width;
+    final accidentalX = noteX -
+        (accidentalPainter.width / 2) -
+        15; // Position to the left of the note
+    final accidentalY = noteY - (accidentalPainter.height / 2);
+    accidentalPainter.paint(canvas, Offset(accidentalX, accidentalY));
+  }
+
   // Draw note head
   if (note.type == NoteType.whole) {
     final textPainter = TextPainter(

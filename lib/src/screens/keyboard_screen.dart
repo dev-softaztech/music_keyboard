@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/src/providers/current_selected_note_provider.dart';
 import 'package:music_keyboard/src/providers/list_of_spacing_for_each_row.dart';
+import 'package:music_keyboard/src/providers/selected_accidental_provider.dart';
 import 'package:music_keyboard/src/widgets/keyboard/clefs_keyboard_layout.dart';
 import 'package:music_keyboard/src/widgets/keyboard/notes_keyboard_layout.dart';
 import 'package:music_keyboard/src/widgets/main_sheet/music_sheet_container.dart';
@@ -48,12 +49,27 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     try {
       final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
       final rowSpacingProvider = context.read<ListOfSpacingForEachRow>();
+      final accidentalProvider = context.read<SelectedAccidentalProvider>();
       var rowSpacingList = rowSpacingProvider.rowSpacingList;
+
+      // Get the selected accidental
+      final selectedAccidental = accidentalProvider.selectedAccidental;
+
+      // Create a new note with the selected accidental
+      final noteWithAccidental = MusicalNote(
+        pitch: note.pitch,
+        octave: note.octave,
+        type: note.type,
+        isConnected: note.isConnected,
+        unicodeCharacter: note.unicodeCharacter,
+        accidentalCharacter: selectedAccidental,
+        noteY: note.noteY,
+      );
 
       setState(() {
         // Insert note at the current insertion index regardless of type
         sheetNoteRows[selectedNoteProvider.selectedRow]
-            .insert(selectedNoteProvider.insertionIndex, note);
+            .insert(selectedNoteProvider.insertionIndex, noteWithAccidental);
 
         if (sheetNoteRows[selectedNoteProvider.selectedRow].length - 1 >=
             maxNotesPerRow) {

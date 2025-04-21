@@ -35,7 +35,7 @@ class KeyboardBySymbols extends StatelessWidget {
 
     return Center(
         child: SizedBox(
-      height: 150,
+      height: 117, // Reduced height to fix overflow
       width: screenWidth - 10,
       child: GridView.builder(
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
