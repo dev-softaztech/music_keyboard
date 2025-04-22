@@ -1,42 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/music_note.dart';
 
-class ClefsKeyboardLayout extends StatelessWidget {
+class BarsKeyboardLayout extends StatelessWidget {
   final void Function(MusicalNote note) onKeyPress;
 
-  const ClefsKeyboardLayout({super.key, required this.onKeyPress});
+  const BarsKeyboardLayout({super.key, required this.onKeyPress});
 
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
 
-    List<(String unicodeCharacter, double offset)>
-        timeSignatureUnicodeCharacters = [
-      ('\ue08a', 0.0),
-      ('\ue08b', 0.0),
-      ('\uf5f9', 20.0),
-      ('\uf5fa', 20.0),
-      ('\uf5fb', 20.0),
-      ('\uf5fc', 20.0),
-      ('\uf5fd', 20.0),
-      ('\uf5fe', 20.0),
-      ('\uf5ff', 20.0),
-      ('\uf600', 20.0),
-      ('\uf601', 20.0),
-      ('\uf602', 20.0),
-      ('\uf603', 20.0),
-      ('\uf604', 20.0),
-      ('\uf605', 20.0),
-      ('\uf510', 20.0),
-    ];
-
-    List<(String unicodeCharacter, double offset)> clefUnicodeCharacters = [
-      ('\uf472', 10.0),
-      ('\uf474', -9.0),
-      //('\uf473', 0.0),
-      //('\ue034', 20.0),
-      //('\uf45c', 20.0),
-      //('\ue032', 20.0),
+    List<(String unicodeCharacter, double offset)> barUnicodeCharacters = [
+      ('\ue030', 20.0),
+      ('\ue031', 20.0),
+      ('\ue032', 20.0),
+      ('\ue033', 20.0),
+      ('\ue034', 20.0),
+      ('\uf45c', 20.0),
+      ('\ue032', 20.0),
+      ('\uf473', 0.0),
     ];
 
     return Center(
@@ -46,26 +28,6 @@ class ClefsKeyboardLayout extends StatelessWidget {
       child: Row(
         children: [
           SizedBox(
-            width: (screenWidth - 10) * 0.40,
-            child: GridView.builder(
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2, // Total keys in one row
-                  crossAxisSpacing: 5, // Space between columns
-                  mainAxisSpacing: 5, // Space between rows
-                  childAspectRatio: 0.85 // / (keyHeight / parentHeight),
-                  ),
-              itemCount: 2, // Total number of keys
-              itemBuilder: (context, index) {
-                return MusicKey(
-                    onTap: (note) => onKeyPress(note),
-                    index: index,
-                    unicodeCharacter: clefUnicodeCharacters[index].$1,
-                    characterOffset: clefUnicodeCharacters[index].$2);
-              },
-            ),
-          ),
-          SizedBox(width: 10),
-          SizedBox(
             width: (screenWidth - 10) * 0.55,
             child: GridView.builder(
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -74,13 +36,13 @@ class ClefsKeyboardLayout extends StatelessWidget {
                   mainAxisSpacing: 5, // Space between rows
                   childAspectRatio: 0.77 // / (keyHeight / parentHeight),
                   ),
-              itemCount: 16, // Total number of keys
+              itemCount: barUnicodeCharacters.length, // Total number of keys
               itemBuilder: (context, index) {
                 return MusicKey(
                     onTap: (note) => onKeyPress(note),
                     index: index,
-                    unicodeCharacter: timeSignatureUnicodeCharacters[index].$1,
-                    characterOffset: timeSignatureUnicodeCharacters[index].$2);
+                    unicodeCharacter: barUnicodeCharacters[index].$1,
+                    characterOffset: barUnicodeCharacters[index].$2);
               },
             ),
           )
@@ -128,7 +90,7 @@ class _MusicKeyState extends State<MusicKey> {
     widget.onTap(MusicalNote(
         pitch: "",
         octave: 0,
-        type: NoteType.clef,
+        type: NoteType.bar,
         isConnected: false,
         unicodeCharacter: widget.unicodeCharacter));
   }

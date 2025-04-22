@@ -3,6 +3,7 @@ import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/src/providers/current_selected_note_provider.dart';
 import 'package:music_keyboard/src/providers/list_of_spacing_for_each_row.dart';
 import 'package:music_keyboard/src/providers/selected_accidental_provider.dart';
+import 'package:music_keyboard/src/widgets/keyboard/bars_keyboard_layout.dart';
 import 'package:music_keyboard/src/widgets/keyboard/clefs_keyboard_layout.dart';
 import 'package:music_keyboard/src/widgets/keyboard/notes_keyboard_layout.dart';
 import 'package:music_keyboard/src/widgets/main_sheet/music_sheet_container.dart';
@@ -36,6 +37,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   int defaultNoteSpacing = 26;
 
   bool showClefs = true;
+  bool showBars = false;
   bool showTimeSignatures = false;
   bool showNotes = false;
 
@@ -311,6 +313,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                 ),
                                 isSelected: [
                                   showClefs,
+                                  showBars,
                                   showTimeSignatures,
                                   showNotes,
                                 ],
@@ -318,11 +321,13 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                   setState(() {
                                     // Reset all selections first
                                     showClefs = index == 0;
-                                    showTimeSignatures = index == 1;
-                                    showNotes = index == 2;
+                                    showBars = index == 1;
+                                    showTimeSignatures = index == 2;
+                                    showNotes = index == 3;
                                     if (index == 0) keyType = "clefs";
-                                    if (index == 1) keyType = "rests";
-                                    if (index == 2) keyType = "notes";
+                                    if (index == 1) keyType = "bars";
+                                    if (index == 2) keyType = "rests";
+                                    if (index == 3) keyType = "notes";
                                   });
                                 },
                                 borderRadius: BorderRadius.circular(8.0),
@@ -335,6 +340,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                 ),
                                 children: const [
                                   Text("Clefs"),
+                                  Text("Bars"),
                                   Text("Rests"),
                                   Text("Notes"),
                                 ],
@@ -358,16 +364,18 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                       children: [
                         keyType == "clefs"
                             ? ClefsKeyboardLayout(onKeyPress: handleKeyPress)
-                            : NotesKeyboardLayout(
-                                showNotesKeyboard: showNotesKeyboard,
-                                onToggleKeyboard: (isNotes) {
-                                  setState(() {
-                                    showNotesKeyboard = isNotes;
-                                  });
-                                },
-                                onKeyPress: handleKeyPress,
-                                keyType: keyType,
-                              ),
+                            : keyType == "bars"
+                                ? BarsKeyboardLayout(onKeyPress: handleKeyPress)
+                                : NotesKeyboardLayout(
+                                    showNotesKeyboard: showNotesKeyboard,
+                                    onToggleKeyboard: (isNotes) {
+                                      setState(() {
+                                        showNotesKeyboard = isNotes;
+                                      });
+                                    },
+                                    onKeyPress: handleKeyPress,
+                                    keyType: keyType,
+                                  ),
                       ],
                     ),
                   ],
