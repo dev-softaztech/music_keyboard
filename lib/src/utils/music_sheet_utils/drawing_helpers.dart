@@ -160,7 +160,6 @@ void drawNoteKey(
   }
 
   // Draw accidental if present
-  double accidentalWidth = 0;
   if (note.accidentalCharacter.isNotEmpty) {
     final accidentalPainter = TextPainter(
       text: TextSpan(
@@ -175,7 +174,7 @@ void drawNoteKey(
     );
 
     accidentalPainter.layout();
-    accidentalWidth = accidentalPainter.width;
+
     final accidentalX = noteX -
         (accidentalPainter.width / 2) -
         15; // Position to the left of the note

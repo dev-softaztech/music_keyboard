@@ -55,12 +55,20 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
       _activeShiftButton = buttonType;
     });
 
-    // Get the position of the button
-    final RenderBox renderBox = _shiftButtonKeys[buttonType]!
-        .currentContext!
-        .findRenderObject() as RenderBox;
-    final position = renderBox.localToGlobal(Offset.zero);
-    final size = renderBox.size;
+    // Get the screen size
+    final Size screenSize = MediaQuery.of(context).size;
+
+    // Calculate the number of items to determine the popup height
+    List<String> unicodeOptions = _getUnicodeOptions(buttonType);
+    int itemCount = unicodeOptions.length;
+
+    // Calculate the popup size based on content
+    // Fixed width for consistency, but height depends on number of items
+    double popupWidth = 200.0;
+    double buttonSize = 80.0; // Fixed size for each button
+    int crossAxisCount = 3; // Always 2 columns
+    int rowCount = (itemCount / crossAxisCount).ceil();
+    double popupHeight = (buttonSize * rowCount) + 32.0; // Add padding
 
     // Create the overlay entry
     _overlayEntry = OverlayEntry(
@@ -76,10 +84,10 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
               ),
             ),
           ),
-          // The actual popup
+          // The actual popup - centered on screen
           Positioned(
-            left: position.dx - 60, // Center the popup above the button
-            top: position.dy - 120, // Position above the button
+            left: (screenSize.width - popupWidth) / 2,
+            top: (screenSize.height - popupHeight) / 2,
             child: Material(
               elevation: 8,
               borderRadius: BorderRadius.circular(12),
@@ -90,8 +98,8 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.orange.shade300),
                 ),
-                width: 150,
-                height: 110,
+                width: popupWidth,
+                height: popupHeight,
                 child: _buildPopupContent(buttonType, context),
               ),
             ),
@@ -113,35 +121,35 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
     });
   }
 
-  // Build the content of the popup based on the button type
-  Widget _buildPopupContent(String buttonType, BuildContext context) {
-    List<String> unicodeOptions = [];
-
-    // Get the appropriate unicode options based on the button type
+  // Get unicode options based on button type
+  List<String> _getUnicodeOptions(String buttonType) {
     if (buttonType == 'sharp') {
-      unicodeOptions = [
+      return [
         '\ue262',
-        '\ue264',
-        '\ue266',
-        '\ue268'
-      ]; // Sharp variants
-    } else if (buttonType == 'flat') {
-      unicodeOptions = [
-        '\ue260',
+        '\ue268',
         '\ue263',
         '\ue265',
-        '\ue267'
-      ]; // Flat variants
+        '\ue269'
+      ]; // Sharp variants
+    } else if (buttonType == 'flat') {
+      return ['\ue260', '\ue264', '\ue266', '\ue267']; // Flat variants
     } else if (buttonType == 'natural') {
-      unicodeOptions = ['\ue261', '\ue269']; // Natural variants
+      return ['\ue261']; // Natural variants
     }
+    return [];
+  }
+
+  // Build the content of the popup based on the button type
+  Widget _buildPopupContent(String buttonType, BuildContext context) {
+    List<String> unicodeOptions = _getUnicodeOptions(buttonType);
 
     return GridView.builder(
+      physics: const NeverScrollableScrollPhysics(), // Disable scrolling
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
+        crossAxisCount: 3,
         crossAxisSpacing: 8,
         mainAxisSpacing: 8,
-        childAspectRatio: 1.5,
+        childAspectRatio: 0.9, // Slightly wider than tall
       ),
       itemCount: unicodeOptions.length,
       itemBuilder: (context, index) {
@@ -165,7 +173,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                 unicode,
                 style: const TextStyle(
                   fontFamily: 'Bravura',
-                  fontSize: 30,
+                  fontSize: 40, // Even smaller
                   color: Color(0xFF242038),
                 ),
               ),
@@ -180,18 +188,19 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
   bool _isAccidentalForButtonType(String accidental, String buttonType) {
     if (buttonType == 'sharp') {
       return accidental == '\ue262' || // sharp
-          accidental == '\ue264' || // sharp
-          accidental == '\ue266' || // sharp
-          accidental == '\ue268'; // sharp
+          accidental == '\ue268' || // sharp
+          accidental == '\ue263' || // sharp
+          accidental == '\ue265' ||
+          accidental == '\ue269'; // sharp
     } else if (buttonType == 'flat') {
       return accidental == '\ue260' || // flat
-          accidental == '\ue263' || // flat
-          accidental == '\ue265' || // flat
+          accidental == '\ue264' || // flat
+          accidental == '\ue266' || // flat
           accidental == '\ue267'; // flat
     } else {
       // natural
       return accidental == '\ue261' || // natural
-          accidental == '\ue269'; // natural
+          accidental == '\ue261'; // natural
     }
   }
 
@@ -212,22 +221,23 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
     String displayUnicode;
     if (buttonType == 'sharp') {
       displayUnicode = selectedAccidental == '\ue262' ||
-              selectedAccidental == '\ue264' ||
-              selectedAccidental == '\ue266' ||
-              selectedAccidental == '\ue268'
+              selectedAccidental == '\ue268' ||
+              selectedAccidental == '\ue263' ||
+              selectedAccidental == '\ue265' ||
+              selectedAccidental == '\ue269'
           ? selectedAccidental
           : '\ue262';
     } else if (buttonType == 'flat') {
       displayUnicode = selectedAccidental == '\ue260' ||
-              selectedAccidental == '\ue263' ||
-              selectedAccidental == '\ue265' ||
+              selectedAccidental == '\ue264' ||
+              selectedAccidental == '\ue266' ||
               selectedAccidental == '\ue267'
           ? selectedAccidental
           : '\ue260';
     } else {
       // natural
       displayUnicode =
-          selectedAccidental == '\ue261' || selectedAccidental == '\ue269'
+          selectedAccidental == '\ue261' || selectedAccidental == '\ue261'
               ? selectedAccidental
               : '\ue261';
     }
@@ -271,7 +281,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
             Text(
               label,
               style: const TextStyle(
-                fontSize: 14,
+                fontSize: 11,
                 color: Color(0xFF242038),
               ),
             ),
