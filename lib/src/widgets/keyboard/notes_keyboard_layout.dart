@@ -41,8 +41,24 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
   @override
   void dispose() {
     // Make sure to remove any active overlay when disposing
-    _removeOverlay();
+    if (_overlayEntry != null) {
+      _overlayEntry!.remove();
+      _overlayEntry = null;
+    }
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(NotesKeyboardLayout oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // If the keyType changes (tab switch), remove any active overlay
+    if (oldWidget.keyType != widget.keyType) {
+      if (_overlayEntry != null) {
+        _overlayEntry!.remove();
+        _overlayEntry = null;
+        _activeShiftButton = null;
+      }
+    }
   }
 
   // Show the popup for a specific shift button

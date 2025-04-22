@@ -13,7 +13,7 @@ void drawNote(
     int index,
     int noteSpacing,
     Color noteColour) {
-  if (note.type == NoteType.clef) {
+  if (note.type == NoteType.clef || note.type == NoteType.bar) {
     drawClefKey(canvas, paint, note, lineSpacing, staffTop, noteX, notes, index,
         noteColour);
     return;
