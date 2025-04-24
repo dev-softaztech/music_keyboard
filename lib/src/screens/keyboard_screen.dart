@@ -75,7 +75,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         if (sheetNoteRows[selectedNoteProvider.selectedRow].length - 1 >=
             maxNotesPerRow) {
           var isNoteEndOfRow = false;
-          if (selectedNoteProvider.insertionIndex == maxNotesPerRow) {
+          if (selectedNoteProvider.insertionIndex >= maxNotesPerRow) {
             isNoteEndOfRow = true;
           }
 
