@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:vector_math/vector_math.dart' as vec;
 import 'package:music_keyboard/models/music_note.dart';
+import 'package:music_keyboard/src/utils/music_sheet_utils/bar_line_calculator.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/drawing_helpers.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/note_position_calculator.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/note_width_calculator.dart';
@@ -38,6 +39,110 @@ class MusicSheetPainter extends CustomPainter {
       double x = 25.0;
       int currentRowSpacing = rowSpacingList[rowIndex];
 
+      // Set duration values for notes in this row
+      BarLineCalculator.setNoteDurations(sheetNoteRows[rowIndex]);
+
+      // Find the applicable time signature for this row
+      String? timeSignature;
+
+      // First check for time signatures within the current row
+      timeSignature =
+          BarLineCalculator.findLastTimeSignature(sheetNoteRows[rowIndex]);
+
+      // If no time signature found in current row, check previous rows
+      if (timeSignature == null && rowIndex > 0) {
+        timeSignature = BarLineCalculator.findLastTimeSignatureAcrossRows(
+            sheetNoteRows, rowIndex - 1);
+      }
+
+      // Track bars and their properties for warning display
+      List<
+          ({
+            int startIndex,
+            int endIndex,
+            double xStart,
+            double xEnd,
+            bool isOverfilled
+          })> bars = [];
+      int barStartIndex = 0;
+      double barStartX = 25.0;
+      double currentBarDuration = 0.0;
+      String? currentBarTimeSignature = timeSignature;
+
+      // First pass: identify all bars and their properties
+      for (int i = 0; i < sheetNoteRows[rowIndex].length; i++) {
+        MusicalNote note = sheetNoteRows[rowIndex][i];
+        double currentX = barStartX + ((i - barStartIndex) * currentRowSpacing);
+
+        // Check for time signature changes within the row
+        if (note.type == NoteType.clef &&
+            BarLineCalculator.timeSignatureValues
+                .containsKey(note.unicodeCharacter)) {
+          currentBarTimeSignature = note.unicodeCharacter;
+
+          // End the previous bar if there was one
+          if (i > 0) {
+            bool isOverfilled = currentBarTimeSignature != null &&
+                BarLineCalculator.hasBarTooManyNotes(
+                    currentBarDuration, currentBarTimeSignature);
+
+            bars.add((
+              startIndex: barStartIndex,
+              endIndex: i - 1,
+              xStart: barStartX,
+              xEnd: currentX - currentRowSpacing,
+              isOverfilled: isOverfilled
+            ));
+          }
+
+          barStartIndex = i + 1;
+          barStartX = currentX + getNoteWidth(note);
+          currentBarDuration = 0.0;
+          // Removed the continue statement that was causing time signatures to be invisible
+        }
+
+        // Check if this is a bar line (either existing or to be added)
+        if (note.type == NoteType.bar) {
+          // End the current bar
+          bool isOverfilled = currentBarTimeSignature != null &&
+              BarLineCalculator.hasBarTooManyNotes(
+                  currentBarDuration, currentBarTimeSignature);
+
+          bars.add((
+            startIndex: barStartIndex,
+            endIndex: i - 1,
+            xStart: barStartX,
+            xEnd: currentX - currentRowSpacing,
+            isOverfilled: isOverfilled
+          ));
+
+          barStartIndex = i + 1;
+          barStartX = currentX + currentRowSpacing;
+          currentBarDuration = 0.0;
+        } else {
+          currentBarDuration += note.duration;
+        }
+      }
+
+      // Add the final bar if there are notes after the last bar line
+      if (barStartIndex < sheetNoteRows[rowIndex].length) {
+        double endX =
+            25.0 + (sheetNoteRows[rowIndex].length * currentRowSpacing);
+        bool isOverfilled = currentBarTimeSignature != null &&
+            BarLineCalculator.hasBarTooManyNotes(
+                currentBarDuration, currentBarTimeSignature);
+
+        bars.add((
+          startIndex: barStartIndex,
+          endIndex: sheetNoteRows[rowIndex].length - 1,
+          xStart: barStartX,
+          xEnd: endX,
+          isOverfilled: isOverfilled
+        ));
+      }
+
+      // Second pass: draw all notes
+      x = 25.0; // Reset x position for drawing
       for (int i = 0; i < sheetNoteRows[rowIndex].length; i++) {
         MusicalNote note = sheetNoteRows[rowIndex][i];
 
@@ -90,13 +195,37 @@ class MusicSheetPainter extends CustomPainter {
             note.type == NoteType.clef ? getNoteWidth(note) : currentRowSpacing;
       }
 
-      if (showCursor && rowIndex == selectedRow) {
+      // We no longer add automatic bar lines here as it's now handled in CurrentSelectedNoteProvider
+
+      if (rowIndex == selectedRow) {
         int clefCount = sheetNoteRows[rowIndex]
             .where((x) => x.type == NoteType.clef)
             .length;
 
-        drawInsertionCursor(canvas, paint, staffTop, selectedIndex, size,
-            currentRowSpacing, clefCount, sheetNoteRows[rowIndex], lineSpacing);
+        // Draw the cursor if showCursor is true
+        if (showCursor) {
+          drawInsertionCursor(
+              canvas,
+              paint,
+              staffTop,
+              selectedIndex,
+              size,
+              currentRowSpacing,
+              clefCount,
+              sheetNoteRows[rowIndex],
+              lineSpacing);
+        }
+
+        // Find which bar contains the selected note and check if it's overfilled
+        for (var bar in bars) {
+          if (selectedIndex >= bar.startIndex &&
+              selectedIndex <= bar.endIndex &&
+              bar.isOverfilled) {
+            // Draw warning above the specific bar
+            drawTooManyNotesWarning(canvas, staffTop, bar.xStart, bar.xEnd);
+            break;
+          }
+        }
       }
 
       paint = Paint()..color = Colors.black;
@@ -104,8 +233,43 @@ class MusicSheetPainter extends CustomPainter {
     }
   }
 
+  /// Draw a warning when there are too many notes in a bar
+  void drawTooManyNotesWarning(
+      Canvas canvas, double staffTop, double barStartX, double barEndX) {
+    final TextPainter textPainter = TextPainter(
+      text: const TextSpan(
+        text: 'Too many notes for bar',
+        style: TextStyle(
+          color: Colors.red,
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+
+    textPainter.layout();
+
+    // Position the warning above the specific bar
+    final double barWidth = barEndX - barStartX;
+    final double x = barStartX + (barWidth - textPainter.width) / 2;
+    final double y = staffTop - 30;
+
+    // Draw a semi-transparent background for better readability
+    final Rect backgroundRect = Rect.fromLTWH(
+        x - 10, y - 5, textPainter.width + 20, textPainter.height + 10);
+
+    canvas.drawRect(
+      backgroundRect,
+      Paint()..color = Colors.white.withOpacity(0.8),
+    );
+
+    // Draw the warning text
+    textPainter.paint(canvas, Offset(x, y));
+  }
+
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(CustomPainter oldDelegate) => true;
 
   void drawStaffLines(Canvas canvas, Paint paint, double staffTop,
       double lineSpacing, double sheetHeight, Size size) {

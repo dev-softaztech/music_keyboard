@@ -33,7 +33,7 @@ class NoteInputScreen extends StatefulWidget {
 class _NoteInputScreenState extends State<NoteInputScreen> {
   final ScreenshotController screenshotController = ScreenshotController();
   List<List<MusicalNote>> sheetNoteRows = [[]];
-  int maxNotesPerRow = 29;
+  int maxNotesPerRow = 23;
   int defaultNoteSpacing = 26;
 
   bool showClefs = true;
@@ -69,10 +69,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
       );
 
       setState(() {
-        // Insert note at the current insertion index regardless of type
-        sheetNoteRows[selectedNoteProvider.selectedRow]
-            .insert(selectedNoteProvider.insertionIndex, noteWithAccidental);
-
+        // Use the addNote method from CurrentSelectedNoteProvider to handle automatic bar line placement
+        selectedNoteProvider.addNote(noteWithAccidental, sheetNoteRows);
+        //NEXT WORK OUT WHAT IS WRONG HERE, AT END OF ROW CURSOR IS NOT BEING MOVED TO NEXT ROW.
         if (sheetNoteRows[selectedNoteProvider.selectedRow].length - 1 >=
             maxNotesPerRow) {
           var isNoteEndOfRow = false;
@@ -121,11 +120,6 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
               : selectedNoteProvider.insertionIndex;
 
           selectedNoteProvider.updateInsertionPoint(selectedRow, selectedIndex);
-        } else {
-          // Move cursor forward
-          selectedNoteProvider.updateInsertionPoint(
-              selectedNoteProvider.selectedRow,
-              selectedNoteProvider.insertionIndex + 1);
         }
 
         updateRowSpacing(selectedNoteProvider.selectedRow);
@@ -142,18 +136,40 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     //here work out how many clefs/time signatures and affect the spacing in some way based on this?
 
     if (sheetNoteRows[rowIndex].length < 12) {
-      rowSpacingList[rowIndex] = 70;
+      rowSpacingList[rowIndex] = 82;
+    } else if (sheetNoteRows[rowIndex].length < 13) {
+      rowSpacingList[rowIndex] = 74;
+    } else if (sheetNoteRows[rowIndex].length < 14) {
+      rowSpacingList[rowIndex] = 67;
     } else if (sheetNoteRows[rowIndex].length < 15) {
-      rowSpacingList[rowIndex] = 55;
+      rowSpacingList[rowIndex] = 61;
+    } else if (sheetNoteRows[rowIndex].length < 16) {
+      rowSpacingList[rowIndex] = 54;
+    } else if (sheetNoteRows[rowIndex].length < 17) {
+      rowSpacingList[rowIndex] = 53;
     } else if (sheetNoteRows[rowIndex].length < 18) {
-      rowSpacingList[rowIndex] = 45;
+      rowSpacingList[rowIndex] = 48;
+    } else if (sheetNoteRows[rowIndex].length < 19) {
+      rowSpacingList[rowIndex] = 44;
+    } else if (sheetNoteRows[rowIndex].length < 20) {
+      rowSpacingList[rowIndex] = 42;
     } else if (sheetNoteRows[rowIndex].length < 21) {
+      rowSpacingList[rowIndex] = 40;
+    } else if (sheetNoteRows[rowIndex].length < 22) {
       rowSpacingList[rowIndex] = 38;
+    } else if (sheetNoteRows[rowIndex].length < 23) {
+      rowSpacingList[rowIndex] = 36;
     } else if (sheetNoteRows[rowIndex].length < 24) {
       rowSpacingList[rowIndex] = 34;
-    } else if (sheetNoteRows[rowIndex].length < 30) {
-      rowSpacingList[rowIndex] = 26;
-    }
+    } else if (sheetNoteRows[rowIndex].length < 25) {
+      rowSpacingList[rowIndex] = 33;
+    } else if (sheetNoteRows[rowIndex].length < 26) {
+      rowSpacingList[rowIndex] = 32;
+    } else if (sheetNoteRows[rowIndex].length < 27) {
+      rowSpacingList[rowIndex] = 31;
+    } //else if (sheetNoteRows[rowIndex].length < 30) {
+    //rowSpacingList[rowIndex] = 26;
+    //}
 
     rowSpacingProvider.updateRowSpacingList(rowSpacingList);
   }
@@ -197,26 +213,31 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
             sheetNoteRows[selectedNoteProvider.selectedRow - 1].isEmpty
                 ? 0
                 : sheetNoteRows[selectedNoteProvider.selectedRow - 1].length);
-      } else if (sheetNoteRows[selectedNoteProvider.selectedRow].isNotEmpty) {
+      } else if (sheetNoteRows[selectedNoteProvider.selectedRow].isNotEmpty &&
+          selectedNoteProvider.insertionIndex > 0) {
+        // Get the note that will be removed
+        MusicalNote noteToRemove =
+            sheetNoteRows[selectedNoteProvider.selectedRow]
+                [selectedNoteProvider.insertionIndex - 1];
+
+        // Update cursor position before removing the note
         selectedNoteProvider.updateInsertionPoint(
             selectedNoteProvider.selectedRow,
-            sheetNoteRows[selectedNoteProvider.selectedRow].indexOf(
-                sheetNoteRows[selectedNoteProvider.selectedRow]
-                    [selectedNoteProvider.insertionIndex - 1]));
+            selectedNoteProvider.insertionIndex - 1);
 
+        // Handle slur indices
         for (var note in sheetNoteRows[selectedNoteProvider.selectedRow]) {
           if (note.slurEndIndex == selectedNoteProvider.insertionIndex) {
             note.slurEndIndex = null;
           }
         }
 
-        sheetNoteRows[selectedNoteProvider.selectedRow].remove(
-            sheetNoteRows[selectedNoteProvider.selectedRow]
-                [selectedNoteProvider.insertionIndex]);
-      }
+        // Save state for undo before removing the note
+        selectedNoteProvider.saveState(sheetNoteRows);
 
-      //Here check if slur index is below removed note index and take one away from all slurred note index
-      //for notes in row that have a slurred index
+        // Remove the note
+        sheetNoteRows[selectedNoteProvider.selectedRow].remove(noteToRemove);
+      }
 
       updateRowSpacing(selectedNoteProvider.selectedRow);
     });

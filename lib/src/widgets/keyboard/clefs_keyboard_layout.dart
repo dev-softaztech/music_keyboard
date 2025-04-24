@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/music_note.dart';
+import 'package:music_keyboard/src/utils/music_sheet_utils/bar_line_calculator.dart';
 
 class ClefsKeyboardLayout extends StatelessWidget {
   final void Function(MusicalNote note) onKeyPress;

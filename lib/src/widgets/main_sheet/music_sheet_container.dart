@@ -215,7 +215,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                                         .selectedRow, // Pass selected row
                                     selectedNoteProvider
                                         .selectedIndex, // Pass selected index
-                                    _showCursor,
+                                    _showCursor, //should always be false
                                     rowSpacingProvider.rowSpacingList),
                                 size: Size(widget.musicSheetWidth,
                                     300), // Ensure proper rendering

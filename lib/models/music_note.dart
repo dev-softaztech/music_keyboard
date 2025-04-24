@@ -8,6 +8,7 @@ class MusicalNote {
   final String accidentalCharacter; // Unicode character for the accidental
   int? slurEndIndex;
   double noteY;
+  double duration; // Duration value for bar line calculation
 
   MusicalNote(
       {required this.pitch,
@@ -17,7 +18,8 @@ class MusicalNote {
       this.isTiedToNext = false,
       this.unicodeCharacter = "",
       this.accidentalCharacter = "",
-      this.noteY = 0.0});
+      this.noteY = 0.0,
+      this.duration = 0.0});
 
   MusicalNote copy() {
     return MusicalNote(
@@ -25,9 +27,11 @@ class MusicalNote {
         octave: octave,
         type: type,
         isConnected: isConnected,
+        isTiedToNext: isTiedToNext,
         unicodeCharacter: unicodeCharacter,
         accidentalCharacter: accidentalCharacter,
-        noteY: noteY);
+        noteY: noteY,
+        duration: duration);
   }
 }
 

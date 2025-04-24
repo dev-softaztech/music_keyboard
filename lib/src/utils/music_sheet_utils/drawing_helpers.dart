@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/music_note.dart';
+import 'package:music_keyboard/src/utils/music_sheet_utils/bar_line_calculator.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/note_position_calculator.dart';
 
 void drawNote(
@@ -45,12 +46,19 @@ void drawClefKey(
     List<MusicalNote> notes,
     int index,
     Color noteColour) {
+  // Determine if this is a time signature
+  // bool isTimeSignature =
+  //    BarLineCalculator.timeSignatureValues.containsKey(note.unicodeCharacter);
+
+  // Use same font size for clefs and time signatures
+  // double fontSize = 40;
+
   final textPainter = TextPainter(
     text: TextSpan(
-      text: note.unicodeCharacter, // Unicode character for whole note
+      text: note.unicodeCharacter,
       style: TextStyle(
-        fontFamily: 'Bravura', // Use Bravura font
-        fontSize: 40, // Adjust font size as needed
+        fontFamily: 'Bravura',
+        fontSize: 40,
         color: noteColour,
       ),
     ),
@@ -61,12 +69,17 @@ void drawClefKey(
   final offsetX = noteX - textPainter.width / 2;
   double offsetY = staffCenter - (lineSpacing * 4) - 1;
 
+  // Adjust Y position for clefs
   if (note.unicodeCharacter == "\uf472") offsetY = offsetY - 10;
   if (note.unicodeCharacter == "\uf474") offsetY = offsetY - 30;
   if (note.unicodeCharacter == "\uf473") offsetY = offsetY - 20;
   if (note.unicodeCharacter == "\ue08a" || note.unicodeCharacter == "\ue08b") {
     offsetY = offsetY - 20;
   }
+  // Adjust Y position for time signatures
+  //if (isTimeSignature) {
+  //  offsetY = offsetY - 20;
+  //}
 
   textPainter.paint(canvas, Offset(offsetX, offsetY + 0.5));
 }
