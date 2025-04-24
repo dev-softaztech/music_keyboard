@@ -69,60 +69,89 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
       );
 
       setState(() {
-        // Use the addNote method from CurrentSelectedNoteProvider to handle automatic bar line placement
+        // Add the note first
         selectedNoteProvider.addNote(noteWithAccidental, sheetNoteRows);
-        //NEXT WORK OUT WHAT IS WRONG HERE, AT END OF ROW CURSOR IS NOT BEING MOVED TO NEXT ROW.
+
+        // Check if we need to handle row overflow
         if (sheetNoteRows[selectedNoteProvider.selectedRow].length - 1 >=
             maxNotesPerRow) {
-          var isNoteEndOfRow = false;
-          if (selectedNoteProvider.insertionIndex >= maxNotesPerRow) {
-            isNoteEndOfRow = true;
+          // Find the current bar boundaries
+          int currentBarStartIndex = 0;
+          int currentBarEndIndex =
+              sheetNoteRows[selectedNoteProvider.selectedRow].length - 1;
+
+          // Find the start of the current bar (either after the last bar line or at the beginning of the row)
+          for (int i = selectedNoteProvider.insertionIndex - 1; i >= 0; i--) {
+            if (sheetNoteRows[selectedNoteProvider.selectedRow][i].type ==
+                NoteType.bar) {
+              currentBarStartIndex = i + 1;
+              break;
+            }
           }
 
-          if (sheetNoteRows.length - 1 > selectedNoteProvider.selectedRow) {
-            if (sheetNoteRows[selectedNoteProvider.selectedRow + 1].length -
-                    1 >=
-                maxNotesPerRow) {
-              sheetNoteRows.insert(selectedNoteProvider.selectedRow + 1, []);
-
-              rowSpacingList.insert(rowSpacingList.length, defaultNoteSpacing);
-              rowSpacingProvider.updateRowSpacingList(rowSpacingList);
+          // Find the end of the current bar (either before the next bar line or at the end of the row)
+          for (int i = selectedNoteProvider.insertionIndex;
+              i < sheetNoteRows[selectedNoteProvider.selectedRow].length;
+              i++) {
+            if (sheetNoteRows[selectedNoteProvider.selectedRow][i].type ==
+                NoteType.bar) {
+              currentBarEndIndex = i - 1;
+              break;
             }
-          } else {
-            sheetNoteRows.insert(selectedNoteProvider.selectedRow + 1, []);
+          }
 
+          // Calculate the number of notes in the current bar
+          int notesInCurrentBar = currentBarEndIndex - currentBarStartIndex + 1;
+
+          // Ensure we have a next row to move to
+          if (sheetNoteRows.length - 1 <= selectedNoteProvider.selectedRow) {
+            // Create a new row if we're at the last row
+            sheetNoteRows.insert(selectedNoteProvider.selectedRow + 1, []);
+            rowSpacingList.insert(rowSpacingList.length, defaultNoteSpacing);
+            rowSpacingProvider.updateRowSpacingList(rowSpacingList);
+          } else if (sheetNoteRows[selectedNoteProvider.selectedRow + 1]
+                      .length +
+                  notesInCurrentBar >
+              maxNotesPerRow) {
+            // If the next row doesn't have enough space, create a new row
+            sheetNoteRows.insert(selectedNoteProvider.selectedRow + 1, []);
             rowSpacingList.insert(rowSpacingList.length, defaultNoteSpacing);
             rowSpacingProvider.updateRowSpacingList(rowSpacingList);
           }
 
-          var overflowCount = 0;
+          // Save state for undo before moving the bar
+          selectedNoteProvider.saveState(sheetNoteRows);
 
-          for (int index = 0;
-              index < sheetNoteRows[selectedNoteProvider.selectedRow].length;
-              index++) {
-            if (index > maxNotesPerRow) {
-              var note = sheetNoteRows[selectedNoteProvider.selectedRow][index];
-              sheetNoteRows[selectedNoteProvider.selectedRow + 1]
-                  .insert(0, note);
+          // Move the entire bar to the next row
+          List<MusicalNote> notesToMove = [];
 
-              sheetNoteRows[selectedNoteProvider.selectedRow].remove(
-                  sheetNoteRows[selectedNoteProvider.selectedRow][index]);
-
-              overflowCount++;
-            }
+          // Collect all notes in the current bar
+          for (int i = currentBarStartIndex; i <= currentBarEndIndex; i++) {
+            notesToMove.add(sheetNoteRows[selectedNoteProvider.selectedRow][i]);
           }
 
-          var selectedRow = isNoteEndOfRow
-              ? selectedNoteProvider.selectedRow + 1
-              : selectedNoteProvider.selectedRow;
-          var selectedIndex = isNoteEndOfRow
-              ? overflowCount
-              : selectedNoteProvider.insertionIndex;
+          // Remove the notes from the current row (in reverse order to maintain indices)
+          for (int i = currentBarEndIndex; i >= currentBarStartIndex; i--) {
+            sheetNoteRows[selectedNoteProvider.selectedRow].removeAt(i);
+          }
 
-          selectedNoteProvider.updateInsertionPoint(selectedRow, selectedIndex);
+          // Insert the notes at the beginning of the next row
+          for (int i = 0; i < notesToMove.length; i++) {
+            sheetNoteRows[selectedNoteProvider.selectedRow + 1]
+                .insert(i, notesToMove[i]);
+          }
+
+          // Update spacing for both the current row and the next row
+          updateRowSpacing(selectedNoteProvider.selectedRow);
+          updateRowSpacing(selectedNoteProvider.selectedRow + 1);
+
+          // Update the insertion point to the next row
+          selectedNoteProvider.updateInsertionPoint(
+              selectedNoteProvider.selectedRow + 1, notesToMove.length);
+        } else {
+          // If no row overflow, just update the current row spacing
+          updateRowSpacing(selectedNoteProvider.selectedRow);
         }
-
-        updateRowSpacing(selectedNoteProvider.selectedRow);
       });
     } catch (e) {
       print("Error adding note: $e");
