@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/music_note.dart';
-import 'package:music_keyboard/src/utils/music_sheet_utils/bar_line_calculator.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/note_position_calculator.dart';
 
 void drawNote(
@@ -469,7 +468,7 @@ void drawLedgerLines(Canvas canvas, Paint paint, double noteY, double noteX,
     // Draw ledger lines **above** the staff
     for (double y = staffTop - lineSpacing; y >= noteY; y -= lineSpacing) {
       canvas.drawLine(
-        Offset(noteX - (noteWidth / 2) - 7, y), // Extend by 5 pixels each side
+        Offset(noteX - (noteWidth / 2) - 7, y),
         Offset(noteX + (noteWidth / 2) + 7, y),
         paint..strokeWidth = 1.0,
       );
@@ -478,7 +477,7 @@ void drawLedgerLines(Canvas canvas, Paint paint, double noteY, double noteX,
     // Draw ledger lines **below** the staff
     for (double y = staffBottom + lineSpacing; y <= noteY; y += lineSpacing) {
       canvas.drawLine(
-        Offset(noteX - (noteWidth / 2) - 7, y), // Extend by 5 pixels each side
+        Offset(noteX - (noteWidth / 2) - 7, y),
         Offset(noteX + (noteWidth / 2) + 7, y),
         paint..strokeWidth = 1.0,
       );

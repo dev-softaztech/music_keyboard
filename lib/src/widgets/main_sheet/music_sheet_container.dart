@@ -163,7 +163,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
           [selectedNoteProvider.selectedIndex];
     }
 
-    var keyboardHeight = 430;
+    var keyboardHeight = 470;
     var canvasHeight = widget.screenSize.height -
         AppBar().preferredSize.height -
         keyboardHeight -

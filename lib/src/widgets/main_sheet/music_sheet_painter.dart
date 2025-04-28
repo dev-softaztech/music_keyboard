@@ -82,7 +82,8 @@ class MusicSheetPainter extends CustomPainter {
 
           // End the previous bar if there was one
           if (i > 0) {
-            bool isOverfilled = currentBarTimeSignature != null &&
+            bool isOverfilled = (currentBarTimeSignature != null &&
+                    currentBarTimeSignature != "") &&
                 BarLineCalculator.hasBarTooManyNotes(
                     currentBarDuration, currentBarTimeSignature);
 

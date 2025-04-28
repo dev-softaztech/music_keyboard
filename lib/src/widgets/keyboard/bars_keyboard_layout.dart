@@ -23,7 +23,7 @@ class BarsKeyboardLayout extends StatelessWidget {
 
     return Center(
         child: SizedBox(
-      height: 300,
+      height: 320,
       width: screenWidth - 10,
       child: Row(
         children: [

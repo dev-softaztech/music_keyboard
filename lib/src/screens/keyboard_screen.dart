@@ -337,7 +337,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
             child: ColoredBox(
               color: const Color(0xFFF7ECE1),
               child: Container(
-                height: 400, // Fixed height for the keyboard area
+                height: 440, // Increased height for the keyboard area
                 /*decoration: const BoxDecoration(
                   border: Border(
                     top: BorderSide(

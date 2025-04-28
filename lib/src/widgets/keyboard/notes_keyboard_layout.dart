@@ -368,7 +368,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
     }
 
     return Container(
-      height: 280, // Fixed height for the keyboard area
+      height: 350, // Increased height to accommodate the arrows
       padding: const EdgeInsets.fromLTRB(0, 5, 0, 0),
       child: Column(
         children: [

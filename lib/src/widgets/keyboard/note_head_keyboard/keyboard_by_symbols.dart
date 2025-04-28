@@ -7,12 +7,98 @@ import 'package:music_keyboard/src/providers/selected_unicode_provider.dart';
 import 'package:music_keyboard/src/providers/is_connected_provider.dart';
 import 'package:music_keyboard/models/music_note.dart';
 
-class KeyboardBySymbols extends StatelessWidget {
+class KeyboardBySymbols extends StatefulWidget {
   final void Function(MusicalNote note) onKeyPress;
   final String keyType;
 
   const KeyboardBySymbols(
       {super.key, required this.onKeyPress, required this.keyType});
+
+  @override
+  State<KeyboardBySymbols> createState() => _KeyboardBySymbolsState();
+}
+
+enum KeyboardRow {
+  top, // Above the staff
+  middle, // On the staff
+  bottom // Below the staff
+}
+
+class _KeyboardBySymbolsState extends State<KeyboardBySymbols>
+    with SingleTickerProviderStateMixin {
+  KeyboardRow currentRow = KeyboardRow.middle;
+  late AnimationController _animationController;
+  late Animation<Offset> _slideAnimation;
+  late Animation<Offset> _incomingSlideAnimation;
+  KeyboardRow? _incomingRow;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: Offset.zero,
+      end: const Offset(0, 0),
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
+
+    _incomingSlideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _switchToRow(KeyboardRow newRow) {
+    if (newRow == currentRow) return;
+
+    setState(() {
+      _incomingRow = newRow;
+
+      // Set up the animation for the incoming row only
+      if (newRow.index < currentRow.index) {
+        // Moving up - new row comes from above
+        _incomingSlideAnimation = Tween<Offset>(
+          begin: const Offset(0, -1), // New row comes from above
+          end: Offset.zero,
+        ).animate(CurvedAnimation(
+          parent: _animationController,
+          curve: Curves.easeInOut,
+        ));
+      } else {
+        // Moving down - new row comes from below
+        _incomingSlideAnimation = Tween<Offset>(
+          begin: const Offset(0, 1), // New row comes from below
+          end: Offset.zero,
+        ).animate(CurvedAnimation(
+          parent: _animationController,
+          curve: Curves.easeInOut,
+        ));
+      }
+    });
+
+    _animationController.forward().then((_) {
+      setState(() {
+        currentRow = newRow;
+        _incomingRow = null;
+        _animationController.reset();
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,53 +109,208 @@ class KeyboardBySymbols extends StatelessWidget {
         context.watch<SelectedUnicodeProvider>().selectedCharacter;
 
     NoteType noteType = NoteType.whole;
-    if (keyType == "clefs") {
+    if (widget.keyType == "clefs") {
       noteType = NoteType.clef;
-    } else if (keyType == "rests") {
+    } else if (widget.keyType == "rests") {
       noteType = NoteType.rest;
-    } else if (keyType == "accidentals") {
+    } else if (widget.keyType == "accidentals") {
       noteType = NoteType.accidental;
-    } else if (keyType == "notes") {
+    } else if (widget.keyType == "notes") {
       noteType = mapUnicodeToNoteType(selectedCharacter);
     }
 
     return Center(
-        child: SizedBox(
-      height: 117, // Reduced height to fix overflow
-      width: screenWidth - 10,
-      child: GridView.builder(
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 15, // Total keys in one row
-            crossAxisSpacing: 2, // Space between columns
-            mainAxisSpacing: 0, // Space between rows
-            childAspectRatio: 0.19 // / (keyHeight / parentHeight),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Up arrow button - positioned above the keyboard
+          if (currentRow != KeyboardRow.top)
+            Container(
+              height: 20,
+              margin: const EdgeInsets.only(bottom: 2),
+              child: Center(
+                child: Container(
+                  height: 20,
+                  width: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.orange,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: InkWell(
+                    onTap: () => _switchToRow(currentRow == KeyboardRow.bottom
+                        ? KeyboardRow.middle
+                        : KeyboardRow.top),
+                    child: const Icon(
+                      Icons.keyboard_arrow_up,
+                      size: 20,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            )
+          else
+            const SizedBox(height: 0), // No space when arrow is hidden
+
+          // Keyboard keys
+          SizedBox(
+            height: 137, // Keep the same height as before
+            width: screenWidth - 10,
+            child: Stack(
+              children: [
+                // Current row - only show if not animating
+                if (_incomingRow == null)
+                  _buildKeyboardGrid(
+                    selectedCharacter: selectedCharacter,
+                    noteType: noteType,
+                    isConnected: isConnected,
+                    row: currentRow,
+                  ),
+
+                // Incoming row during animation
+                if (_incomingRow != null)
+                  SlideTransition(
+                    position: _incomingSlideAnimation,
+                    child: _buildKeyboardGrid(
+                      selectedCharacter: selectedCharacter,
+                      noteType: noteType,
+                      isConnected: isConnected,
+                      row: _incomingRow!,
+                    ),
+                  ),
+              ],
             ),
-        itemCount: 15, // Total number of keys
-        itemBuilder: (context, index) {
-          return MusicKey(
-              unicodeCharacter: selectedCharacter,
-              pitch: _getPitch(index),
-              octave: _getOctave(index),
-              type: noteType,
-              isConnected: isConnected,
-              //height: 150, //keyHeight, // Pass the desired height
-              onTap: (note) => onKeyPress(note),
-              index: index,
-              selectedCharacter: selectedCharacter);
-        },
+          ),
+
+          // Down arrow button - positioned below the keyboard
+          if (currentRow != KeyboardRow.bottom)
+            Container(
+              height: 20,
+              margin: const EdgeInsets.only(top: 2),
+              child: Center(
+                child: Container(
+                  height: 20,
+                  width: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.orange,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: InkWell(
+                    onTap: () => _switchToRow(currentRow == KeyboardRow.top
+                        ? KeyboardRow.middle
+                        : KeyboardRow.bottom),
+                    child: const Icon(
+                      Icons.keyboard_arrow_down,
+                      size: 20,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            )
+          else
+            const SizedBox(height: 0), // No space when arrow is hidden
+        ],
       ),
-    ));
+    );
   }
 
-  // Map the index to a pitch
-  String _getPitch(int index) {
+  Widget _buildKeyboardGrid({
+    required String selectedCharacter,
+    required NoteType noteType,
+    required bool isConnected,
+    required KeyboardRow row,
+  }) {
+    return GridView.builder(
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 9, // Changed from 15 to 9 keys
+          crossAxisSpacing: 2, // Space between columns
+          mainAxisSpacing: 0, // Space between rows
+          childAspectRatio: 0.32 // Adjusted for fewer keys
+          ),
+      itemCount: 9, // Changed from 15 to 9 keys
+      itemBuilder: (context, index) {
+        return MusicKey(
+          unicodeCharacter: selectedCharacter,
+          pitch: _getPitch(index, row),
+          octave: _getOctave(index, row),
+          type: noteType,
+          isConnected: isConnected,
+          onTap: (note) => widget.onKeyPress(note),
+          index: index,
+          selectedCharacter: selectedCharacter,
+        );
+      },
+    );
+  }
+
+  // Map the index to a pitch based on the current row
+  String _getPitch(int index, KeyboardRow row) {
     const pitches = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
-    return pitches[index % pitches.length];
+
+    // Starting pitch index depends on the row
+    int startPitchIndex;
+    switch (row) {
+      case KeyboardRow.top:
+        startPitchIndex = 5; // Start with 'A' for top row
+        break;
+      case KeyboardRow.middle:
+        startPitchIndex = 3; // Start with 'F' for middle row
+        break;
+      case KeyboardRow.bottom:
+        startPitchIndex = 1; // Start with 'D' for bottom row
+        break;
+    }
+
+    // Calculate the pitch index by adding the starting index and the current index
+    int pitchIndex = (startPitchIndex + index) % pitches.length;
+    return pitches[pitchIndex];
   }
 
-  // Map the index to an octave
-  int _getOctave(int index) {
-    return 4 + (index ~/ 7); // Cycle through octaves
+  // Map the index to an octave based on the current row
+  int _getOctave(int index, KeyboardRow row) {
+    // Base octave depends on which row we're showing
+    int baseOctave;
+    switch (row) {
+      case KeyboardRow.top:
+        baseOctave = 5; // Start with octave 5 for top row
+        break;
+      case KeyboardRow.middle:
+        baseOctave = 4; // Start with octave 4 for middle row
+        break;
+      case KeyboardRow.bottom:
+        baseOctave = 3; // Start with octave 3 for bottom row
+        break;
+    }
+
+    // Calculate the pitch index to determine when to increment the octave
+    const pitches = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+    int startPitchIndex;
+    switch (row) {
+      case KeyboardRow.top:
+        startPitchIndex = 5; // Start with 'A' for top row
+        // If we've gone past 'B' (index 6), increment the octave
+        if ((startPitchIndex + index) >= pitches.length) {
+          return baseOctave + ((startPitchIndex + index) ~/ pitches.length);
+        }
+        break;
+      case KeyboardRow.middle:
+        startPitchIndex = 3; // Start with 'F' for middle row
+        // If we've gone past 'B' (index 6), increment the octave
+        if ((startPitchIndex + index) >= pitches.length) {
+          return baseOctave + ((startPitchIndex + index) ~/ pitches.length);
+        }
+        break;
+      case KeyboardRow.bottom:
+        startPitchIndex = 1; // Start with 'D' for bottom row
+        // If we've gone past 'B' (index 6), increment the octave
+        if ((startPitchIndex + index) >= pitches.length) {
+          return baseOctave + ((startPitchIndex + index) ~/ pitches.length);
+        }
+        break;
+    }
+
+    return baseOctave;
   }
 }
 
@@ -193,19 +434,17 @@ class KeyboardSymbolsMusicStaffPainter extends CustomPainter {
       canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
     }
 
-    // **Draw an extra staff line below if index is 0, 1, or 2**
-    if (index <= 1) {
-      double extraLineY = staffBottom + lineSpacing; // Position below the staff
-      canvas.drawLine(
-          Offset(0, extraLineY), Offset(size.width, extraLineY), paint);
-    }
+    // Determine if we need to draw ledger lines based on the note's position
+    // Calculate the note's Y position
+    final double noteY = calculateNoteYVerticalKeyboard(
+        musicalNote.pitch, musicalNote.octave, lineSpacing, staffTop);
 
-    // **Draw an extra staff line above if index is 14 or higher**
-    if (index >= 13) {
-      double extraLineY = staffTop - lineSpacing; // Position above the staff
-      canvas.drawLine(
-          Offset(0, extraLineY), Offset(size.width, extraLineY), paint);
-    }
+    // Get the width of the note for drawing ledger lines
+    double noteWidth = size.width / 3; // Approximate width of the note
+
+    // Draw ledger lines for notes above or below the staff
+    drawLedgerLines(
+        canvas, paint, noteY, size.width / 2, noteWidth, lineSpacing, staffTop);
 
     // For notes with accidentals, we need to draw both the accidental and the note
     bool isAccidental = unicodeCharacter == '\ue260' || // flat
@@ -321,4 +560,36 @@ class KeyboardSymbolsMusicStaffPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(CustomPainter oldDelegate) => true;
+
+  // Draw ledger lines for notes that are above or below the staff
+  void drawLedgerLines(Canvas canvas, Paint paint, double noteY, double noteX,
+      double noteWidth, double lineSpacing, double staffTop) {
+    final double staffBottom =
+        staffTop + (4 * lineSpacing); // Bottom staff line
+
+    // Determine if the note is above or below the staff
+    if (noteY < staffTop) {
+      // Draw ledger lines above the staff
+      for (double y = staffTop - lineSpacing;
+          y >= noteY - lineSpacing / 2;
+          y -= lineSpacing) {
+        canvas.drawLine(
+          Offset(noteX - (noteWidth / 2) - 7, y),
+          Offset(noteX + (noteWidth / 2) + 7, y),
+          paint..strokeWidth = 1.0,
+        );
+      }
+    } else if (noteY > staffBottom) {
+      // Draw ledger lines below the staff
+      for (double y = staffBottom + lineSpacing;
+          y <= noteY + lineSpacing / 2;
+          y += lineSpacing) {
+        canvas.drawLine(
+          Offset(noteX - (noteWidth / 2) - 7, y),
+          Offset(noteX + (noteWidth / 2) + 7, y),
+          paint..strokeWidth = 1.0,
+        );
+      }
+    }
+  }
 }
