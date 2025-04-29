@@ -28,6 +28,7 @@ class _KeyboardBySymbolsState extends State<KeyboardBySymbols>
     with SingleTickerProviderStateMixin {
   KeyboardRow currentRow = KeyboardRow.middle;
   late AnimationController _animationController;
+  // ignore: unused_field
   late Animation<Offset> _slideAnimation;
   late Animation<Offset> _incomingSlideAnimation;
   KeyboardRow? _incomingRow;
@@ -426,7 +427,6 @@ class KeyboardSymbolsMusicStaffPainter extends CustomPainter {
     final lineSpacing = size.height / 15; // Scale based on the smaller height
     final staffTop =
         (size.height - (4 * lineSpacing)) / 2; // Center the staff vertically
-    final staffBottom = staffTop + (4 * lineSpacing);
 
     // Draw the 5 staff lines
     for (int i = 0; i < 5; i++) {
