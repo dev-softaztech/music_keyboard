@@ -7,6 +7,7 @@ import 'package:music_keyboard/src/widgets/main_sheet/music_sheet_painter.dart';
 import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:vector_math/vector_math_64.dart' as vector_math;
 
 class MusicSheetContainer extends StatefulWidget {
@@ -173,26 +174,56 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
       children: [
         Stack(children: [
           GestureDetector(
-              onTapDown: _handleTap, // Handle user tap
-              child: Container(
-                width: widget.screenSize.width,
-                height: canvasHeight, // Adjust height as needed
-                color: Colors.white, // Background color
-                child: InteractiveViewer(
-                  transformationController: _transformationController,
-                  minScale: initialScale *
-                      0.5, // Allows zooming out further if needed
-                  maxScale: 3.0, // Allow zooming in up to 3x
-                  boundaryMargin: EdgeInsets.fromLTRB(
-                      20, 0, 20, 9999), // Allow scrolling outside bounds
-                  constrained: false,
-                  child: Align(
-                    // Ensures content is aligned properly
-                    alignment: Alignment.topLeft,
-                    child: SizedBox(
+            onTapDown: _handleTap, // Handle user tap
+            child: Container(
+              width: widget.screenSize.width,
+              height: canvasHeight, // Adjust height as needed
+              color: Colors.white, // Background color
+              child: InteractiveViewer(
+                transformationController: _transformationController,
+                minScale:
+                    initialScale * 0.5, // Allows zooming out further if needed
+                maxScale: 3.0, // Allow zooming in up to 3x
+                boundaryMargin: EdgeInsets.fromLTRB(
+                    20, 0, 20, 9999), // Allow scrolling outside bounds
+                constrained: false,
+                child: Align(
+                  // Ensures content is aligned properly
+                  alignment: Alignment.topLeft,
+                  child: Builder(
+                    builder: (context) {
+                      // Calculate dynamic height based on number of rows
+                      const double sheetHeight = 40.0;
+                      const double topGap = 65.0;
+                      const double bottomGap = 65.0;
+                      const double rowTotalHeight =
+                          topGap + sheetHeight + bottomGap; // = 170px per row
+
+                      // Calculate total height based on number of rows
+                      final double totalHeight = math.max(
+                          rowTotalHeight * widget.sheetNoteRows.length,
+                          300.0 // Minimum height of 300px
+                          );
+
+                      return SizedBox(
                         width: widget.musicSheetWidth, // Force width
-                        height: 300, // Adjust height as needed
+                        height: totalHeight, // Dynamic height based on rows
                         child: Stack(children: [
+                          Positioned.fill(
+                            child: Screenshot(
+                              controller: widget.screenshotController,
+                              child: CustomPaint(
+                                painter: MusicSheetPainter(
+                                    widget.sheetNoteRows,
+                                    -1, // No selected row in screenshot
+                                    -1, // No selected index in screenshot
+                                    false, // Never show cursor in screenshot
+                                    rowSpacingProvider.rowSpacingList),
+                                size: Size(widget.musicSheetWidth,
+                                    totalHeight), // Dynamic height
+                              ),
+                            ),
+                          ),
                           CustomPaint(
                             painter: MusicSheetPainter(
                                 widget.sheetNoteRows,
@@ -203,29 +234,16 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                                 _showCursor,
                                 rowSpacingProvider.rowSpacingList),
                             size: Size(widget.musicSheetWidth,
-                                300), // Ensure proper rendering
-                          ),
-                          Positioned.fill(
-                            child: Screenshot(
-                              controller: widget.screenshotController,
-                              child: CustomPaint(
-                                painter: MusicSheetPainter(
-                                    widget.sheetNoteRows,
-                                    selectedNoteProvider
-                                        .selectedRow, // Pass selected row
-                                    selectedNoteProvider
-                                        .selectedIndex, // Pass selected index
-                                    _showCursor, //should always be false
-                                    rowSpacingProvider.rowSpacingList),
-                                size: Size(widget.musicSheetWidth,
-                                    300), // Ensure proper rendering
-                              ),
-                            ),
+                                totalHeight), // Dynamic height
                           )
-                        ])),
+                        ]),
+                      );
+                    },
                   ),
                 ),
-              )),
+              ),
+            ),
+          ),
           // Floating Reset Button (Only Shows When Zoomed)
           if (isZoomed)
             Positioned(
