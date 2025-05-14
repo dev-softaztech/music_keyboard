@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:vector_math/vector_math.dart' as vec;
+import 'dart:math' as math;
 import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/bar_line_calculator.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/drawing_helpers.dart';
@@ -363,45 +364,359 @@ class MusicSheetPainter extends CustomPainter {
     Color color,
     List<MusicalNote> rowNotes,
   ) {
-    // Slight vertical offset to keep slur above/below note heads
-    startY = startY >= staffCentre ? startY + 6 : startY - 6;
-    endY = startY >= staffCentre ? endY + 6 : endY - 6;
-
-    final Offset start = Offset(startX, startY);
-    final Offset end = Offset(endX, endY);
-
     // Ensure left-to-right direction
     final int minIndex = startIndex < endIndex ? startIndex : endIndex;
     final int maxIndex = startIndex > endIndex ? startIndex : endIndex;
 
-    final bool isSlurAbove = startY < endY;
+    // Determine if the slur should be above or below based on note positions
+    // If most notes are above the staff center, slur should be below, and vice versa
+    int notesAboveCenter = 0;
+    int notesBelowCenter = 0;
 
-    double curveHeight = 20;
-    double yDifference = endY - startY;
-    int noteSpan = (maxIndex - minIndex).clamp(1, rowNotes.length);
-    double stepY = yDifference / noteSpan;
-
-    double simulatedY = startY;
-
-    for (int i = minIndex + 1; i < maxIndex; i++) {
-      simulatedY += stepY;
+    for (int i = minIndex; i <= maxIndex; i++) {
       final note = rowNotes[i];
-      //may need to equate for stem height
-      // Check for overlap and increase height if needed
-      if (isSlurAbove && note.noteY < simulatedY) {
-        curveHeight += (simulatedY - note.noteY).abs() + 10;
-      } else if (!isSlurAbove && note.noteY > simulatedY) {
-        curveHeight += (note.noteY - simulatedY).abs() + 10;
+      if (note.noteY > staffCentre) {
+        notesAboveCenter++;
+      } else {
+        notesBelowCenter++;
       }
     }
 
-    curveHeight = curveHeight.clamp(20, 90);
+    final bool isSlurAbove = notesBelowCenter >= notesAboveCenter;
 
+    // Apply vertical offset based on slur position - increase for better clearance
+    startY = isSlurAbove ? startY - 12 : startY + 12;
+    endY = isSlurAbove ? endY - 12 : endY + 12;
+
+    final Offset start = Offset(startX, startY);
+    final Offset end = Offset(endX, endY);
+
+    // Start with a moderate base curve height
+    double curveHeight = 30;
+    double yDifference = endY - startY;
+    int noteSpan = (maxIndex - minIndex).clamp(1, rowNotes.length);
+    double stepY = yDifference / noteSpan;
+    double horizontalDistance = (endX - startX).abs();
+
+    // Define note head size (approximate)
+    const double noteHeadHeight = 10.0;
+    const double noteHeadWidth = 12.0;
+
+    // Track obstacles for optimal control point placement
+    List<
+        ({
+          double x,
+          double y,
+          double width,
+          double height,
+          bool isUpsideDown,
+          bool isStem,
+          double obstacleTop,
+          double obstacleBottom
+        })> obstacles = [];
+
+    bool hasUpsideDownStems = false;
+    bool hasDownwardStems = false;
+
+    // First pass: identify all obstacles (note heads and stems)
+    for (int i = minIndex; i <= maxIndex; i++) {
+      final note = rowNotes[i];
+
+      // Calculate note X position more accurately
+      double noteX = startX + ((i - minIndex) / noteSpan) * horizontalDistance;
+
+      // Add note head as an obstacle (all notes have heads)
+      double noteHeadTop = note.noteY - (noteHeadHeight / 2);
+      double noteHeadBottom = note.noteY + (noteHeadHeight / 2);
+
+      obstacles.add((
+        x: noteX,
+        y: note.noteY,
+        width: noteHeadWidth,
+        height: noteHeadHeight,
+        isUpsideDown: false,
+        isStem: false,
+        obstacleTop: noteHeadTop,
+        obstacleBottom: noteHeadBottom
+      ));
+
+      // Skip stem calculation for notes that don't have stems
+      if (note.type == NoteType.whole ||
+          note.type == NoteType.rest ||
+          note.type == NoteType.clef ||
+          note.type == NoteType.bar ||
+          note.type == NoteType.accidental) {
+        continue;
+      }
+
+      // Determine if the note's stem is upside down (pointing up)
+      final bool isUpsideDownNote = note.noteY < staffCentre;
+
+      if (isUpsideDownNote) {
+        hasUpsideDownStems = true;
+      } else {
+        hasDownwardStems = true;
+      }
+
+      // Calculate stem height based on note type and connected status
+      double stemHeight = 35.0; // Base stem height
+
+      // Adjust stem height for 32nd or 64th notes
+      if (note.type == NoteType.thirtySecond ||
+          note.type == NoteType.sixtyFourth) {
+        stemHeight += 10.0;
+      }
+
+      // For connected notes, calculate more accurate stem height
+      if ((note.type == NoteType.eighth ||
+              note.type == NoteType.sixteenth ||
+              note.type == NoteType.thirtySecond ||
+              note.type == NoteType.sixtyFourth) &&
+          note.isConnected) {
+        // Get the connected notes group to determine actual stem height
+        var notesGroup = getConnectedNotesGroup(i, rowNotes);
+        var connectedNotesGroup = notesGroup.notesGroup;
+        bool firstNoteUpsideDown = false;
+
+        if (connectedNotesGroup.isNotEmpty) {
+          var notesGroupYs = getConnectedNotesGroupHighestY(connectedNotesGroup,
+              10.0, staffCentre); // Using lineSpacing = 10.0
+
+          double connectedGroupHighestY = notesGroupYs.highestY;
+          double connectedGroupLowestY = notesGroupYs.lowestY;
+          firstNoteUpsideDown = notesGroupYs.firstNoteY < staffCentre;
+
+          // Adjust stem height based on the connected group
+          if (!firstNoteUpsideDown) {
+            stemHeight = (note.noteY - connectedGroupHighestY) + stemHeight;
+          } else {
+            stemHeight = (connectedGroupLowestY - note.noteY) + stemHeight;
+          }
+
+          // Add buffer for complex connected notes
+          if (notesGroupYs.doesGroupContain32ndOr64thNote) {
+            stemHeight += 10.0;
+          }
+        }
+      }
+
+      // Add a safety buffer to stem height
+      stemHeight += 10.0;
+
+      // Calculate stem position and dimensions
+      double stemX = isUpsideDownNote ? noteX - 5.0 : noteX + 5.0;
+      double stemWidth = 1.5; // Stem width
+      double stemTop, stemBottom;
+
+      if (isUpsideDownNote) {
+        // Stem points up
+        stemTop = note.noteY - stemHeight;
+        stemBottom = note.noteY;
+      } else {
+        // Stem points down
+        stemTop = note.noteY;
+        stemBottom = note.noteY + stemHeight;
+      }
+
+      // Add stem as an obstacle
+      obstacles.add((
+        x: stemX,
+        y: note.noteY,
+        width: stemWidth,
+        height: stemHeight,
+        isUpsideDown: isUpsideDownNote,
+        isStem: true,
+        obstacleTop: stemTop,
+        obstacleBottom: stemBottom
+      ));
+    }
+
+    // Find the most problematic obstacle
+    double maxObstacleImpact = 0;
+    double obstaclePositionRatio = 0.5; // Default to center
+
+    for (var obstacle in obstacles) {
+      // Calculate where this obstacle is along the x-axis (0.0 = start, 1.0 = end)
+      double positionRatio = (obstacle.x - startX) / horizontalDistance;
+      positionRatio = positionRatio.clamp(0.0, 1.0);
+
+      // Calculate the impact of this obstacle
+      double impact = 0;
+
+      if (obstacle.isStem) {
+        // Stems have higher impact
+        if (isSlurAbove && obstacle.isUpsideDown) {
+          // For upward stems when slur is above
+          impact = obstacle.height * 1.5;
+        } else if (!isSlurAbove && !obstacle.isUpsideDown) {
+          // For downward stems when slur is below
+          impact = obstacle.height * 1.5;
+        }
+      } else {
+        // Note heads have impact regardless of slur position
+        impact = obstacle.height;
+      }
+
+      // If this obstacle has more impact than previous ones
+      if (impact > maxObstacleImpact) {
+        maxObstacleImpact = impact;
+        // Shift control point slightly away from the obstacle
+        obstaclePositionRatio =
+            positionRatio > 0.5 ? positionRatio - 0.2 : positionRatio + 0.2;
+        obstaclePositionRatio = obstaclePositionRatio.clamp(
+            0.3, 0.7); // Keep within reasonable bounds
+      }
+    }
+
+    // Calculate the Bezier curve path to check for intersections
+    List<Offset> bezierPoints = [];
+    const int segments = 100;
+
+    // Calculate control point for the Bezier curve
+    double controlX = startX + (horizontalDistance * obstaclePositionRatio);
     double controlY = (start.dy + end.dy) / 2;
-    controlY += isSlurAbove ? -curveHeight : curveHeight;
 
-    final Offset control = Offset((startX + endX) / 2, controlY);
+    // Apply initial curve height
+    double heightMultiplier = 1.0 + (horizontalDistance / 500);
+    heightMultiplier = heightMultiplier.clamp(1.0, 1.5);
 
+    controlY += isSlurAbove
+        ? -curveHeight * heightMultiplier
+        : curveHeight * heightMultiplier;
+
+    Offset control = Offset(controlX, controlY);
+
+    // Generate points along the curve
+    for (int i = 0; i <= segments; i++) {
+      double t = i / segments;
+      double x = (1 - t) * (1 - t) * start.dx +
+          2 * (1 - t) * t * control.dx +
+          t * t * end.dx;
+      double y = (1 - t) * (1 - t) * start.dy +
+          2 * (1 - t) * t * control.dy +
+          t * t * end.dy;
+      bezierPoints.add(Offset(x, y));
+    }
+
+    // Check for intersections with obstacles
+    bool hasIntersection;
+    int maxIterations = 10;
+    int iteration = 0;
+
+    do {
+      hasIntersection = false;
+      iteration++;
+
+      // Check each obstacle against the curve
+      for (var obstacle in obstacles) {
+        // For stems, check if the curve intersects the stem line
+        if (obstacle.isStem) {
+          double stemX = obstacle.x;
+          double stemTop = obstacle.obstacleTop;
+          double stemBottom = obstacle.obstacleBottom;
+
+          // Find the closest point on the curve to this stem's x-coordinate
+          Offset? closestPoint;
+          double minDistance = double.infinity;
+
+          for (var point in bezierPoints) {
+            double distance = (point.dx - stemX).abs();
+            if (distance < minDistance) {
+              minDistance = distance;
+              closestPoint = point;
+            }
+          }
+
+          if (closestPoint != null && minDistance < 5.0) {
+            // Check if this point intersects with the stem
+            bool intersects = false;
+
+            if (isSlurAbove && obstacle.isUpsideDown) {
+              // For upward stems when slur is above
+              intersects =
+                  closestPoint.dy > stemTop && closestPoint.dy < stemBottom;
+            } else if (!isSlurAbove && !obstacle.isUpsideDown) {
+              // For downward stems when slur is below
+              intersects =
+                  closestPoint.dy > stemTop && closestPoint.dy < stemBottom;
+            }
+
+            if (intersects) {
+              hasIntersection = true;
+              // Increase curve height to avoid this stem
+              curveHeight += 10.0;
+              break;
+            }
+          }
+        }
+        // For note heads, check if the curve passes through the note head
+        else {
+          double noteHeadLeft = obstacle.x - (obstacle.width / 2);
+          double noteHeadRight = obstacle.x + (obstacle.width / 2);
+          double noteHeadTop = obstacle.obstacleTop;
+          double noteHeadBottom = obstacle.obstacleBottom;
+
+          // Check if any point on the curve intersects with this note head
+          for (var point in bezierPoints) {
+            if (point.dx >= noteHeadLeft &&
+                point.dx <= noteHeadRight &&
+                point.dy >= noteHeadTop &&
+                point.dy <= noteHeadBottom) {
+              hasIntersection = true;
+              // Increase curve height to avoid this note head
+              curveHeight += 8.0;
+              break;
+            }
+          }
+
+          if (hasIntersection) break;
+        }
+      }
+
+      if (hasIntersection) {
+        // Recalculate control point with new curve height
+        controlY = (start.dy + end.dy) / 2;
+        controlY += isSlurAbove
+            ? -curveHeight * heightMultiplier
+            : curveHeight * heightMultiplier;
+        control = Offset(controlX, controlY);
+
+        // Regenerate bezier points
+        bezierPoints.clear();
+        for (int i = 0; i <= segments; i++) {
+          double t = i / segments;
+          double x = (1 - t) * (1 - t) * start.dx +
+              2 * (1 - t) * t * control.dx +
+              t * t * end.dx;
+          double y = (1 - t) * (1 - t) * start.dy +
+              2 * (1 - t) * t * control.dy +
+              t * t * end.dy;
+          bezierPoints.add(Offset(x, y));
+        }
+      }
+    } while (hasIntersection && iteration < maxIterations);
+
+    // Add moderate extra height if we have stems in the way
+    if (hasUpsideDownStems && isSlurAbove) {
+      curveHeight += 15;
+    }
+    if (hasDownwardStems && !isSlurAbove) {
+      curveHeight += 10;
+    }
+
+    // Limit maximum curve height to prevent overlapping with other staves
+    // The maximum is now proportional to the horizontal distance
+    double maxHeight = math.min(80, horizontalDistance * 0.3);
+    curveHeight = curveHeight.clamp(30, maxHeight);
+
+    // Final control point calculation
+    controlY = (start.dy + end.dy) / 2;
+    controlY += isSlurAbove
+        ? -curveHeight * heightMultiplier
+        : curveHeight * heightMultiplier;
+    control = Offset(controlX, controlY);
+
+    // Draw the slur
     drawVariableThicknessBezier(
       canvas: canvas,
       start: start,

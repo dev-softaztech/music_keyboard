@@ -142,7 +142,7 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
     // Apply beaming to all notes in the range
     for (int r = startRow; r <= endRow; r++) {
       for (int i = (r == startRow ? startIndex : 0);
-          i <= (r == endRow ? endIndex : sheetNoteRows[r].length - 1);
+          i < (r == endRow ? endIndex : sheetNoteRows[r].length - 1);
           i++) {
         sheetNoteRows[r][i].isConnected = true;
       }
