@@ -164,7 +164,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
           [selectedNoteProvider.selectedIndex];
     }
 
-    var keyboardHeight = 470;
+    var keyboardHeight = 480;
     var canvasHeight = widget.screenSize.height -
         AppBar().preferredSize.height -
         keyboardHeight -
@@ -256,163 +256,177 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
               ),
             ),
         ]),
-        Row(
-          spacing: 5,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Row(
-              spacing: 3,
-              mainAxisSize: MainAxisSize.min,
+        PreferredSize(
+          preferredSize: const Size.fromHeight(2.0), // Border thickness
+          child: Container(
+            color: Colors.black, // Border color
+            height: 2.0, // Border height
+          ),
+        ),
+        Container(
+            color: Colors.white,
+            padding: const EdgeInsets.all(6),
+            child: Row(
+              spacing: 5,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text("Beam", style: TextStyle(fontSize: 10)),
-                Transform.scale(
-                    scale:
-                        0.6, // Adjust this value (0.7 = 70% of original size)
-                    child: Container(
-                      constraints:
-                          BoxConstraints.tight(Size(30, 20)), // Custom size
-                      child: Switch(
-                        inactiveThumbColor: const Color(0xFF242038),
-                        inactiveTrackColor: Colors.white,
-                        activeColor: const Color(0xFF242038),
-                        activeTrackColor: Colors.orange,
-                        value: selectedNote.isConnected,
-                        onChanged: (newValue) {
-                          setState(() {
-                            selectedNote.isConnected = newValue;
-                          });
-                        },
+                Row(
+                  spacing: 3,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text("Beam", style: TextStyle(fontSize: 10)),
+                    Transform.scale(
+                        scale:
+                            0.6, // Adjust this value (0.7 = 70% of original size)
+                        child: Container(
+                          constraints:
+                              BoxConstraints.tight(Size(30, 20)), // Custom size
+                          child: Switch(
+                            inactiveThumbColor: Colors.black,
+                            inactiveTrackColor: Colors.white,
+                            activeColor: Colors.white,
+                            activeTrackColor: Colors.black,
+                            value: selectedNote.isConnected,
+                            onChanged: (newValue) {
+                              setState(() {
+                                selectedNote.isConnected = newValue;
+                              });
+                            },
+                          ),
+                        ))
+                  ],
+                ),
+                SizedBox(
+                    width: 60,
+                    height: 25,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          context
+                              .read<CurrentSelectedNoteProvider>()
+                              .enableBeaming();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content:
+                                    Text("Select a second note to beam to.")),
+                          );
+                        });
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            const Color.fromARGB(255, 255, 255, 255),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: EdgeInsets.zero,
                       ),
-                    ))
-              ],
-            ),
-            SizedBox(
-                width: 60,
-                height: 25,
-                child: ElevatedButton(
-                  onPressed: () {
-                    setState(() {
+                      child: const Text(
+                        "Beam Notes",
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                    )),
+                //SizedBox(width: 5),
+                Row(
+                  spacing: 8,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text("Tie", style: TextStyle(fontSize: 10)),
+                    Transform.scale(
+                      scale: 0.6,
+                      child: Container(
+                          constraints:
+                              BoxConstraints.tight(Size(30, 20)), // Custom size
+                          child: Switch(
+                            inactiveThumbColor: Colors.black,
+                            inactiveTrackColor: Colors.white,
+                            activeColor: Colors.white,
+                            activeTrackColor: Colors.black,
+                            value: selectedNote.isTiedToNext,
+                            onChanged: (newValue) {
+                              setState(() {
+                                MusicalNote nextNote = widget.sheetNoteRows[
+                                        selectedNoteProvider.selectedRow]
+                                    [selectedNoteProvider.selectedIndex + 1];
+
+                                if (selectedNote.pitch == nextNote.pitch) {
+                                  selectedNote.isTiedToNext = newValue;
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content: Text(
+                                            "Cannot Tie to a note with a different pitch.")),
+                                  );
+                                }
+                              });
+                            },
+                          )),
+                    )
+                  ],
+                ),
+                SizedBox(
+                    width: 60,
+                    height: 25,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        context
+                            .read<CurrentSelectedNoteProvider>()
+                            .enableSlurring();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content:
+                                  Text("Select a second note to add slur.")),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            const Color.fromARGB(255, 255, 255, 255),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: EdgeInsets.zero,
+                      ),
+                      child: const Text(
+                        "Slur Notes",
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                    )),
+                //SizedBox(width: 5),
+                SizedBox(
+                  width: 60,
+                  height: 25,
+                  child: ElevatedButton(
+                    onPressed: () {
                       context
                           .read<CurrentSelectedNoteProvider>()
-                          .enableBeaming();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text("Select a second note to beam to.")),
-                      );
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                          .undo(widget.sheetNoteRows);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: EdgeInsets.zero,
                     ),
-                    padding: EdgeInsets.zero,
-                  ),
-                  child: const Text(
-                    "Beam Notes",
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
+                    child: const Text(
+                      "Undo",
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
                     ),
                   ),
-                )),
-            //SizedBox(width: 5),
-            Row(
-              spacing: 8,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text("Tie", style: TextStyle(fontSize: 10)),
-                Transform.scale(
-                  scale: 0.6,
-                  child: Container(
-                      constraints:
-                          BoxConstraints.tight(Size(30, 20)), // Custom size
-                      child: Switch(
-                        inactiveThumbColor: const Color(0xFF242038),
-                        inactiveTrackColor: Colors.white,
-                        activeColor: const Color(0xFF242038),
-                        activeTrackColor: Colors.orange,
-                        value: selectedNote.isTiedToNext,
-                        onChanged: (newValue) {
-                          setState(() {
-                            MusicalNote nextNote = widget.sheetNoteRows[
-                                    selectedNoteProvider.selectedRow]
-                                [selectedNoteProvider.selectedIndex + 1];
-
-                            if (selectedNote.pitch == nextNote.pitch) {
-                              selectedNote.isTiedToNext = newValue;
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content: Text(
-                                        "Cannot Tie to a note with a different pitch.")),
-                              );
-                            }
-                          });
-                        },
-                      )),
                 )
               ],
-            ),
-            SizedBox(
-                width: 60,
-                height: 25,
-                child: ElevatedButton(
-                  onPressed: () {
-                    context
-                        .read<CurrentSelectedNoteProvider>()
-                        .enableSlurring();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text("Select a second note to add slur.")),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    padding: EdgeInsets.zero,
-                  ),
-                  child: const Text(
-                    "Slur Notes",
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                )),
-            //SizedBox(width: 5),
-            SizedBox(
-              width: 60,
-              height: 25,
-              child: ElevatedButton(
-                onPressed: () {
-                  context
-                      .read<CurrentSelectedNoteProvider>()
-                      .undo(widget.sheetNoteRows);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  padding: EdgeInsets.zero,
-                ),
-                child: const Text(
-                  "Undo",
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-              ),
-            )
-          ],
-        )
+            ))
       ],
     );
   }

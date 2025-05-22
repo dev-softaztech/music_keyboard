@@ -23,10 +23,10 @@ class NumberSelectorRadioButtons extends StatelessWidget {
             width: 30,
             height: 40,
             decoration: BoxDecoration(
-              color: isSelected ? Colors.orange[700] : Colors.orange[300],
+              color: isSelected ? Colors.black : Colors.grey[100],
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: isSelected ? Colors.orange[900]! : Colors.orange[500]!,
+                color: Colors.black,
                 width: 2,
               ),
             ),
@@ -34,7 +34,7 @@ class NumberSelectorRadioButtons extends StatelessWidget {
             child: Text(
               '$number',
               style: TextStyle(
-                color: Colors.white,
+                color: isSelected ? Colors.white : Colors.black,
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),

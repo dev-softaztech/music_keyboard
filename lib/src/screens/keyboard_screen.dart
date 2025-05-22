@@ -335,7 +335,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(2.0), // Border thickness
           child: Container(
-            color: Colors.orange, // Border color
+            color: Colors.black, // Border color
             height: 2.0, // Border height
           ),
         ),
@@ -363,17 +363,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
             left: 0,
             right: 0,
             child: ColoredBox(
-              color: const Color(0xFFF7ECE1),
+              color: const Color.fromARGB(255, 255, 253, 253),
               child: Container(
-                height: 440, // Increased height for the keyboard area
-                /*decoration: const BoxDecoration(
-                  border: Border(
-                    top: BorderSide(
-                      color: Colors.orange, // Set the border color
-                      width: 2.0, // Set the border width
-                    ),
-                  ),
-                ),*/
+                height: 440,
                 padding: const EdgeInsets.fromLTRB(0, 5, 0, 0),
                 child: Column(
                   children: [
@@ -410,7 +402,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                 },
                                 borderRadius: BorderRadius.circular(8.0),
                                 selectedColor: Colors.white,
-                                fillColor: Colors.orange,
+                                fillColor: Colors.black,
                                 color: Colors.black,
                                 constraints: const BoxConstraints(
                                   minHeight: 28.0,

@@ -45,7 +45,7 @@ class KeyboardByNotes extends StatelessWidget {
               height: 50, // Set fixed height
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
+                  backgroundColor: Colors.black,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),

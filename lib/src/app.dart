@@ -58,16 +58,18 @@ class MyApp extends StatelessWidget {
           theme: ThemeData(
             // Customize AppBar color
             appBarTheme: AppBarTheme(
-              backgroundColor: Color(0xFFF7ECE1), // AppBar background color
-              foregroundColor: Color(0xFF242038), // AppBar text/icon color
+              backgroundColor: const Color.fromARGB(
+                  255, 255, 253, 253), // AppBar background color
+              foregroundColor: Colors.black, // AppBar text/icon color
             ),
           ),
           darkTheme: //ThemeData.dark(),
               ThemeData(
             // Customize AppBar color
             appBarTheme: AppBarTheme(
-              backgroundColor: Color(0xFFF7ECE1), // AppBar background color
-              foregroundColor: Color(0xFF242038), // AppBar text/icon color
+              backgroundColor: const Color.fromARGB(
+                  255, 255, 253, 253), // AppBar background color
+              foregroundColor: Colors.black, // AppBar text/icon color
             ),
           ),
           themeMode: settingsController.themeMode,

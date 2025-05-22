@@ -134,7 +134,7 @@ class _KeyboardBySymbolsState extends State<KeyboardBySymbols>
                   height: 20,
                   width: 40,
                   decoration: BoxDecoration(
-                    color: Colors.orange,
+                    color: Colors.black,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: InkWell(
@@ -193,7 +193,7 @@ class _KeyboardBySymbolsState extends State<KeyboardBySymbols>
                   height: 20,
                   width: 40,
                   decoration: BoxDecoration(
-                    color: Colors.orange,
+                    color: Colors.black,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: InkWell(

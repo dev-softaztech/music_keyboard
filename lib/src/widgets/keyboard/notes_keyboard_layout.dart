@@ -112,7 +112,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.orange.shade300),
+                  border: Border.all(color: Colors.white),
                 ),
                 width: popupWidth,
                 height: popupHeight,
@@ -181,7 +181,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
           },
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.orange.shade100,
+              color: Colors.grey.shade100,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Center(
@@ -282,10 +282,10 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: isActive
-              ? Colors.orange[700]
+              ? Colors.grey[700]
               : isSelected
-                  ? Colors.orange[500] // Shaded when selected
-                  : Colors.orange[300],
+                  ? Colors.grey[500] // Shaded when selected
+                  : Colors.grey[300],
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
@@ -298,7 +298,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
               label,
               style: const TextStyle(
                 fontSize: 11,
-                color: Color(0xFF242038),
+                color: Colors.black,
               ),
             ),
             const SizedBox(width: 4),
@@ -394,9 +394,8 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                             provider.updateSelectedCharacter(character);
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: isSelected
-                                ? Colors.orange[700]
-                                : Colors.orange[300],
+                            backgroundColor:
+                                isSelected ? Colors.black : Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -410,10 +409,10 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                                     : const Offset(0, 0),
                             child: Text(
                               character,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontFamily: 'Bravura',
                                 fontSize: 30,
-                                color: Color(0xFF242038),
+                                color: isSelected ? Colors.white : Colors.black,
                                 height: 1.0,
                               ),
                             ),
@@ -452,10 +451,10 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                     builder: (context, provider, _) => Transform.scale(
                       scale: 0.7,
                       child: Switch(
-                        inactiveThumbColor: const Color(0xFF242038),
+                        inactiveThumbColor: Colors.black,
                         inactiveTrackColor: Colors.white,
-                        activeColor: const Color(0xFF242038),
-                        activeTrackColor: Colors.orange,
+                        activeColor: Colors.white,
+                        activeTrackColor: Colors.black,
                         value: provider.isConnected,
                         onChanged: (value) {
                           provider.toggleConnection(value);
@@ -479,7 +478,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                   },
                   borderRadius: BorderRadius.circular(8.0),
                   selectedColor: Colors.white,
-                  fillColor: Colors.orange,
+                  fillColor: Colors.black,
                   color: Colors.black,
                   constraints: const BoxConstraints(
                     minHeight: 23.0,
