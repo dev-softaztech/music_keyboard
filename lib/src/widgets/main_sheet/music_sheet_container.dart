@@ -45,8 +45,23 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
 
     _transformationController = TransformationController();
 
-    // Apply the initial scale
-    _transformationController.value = Matrix4.identity()..scale(initialScale);
+    // Apply the initial scale and center horizontally
+    final double scaleFactor =
+        initialScale * 0.9; // Using 0.9 as the zoom factor
+
+    // Calculate the translation needed to center the content
+    final double translationX =
+        (widget.screenSize.width - (widget.musicSheetWidth * scaleFactor)) / 2;
+
+    // Create a matrix with scale first
+    final Matrix4 scaleMatrix = Matrix4.identity()..scale(scaleFactor);
+
+    // Then create a matrix with translation
+    final Matrix4 translationMatrix = Matrix4.identity()
+      ..setTranslationRaw(translationX, 0, 0);
+
+    // Combine the matrices: first scale, then translate
+    _transformationController.value = translationMatrix * scaleMatrix;
 
     // Listen for zoom changes
     _transformationController.addListener(_onZoomChanged);
@@ -73,7 +88,23 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
 
   void _resetZoom() {
     setState(() {
-      _transformationController.value = Matrix4.identity()..scale(initialScale);
+      final double scaleFactor =
+          initialScale * 0.9; // Using 0.9 as the zoom factor
+
+      // Calculate the translation needed to center the content
+      final double translationX =
+          (widget.screenSize.width - (widget.musicSheetWidth * scaleFactor)) /
+              2;
+
+      // Create a matrix with scale first
+      final Matrix4 scaleMatrix = Matrix4.identity()..scale(scaleFactor);
+
+      // Then create a matrix with translation
+      final Matrix4 translationMatrix = Matrix4.identity()
+        ..setTranslationRaw(translationX, 0, 0);
+
+      // Combine the matrices: first scale, then translate
+      _transformationController.value = translationMatrix * scaleMatrix;
       isZoomed = false;
     });
   }
@@ -178,14 +209,15 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
             child: Container(
               width: widget.screenSize.width,
               height: canvasHeight, // Adjust height as needed
-              color: Colors.white, // Background color
+              color:
+                  const Color.fromARGB(255, 199, 199, 199), // Background color
               child: InteractiveViewer(
                 transformationController: _transformationController,
                 minScale:
-                    initialScale * 0.5, // Allows zooming out further if needed
+                    initialScale * 0.4, // Allows zooming out further if needed
                 maxScale: 3.0, // Allow zooming in up to 3x
                 boundaryMargin: EdgeInsets.fromLTRB(
-                    20, 0, 20, 9999), // Allow scrolling outside bounds
+                    200, 200, 200, 9999), // Allow scrolling outside bounds
                 constrained: false,
                 child: Align(
                   // Ensures content is aligned properly
@@ -202,7 +234,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                       // Calculate total height based on number of rows
                       final double totalHeight = math.max(
                           rowTotalHeight * widget.sheetNoteRows.length,
-                          300.0 // Minimum height of 300px
+                          1000.0 // Minimum height of 300px
                           );
 
                       return SizedBox(

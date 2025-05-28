@@ -64,7 +64,7 @@ int calculateInsertionIndex(
 /// Calculate the X position for a given index in the row
 double calculateXPositionForIndex(
     int index, List<MusicalNote> notes, int rowSpacing) {
-  double x = 25.0; // Starting X position
+  double x = 60.0; // Starting X position
 
   for (int i = 0; i < index && i < notes.length; i++) {
     final note = notes[i];

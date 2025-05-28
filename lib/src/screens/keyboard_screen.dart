@@ -33,7 +33,7 @@ class NoteInputScreen extends StatefulWidget {
 class _NoteInputScreenState extends State<NoteInputScreen> {
   final ScreenshotController screenshotController = ScreenshotController();
   List<List<MusicalNote>> sheetNoteRows = [[]];
-  int maxNotesPerRow = 23;
+  int maxNotesPerRow = 19;
   int defaultNoteSpacing = 26;
 
   bool showClefs = true;
@@ -193,37 +193,37 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     //here work out how many clefs/time signatures and affect the spacing in some way based on this?
 
     if (sheetNoteRows[rowIndex].length < 12) {
-      rowSpacingList[rowIndex] = 82;
-    } else if (sheetNoteRows[rowIndex].length < 13) {
       rowSpacingList[rowIndex] = 74;
+    } else if (sheetNoteRows[rowIndex].length < 13) {
+      rowSpacingList[rowIndex] = 66;
     } else if (sheetNoteRows[rowIndex].length < 14) {
-      rowSpacingList[rowIndex] = 67;
+      rowSpacingList[rowIndex] = 60;
     } else if (sheetNoteRows[rowIndex].length < 15) {
-      rowSpacingList[rowIndex] = 61;
+      rowSpacingList[rowIndex] = 55;
     } else if (sheetNoteRows[rowIndex].length < 16) {
-      rowSpacingList[rowIndex] = 54;
+      rowSpacingList[rowIndex] = 51;
     } else if (sheetNoteRows[rowIndex].length < 17) {
-      rowSpacingList[rowIndex] = 53;
+      rowSpacingList[rowIndex] = 46;
     } else if (sheetNoteRows[rowIndex].length < 18) {
-      rowSpacingList[rowIndex] = 48;
+      rowSpacingList[rowIndex] = 43;
     } else if (sheetNoteRows[rowIndex].length < 19) {
-      rowSpacingList[rowIndex] = 44;
+      rowSpacingList[rowIndex] = 41;
     } else if (sheetNoteRows[rowIndex].length < 20) {
-      rowSpacingList[rowIndex] = 42;
-    } else if (sheetNoteRows[rowIndex].length < 21) {
-      rowSpacingList[rowIndex] = 40;
-    } else if (sheetNoteRows[rowIndex].length < 22) {
       rowSpacingList[rowIndex] = 38;
-    } else if (sheetNoteRows[rowIndex].length < 23) {
+    } else if (sheetNoteRows[rowIndex].length < 21) {
       rowSpacingList[rowIndex] = 36;
-    } else if (sheetNoteRows[rowIndex].length < 24) {
-      rowSpacingList[rowIndex] = 34;
-    } else if (sheetNoteRows[rowIndex].length < 25) {
-      rowSpacingList[rowIndex] = 33;
-    } else if (sheetNoteRows[rowIndex].length < 26) {
-      rowSpacingList[rowIndex] = 32;
-    } else if (sheetNoteRows[rowIndex].length < 27) {
+    } else if (sheetNoteRows[rowIndex].length < 22) {
+      rowSpacingList[rowIndex] = 35;
+    } else if (sheetNoteRows[rowIndex].length < 23) {
       rowSpacingList[rowIndex] = 31;
+    } else if (sheetNoteRows[rowIndex].length < 24) {
+      rowSpacingList[rowIndex] = 29;
+    } else if (sheetNoteRows[rowIndex].length < 25) {
+      rowSpacingList[rowIndex] = 27;
+    } else if (sheetNoteRows[rowIndex].length < 26) {
+      rowSpacingList[rowIndex] = 26;
+    } else if (sheetNoteRows[rowIndex].length < 27) {
+      rowSpacingList[rowIndex] = 25;
     } //else if (sheetNoteRows[rowIndex].length < 30) {
     //rowSpacingList[rowIndex] = 26;
     //}
