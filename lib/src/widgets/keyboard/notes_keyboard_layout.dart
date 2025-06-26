@@ -463,7 +463,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                     ),
                   ),
                 ],
-              ),
+              ), /*
               Padding(
                 padding:
                     const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
@@ -489,17 +489,64 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                     Text("Letters"),
                   ],
                 ),
-              ),
+              ),*/
             ],
           ),
 
           // Show the appropriate keyboard based on the toggle
-          if (widget.showNotesKeyboard)
+          /*if (widget.showNotesKeyboard)
             KeyboardByNotes(
                 onKeyPress: widget.onKeyPress, keyType: widget.keyType)
-          else
-            KeyboardBySymbols(
-                onKeyPress: widget.onKeyPress, keyType: widget.keyType),
+          else*/
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                margin: EdgeInsets.all(10.0),
+                padding: EdgeInsets.all(10.0),
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  border: Border.all(
+                    color: const Color.fromARGB(255, 0, 0, 0),
+                    width: 1.0,
+                  ),
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                child: Center(
+                  child: Text(
+                    'B',
+                    style: TextStyle(
+                      color: const Color.fromARGB(255, 0, 0, 0),
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+              ),
+              KeyboardBySymbols(
+                  onKeyPress: widget.onKeyPress, keyType: widget.keyType),
+              Container(
+                margin: EdgeInsets.all(10.0),
+                padding: EdgeInsets.all(10.0),
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  border: Border.all(
+                    color: const Color.fromARGB(255, 0, 0, 0),
+                    width: 1.0,
+                  ),
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                child: Center(
+                  child: Text(
+                    'B',
+                    style: TextStyle(
+                      color: const Color.fromARGB(255, 0, 0, 0),
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          )
         ],
       ),
     );
