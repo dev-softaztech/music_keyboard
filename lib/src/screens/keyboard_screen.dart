@@ -44,6 +44,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   bool showNotesKeyboard = false;
   bool showSymbolsKeyboard = false;
   bool isTieing = false;
+  bool showMenu = false;
 
   String keyType = "clefs";
 
@@ -239,9 +240,17 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         final rowSpacingProvider = context.read<ListOfSpacingForEachRow>();
         var rowSpacingList = rowSpacingProvider.rowSpacingList;
 
+        // Insert new row after current row
         sheetNoteRows.insert(selectedNoteProvider.selectedRow + 1, []);
-        rowSpacingList.insert(rowSpacingList.length, defaultNoteSpacing);
+        rowSpacingList.insert(
+            selectedNoteProvider.selectedRow + 1, defaultNoteSpacing);
         rowSpacingProvider.updateRowSpacingList(rowSpacingList);
+
+        // Move cursor to the new row
+        selectedNoteProvider.updateInsertionPoint(
+            selectedNoteProvider.selectedRow + 1, 0);
+
+        print("Added new row. Total rows: ${sheetNoteRows.length}");
       }
     });
   }
@@ -302,12 +311,17 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
   // Save the current screenshot to the gallery and show a toast
   Future<void> handleSavePress() async {
-    final image = await screenshotController.capture();
-    if (image != null) {
-      await saveImageToGallery(image);
-      ToastUtils.showToast("Saved to Camera Roll!");
-    } else {
-      ToastUtils.showToast("Screenshot capture failed!", isError: true);
+    try {
+      final image = await screenshotController.capture();
+      if (image != null) {
+        await saveImageToGallery(image);
+        ToastUtils.showToast("Saved to Camera Roll!");
+      } else {
+        ToastUtils.showToast("Screenshot capture failed!", isError: true);
+      }
+    } catch (e) {
+      print("Screenshot error: $e");
+      ToastUtils.showToast("Screenshot failed: ${e.toString()}", isError: true);
     }
   }
 
@@ -321,25 +335,6 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     const double musicSheetWidth = noteWidth * maxNotes;
 
     return Scaffold(
-      appBar: AppBar(
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: handleSavePress,
-          ),
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: forceNewRow,
-          ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(2.0), // Border thickness
-          child: Container(
-            color: Colors.black, // Border color
-            height: 2.0, // Border height
-          ),
-        ),
-      ),
       body: Stack(
         children: [
           // Music Sheet taking full available height above the keyboard
@@ -356,6 +351,133 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
               ],
             ),
           ),
+
+          // Floating Menu Button - Top Right
+          Positioned(
+            top: statusBarHeight + 10,
+            right: 15,
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  showMenu = !showMenu;
+                });
+              },
+              child: Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(25),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.3),
+                      spreadRadius: 2,
+                      blurRadius: 5,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.menu,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+            ),
+          ),
+
+          // Tap outside to close menu (positioned first so it's behind the menu)
+          if (showMenu)
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    showMenu = false;
+                  });
+                },
+                child: Container(
+                  color: Colors.transparent,
+                ),
+              ),
+            ),
+
+          // Popup Menu - appears next to the menu button (positioned after overlay so it's on top)
+          if (showMenu)
+            Positioned(
+              top: statusBarHeight + 70, // Below the menu button
+              right: 15,
+              child: Material(
+                elevation: 8,
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  width: 120,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Save Button
+                      InkWell(
+                        onTap: () {
+                          print("Save button tapped!");
+                          setState(() {
+                            showMenu = false;
+                          });
+                          handleSavePress();
+                        },
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(8),
+                          topRight: Radius.circular(8),
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 12, horizontal: 16),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.save, size: 20, color: Colors.black),
+                              SizedBox(width: 8),
+                              Text('Save', style: TextStyle(fontSize: 14)),
+                            ],
+                          ),
+                        ),
+                      ),
+                      // Divider
+                      Container(
+                        height: 1,
+                        color: Colors.grey[300],
+                      ),
+                      // Add Button
+                      InkWell(
+                        onTap: () {
+                          print("Add button tapped!");
+                          setState(() {
+                            showMenu = false;
+                          });
+                          forceNewRow();
+                        },
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(8),
+                          bottomRight: Radius.circular(8),
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 12, horizontal: 16),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.add, size: 20, color: Colors.black),
+                              SizedBox(width: 8),
+                              Text('Add', style: TextStyle(fontSize: 14)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
 
           // Keyboard Section Pinned to Bottom
           Positioned(
