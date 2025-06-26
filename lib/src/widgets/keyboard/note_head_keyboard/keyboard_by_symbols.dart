@@ -10,9 +10,13 @@ import 'package:music_keyboard/models/music_note.dart';
 class KeyboardBySymbols extends StatefulWidget {
   final void Function(MusicalNote note) onKeyPress;
   final String keyType;
+  final bool showLowerPair;
 
   const KeyboardBySymbols(
-      {super.key, required this.onKeyPress, required this.keyType});
+      {super.key,
+      required this.onKeyPress,
+      required this.keyType,
+      required this.showLowerPair});
 
   @override
   State<KeyboardBySymbols> createState() => _KeyboardBySymbolsState();
@@ -24,83 +28,7 @@ enum KeyboardRow {
   bottom // Below the staff
 }
 
-class _KeyboardBySymbolsState extends State<KeyboardBySymbols>
-    with SingleTickerProviderStateMixin {
-  KeyboardRow currentRow = KeyboardRow.middle;
-  late AnimationController _animationController;
-  // ignore: unused_field
-  late Animation<Offset> _slideAnimation;
-  late Animation<Offset> _incomingSlideAnimation;
-  KeyboardRow? _incomingRow;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-
-    _slideAnimation = Tween<Offset>(
-      begin: Offset.zero,
-      end: const Offset(0, 0),
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
-
-    _incomingSlideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  void _switchToRow(KeyboardRow newRow) {
-    if (newRow == currentRow) return;
-
-    setState(() {
-      _incomingRow = newRow;
-
-      // Set up the animation for the incoming row only
-      if (newRow.index < currentRow.index) {
-        // Moving up - new row comes from above
-        _incomingSlideAnimation = Tween<Offset>(
-          begin: const Offset(0, -1), // New row comes from above
-          end: Offset.zero,
-        ).animate(CurvedAnimation(
-          parent: _animationController,
-          curve: Curves.easeInOut,
-        ));
-      } else {
-        // Moving down - new row comes from below
-        _incomingSlideAnimation = Tween<Offset>(
-          begin: const Offset(0, 1), // New row comes from below
-          end: Offset.zero,
-        ).animate(CurvedAnimation(
-          parent: _animationController,
-          curve: Curves.easeInOut,
-        ));
-      }
-    });
-
-    _animationController.forward().then((_) {
-      setState(() {
-        currentRow = newRow;
-        _incomingRow = null;
-        _animationController.reset();
-      });
-    });
-  }
-
+class _KeyboardBySymbolsState extends State<KeyboardBySymbols> {
   @override
   Widget build(BuildContext context) {
     final isConnected = context.watch<IsConnectedProvider>().isConnected;
@@ -124,93 +52,38 @@ class _KeyboardBySymbolsState extends State<KeyboardBySymbols>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Up arrow button - positioned above the keyboard
-          if (currentRow != KeyboardRow.top)
-            Container(
-              height: 20,
-              margin: const EdgeInsets.only(bottom: 2),
-              child: Center(
-                child: Container(
-                  height: 20,
-                  width: 40,
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: InkWell(
-                    onTap: () => _switchToRow(currentRow == KeyboardRow.bottom
-                        ? KeyboardRow.middle
-                        : KeyboardRow.top),
-                    child: const Icon(
-                      Icons.keyboard_arrow_up,
-                      size: 20,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            )
-          else
-            const SizedBox(height: 0), // No space when arrow is hidden
-
-          // Keyboard keys
+          // Two keyboard rows - always visible
           SizedBox(
-            height: 137, // Keep the same height as before
-            width: screenWidth - 10,
-            child: Stack(
+            height: 210, // Double the height for two rows
+            width: screenWidth - 105,
+            child: Column(
               children: [
-                // Current row - only show if not animating
-                if (_incomingRow == null)
-                  _buildKeyboardGrid(
+                // Top row
+                Expanded(
+                  child: _buildKeyboardGrid(
                     selectedCharacter: selectedCharacter,
                     noteType: noteType,
                     isConnected: isConnected,
-                    row: currentRow,
+                    row: widget.showLowerPair
+                        ? KeyboardRow.middle
+                        : KeyboardRow.top,
                   ),
-
-                // Incoming row during animation
-                if (_incomingRow != null)
-                  SlideTransition(
-                    position: _incomingSlideAnimation,
-                    child: _buildKeyboardGrid(
-                      selectedCharacter: selectedCharacter,
-                      noteType: noteType,
-                      isConnected: isConnected,
-                      row: _incomingRow!,
-                    ),
+                ),
+                const SizedBox(height: 2), // Small gap between rows
+                // Bottom row
+                Expanded(
+                  child: _buildKeyboardGrid(
+                    selectedCharacter: selectedCharacter,
+                    noteType: noteType,
+                    isConnected: isConnected,
+                    row: widget.showLowerPair
+                        ? KeyboardRow.bottom
+                        : KeyboardRow.middle,
                   ),
+                ),
               ],
             ),
           ),
-
-          // Down arrow button - positioned below the keyboard
-          if (currentRow != KeyboardRow.bottom)
-            Container(
-              height: 20,
-              margin: const EdgeInsets.only(top: 2),
-              child: Center(
-                child: Container(
-                  height: 20,
-                  width: 40,
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: InkWell(
-                    onTap: () => _switchToRow(currentRow == KeyboardRow.top
-                        ? KeyboardRow.middle
-                        : KeyboardRow.bottom),
-                    child: const Icon(
-                      Icons.keyboard_arrow_down,
-                      size: 20,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            )
-          else
-            const SizedBox(height: 0), // No space when arrow is hidden
         ],
       ),
     );

@@ -38,6 +38,15 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
     'natural': GlobalKey(),
   };
 
+  // Octave pair state - false = Middle+Top pair, true = Bottom+Middle pair
+  bool showLowerPair = false;
+
+  void _toggleOctavePair() {
+    setState(() {
+      showLowerPair = !showLowerPair;
+    });
+  }
+
   @override
   void dispose() {
     // Make sure to remove any active overlay when disposing
@@ -501,29 +510,63 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                margin: EdgeInsets.all(10.0),
-                padding: EdgeInsets.all(10.0),
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  border: Border.all(
-                    color: const Color.fromARGB(255, 0, 0, 0),
-                    width: 1.0,
-                  ),
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                child: Center(
-                  child: Text(
-                    'B',
-                    style: TextStyle(
-                      color: const Color.fromARGB(255, 0, 0, 0),
-                      fontStyle: FontStyle.italic,
+              Column(
+                children: [
+                  // Octave cycle button
+                  Container(
+                    height: 30,
+                    margin: const EdgeInsets.only(bottom: 5),
+                    child: Center(
+                      child: Container(
+                        height: 30,
+                        width: 30,
+                        decoration: BoxDecoration(
+                          color: Colors.black,
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: InkWell(
+                          onTap: _toggleOctavePair,
+                          child: Center(
+                            child: Text(
+                              'Oct',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                  Container(
+                    margin: EdgeInsets.all(10.0),
+                    padding: EdgeInsets.all(10.0),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      border: Border.all(
+                        color: const Color.fromARGB(255, 0, 0, 0),
+                        width: 1.0,
+                      ),
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    child: Center(
+                      child: Text(
+                        'B',
+                        style: TextStyle(
+                          color: const Color.fromARGB(255, 0, 0, 0),
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
               KeyboardBySymbols(
-                  onKeyPress: widget.onKeyPress, keyType: widget.keyType),
+                  onKeyPress: widget.onKeyPress,
+                  keyType: widget.keyType,
+                  showLowerPair: showLowerPair),
               Container(
                 margin: EdgeInsets.all(10.0),
                 padding: EdgeInsets.all(10.0),
