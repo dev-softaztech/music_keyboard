@@ -69,7 +69,7 @@ class _KeyboardBySymbolsState extends State<KeyboardBySymbols> {
                         : KeyboardRow.top,
                   ),
                 ),
-                const SizedBox(height: 2), // Small gap between rows
+                const SizedBox(height: 5), // Small gap between rows
                 // Bottom row
                 Expanded(
                   child: _buildKeyboardGrid(
@@ -95,26 +95,33 @@ class _KeyboardBySymbolsState extends State<KeyboardBySymbols> {
     required bool isConnected,
     required KeyboardRow row,
   }) {
-    return GridView.builder(
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 9, // Changed from 15 to 9 keys
-          crossAxisSpacing: 2, // Space between columns
-          mainAxisSpacing: 0, // Space between rows
-          childAspectRatio: 0.32 // Adjusted for fewer keys
-          ),
-      itemCount: 9, // Changed from 15 to 9 keys
-      itemBuilder: (context, index) {
-        return MusicKey(
-          unicodeCharacter: selectedCharacter,
-          pitch: _getPitch(index, row),
-          octave: _getOctave(index, row),
-          type: noteType,
-          isConnected: isConnected,
-          onTap: (note) => widget.onKeyPress(note),
-          index: index,
-          selectedCharacter: selectedCharacter,
-        );
-      },
+    return Padding(
+      padding: EdgeInsets.zero, // No padding
+      child: Container(
+        color: Colors.transparent, // No background color
+        margin: EdgeInsets.zero, // No margin
+        child: GridView.builder(
+          padding: EdgeInsets.zero, // No internal padding in the GridView
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 9,
+              crossAxisSpacing: 2, // Space between columns
+              mainAxisSpacing: 0, // Space between rows
+              childAspectRatio: 0.32),
+          itemCount: 9,
+          itemBuilder: (context, index) {
+            return MusicKey(
+              unicodeCharacter: selectedCharacter,
+              pitch: _getPitch(index, row),
+              octave: _getOctave(index, row),
+              type: noteType,
+              isConnected: isConnected,
+              onTap: (note) => widget.onKeyPress(note),
+              index: index,
+              selectedCharacter: selectedCharacter,
+            );
+          },
+        ),
+      ),
     );
   }
 
