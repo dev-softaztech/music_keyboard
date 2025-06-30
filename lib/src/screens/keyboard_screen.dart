@@ -335,248 +335,267 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     const double musicSheetWidth = noteWidth * maxNotes;
 
     return Scaffold(
-      body: Stack(
-        children: [
-          // Music Sheet taking full available height above the keyboard
-          Positioned.fill(
-            child: Column(
-              children: [
-                MusicSheetContainer(
-                    screenSize: screenSize,
-                    screenshotController: screenshotController,
-                    sheetNoteRows: sheetNoteRows,
-                    musicSheetWidth: musicSheetWidth,
-                    statusBarHeight: statusBarHeight),
-                const Spacer(), // Pushes the keyboard container to the bottom
-              ],
-            ),
-          ),
+        body: SafeArea(
+            // Keeps content out of status bar area
+            top: true,
+            bottom: false,
+            child: Column(children: [
+              // "AppBar" that's only as tall as the status bar
 
-          // Floating Menu Button - Top Right
-          Positioned(
-            top: statusBarHeight + 10,
-            right: 15,
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  showMenu = !showMenu;
-                });
-              },
-              child: Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: Colors.black,
-                  borderRadius: BorderRadius.circular(25),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
-                      spreadRadius: 2,
-                      blurRadius: 5,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.menu,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              ),
-            ),
-          ),
-
-          // Tap outside to close menu (positioned first so it's behind the menu)
-          if (showMenu)
-            Positioned.fill(
-              child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    showMenu = false;
-                  });
-                },
-                child: Container(
-                  color: Colors.transparent,
-                ),
-              ),
-            ),
-
-          // Popup Menu - appears next to the menu button (positioned after overlay so it's on top)
-          if (showMenu)
-            Positioned(
-              top: statusBarHeight + 70, // Below the menu button
-              right: 15,
-              child: Material(
-                elevation: 8,
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  width: 120,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Save Button
-                      InkWell(
-                        onTap: () {
-                          print("Save button tapped!");
-                          setState(() {
-                            showMenu = false;
-                          });
-                          handleSavePress();
-                        },
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(8),
-                          topRight: Radius.circular(8),
-                        ),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 12, horizontal: 16),
-                          child: const Row(
-                            children: [
-                              Icon(Icons.save, size: 20, color: Colors.black),
-                              SizedBox(width: 8),
-                              Text('Save', style: TextStyle(fontSize: 14)),
-                            ],
-                          ),
-                        ),
-                      ),
-                      // Divider
-                      Container(
-                        height: 1,
-                        color: Colors.grey[300],
-                      ),
-                      // Add Button
-                      InkWell(
-                        onTap: () {
-                          print("Add button tapped!");
-                          setState(() {
-                            showMenu = false;
-                          });
-                          forceNewRow();
-                        },
-                        borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(8),
-                          bottomRight: Radius.circular(8),
-                        ),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 12, horizontal: 16),
-                          child: const Row(
-                            children: [
-                              Icon(Icons.add, size: 20, color: Colors.black),
-                              SizedBox(width: 8),
-                              Text('Add', style: TextStyle(fontSize: 14)),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-          // Keyboard Section Pinned to Bottom
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: ColoredBox(
-              color: const Color.fromARGB(255, 255, 253, 253),
-              child: Container(
-                height: 440,
-                padding: const EdgeInsets.fromLTRB(0, 5, 0, 0),
-                child: Column(
+              Expanded(
+                child: Stack(
                   children: [
-                    // Toggle Buttons for Keyboard Selection and Backspace
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(children: [
-                          Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 4, horizontal: 5),
-                              child: ToggleButtons(
-                                textStyle: const TextStyle(
-                                  fontSize: 11,
-                                ),
-                                isSelected: [
-                                  showClefs,
-                                  showBars,
-                                  showTimeSignatures,
-                                  showNotes,
-                                ],
-                                onPressed: (int index) {
-                                  setState(() {
-                                    // Reset all selections first
-                                    showClefs = index == 0;
-                                    showBars = index == 1;
-                                    showTimeSignatures = index == 2;
-                                    showNotes = index == 3;
-                                    if (index == 0) keyType = "clefs";
-                                    if (index == 1) keyType = "bars";
-                                    if (index == 2) keyType = "rests";
-                                    if (index == 3) keyType = "notes";
-                                  });
-                                },
-                                borderRadius: BorderRadius.circular(8.0),
-                                selectedColor: Colors.white,
-                                fillColor: Colors.black,
-                                color: Colors.black,
-                                constraints: const BoxConstraints(
-                                  minHeight: 28.0,
-                                  minWidth: 70.0,
-                                ),
-                                children: const [
-                                  Text("Clefs"),
-                                  Text("Bars"),
-                                  Text("Rests"),
-                                  Text("Notes"),
-                                ],
-                              ))
-                        ]),
-                        Row(
-                          children: [
-                            IconButton(
-                              onPressed: handleBackspacePress,
-                              icon: const Icon(Icons.backspace,
-                                  color: Color(0xFF242038)),
-                              iconSize: 25.0,
-                            ),
-                            const Padding(
-                                padding: EdgeInsets.fromLTRB(0, 0, 5, 0))
-                          ],
+                    // Music Sheet taking full available height above the keyboard
+                    Positioned.fill(
+                      child: Column(
+                        children: [
+                          MusicSheetContainer(
+                              screenSize: screenSize,
+                              screenshotController: screenshotController,
+                              sheetNoteRows: sheetNoteRows,
+                              musicSheetWidth: musicSheetWidth,
+                              statusBarHeight: statusBarHeight),
+                          const Spacer(), // Pushes the keyboard container to the bottom
+                        ],
+                      ),
+                    ),
+
+                    // Floating Menu Button - Top Right
+                    Positioned(
+                      top: 10,
+                      right: 15,
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            showMenu = !showMenu;
+                          });
+                        },
+                        child: Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: Colors.black,
+                            borderRadius: BorderRadius.circular(25),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.3),
+                                spreadRadius: 2,
+                                blurRadius: 5,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.menu,
+                            color: Colors.white,
+                            size: 24,
+                          ),
                         ),
-                      ],
+                      ),
                     ),
-                    Stack(
-                      children: [
-                        keyType == "clefs"
-                            ? ClefsKeyboardLayout(onKeyPress: handleKeyPress)
-                            : keyType == "bars"
-                                ? BarsKeyboardLayout(onKeyPress: handleKeyPress)
-                                : NotesKeyboardLayout(
-                                    showNotesKeyboard: showNotesKeyboard,
-                                    onToggleKeyboard: (isNotes) {
-                                      setState(() {
-                                        showNotesKeyboard = isNotes;
-                                      });
-                                    },
-                                    onKeyPress: handleKeyPress,
-                                    keyType: keyType,
+
+                    // Tap outside to close menu (positioned first so it's behind the menu)
+                    if (showMenu)
+                      Positioned.fill(
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              showMenu = false;
+                            });
+                          },
+                          child: Container(
+                            color: Colors.transparent,
+                          ),
+                        ),
+                      ),
+
+                    // Popup Menu - appears next to the menu button (positioned after overlay so it's on top)
+                    if (showMenu)
+                      Positioned(
+                        top: statusBarHeight + 70, // Below the menu button
+                        right: 15,
+                        child: Material(
+                          elevation: 8,
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            width: 120,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Save Button
+                                InkWell(
+                                  onTap: () {
+                                    print("Save button tapped!");
+                                    setState(() {
+                                      showMenu = false;
+                                    });
+                                    handleSavePress();
+                                  },
+                                  borderRadius: const BorderRadius.only(
+                                    topLeft: Radius.circular(8),
+                                    topRight: Radius.circular(8),
                                   ),
-                      ],
-                    ),
-                  ],
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 12, horizontal: 16),
+                                    child: const Row(
+                                      children: [
+                                        Icon(Icons.save,
+                                            size: 20, color: Colors.black),
+                                        SizedBox(width: 8),
+                                        Text('Save',
+                                            style: TextStyle(fontSize: 14)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                // Divider
+                                Container(
+                                  height: 1,
+                                  color: Colors.grey[300],
+                                ),
+                                // Add Button
+                                InkWell(
+                                  onTap: () {
+                                    print("Add button tapped!");
+                                    setState(() {
+                                      showMenu = false;
+                                    });
+                                    forceNewRow();
+                                  },
+                                  borderRadius: const BorderRadius.only(
+                                    bottomLeft: Radius.circular(8),
+                                    bottomRight: Radius.circular(8),
+                                  ),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 12, horizontal: 16),
+                                    child: const Row(
+                                      children: [
+                                        Icon(Icons.add,
+                                            size: 20, color: Colors.black),
+                                        SizedBox(width: 8),
+                                        Text('Add',
+                                            style: TextStyle(fontSize: 14)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+
+                    // Keyboard Section Pinned to Bottom
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: ColoredBox(
+                        color: const Color.fromARGB(255, 255, 253, 253),
+                        child: Container(
+                          height: 440,
+                          padding: const EdgeInsets.fromLTRB(0, 5, 0, 0),
+                          child: Column(
+                            children: [
+                              // Toggle Buttons for Keyboard Selection and Backspace
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(children: [
+                                    Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 4, horizontal: 5),
+                                        child: ToggleButtons(
+                                          textStyle: const TextStyle(
+                                            fontSize: 11,
+                                          ),
+                                          isSelected: [
+                                            showClefs,
+                                            showBars,
+                                            showTimeSignatures,
+                                            showNotes,
+                                          ],
+                                          onPressed: (int index) {
+                                            setState(() {
+                                              // Reset all selections first
+                                              showClefs = index == 0;
+                                              showBars = index == 1;
+                                              showTimeSignatures = index == 2;
+                                              showNotes = index == 3;
+                                              if (index == 0) keyType = "clefs";
+                                              if (index == 1) keyType = "bars";
+                                              if (index == 2) keyType = "rests";
+                                              if (index == 3) keyType = "notes";
+                                            });
+                                          },
+                                          borderRadius:
+                                              BorderRadius.circular(8.0),
+                                          selectedColor: Colors.white,
+                                          fillColor: Colors.black,
+                                          color: Colors.black,
+                                          constraints: const BoxConstraints(
+                                            minHeight: 28.0,
+                                            minWidth: 70.0,
+                                          ),
+                                          children: const [
+                                            Text("Clefs"),
+                                            Text("Bars"),
+                                            Text("Rests"),
+                                            Text("Notes"),
+                                          ],
+                                        ))
+                                  ]),
+                                  Row(
+                                    children: [
+                                      IconButton(
+                                        onPressed: handleBackspacePress,
+                                        icon: const Icon(Icons.backspace,
+                                            color: Color(0xFF242038)),
+                                        iconSize: 25.0,
+                                      ),
+                                      const Padding(
+                                          padding:
+                                              EdgeInsets.fromLTRB(0, 0, 5, 0))
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              Stack(
+                                children: [
+                                  keyType == "clefs"
+                                      ? ClefsKeyboardLayout(
+                                          onKeyPress: handleKeyPress)
+                                      : keyType == "bars"
+                                          ? BarsKeyboardLayout(
+                                              onKeyPress: handleKeyPress)
+                                          : NotesKeyboardLayout(
+                                              showNotesKeyboard:
+                                                  showNotesKeyboard,
+                                              onToggleKeyboard: (isNotes) {
+                                                setState(() {
+                                                  showNotesKeyboard = isNotes;
+                                                });
+                                              },
+                                              onKeyPress: handleKeyPress,
+                                              keyType: keyType,
+                                            ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    )
+                  ], //end of column
                 ),
-              ),
-            ),
-          )
-        ],
-      ),
-    );
+              )
+            ])));
   }
 }
