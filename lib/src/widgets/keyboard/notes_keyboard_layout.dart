@@ -268,7 +268,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
     }
 
     return SizedBox(
-      width: 80,
+      width: 30,
       height: 50,
       child: ElevatedButton(
         key: _shiftButtonKeys[buttonType],
@@ -300,26 +300,13 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
           ),
           padding: EdgeInsets.zero,
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 11,
-                color: Colors.black,
-              ),
-            ),
-            const SizedBox(width: 4),
-            Text(
-              displayUnicode,
-              style: const TextStyle(
-                fontFamily: 'Bravura',
-                fontSize: 24,
-                color: Color(0xFF242038),
-              ),
-            ),
-          ],
+        child: Text(
+          displayUnicode,
+          style: const TextStyle(
+            fontFamily: 'Bravura',
+            fontSize: 30,
+            color: Color(0xFF242038),
+          ),
         ),
       ),
     );
@@ -434,21 +421,6 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
               ),
             ),
 
-          // For notes, show the shift key style buttons for accidentals
-          if (widget.keyType == "notes")
-            Container(
-              height: 30,
-              margin: const EdgeInsets.symmetric(vertical: 3),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildShiftButton('sharp', 'Sharp', context),
-                  _buildShiftButton('flat', 'Flat', context),
-                  _buildShiftButton('natural', 'Natural', context),
-                ],
-              ),
-            ),
-
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -510,82 +482,80 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Column(
-                children: [
-                  // Octave cycle button
-                  Container(
-                    height: 30,
-                    margin: const EdgeInsets.only(bottom: 5),
-                    child: Center(
-                      child: Container(
-                        height: 30,
-                        width: 30,
-                        decoration: BoxDecoration(
-                          color: Colors.black,
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        child: InkWell(
-                          onTap: _toggleOctavePair,
-                          child: Center(
-                            child: Text(
-                              'Oct',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
+              Container(
+                margin: EdgeInsets.all(5.0),
+                padding: EdgeInsets.all(5.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Shift buttons
+                    _buildShiftButton('sharp', 'Sharp', context),
+                    const SizedBox(height: 5),
+                    _buildShiftButton('flat', 'Flat', context),
+                    const SizedBox(height: 5),
+                    _buildShiftButton('natural', 'Natural', context),
+                    const SizedBox(height: 5),
+                    // Octave cycle button
+                    Container(
+                      height: 30,
+                      margin: const EdgeInsets.only(bottom: 5),
+                      child: Center(
+                        child: Container(
+                          height: 30,
+                          width: 30,
+                          decoration: BoxDecoration(
+                            color: Colors.black,
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          child: InkWell(
+                            onTap: _toggleOctavePair,
+                            child: Center(
+                              child: Text(
+                                'Oct',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  Container(
-                    margin: EdgeInsets.all(10.0),
-                    padding: EdgeInsets.all(10.0),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      border: Border.all(
-                        color: const Color.fromARGB(255, 0, 0, 0),
-                        width: 1.0,
-                      ),
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    child: Center(
-                      child: Text(
-                        'B',
-                        style: TextStyle(
-                          color: const Color.fromARGB(255, 0, 0, 0),
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              //const SizedBox(width: 5),
               KeyboardBySymbols(
                   onKeyPress: widget.onKeyPress,
                   keyType: widget.keyType,
                   showLowerPair: showLowerPair),
               Container(
-                margin: EdgeInsets.all(10.0),
-                padding: EdgeInsets.all(10.0),
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  border: Border.all(
-                    color: const Color.fromARGB(255, 0, 0, 0),
-                    width: 1.0,
-                  ),
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                child: Center(
-                  child: Text(
-                    'B',
-                    style: TextStyle(
-                      color: const Color.fromARGB(255, 0, 0, 0),
-                      fontStyle: FontStyle.italic,
+                margin: EdgeInsets.all(5.0),
+                padding: EdgeInsets.all(5.0),
+                child: Column(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        border: Border.all(
+                          color: const Color.fromARGB(255, 0, 0, 0),
+                          width: 1.0,
+                        ),
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'B',
+                          style: TextStyle(
+                            color: const Color.fromARGB(255, 0, 0, 0),
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ),
             ],
