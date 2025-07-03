@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/src/providers/current_selected_note_provider.dart';
+import 'package:music_keyboard/src/providers/is_connected_provider.dart';
 import 'package:music_keyboard/src/providers/list_of_spacing_for_each_row.dart';
 import 'package:music_keyboard/src/providers/selected_accidental_provider.dart';
 import 'package:music_keyboard/src/widgets/keyboard/bars_keyboard_layout.dart';
@@ -429,7 +430,6 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                 // Save Button
                                 InkWell(
                                   onTap: () {
-                                    print("Save button tapped!");
                                     setState(() {
                                       showMenu = false;
                                     });
@@ -461,7 +461,6 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                 // Add Button
                                 InkWell(
                                   onTap: () {
-                                    print("Add button tapped!");
                                     setState(() {
                                       showMenu = false;
                                     });
@@ -578,30 +577,39 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                               Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    SizedBox(
-                                      width: 60,
-                                      height: 30,
-                                      child: ElevatedButton(
-                                        onPressed: handleBackspacePress,
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.grey[100],
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                            side: BorderSide(
-                                                color: Colors.black, width: 1),
+                                    Consumer<IsConnectedProvider>(
+                                      builder: (context, provider, _) =>
+                                          SizedBox(
+                                        width: 60,
+                                        height: 30,
+                                        child: ElevatedButton(
+                                          onPressed: () {
+                                            provider.toggleConnection(
+                                                !provider.isConnected);
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor:
+                                                provider.isConnected
+                                                    ? Colors.grey[400]
+                                                    : Colors.grey[100],
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              side: BorderSide(
+                                                  color: Colors.black,
+                                                  width: 1),
+                                            ),
+                                            padding: EdgeInsets.zero,
                                           ),
-                                          padding: EdgeInsets.zero,
-                                        ),
-                                        child: Transform.translate(
-                                          offset: Offset(
-                                              0, 4), // 👈 move down by 2 pixels
-                                          child: Text(
-                                            '\u266B',
-                                            style: const TextStyle(
-                                              color: Colors.black,
-                                              fontSize: 23,
-                                              fontFamily: 'Bravura',
+                                          child: Transform.translate(
+                                            offset: Offset(0, 4),
+                                            child: Text(
+                                              '\u266B',
+                                              style: const TextStyle(
+                                                color: Colors.black,
+                                                fontSize: 23,
+                                                fontFamily: 'Bravura',
+                                              ),
                                             ),
                                           ),
                                         ),

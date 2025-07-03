@@ -293,7 +293,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
           backgroundColor: isActive
               ? Colors.grey[500]
               : isSelected
-                  ? Colors.grey[200] // Shaded when selected
+                  ? Colors.grey[300] // Shaded when selected
                   : Colors.grey[100],
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
@@ -421,65 +421,6 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                 ),
               ),
             ),
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              /*Row(
-                children: [
-                  const Padding(padding: EdgeInsets.fromLTRB(5, 0, 0, 0)),
-                  const Text("Beam Lock", style: TextStyle(fontSize: 10)),
-                  Consumer<IsConnectedProvider>(
-                    builder: (context, provider, _) => Transform.scale(
-                      scale: 0.7,
-                      child: Switch(
-                        inactiveThumbColor: Colors.black,
-                        inactiveTrackColor: Colors.white,
-                        activeColor: Colors.white,
-                        activeTrackColor: Colors.black,
-                        value: provider.isConnected,
-                        onChanged: (value) {
-                          provider.toggleConnection(value);
-                        },
-                      ),
-                    ),
-                  ),
-                ],
-              ),*/ /*
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
-                child: ToggleButtons(
-                  textStyle: const TextStyle(fontSize: 10),
-                  isSelected: [
-                    !widget.showNotesKeyboard,
-                    widget.showNotesKeyboard
-                  ],
-                  onPressed: (int index) {
-                    widget.onToggleKeyboard(index == 1);
-                  },
-                  borderRadius: BorderRadius.circular(8.0),
-                  selectedColor: Colors.white,
-                  fillColor: Colors.black,
-                  color: Colors.black,
-                  constraints: const BoxConstraints(
-                    minHeight: 23.0,
-                    minWidth: 60.0,
-                  ),
-                  children: const [
-                    Text("Note heads"),
-                    Text("Letters"),
-                  ],
-                ),
-              ),*/
-            ],
-          ),
-
-          // Show the appropriate keyboard based on the toggle
-          /*if (widget.showNotesKeyboard)
-            KeyboardByNotes(
-                onKeyPress: widget.onKeyPress, keyType: widget.keyType)
-          else*/
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
