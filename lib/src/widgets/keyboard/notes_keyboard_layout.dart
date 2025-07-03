@@ -269,7 +269,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
 
     return SizedBox(
       width: 30,
-      height: 50,
+      height: 40,
       child: ElevatedButton(
         key: _shiftButtonKeys[buttonType],
         onPressed: () {
@@ -291,12 +291,13 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: isActive
-              ? Colors.grey[700]
+              ? Colors.grey[500]
               : isSelected
-                  ? Colors.grey[500] // Shaded when selected
-                  : Colors.grey[300],
+                  ? Colors.grey[200] // Shaded when selected
+                  : Colors.grey[100],
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
+            side: BorderSide(color: Colors.black, width: 1),
           ),
           padding: EdgeInsets.zero,
         ),
@@ -364,7 +365,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
     }
 
     return Container(
-      height: 350, // Increased height to accommodate the arrows
+      height: 315, // Increased height to accommodate the arrows
       padding: const EdgeInsets.fromLTRB(0, 5, 0, 0),
       child: Column(
         children: [
@@ -424,7 +425,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
+              /*Row(
                 children: [
                   const Padding(padding: EdgeInsets.fromLTRB(5, 0, 0, 0)),
                   const Text("Beam Lock", style: TextStyle(fontSize: 10)),
@@ -444,7 +445,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                     ),
                   ),
                 ],
-              ), /*
+              ),*/ /*
               Padding(
                 padding:
                     const EdgeInsets.symmetric(vertical: 4, horizontal: 10),
@@ -482,51 +483,34 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // Octave cycle button
               Container(
                 margin: EdgeInsets.all(5.0),
                 padding: EdgeInsets.all(5.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // Shift buttons
-                    _buildShiftButton('sharp', 'Sharp', context),
-                    const SizedBox(height: 5),
-                    _buildShiftButton('flat', 'Flat', context),
-                    const SizedBox(height: 5),
-                    _buildShiftButton('natural', 'Natural', context),
-                    const SizedBox(height: 5),
-                    // Octave cycle button
-                    Container(
-                      height: 30,
-                      margin: const EdgeInsets.only(bottom: 5),
-                      child: Center(
-                        child: Container(
-                          height: 30,
-                          width: 30,
-                          decoration: BoxDecoration(
-                            color: Colors.black,
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                          child: InkWell(
-                            onTap: _toggleOctavePair,
-                            child: Center(
-                              child: Text(
-                                'Oct',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
+                child: SizedBox(
+                  width: 30,
+                  height: 40,
+                  child: ElevatedButton(
+                    onPressed: _toggleOctavePair,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey[100],
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        side: BorderSide(color: Colors.black, width: 1),
+                      ),
+                      padding: EdgeInsets.zero,
+                    ),
+                    child: Text(
+                      'OCT',
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ],
+                  ),
                 ),
               ),
-              //const SizedBox(width: 5),
               KeyboardBySymbols(
                   onKeyPress: widget.onKeyPress,
                   keyType: widget.keyType,
@@ -536,30 +520,67 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                 padding: EdgeInsets.all(5.0),
                 child: Column(
                   children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        border: Border.all(
-                          color: const Color.fromARGB(255, 0, 0, 0),
-                          width: 1.0,
+                    SizedBox(
+                      width: 30,
+                      height: 40,
+                      child: ElevatedButton(
+                        onPressed: () {},
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey[100],
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            side: BorderSide(color: Colors.black, width: 1),
+                          ),
+                          padding: EdgeInsets.zero,
                         ),
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                      child: Center(
                         child: Text(
-                          'B',
-                          style: TextStyle(
-                            color: const Color.fromARGB(255, 0, 0, 0),
-                            fontStyle: FontStyle.italic,
+                          '\uE883',
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontSize: 40,
+                            //fontWeight: FontWeight.bold,
+                            fontFamily: 'Bravura',
                           ),
                         ),
                       ),
                     ),
+                    const SizedBox(height: 5),
+                    SizedBox(
+                      width: 30,
+                      height: 40,
+                      child: ElevatedButton(
+                        onPressed: () {},
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey[100],
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            side: BorderSide(color: Colors.black, width: 1),
+                          ),
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: Text(
+                          '\uE110',
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontSize: 25,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Bravura',
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    // Shift buttons
+                    _buildShiftButton('sharp', 'Sharp', context),
+                    const SizedBox(height: 5),
+                    _buildShiftButton('flat', 'Flat', context),
+                    const SizedBox(height: 5),
+                    _buildShiftButton('natural', 'Natural', context),
                   ],
                 ),
-              ),
+              )
             ],
-          )
+          ),
         ],
       ),
     );

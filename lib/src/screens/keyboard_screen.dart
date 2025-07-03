@@ -412,7 +412,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                     // Popup Menu - appears next to the menu button (positioned after overlay so it's on top)
                     if (showMenu)
                       Positioned(
-                        top: statusBarHeight + 70, // Below the menu button
+                        top: statusBarHeight + 15, // Below the menu button
                         right: 15,
                         child: Material(
                           elevation: 8,
@@ -552,19 +552,6 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                           ],
                                         ))
                                   ]),
-                                  Row(
-                                    children: [
-                                      IconButton(
-                                        onPressed: handleBackspacePress,
-                                        icon: const Icon(Icons.backspace,
-                                            color: Color(0xFF242038)),
-                                        iconSize: 25.0,
-                                      ),
-                                      const Padding(
-                                          padding:
-                                              EdgeInsets.fromLTRB(0, 0, 5, 0))
-                                    ],
-                                  ),
                                 ],
                               ),
                               Stack(
@@ -588,12 +575,91 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                             ),
                                 ],
                               ),
+                              Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    SizedBox(
+                                      width: 60,
+                                      height: 30,
+                                      child: ElevatedButton(
+                                        onPressed: handleBackspacePress,
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.grey[100],
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            side: BorderSide(
+                                                color: Colors.black, width: 1),
+                                          ),
+                                          padding: EdgeInsets.zero,
+                                        ),
+                                        child: Transform.translate(
+                                          offset: Offset(
+                                              0, 4), // 👈 move down by 2 pixels
+                                          child: Text(
+                                            '\u266B',
+                                            style: const TextStyle(
+                                              color: Colors.black,
+                                              fontSize: 23,
+                                              fontFamily: 'Bravura',
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 15),
+                                    SizedBox(
+                                      width: 180,
+                                      height: 30,
+                                      child: ElevatedButton(
+                                        onPressed: handleBackspacePress,
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.grey[100],
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            side: BorderSide(
+                                                color: Colors.black, width: 1),
+                                          ),
+                                          padding: EdgeInsets.zero,
+                                        ),
+                                        child: Text(
+                                          'BAR',
+                                          style: const TextStyle(
+                                            color: Colors.black,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 15),
+                                    SizedBox(
+                                      width: 60,
+                                      height: 30,
+                                      child: ElevatedButton(
+                                        onPressed: handleBackspacePress,
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.grey[100],
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            side: BorderSide(
+                                                color: Colors.black, width: 1),
+                                          ),
+                                          padding: EdgeInsets.zero,
+                                        ),
+                                        child: const Icon(Icons.backspace,
+                                            color: Color(0xFF242038), size: 25),
+                                      ),
+                                    ),
+                                  ])
                             ],
                           ),
                         ),
                       ),
                     )
-                  ], //end of column
+                  ],
                 ),
               )
             ])));
