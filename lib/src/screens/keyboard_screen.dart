@@ -372,11 +372,15 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                           });
                         },
                         child: Container(
-                          width: 50,
-                          height: 50,
+                          width: 35,
+                          height: 35,
                           decoration: BoxDecoration(
-                            color: Colors.black,
+                            color: Colors.white,
                             borderRadius: BorderRadius.circular(25),
+                            border: Border.all(
+                              color: Colors.black,
+                              width: 1,
+                            ),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withOpacity(0.3),
@@ -388,7 +392,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                           ),
                           child: const Icon(
                             Icons.menu,
-                            color: Colors.white,
+                            color: Color.fromARGB(255, 0, 0, 0),
                             size: 24,
                           ),
                         ),

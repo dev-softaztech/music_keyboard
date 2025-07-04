@@ -283,14 +283,31 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
           // Floating Reset Button (Only Shows When Zoomed)
           if (isZoomed)
             Positioned(
-              bottom: 20,
-              right: 20,
-              child: FloatingActionButton(
-                onPressed: _resetZoom,
-                backgroundColor: const Color.fromARGB(255, 18, 17, 16),
-                child: Icon(Icons.zoom_out_map, color: Colors.white),
-              ),
-            ),
+                bottom: 20,
+                right: 5,
+                child: Material(
+                  color: Colors.transparent,
+                  elevation: 5,
+                  shadowColor: Colors.black.withOpacity(0.3),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                  child: RawMaterialButton(
+                    onPressed: _resetZoom,
+                    fillColor: Colors.white,
+                    constraints:
+                        const BoxConstraints.tightFor(width: 35, height: 35),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25),
+                      side: const BorderSide(color: Colors.black, width: 1),
+                    ),
+                    child: const Icon(
+                      Icons.zoom_out_map,
+                      color: Colors.black,
+                      size: 24,
+                    ),
+                  ),
+                )),
         ]),
         PreferredSize(
           preferredSize: const Size.fromHeight(2.0), // Border thickness
