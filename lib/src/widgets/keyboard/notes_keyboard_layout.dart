@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/music_note.dart';
-import 'package:music_keyboard/src/providers/is_connected_provider.dart';
 import 'package:music_keyboard/src/providers/selected_accidental_provider.dart';
-import 'package:music_keyboard/src/widgets/keyboard/letters_keyboard/keyboard_by_notes.dart';
 import 'package:music_keyboard/src/widgets/keyboard/note_head_keyboard/keyboard_by_symbols.dart';
 import 'package:music_keyboard/src/providers/selected_unicode_provider.dart';
 import 'package:provider/provider.dart';
-import 'dart:ui';
 
 class NotesKeyboardLayout extends StatefulWidget {
   final bool showNotesKeyboard;
@@ -160,6 +157,16 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
       return ['\ue260', '\ue264', '\ue266', '\ue267']; // Flat variants
     } else if (buttonType == 'natural') {
       return ['\ue261']; // Natural variants
+    } else if (buttonType == 'rest') {
+      return [
+        '\ue4e5',
+        '\ue1b3',
+        '\ue4e4',
+        '\ue4e6',
+        '\ue4e7',
+        '\ue4e8',
+        '\ue4e9'
+      ]; // Rest variants
     }
     return [];
   }
@@ -222,6 +229,14 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
           accidental == '\ue264' || // flat
           accidental == '\ue266' || // flat
           accidental == '\ue267'; // flat
+    } else if (buttonType == 'rest') {
+      return accidental == '\ue4e5' ||
+          accidental == '\ue1b3' ||
+          accidental == '\ue4e4' ||
+          accidental == '\ue4e6' ||
+          accidental == '\ue4e7' ||
+          accidental == '\ue4e8' ||
+          accidental == '\ue4e9';
     } else {
       // natural
       return accidental == '\ue261' || // natural
@@ -259,6 +274,16 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
               selectedAccidental == '\ue267'
           ? selectedAccidental
           : '\ue260';
+    } else if (buttonType == 'rest') {
+      displayUnicode = selectedAccidental == '\ue4e5' ||
+              selectedAccidental == '\ue1b3' ||
+              selectedAccidental == '\ue4e4' ||
+              selectedAccidental == '\ue4e6' ||
+              selectedAccidental == '\ue4e7' ||
+              selectedAccidental == '\ue4e8' ||
+              selectedAccidental == '\ue4e9'
+          ? selectedAccidental
+          : '\ue4e5';
     } else {
       // natural
       displayUnicode =
@@ -360,8 +385,6 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
         '\ue1db',
         '\ue1dd',
       ];
-
-      // No automatic selection of accidental on load
     }
 
     return Container(
@@ -424,32 +447,137 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Octave cycle button
               Container(
                 margin: EdgeInsets.all(5.0),
                 padding: EdgeInsets.all(5.0),
-                child: SizedBox(
-                  width: 30,
-                  height: 40,
-                  child: ElevatedButton(
-                    onPressed: _toggleOctavePair,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey[100],
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        side: BorderSide(color: Colors.black, width: 1),
+                child: Column(
+                  children: [
+                    //Clef
+                    SizedBox(
+                      width: 30,
+                      height: 40,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          widget.onKeyPress(MusicalNote(
+                              pitch: "",
+                              octave: 0,
+                              type: NoteType.clef,
+                              isConnected: false,
+                              unicodeCharacter: "\uf472"));
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey[100],
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            side: BorderSide(color: Colors.black, width: 1),
+                          ),
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: Text(
+                          '\uf472',
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontSize: 20,
+                            //fontWeight: FontWeight.bold,
+                            fontFamily: 'Bravura',
+                          ),
+                        ),
                       ),
-                      padding: EdgeInsets.zero,
                     ),
-                    child: Text(
-                      'OCT',
-                      style: const TextStyle(
-                        color: Colors.black,
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
+                    const SizedBox(height: 5),
+                    //Bass cleff
+                    SizedBox(
+                      width: 30,
+                      height: 40,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          widget.onKeyPress(MusicalNote(
+                              pitch: "",
+                              octave: 0,
+                              type: NoteType.clef,
+                              isConnected: false,
+                              unicodeCharacter: "\uf474"));
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey[100],
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            side: BorderSide(color: Colors.black, width: 1),
+                          ),
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: Text(
+                          '\uf474',
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontSize: 20,
+                            //fontWeight: FontWeight.bold,
+                            fontFamily: 'Bravura',
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 5),
+                    //4/4 time signature
+                    SizedBox(
+                      width: 30,
+                      height: 40,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          widget.onKeyPress(MusicalNote(
+                              pitch: "",
+                              octave: 0,
+                              type: NoteType.clef,
+                              isConnected: false,
+                              unicodeCharacter: "\uf474"));
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey[100],
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            side: BorderSide(color: Colors.black, width: 1),
+                          ),
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: Text(
+                          '\uf5fe',
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontSize: 20,
+                            //fontWeight: FontWeight.bold,
+                            fontFamily: 'Bravura',
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    _buildShiftButton('rest', 'Rest', context),
+                    const SizedBox(height: 5),
+                    // Octave cycle button
+                    SizedBox(
+                      width: 30,
+                      height: 40,
+                      child: ElevatedButton(
+                        onPressed: _toggleOctavePair,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey[100],
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            side: BorderSide(color: Colors.black, width: 1),
+                          ),
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: Text(
+                          'OCT',
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               KeyboardBySymbols(

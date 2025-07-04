@@ -187,8 +187,12 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
         Provider.of<CurrentSelectedNoteProvider>(context);
     final rowSpacingProvider = Provider.of<ListOfSpacingForEachRow>(context);
 
-    MusicalNote selectedNote =
-        MusicalNote(pitch: "", octave: 0, type: NoteType.clef);
+    MusicalNote selectedNote = MusicalNote(
+        pitch: "",
+        octave: 0,
+        type: NoteType.clef,
+        isConnected: false,
+        unicodeCharacter: "");
 
     if (widget.sheetNoteRows[selectedNoteProvider.selectedRow].isNotEmpty) {
       selectedNote = widget.sheetNoteRows[selectedNoteProvider.selectedRow]

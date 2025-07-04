@@ -620,7 +620,14 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                       width: 180,
                                       height: 30,
                                       child: ElevatedButton(
-                                        onPressed: handleBackspacePress,
+                                        onPressed: () {
+                                          handleKeyPress(MusicalNote(
+                                              pitch: "",
+                                              octave: 0,
+                                              type: NoteType.bar,
+                                              isConnected: false,
+                                              unicodeCharacter: "\ue030"));
+                                        },
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: Colors.grey[100],
                                           shape: RoundedRectangleBorder(
