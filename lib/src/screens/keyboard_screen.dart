@@ -46,6 +46,8 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   bool showSymbolsKeyboard = false;
   bool isTieing = false;
   bool showMenu = false;
+  bool isBeamLockActive = false;
+  DateTime? _lastTapTime;
 
   String keyType = "clefs";
 
@@ -64,7 +66,8 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         pitch: note.pitch,
         octave: note.octave,
         type: note.type,
-        isConnected: note.isConnected,
+        isConnected: note
+            .isConnected, //isConnected: isBeamLockActive ? true : note.isConnected,
         unicodeCharacter: note.unicodeCharacter,
         accidentalCharacter: selectedAccidental,
         noteY: note.noteY,
@@ -581,40 +584,102 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                               Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Consumer<IsConnectedProvider>(
-                                      builder: (context, provider, _) =>
-                                          SizedBox(
-                                        width: 60,
-                                        height: 30,
-                                        child: ElevatedButton(
-                                          onPressed: () {
-                                            provider.toggleConnection(
-                                                !provider.isConnected);
-                                          },
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor:
-                                                provider.isConnected
+                                    Consumer<CurrentSelectedNoteProvider>(
+                                      builder:
+                                          (context, selectedNoteProvider, _) =>
+                                              GestureDetector(
+                                        onTap: () {
+                                          final now = DateTime.now();
+                                          if (_lastTapTime != null &&
+                                              now.difference(_lastTapTime!) <
+                                                  const Duration(seconds: 2)) {
+                                            // Double tap
+                                            setState(() {
+                                              isBeamLockActive =
+                                                  !isBeamLockActive;
+                                              final isConnectedProvider =
+                                                  context.read<
+                                                      IsConnectedProvider>();
+                                              isConnectedProvider
+                                                  .toggleConnection(true);
+                                            });
+                                          } else {
+                                            // Single tap
+                                            if (isBeamLockActive) {
+                                              setState(() {
+                                                isBeamLockActive = false;
+                                                final isConnectedProvider =
+                                                    context.read<
+                                                        IsConnectedProvider>();
+                                                isConnectedProvider
+                                                    .toggleConnection(false);
+                                              });
+                                            } else {
+                                              if (sheetNoteRows[
+                                                      selectedNoteProvider
+                                                          .selectedRow]
+                                                  .isNotEmpty) {
+                                                setState(() {
+                                                  final selectedNote =
+                                                      sheetNoteRows[
+                                                              selectedNoteProvider
+                                                                  .selectedRow][
+                                                          selectedNoteProvider
+                                                              .selectedIndex];
+                                                  selectedNote.isConnected =
+                                                      !selectedNote.isConnected;
+                                                });
+                                              }
+                                            }
+                                          }
+                                          _lastTapTime = now;
+                                        },
+                                        child: Container(
+                                          width: 60,
+                                          height: 30,
+                                          decoration: BoxDecoration(
+                                            color: isBeamLockActive
+                                                ? Colors.black
+                                                : (sheetNoteRows[selectedNoteProvider
+                                                                .selectedRow]
+                                                            .isNotEmpty &&
+                                                        sheetNoteRows[selectedNoteProvider
+                                                                    .selectedRow]
+                                                                [
+                                                                selectedNoteProvider
+                                                                    .selectedIndex]
+                                                            .isConnected)
                                                     ? Colors.grey[400]
                                                     : Colors.grey[100],
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                              side: BorderSide(
-                                                  color: Colors.black,
-                                                  width: 1),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            border: Border.all(
+                                              color: Colors.black,
+                                              width: 1,
                                             ),
-                                            padding: EdgeInsets.zero,
                                           ),
-                                          child: Transform.translate(
-                                            offset: Offset(0, 4),
-                                            child: Text(
-                                              '\u266B',
-                                              style: const TextStyle(
-                                                color: Colors.black,
-                                                fontSize: 23,
-                                                fontFamily: 'Bravura',
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Transform.translate(
+                                                offset: const Offset(0, 4),
+                                                child: Text(
+                                                  '\u266B',
+                                                  style: TextStyle(
+                                                    color: isBeamLockActive
+                                                        ? Colors.white
+                                                        : Colors.black,
+                                                    fontSize: 23,
+                                                    fontFamily: 'Bravura',
+                                                  ),
+                                                ),
                                               ),
-                                            ),
+                                              if (isBeamLockActive)
+                                                const Icon(Icons.lock,
+                                                    color: Colors.white,
+                                                    size: 12),
+                                            ],
                                           ),
                                         ),
                                       ),

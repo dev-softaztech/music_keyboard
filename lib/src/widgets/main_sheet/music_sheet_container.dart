@@ -489,41 +489,6 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
             height: 2.0, // Border height
           ),
         ),
-        Container(
-            color: Colors.white,
-            padding: const EdgeInsets.all(6),
-            child: Row(
-              spacing: 5,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Row(
-                  spacing: 3,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text("Beam", style: TextStyle(fontSize: 10)),
-                    Transform.scale(
-                        scale:
-                            0.6, // Adjust this value (0.7 = 70% of original size)
-                        child: Container(
-                          constraints:
-                              BoxConstraints.tight(Size(30, 20)), // Custom size
-                          child: Switch(
-                            inactiveThumbColor: Colors.black,
-                            inactiveTrackColor: Colors.white,
-                            activeColor: Colors.white,
-                            activeTrackColor: Colors.black,
-                            value: selectedNote.isConnected,
-                            onChanged: (newValue) {
-                              setState(() {
-                                selectedNote.isConnected = newValue;
-                              });
-                            },
-                          ),
-                        ))
-                  ],
-                ),
-              ],
-            ))
       ],
     );
   }
