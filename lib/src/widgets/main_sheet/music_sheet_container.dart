@@ -187,9 +187,23 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     const double startAngle = (math.pi / 2); // Start from the top
     const double angleIncrement = math.pi / 4; // 45 degrees between items
 
+    final selectedNoteProvider =
+        Provider.of<CurrentSelectedNoteProvider>(context);
+    MusicalNote selectedNote = MusicalNote(
+        pitch: "",
+        octave: 0,
+        type: NoteType.clef,
+        isConnected: false,
+        unicodeCharacter: "");
+
+    if (widget.sheetNoteRows[selectedNoteProvider.selectedRow].isNotEmpty) {
+      selectedNote = widget.sheetNoteRows[selectedNoteProvider.selectedRow]
+          [selectedNoteProvider.selectedIndex];
+    }
+
     final List<Map<String, dynamic>> menuItems = [
       {'label': 'ff', 'type': 'dynamics'},
-      {'label': '4/4', 'type': 'text'},
+      {'label': '4/4', 'type': '__'},
       {'label': 'BEAM', 'type': 'beam'},
       {'label': 'SLUR', 'type': 'slur'},
       {'label': 'TIE', 'type': 'tie'},
@@ -205,7 +219,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
         right: 4 - x,
         child: AnimatedOpacity(
           opacity: showMenu ? 1.0 : 0.0,
-          duration: const Duration(milliseconds: 5000),
+          duration: const Duration(milliseconds: 300),
           child: Material(
             color: Colors.transparent,
             elevation: 5,
@@ -215,9 +229,23 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
             ),
             child: RawMaterialButton(
               onPressed: () {
-                if (menuItems[index]['label'] == "dynamics") {
-                } else if (menuItems[index]['label'] == "____") {
-                } else if (menuItems[index]['label'] == "beam") {
+                if (menuItems[index]['type'] == "tie") {
+                  setState(() {
+                    MusicalNote nextNote =
+                        widget.sheetNoteRows[selectedNoteProvider.selectedRow]
+                            [selectedNoteProvider.selectedIndex + 1];
+
+                    if (selectedNote.pitch == nextNote.pitch) {
+                      selectedNote.isTiedToNext = !selectedNote.isTiedToNext;
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text(
+                                "Cannot Tie to a note with a different pitch.")),
+                      );
+                    }
+                  });
+                } else if (menuItems[index]['type'] == "beam") {
                   setState(() {
                     context.read<CurrentSelectedNoteProvider>().enableBeaming();
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -225,8 +253,17 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                           content: Text("Select a second note to beam to.")),
                     );
                   });
-                } else if (menuItems[index]['label'] == "slur") {
-                } else if (menuItems[index]['label'] == "tie") {}
+                } else if (menuItems[index]['type'] == "slur") {
+                  setState(() {
+                    context
+                        .read<CurrentSelectedNoteProvider>()
+                        .enableSlurring();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text("Select a second note to add slur.")),
+                    );
+                  });
+                }
               },
               fillColor: Colors.white,
               constraints: const BoxConstraints.tightFor(width: 35, height: 35),
@@ -388,7 +425,11 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                   borderRadius: BorderRadius.circular(25),
                 ),
                 child: RawMaterialButton(
-                  onPressed: _resetZoom,
+                  onPressed: () {
+                    context
+                        .read<CurrentSelectedNoteProvider>()
+                        .undo(widget.sheetNoteRows);
+                  },
                   fillColor: Colors.white,
                   constraints:
                       const BoxConstraints.tightFor(width: 35, height: 35),
@@ -481,135 +522,6 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                         ))
                   ],
                 ),
-                SizedBox(
-                    width: 60,
-                    height: 25,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          context
-                              .read<CurrentSelectedNoteProvider>()
-                              .enableBeaming();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content:
-                                    Text("Select a second note to beam to.")),
-                          );
-                        });
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            const Color.fromARGB(255, 255, 255, 255),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: EdgeInsets.zero,
-                      ),
-                      child: const Text(
-                        "Beam Notes",
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
-                      ),
-                    )),
-                //SizedBox(width: 5),
-                Row(
-                  spacing: 8,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text("Tie", style: TextStyle(fontSize: 10)),
-                    Transform.scale(
-                      scale: 0.6,
-                      child: Container(
-                          constraints:
-                              BoxConstraints.tight(Size(30, 20)), // Custom size
-                          child: Switch(
-                            inactiveThumbColor: Colors.black,
-                            inactiveTrackColor: Colors.white,
-                            activeColor: Colors.white,
-                            activeTrackColor: Colors.black,
-                            value: selectedNote.isTiedToNext,
-                            onChanged: (newValue) {
-                              setState(() {
-                                MusicalNote nextNote = widget.sheetNoteRows[
-                                        selectedNoteProvider.selectedRow]
-                                    [selectedNoteProvider.selectedIndex + 1];
-
-                                if (selectedNote.pitch == nextNote.pitch) {
-                                  selectedNote.isTiedToNext = newValue;
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                        content: Text(
-                                            "Cannot Tie to a note with a different pitch.")),
-                                  );
-                                }
-                              });
-                            },
-                          )),
-                    )
-                  ],
-                ),
-                SizedBox(
-                    width: 60,
-                    height: 25,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        context
-                            .read<CurrentSelectedNoteProvider>()
-                            .enableSlurring();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content:
-                                  Text("Select a second note to add slur.")),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            const Color.fromARGB(255, 255, 255, 255),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: EdgeInsets.zero,
-                      ),
-                      child: const Text(
-                        "Slur Notes",
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
-                      ),
-                    )),
-                //SizedBox(width: 5),
-                SizedBox(
-                  width: 60,
-                  height: 25,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      context
-                          .read<CurrentSelectedNoteProvider>()
-                          .undo(widget.sheetNoteRows);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      padding: EdgeInsets.zero,
-                    ),
-                    child: const Text(
-                      "Undo",
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
-                    ),
-                  ),
-                )
               ],
             ))
       ],
