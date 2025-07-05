@@ -182,6 +182,72 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     return calculateInsertionIndex(tapX, notes, currentRowSpacing);
   }
 
+  List<Widget> _buildCircularMenu() {
+    const double radius = 50.0;
+    const double startAngle = (math.pi / 2); // Start from the top
+    const double angleIncrement = math.pi / 4; // 45 degrees between items
+
+    final List<Map<String, dynamic>> menuItems = [
+      {'label': 'ff', 'type': 'dynamics'},
+      {'label': '4/4', 'type': 'text'},
+      {'label': 'BEAM', 'type': 'beam'},
+      {'label': 'SLUR', 'type': 'slur'},
+      {'label': 'TIE', 'type': 'tie'},
+    ];
+
+    return List.generate(menuItems.length, (index) {
+      final double angle = startAngle + (index * angleIncrement);
+      final double x = radius * math.cos(angle);
+      final double y = radius * math.sin(angle);
+
+      return Positioned(
+        bottom: 50 + y,
+        right: 4 - x,
+        child: AnimatedOpacity(
+          opacity: showMenu ? 1.0 : 0.0,
+          duration: const Duration(milliseconds: 5000),
+          child: Material(
+            color: Colors.transparent,
+            elevation: 5,
+            shadowColor: Colors.black.withOpacity(0.3),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(25),
+            ),
+            child: RawMaterialButton(
+              onPressed: () {
+                if (menuItems[index]['label'] == "dynamics") {
+                } else if (menuItems[index]['label'] == "____") {
+                } else if (menuItems[index]['label'] == "beam") {
+                  setState(() {
+                    context.read<CurrentSelectedNoteProvider>().enableBeaming();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text("Select a second note to beam to.")),
+                    );
+                  });
+                } else if (menuItems[index]['label'] == "slur") {
+                } else if (menuItems[index]['label'] == "tie") {}
+              },
+              fillColor: Colors.white,
+              constraints: const BoxConstraints.tightFor(width: 35, height: 35),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(25),
+                side: const BorderSide(color: Colors.black, width: 1),
+              ),
+              child: Text(
+                menuItems[index]['label'],
+                style: const TextStyle(
+                    fontSize: 10,
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+        ),
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final selectedNoteProvider =
@@ -337,8 +403,9 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                   ),
                 ),
               )),
+          if (showMenu) ..._buildCircularMenu(),
           Positioned(
-            bottom: 50,
+            bottom: 55,
             right: 11,
             child: GestureDetector(
               onTap: () {
@@ -365,9 +432,9 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                     ),
                   ],
                 ),
-                child: const Icon(
-                  Icons.album_outlined,
-                  color: Color.fromARGB(255, 0, 0, 0),
+                child: Icon(
+                  showMenu ? Icons.close : Icons.album_outlined,
+                  color: const Color.fromARGB(255, 0, 0, 0),
                   size: 24,
                 ),
               ),
