@@ -473,13 +473,16 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                           ),
                           padding: EdgeInsets.zero,
                         ),
-                        child: Text(
-                          '\uf472',
-                          style: const TextStyle(
-                            color: Colors.black,
-                            fontSize: 20,
-                            //fontWeight: FontWeight.bold,
-                            fontFamily: 'Bravura',
+                        child: Transform.translate(
+                          offset: const Offset(0, 4),
+                          child: Text(
+                            '\uf472',
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontSize: 20,
+                              //fontWeight: FontWeight.bold,
+                              fontFamily: 'Bravura',
+                            ),
                           ),
                         ),
                       ),
@@ -520,59 +523,68 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                     const SizedBox(height: 5),
                     //4/4 time signature
                     SizedBox(
-                      width: 30,
-                      height: 40,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          widget.onKeyPress(MusicalNote(
-                              pitch: "",
-                              octave: 0,
-                              type: NoteType.clef,
-                              isConnected: false,
-                              unicodeCharacter: "\uf474"));
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey[100],
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            side: BorderSide(color: Colors.black, width: 1),
+                        width: 30,
+                        height: 40,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            widget.onKeyPress(MusicalNote(
+                                pitch: "",
+                                octave: 0,
+                                type: NoteType.clef,
+                                isConnected: false,
+                                unicodeCharacter: '\uf5fe'));
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey[100],
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              side: BorderSide(color: Colors.black, width: 1),
+                            ),
+                            padding: EdgeInsets.zero,
                           ),
-                          padding: EdgeInsets.zero,
-                        ),
-                        child: Text(
-                          '\uf5fe',
-                          style: const TextStyle(
-                            color: Colors.black,
-                            fontSize: 20,
-                            //fontWeight: FontWeight.bold,
-                            fontFamily: 'Bravura',
+                          child: Transform.translate(
+                            offset: const Offset(0, 11),
+                            child: Text(
+                              '\uf5fe',
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontSize: 23,
+                                //fontWeight: FontWeight.bold,
+                                fontFamily: 'Bravura',
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                    ),
+                        )),
                     const SizedBox(height: 5),
                     _buildShiftButton('rest', 'Rest', context),
                     const SizedBox(height: 5),
                     // Octave cycle button
-                    SizedBox(
-                      width: 30,
-                      height: 40,
-                      child: ElevatedButton(
-                        onPressed: _toggleOctavePair,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey[100],
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            side: BorderSide(color: Colors.black, width: 1),
+                    Transform.translate(
+                      offset: const Offset(4, 0),
+                      child: SizedBox(
+                        width: 30,
+                        height: 40,
+                        child: ElevatedButton(
+                          onPressed: _toggleOctavePair,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey[100],
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              side: BorderSide(color: Colors.black, width: 1),
+                            ),
+                            padding: EdgeInsets.zero,
                           ),
-                          padding: EdgeInsets.zero,
-                        ),
-                        child: Text(
-                          'OCT',
-                          style: const TextStyle(
-                            color: Colors.black,
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
+                          child: Transform.translate(
+                            offset: const Offset(0, 6),
+                            child: Text(
+                              '\uE511',
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontSize: 24,
+                                //fontWeight: FontWeight.bold,
+                                fontFamily: 'Bravura',
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -644,7 +656,10 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                     const SizedBox(height: 5),
                     _buildShiftButton('flat', 'Flat', context),
                     const SizedBox(height: 5),
-                    _buildShiftButton('natural', 'Natural', context),
+                    Transform.translate(
+                      offset: const Offset(-4, 0),
+                      child: _buildShiftButton('natural', 'Natural', context),
+                    ),
                   ],
                 ),
               )

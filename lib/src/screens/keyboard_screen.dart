@@ -592,7 +592,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                           final now = DateTime.now();
                                           if (_lastTapTime != null &&
                                               now.difference(_lastTapTime!) <
-                                                  const Duration(seconds: 2)) {
+                                                  const Duration(seconds: 1)) {
                                             // Double tap
                                             setState(() {
                                               isBeamLockActive =
@@ -708,7 +708,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                           padding: EdgeInsets.zero,
                                         ),
                                         child: Text(
-                                          'BAR',
+                                          'BARS',
                                           style: const TextStyle(
                                             color: Colors.black,
                                             fontSize: 13,
