@@ -35,6 +35,10 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
     'natural': GlobalKey(),
   };
 
+  int _sharpState = 0; // 0: off, 1: sharp, 2: double sharp
+  int _flatState = 0; // 0: off, 1: flat, 2: double flat
+  int _naturalState = 0; // 0: off, 1: natural
+
   // Octave pair state - false = Middle+Top pair, true = Bottom+Middle pair
   bool showLowerPair = false;
 
@@ -332,6 +336,163 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
             fontFamily: 'Bravura',
             fontSize: 30,
             color: Color(0xFF242038),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSharpButton(BuildContext context) {
+    String displayUnicode;
+    switch (_sharpState) {
+      case 1:
+        displayUnicode = '\uF4DE'; // Sharp
+        break;
+      case 2:
+        displayUnicode = '\uF4DF'; // Double Sharp
+        break;
+      default:
+        displayUnicode = '\uF4DE'; // Default to sharp
+    }
+
+    return SizedBox(
+      width: 30,
+      height: 40,
+      child: ElevatedButton(
+        onPressed: () {
+          setState(() {
+            _sharpState = (_sharpState + 1) % 3;
+            _flatState = 0;
+            _naturalState = 0;
+            String accidental = '';
+            if (_sharpState == 1) {
+              accidental = '\uF4DE';
+            } else if (_sharpState == 2) {
+              accidental = '\uF4DF';
+            }
+            context
+                .read<SelectedAccidentalProvider>()
+                .updateSelectedAccidental(accidental);
+          });
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor:
+              _sharpState != 0 ? Colors.grey[300] : Colors.grey[100],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: const BorderSide(color: Colors.black, width: 1),
+          ),
+          padding: EdgeInsets.zero,
+        ),
+        child: Transform.translate(
+          offset: const Offset(0, 10),
+          child: Text(
+            displayUnicode,
+            style: const TextStyle(
+              fontFamily: 'Bravura',
+              fontSize: 28,
+              color: Color(0xFF242038),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFlatButton(BuildContext context) {
+    String displayUnicode;
+    switch (_flatState) {
+      case 1:
+        displayUnicode = '\uF4DC'; // Flat
+        break;
+      case 2:
+        displayUnicode = '\uF4E0'; // Double Flat
+        break;
+      default:
+        displayUnicode = '\uF4DC'; // Default to flat
+    }
+
+    return SizedBox(
+      width: 30,
+      height: 40,
+      child: ElevatedButton(
+        onPressed: () {
+          setState(() {
+            _flatState = (_flatState + 1) % 3;
+            _sharpState = 0;
+            _naturalState = 0;
+            String accidental = '';
+            if (_flatState == 1) {
+              accidental = '\uF4DC';
+            } else if (_flatState == 2) {
+              accidental = '\uF4E0';
+            }
+            context
+                .read<SelectedAccidentalProvider>()
+                .updateSelectedAccidental(accidental);
+          });
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor:
+              _flatState != 0 ? Colors.grey[300] : Colors.grey[100],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: const BorderSide(color: Colors.black, width: 1),
+          ),
+          padding: EdgeInsets.zero,
+        ),
+        child: Transform.translate(
+          offset: const Offset(0, 10),
+          child: Text(
+            displayUnicode,
+            style: const TextStyle(
+              fontFamily: 'Bravura',
+              fontSize: 28,
+              color: Color(0xFF242038),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNaturalButton(BuildContext context) {
+    return SizedBox(
+      width: 30,
+      height: 40,
+      child: ElevatedButton(
+        onPressed: () {
+          setState(() {
+            _naturalState = (_naturalState + 1) % 2;
+            _sharpState = 0;
+            _flatState = 0;
+            String accidental = '';
+            if (_naturalState == 1) {
+              accidental = '\uF4DD';
+            }
+            context
+                .read<SelectedAccidentalProvider>()
+                .updateSelectedAccidental(accidental);
+          });
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor:
+              _naturalState != 0 ? Colors.grey[300] : Colors.grey[100],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: const BorderSide(color: Colors.black, width: 1),
+          ),
+          padding: EdgeInsets.zero,
+        ),
+        child: Transform.translate(
+          offset: const Offset(0, 10),
+          child: const Text(
+            '\uF4DD',
+            style: TextStyle(
+              fontFamily: 'Bravura',
+              fontSize: 28,
+              color: Color(0xFF242038),
+            ),
           ),
         ),
       ),
@@ -652,13 +813,13 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                     ),
                     const SizedBox(height: 5),
                     // Shift buttons
-                    _buildShiftButton('sharp', 'Sharp', context),
+                    _buildSharpButton(context),
                     const SizedBox(height: 5),
-                    _buildShiftButton('flat', 'Flat', context),
+                    _buildFlatButton(context),
                     const SizedBox(height: 5),
                     Transform.translate(
                       offset: const Offset(-4, 0),
-                      child: _buildShiftButton('natural', 'Natural', context),
+                      child: _buildNaturalButton(context),
                     ),
                   ],
                 ),

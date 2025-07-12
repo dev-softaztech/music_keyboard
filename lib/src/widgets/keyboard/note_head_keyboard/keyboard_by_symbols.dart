@@ -327,16 +327,11 @@ class KeyboardSymbolsMusicStaffPainter extends CustomPainter {
         canvas, paint, noteY, size.width / 2, noteWidth, lineSpacing, staffTop);
 
     // For notes with accidentals, we need to draw both the accidental and the note
-    bool isAccidental = unicodeCharacter == '\ue260' || // flat
-        unicodeCharacter == '\ue261' || // natural
-        unicodeCharacter == '\ue262' || // sharp
-        unicodeCharacter == '\ue263' || // flat
-        unicodeCharacter == '\ue264' || // sharp
-        unicodeCharacter == '\ue265' || // flat
-        unicodeCharacter == '\ue266' || // sharp
-        unicodeCharacter == '\ue267' || // flat
-        unicodeCharacter == '\ue268' || // sharp
-        unicodeCharacter == '\ue269'; // natural
+    bool isAccidental = unicodeCharacter == '\uF4DE' || // sharp
+        unicodeCharacter == '\uF4DF' || // sharp
+        unicodeCharacter == '\uF4DC' || // flat
+        unicodeCharacter == '\uF4E0' || // flat
+        unicodeCharacter == '\uF4DD'; // natural
 
     if (musicalNote.type == NoteType.accidental ||
         (musicalNote.type != NoteType.clef &&
