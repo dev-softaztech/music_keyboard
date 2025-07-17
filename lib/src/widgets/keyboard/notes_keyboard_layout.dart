@@ -702,13 +702,16 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                           ),
                           padding: EdgeInsets.zero,
                         ),
-                        child: Text(
-                          '\uE883',
-                          style: const TextStyle(
-                            color: Colors.black,
-                            fontSize: 40,
-                            //fontWeight: FontWeight.bold,
-                            fontFamily: 'Bravura',
+                        child: Transform.translate(
+                          offset: const Offset(0, 22),
+                          child: Text(
+                            '\uE201 \uE202 \uE203',
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontSize: 22,
+                              //fontWeight: FontWeight.bold,
+                              fontFamily: 'Bravura',
+                            ),
                           ),
                         ),
                       ),
@@ -727,13 +730,32 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                           ),
                           padding: EdgeInsets.zero,
                         ),
-                        child: Text(
-                          '\uE110',
-                          style: const TextStyle(
-                            color: Colors.black,
-                            fontSize: 25,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Bravura',
+                        child: Transform.translate(
+                          offset: const Offset(7, 8),
+                          child: Row(
+                            children: [
+                              Text(
+                                '\uE1F0 ',
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 25,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Bravura',
+                                ),
+                              ),
+                              Transform.translate(
+                                offset: const Offset(0, -2),
+                                child: Text(
+                                  '\uE110',
+                                  style: const TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'Bravura',
+                                  ),
+                                ),
+                              )
+                            ],
                           ),
                         ),
                       ),

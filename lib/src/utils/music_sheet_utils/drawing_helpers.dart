@@ -103,7 +103,7 @@ void drawRestKey(
 
   textPainter.layout();
   final offsetX = noteX - textPainter.width / 2;
-  final offsetY = staffTop - textPainter.height / 2;
+  final offsetY = (staffTop + (lineSpacing * 2)) - textPainter.height / 2;
   textPainter.paint(canvas, Offset(offsetX, offsetY + 0.5));
 }
 
