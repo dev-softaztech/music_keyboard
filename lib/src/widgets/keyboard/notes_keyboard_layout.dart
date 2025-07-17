@@ -24,6 +24,7 @@ class NotesKeyboardLayout extends StatefulWidget {
 }
 
 class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
+  String _selectedRestUnicode = '\ue4e5'; // Default rest unicode, whole note
   // Track which shift button is currently showing its popup
   String? _activeShiftButton;
   // Overlay entry for the popup
@@ -149,27 +150,15 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
 
   // Get unicode options based on button type
   List<String> _getUnicodeOptions(String buttonType) {
-    if (buttonType == 'sharp') {
+    if (buttonType == 'rest') {
       return [
-        '\ue262',
-        '\ue268',
-        '\ue263',
-        '\ue265',
-        '\ue269'
-      ]; // Sharp variants
-    } else if (buttonType == 'flat') {
-      return ['\ue260', '\ue264', '\ue266', '\ue267']; // Flat variants
-    } else if (buttonType == 'natural') {
-      return ['\ue261']; // Natural variants
-    } else if (buttonType == 'rest') {
-      return [
-        '\ue4e5',
-        '\ue1b3',
-        '\ue4e4',
-        '\ue4e6',
-        '\ue4e7',
-        '\ue4e8',
-        '\ue4e9'
+        '\ue4e5', // Whole rest
+        '\ue4e6', // Half rest
+        '\ue4e4', // Quarter rest
+        '\ue4e7', // 8th rest
+        '\ue4e8', // 16th rest
+        '\ue4e9', // 32nd rest
+        '\ue1b3', // 64th rest
       ]; // Rest variants
     }
     return [];
@@ -192,10 +181,23 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
         final unicode = unicodeOptions[index];
         return InkWell(
           onTap: () {
-            // Update the selected accidental in the provider
-            context
-                .read<SelectedAccidentalProvider>()
-                .updateSelectedAccidental(unicode);
+            if (buttonType == 'rest') {
+              setState(() {
+                _selectedRestUnicode = unicode;
+              });
+              widget.onKeyPress(MusicalNote(
+                pitch: "D",
+                octave: 4,
+                type: NoteType.rest,
+                isConnected: false,
+                unicodeCharacter: unicode,
+              ));
+            } else {
+              // Update the selected accidental in the provider
+              context
+                  .read<SelectedAccidentalProvider>()
+                  .updateSelectedAccidental(unicode);
+            }
             // Remove the overlay
             _removeOverlay();
           },
@@ -220,122 +222,47 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
     );
   }
 
-  // Check if the accidental belongs to a specific button type
-  bool _isAccidentalForButtonType(String accidental, String buttonType) {
-    if (buttonType == 'sharp') {
-      return accidental == '\ue262' || // sharp
-          accidental == '\ue268' || // sharp
-          accidental == '\ue263' || // sharp
-          accidental == '\ue265' ||
-          accidental == '\ue269'; // sharp
-    } else if (buttonType == 'flat') {
-      return accidental == '\ue260' || // flat
-          accidental == '\ue264' || // flat
-          accidental == '\ue266' || // flat
-          accidental == '\ue267'; // flat
-    } else if (buttonType == 'rest') {
-      return accidental == '\ue4e5' ||
-          accidental == '\ue1b3' ||
-          accidental == '\ue4e4' ||
-          accidental == '\ue4e6' ||
-          accidental == '\ue4e7' ||
-          accidental == '\ue4e8' ||
-          accidental == '\ue4e9';
-    } else {
-      // natural
-      return accidental == '\ue261' || // natural
-          accidental == '\ue261'; // natural
-    }
-  }
-
-  // Build a shift button
   Widget _buildShiftButton(
       String buttonType, String label, BuildContext context) {
     final isActive = _activeShiftButton == buttonType;
 
-    // Get the selected accidental from the provider
-    final selectedAccidental =
-        context.watch<SelectedAccidentalProvider>().selectedAccidental;
-
-    // Check if this button type is currently selected (has one of its accidentals active)
-    final isSelected = selectedAccidental.isNotEmpty &&
-        _isAccidentalForButtonType(selectedAccidental, buttonType);
-
-    // Determine which unicode to show based on the button type
-    String displayUnicode;
-    if (buttonType == 'sharp') {
-      displayUnicode = selectedAccidental == '\ue262' ||
-              selectedAccidental == '\ue268' ||
-              selectedAccidental == '\ue263' ||
-              selectedAccidental == '\ue265' ||
-              selectedAccidental == '\ue269'
-          ? selectedAccidental
-          : '\ue262';
-    } else if (buttonType == 'flat') {
-      displayUnicode = selectedAccidental == '\ue260' ||
-              selectedAccidental == '\ue264' ||
-              selectedAccidental == '\ue266' ||
-              selectedAccidental == '\ue267'
-          ? selectedAccidental
-          : '\ue260';
-    } else if (buttonType == 'rest') {
-      displayUnicode = selectedAccidental == '\ue4e5' ||
-              selectedAccidental == '\ue1b3' ||
-              selectedAccidental == '\ue4e4' ||
-              selectedAccidental == '\ue4e6' ||
-              selectedAccidental == '\ue4e7' ||
-              selectedAccidental == '\ue4e8' ||
-              selectedAccidental == '\ue4e9'
-          ? selectedAccidental
-          : '\ue4e5';
-    } else {
-      // natural
-      displayUnicode =
-          selectedAccidental == '\ue261' || selectedAccidental == '\ue261'
-              ? selectedAccidental
-              : '\ue261';
-    }
-
     return SizedBox(
       width: 30,
       height: 40,
-      child: ElevatedButton(
-        key: _shiftButtonKeys[buttonType],
-        onPressed: () {
-          if (isActive) {
-            // If the popup is active, close it
-            _removeOverlay();
-          } else if (isSelected) {
-            // If this button is already selected (shaded), clear the accidental
-            // Use Future.microtask to schedule the update after the build phase
-            Future.microtask(() {
-              context
-                  .read<SelectedAccidentalProvider>()
-                  .updateSelectedAccidental('');
-            });
-          } else {
-            // Otherwise show the popup
-            _showPopup(buttonType, context);
-          }
+      child: GestureDetector(
+        onLongPress: () {
+          _showPopup(buttonType, context);
         },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isActive
-              ? Colors.grey[500]
-              : isSelected
-                  ? Colors.grey[300] // Shaded when selected
-                  : Colors.grey[100],
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: BorderSide(color: Colors.black, width: 1),
+        child: ElevatedButton(
+          key: _shiftButtonKeys[buttonType],
+          onPressed: () {
+            if (isActive) {
+              _removeOverlay();
+            } else if (buttonType == 'rest') {
+              widget.onKeyPress(MusicalNote(
+                pitch: "",
+                octave: 0,
+                type: NoteType.rest,
+                isConnected: false,
+                unicodeCharacter: _selectedRestUnicode,
+              ));
+            }
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isActive ? Colors.grey[500] : Colors.grey[100],
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+              side: const BorderSide(color: Colors.black, width: 1),
+            ),
+            padding: EdgeInsets.zero,
           ),
-          padding: EdgeInsets.zero,
-        ),
-        child: Text(
-          displayUnicode,
-          style: const TextStyle(
-            fontFamily: 'Bravura',
-            fontSize: 30,
-            color: Color(0xFF242038),
+          child: Text(
+            _selectedRestUnicode,
+            style: const TextStyle(
+              fontFamily: 'Bravura',
+              fontSize: 30,
+              color: Color(0xFF242038),
+            ),
           ),
         ),
       ),

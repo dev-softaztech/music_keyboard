@@ -19,17 +19,13 @@ void drawNote(
     return;
   }
 
-  final double noteY =
-      calculateNoteYMainSheet(note.pitch, note.octave, lineSpacing, staffTop);
-  note.noteY = noteY;
-
   if (note.type == NoteType.rest) {
-    drawRestAccidentalKey(canvas, paint, note, lineSpacing, staffTop, noteX,
-        notes, index, noteY, noteColour);
-  } else if (note.type == NoteType.accidental) {
-    drawRestAccidentalKey(canvas, paint, note, lineSpacing, staffTop, noteX,
-        notes, index, noteY, noteColour);
+    drawRestKey(canvas, paint, note, lineSpacing, staffTop, noteX, notes, index,
+        noteColour);
   } else {
+    final double noteY =
+        calculateNoteYMainSheet(note.pitch, note.octave, lineSpacing, staffTop);
+    note.noteY = noteY;
     drawNoteKey(canvas, paint, note, lineSpacing, staffTop, noteX, notes, index,
         noteY, noteSpacing, noteColour);
   }
@@ -40,7 +36,7 @@ void drawClefKey(
     Paint paint,
     MusicalNote note,
     double lineSpacing,
-    double staffCenter,
+    double staffTop,
     double noteX,
     List<MusicalNote> notes,
     int index,
@@ -66,7 +62,7 @@ void drawClefKey(
 
   textPainter.layout();
   final offsetX = noteX - textPainter.width / 2;
-  double offsetY = staffCenter - (lineSpacing * 4) - 1;
+  double offsetY = staffTop - (lineSpacing * 4) - 1;
 
   // Adjust Y position for clefs
   if (note.unicodeCharacter == "\uf472") offsetY = offsetY - 10;
@@ -83,19 +79,16 @@ void drawClefKey(
   textPainter.paint(canvas, Offset(offsetX, offsetY + 0.5));
 }
 
-void drawRestAccidentalKey(
+void drawRestKey(
     Canvas canvas,
     Paint paint,
     MusicalNote note,
     double lineSpacing,
-    double staffCenter,
+    double staffTop,
     double noteX,
     List<MusicalNote> notes,
     int index,
-    double noteY,
     Color noteColour) {
-  double noteWidth = 10;
-
   final textPainter = TextPainter(
     text: TextSpan(
       text: note.unicodeCharacter, // Unicode character for whole note
@@ -110,12 +103,8 @@ void drawRestAccidentalKey(
 
   textPainter.layout();
   final offsetX = noteX - textPainter.width / 2;
-  final offsetY = noteY - textPainter.height / 2;
+  final offsetY = staffTop - textPainter.height / 2;
   textPainter.paint(canvas, Offset(offsetX, offsetY + 0.5));
-  noteWidth = textPainter.width;
-
-  drawLedgerLines(
-      canvas, paint, noteY, noteX, noteWidth, lineSpacing, staffCenter);
 }
 
 void drawNoteKey(
