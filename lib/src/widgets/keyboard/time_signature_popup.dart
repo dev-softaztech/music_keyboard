@@ -39,14 +39,16 @@ class _TimeSignaturePopupState extends State<TimeSignaturePopup> {
     '\uF5DA', // 9
   ];
 
-  late FixedExtentScrollController _topController;
-  late FixedExtentScrollController _bottomController;
+  late PageController _topController;
+  late PageController _bottomController;
+  int _selectedTopIndex = 4;
+  int _selectedBottomIndex = 4;
 
   @override
   void initState() {
     super.initState();
-    _topController = FixedExtentScrollController(initialItem: 4);
-    _bottomController = FixedExtentScrollController(initialItem: 4);
+    _topController = PageController(initialPage: 4, viewportFraction: 0.3);
+    _bottomController = PageController(initialPage: 4, viewportFraction: 0.3);
   }
 
   @override
@@ -71,97 +73,176 @@ class _TimeSignaturePopupState extends State<TimeSignaturePopup> {
   }
 
   Widget _buildCommonButton(String top, String bottom, String displayText) {
-    return ElevatedButton(
-      onPressed: () => _selectTimeSignature(top, bottom),
-      child: Text(displayText),
+    return SizedBox(
+      width: 60,
+      height: 70,
+      child: ElevatedButton(
+          onPressed: () => _selectTimeSignature(top, bottom),
+          child: Column(
+            children: [
+              Transform.translate(
+                offset: const Offset(-3, 25),
+                child: Text(
+                  top,
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 40,
+                    fontFamily: 'Bravura',
+                  ),
+                ),
+              ),
+              Transform.translate(
+                offset: const Offset(-3, -32),
+                child: Text(
+                  bottom,
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 40,
+                    fontFamily: 'Bravura',
+                  ),
+                ),
+              ),
+            ],
+          )),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Select Time Signature'),
+      //title: const Text('Select Time Signature'),
       content:
           _showCustomSelector ? _buildCustomSelector() : _buildCommonSelector(),
     );
   }
 
   Widget _buildCommonSelector() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _buildCommonButton('\uF5D1', '\uF5D0', '4/4'),
-        _buildCommonButton('\uF5CF', '\uF5D0', '3/4'),
-        _buildCommonButton('\uF5CD', '\uF5D0', '2/4'),
-        _buildCommonButton('\uF5D5', '\uF5D8', '6/8'),
-        const SizedBox(height: 16),
-        ElevatedButton(
-          onPressed: () {
-            setState(() {
-              _showCustomSelector = true;
-            });
-          },
-          child: const Text('Custom'),
-        ),
-      ],
+    return SizedBox(
+      height: 140,
+      child: Column(
+        children: [
+          Row(
+            children: [
+              _buildCommonButton('\uF5D1', '\uF5D0', '4/4'),
+              const SizedBox(width: 5),
+              _buildCommonButton('\uF5CF', '\uF5D0', '3/4'),
+              const SizedBox(width: 5),
+              _buildCommonButton('\uF5CD', '\uF5D0', '2/4'),
+              const SizedBox(width: 5),
+              _buildCommonButton('\uF5D5', '\uF5D8', '6/8'),
+            ],
+          ),
+          const SizedBox(height: 15),
+          ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _showCustomSelector = true;
+                });
+              },
+              child: const Text(
+                'CUSTOM',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              )),
+        ],
+      ),
     );
   }
 
   Widget _buildCustomSelector() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildWheel(_topController, _topUnicodes),
-            const Text('/', style: TextStyle(fontSize: 40)),
-            _buildWheel(_bottomController, _bottomUnicodes),
-          ],
-        ),
-        const SizedBox(height: 20),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
+    return SizedBox(
+      width: 200, // Constrain the width of the dialog content
+      child: Stack(
+        children: [
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                height: 60,
+                child: Column(
+                  children: [
+                    _buildHorizontalWheel(_topController, _bottomUnicodes,
+                        (index) {
+                      setState(() {
+                        _selectedTopIndex = index;
+                      });
+                    }),
+                    _buildHorizontalWheel(_bottomController, _bottomUnicodes,
+                        (index) {
+                      setState(() {
+                        _selectedBottomIndex = index;
+                      });
+                    }),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Cancel'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      final top = _topUnicodes[_selectedTopIndex];
+                      final bottom = _bottomUnicodes[_selectedBottomIndex];
+                      _selectTimeSignature(top, bottom);
+                    },
+                    child: const Text('Confirm'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          // 🔷 Line overlay
+          Positioned(
+            left: 95, // adjust: slightly left of center (200 / 2 = 100)
+            top: 0,
+            bottom: null,
+            child: Container(
+              width: 1,
+              height: 70, // only cover top half of 60
+              color: Colors.black,
             ),
-            ElevatedButton(
-              onPressed: () {
-                final top = _topUnicodes[_topController.selectedItem];
-                final bottom = _bottomUnicodes[_bottomController.selectedItem];
-                _selectTimeSignature(top, bottom);
-              },
-              child: const Text('Confirm'),
+          ),
+          Positioned(
+            right: 95, // adjust: slightly left of center (200 / 2 = 100)
+            top: 0,
+            bottom: null,
+            child: Container(
+              width: 1,
+              height: 70, // only cover top half of 60
+              color: Colors.black,
             ),
-          ],
-        ),
-      ],
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildWheel(
-      FixedExtentScrollController controller, List<String> items) {
+  Widget _buildHorizontalWheel(PageController controller, List<String> items,
+      void Function(int) onPageChanged) {
     return SizedBox(
-      height: 150,
-      width: 80,
-      child: ListWheelScrollView.useDelegate(
+      height: 30,
+      child: PageView.builder(
         controller: controller,
-        itemExtent: 50,
-        physics: const FixedExtentScrollPhysics(),
-        onSelectedItemChanged: (index) {},
-        childDelegate: ListWheelChildLoopingListDelegate(
-          children: items
-              .map((item) => Center(
-                    child: Text(
-                      item,
-                      style:
-                          const TextStyle(fontFamily: 'Bravura', fontSize: 40),
-                    ),
-                  ))
-              .toList(),
-        ),
+        scrollDirection: Axis.horizontal,
+        onPageChanged: onPageChanged,
+        itemCount: items.length,
+        itemBuilder: (context, index) {
+          return Center(
+            child: Text(
+              items[index],
+              style: const TextStyle(fontFamily: 'Bravura', fontSize: 40),
+            ),
+          );
+        },
       ),
     );
   }
