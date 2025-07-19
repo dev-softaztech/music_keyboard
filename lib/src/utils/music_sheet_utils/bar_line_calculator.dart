@@ -4,33 +4,33 @@ import 'package:music_keyboard/models/music_note.dart';
 class BarLineCalculator {
   /// Map of time signature unicode characters to their beat values
   static final Map<String, double> timeSignatureValues = {
-    '\ue08a': 4.0, // 4 quarter note beats per bar
-    '\ue08b': 4.0, // 2 half note beats per bar (equivalent to 4 quarter notes)
-    '\uf5f9': 2.0, // 2 quarter note beats per bar
-    '\uf5fa': 4.0, // 2 half note beats per bar
-    '\uf5fb': 6.0, // 3 half note beats per bar
-    '\uf5fc': 3.0, // 3 quarter note beats per bar
-    '\uf5fd': 3.0 / 2, // 3 eighth note beats per bar
-    '\uf5fe': 4.0, // 4 quarter note beats per bar
-    '\uf5ff': 5.0, // 5 quarter note beats per bar
-    '\uf600': 5.0 / 2, // 5 eighth note beats per bar
-    '\uf601': 6.0, // 6 quarter note beats per bar
-    '\uf602': 6.0 / 2, // 6 eighth note beats per bar
-    '\uf603': 7.0 / 2, // 7 eighth note beats per bar
-    '\uf604': 9.0 / 2, // 9 eighth note beats per bar
-    '\uf605': 12.0 / 2, // 12 eighth note beats per bar
-    '\uf510': 4.0, // Additional time signature from ClefsKeyboardLayout
+    '\ue08a': 1.0, // 4 quarter note beats per bar
+    '\ue08b': 1.0, // 2 half note beats per bar (equivalent to 4 quarter notes)
+    '\uf5f9': 0.5, // 2 quarter note beats per bar
+    '\uf5fa': 1.0, // 2 half note beats per bar
+    '\uf5fb': 1.5, // 3 half note beats per bar
+    '\uf5fc': 0.75, // 3 quarter note beats per bar
+    '\uf5fd': 0.75 / 2, // 3 eighth note beats per bar
+    '\uf5fe': 1.0, // 4 quarter note beats per bar
+    '\uf5ff': 1.25, // 5 quarter note beats per bar
+    '\uf600': 1.25 / 2, // 5 eighth note beats per bar
+    '\uf601': 1.5, // 6 quarter note beats per bar
+    '\uf602': 1.5 / 2, // 6 eighth note beats per bar
+    '\uf603': 1.75 / 2, // 7 eighth note beats per bar
+    '\uf604': 2.25 / 2, // 9 eighth note beats per bar
+    '\uf605': 3.0 / 2, // 12 eighth note beats per bar
+    '\uf510': 1.0, // Additional time signature from ClefsKeyboardLayout
   };
-
+//currently based on quarter notes so a whole note is 4, change to whole note being 1. update above and below.
   /// Map of note types to their duration values (in quarter notes)
   static final Map<NoteType, double> noteDurations = {
-    NoteType.whole: 4.0,
-    NoteType.half: 2.0,
-    NoteType.quarter: 1.0,
-    NoteType.eighth: 0.5,
-    NoteType.sixteenth: 0.25,
-    NoteType.thirtySecond: 0.125,
-    NoteType.sixtyFourth: 0.0625,
+    NoteType.whole: 1,
+    NoteType.half: 0.5,
+    NoteType.quarter: 0.25,
+    NoteType.eighth: 0.125,
+    NoteType.sixteenth: 0.0625,
+    NoteType.thirtySecond: 0.03125,
+    NoteType.sixtyFourth: 0.015625,
     NoteType.rest: 0.0, // Rests don't contribute to duration
     NoteType.accidental: 0.0, // Accidentals don't contribute to duration
     NoteType.clef: 0.0, // Clefs don't contribute to duration

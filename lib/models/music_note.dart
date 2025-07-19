@@ -9,6 +9,8 @@ class MusicalNote {
   int? slurEndIndex;
   double noteY;
   double duration; // Duration value for bar line calculation
+  final String topTimeSignatureCharacter;
+  final String bottomTimeSignatureCharacter;
 
   MusicalNote(
       {required this.pitch,
@@ -19,7 +21,9 @@ class MusicalNote {
       this.unicodeCharacter = "",
       this.accidentalCharacter = "",
       this.noteY = 0.0,
-      this.duration = 0.0});
+      this.duration = 0.0,
+      this.topTimeSignatureCharacter = "",
+      this.bottomTimeSignatureCharacter = ""});
 
   MusicalNote copy() {
     return MusicalNote(
@@ -31,7 +35,9 @@ class MusicalNote {
         unicodeCharacter: unicodeCharacter,
         accidentalCharacter: accidentalCharacter,
         noteY: noteY,
-        duration: duration);
+        duration: duration,
+        topTimeSignatureCharacter: topTimeSignatureCharacter,
+        bottomTimeSignatureCharacter: bottomTimeSignatureCharacter);
   }
 }
 
@@ -46,5 +52,6 @@ enum NoteType {
   clef,
   rest,
   accidental,
-  bar
+  bar,
+  timeSignature
 }

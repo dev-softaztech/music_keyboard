@@ -17,9 +17,10 @@ void drawNote(
     drawClefKey(canvas, paint, note, lineSpacing, staffTop, noteX, notes, index,
         noteColour);
     return;
-  }
-
-  if (note.type == NoteType.rest) {
+  } else if (note.type == NoteType.timeSignature) {
+    drawTimeSignatureKey(canvas, paint, note, lineSpacing, staffTop, noteX,
+        notes, index, noteColour);
+  } else if (note.type == NoteType.rest) {
     drawRestKey(canvas, paint, note, lineSpacing, staffTop, noteX, notes, index,
         noteColour);
   } else {
@@ -77,6 +78,50 @@ void drawClefKey(
   //}
 
   textPainter.paint(canvas, Offset(offsetX, offsetY + 0.5));
+}
+
+void drawTimeSignatureKey(
+    Canvas canvas,
+    Paint paint,
+    MusicalNote note,
+    double lineSpacing,
+    double staffTop,
+    double noteX,
+    List<MusicalNote> notes,
+    int index,
+    Color noteColour) {
+  final textPainterTop = TextPainter(
+    text: TextSpan(
+      text: note.unicodeCharacter,
+      style: TextStyle(
+        fontFamily: 'Bravura',
+        fontSize: 40,
+        color: noteColour,
+      ),
+    ),
+    textDirection: TextDirection.ltr,
+  );
+
+  final textPainterBottom = TextPainter(
+    text: TextSpan(
+      text: note.unicodeCharacter,
+      style: TextStyle(
+        fontFamily: 'Bravura',
+        fontSize: 40,
+        color: noteColour,
+      ),
+    ),
+    textDirection: TextDirection.ltr,
+  );
+
+  textPainterTop.layout();
+  textPainterBottom.layout();
+
+  final offsetX = noteX - textPainterTop.width / 2;
+  double offsetY = staffTop - (lineSpacing * 4) - 1;
+
+  textPainterTop.paint(canvas, Offset(offsetX, offsetY + 0.5));
+  textPainterBottom.paint(canvas, Offset(offsetX, offsetY + 0.5));
 }
 
 void drawRestKey(
