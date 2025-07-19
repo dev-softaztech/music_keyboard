@@ -9,8 +9,8 @@ class MusicalNote {
   int? slurEndIndex;
   double noteY;
   double duration; // Duration value for bar line calculation
-  final String topTimeSignatureCharacter;
-  final String bottomTimeSignatureCharacter;
+  String topTimeSignatureCharacter;
+  String bottomTimeSignatureCharacter;
 
   MusicalNote(
       {required this.pitch,

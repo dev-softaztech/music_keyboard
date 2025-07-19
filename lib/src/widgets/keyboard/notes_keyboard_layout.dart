@@ -618,9 +618,10 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                             widget.onKeyPress(MusicalNote(
                                 pitch: "",
                                 octave: 0,
-                                type: NoteType.clef,
+                                type: NoteType.timeSignature,
                                 isConnected: false,
-                                unicodeCharacter: '\uf5fe'));
+                                topTimeSignatureCharacter: '\uF5D1',
+                                bottomTimeSignatureCharacter: '\uF5D0'));
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.grey[100],

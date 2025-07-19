@@ -63,15 +63,16 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
       // Create a new note with the selected accidental
       final noteWithAccidental = MusicalNote(
-        pitch: note.pitch,
-        octave: note.octave,
-        type: note.type,
-        isConnected: note
-            .isConnected, //isConnected: isBeamLockActive ? true : note.isConnected,
-        unicodeCharacter: note.unicodeCharacter,
-        accidentalCharacter: selectedAccidental,
-        noteY: note.noteY,
-      );
+          pitch: note.pitch,
+          octave: note.octave,
+          type: note.type,
+          isConnected: note
+              .isConnected, //isConnected: isBeamLockActive ? true : note.isConnected,
+          unicodeCharacter: note.unicodeCharacter,
+          accidentalCharacter: selectedAccidental,
+          noteY: note.noteY,
+          topTimeSignatureCharacter: note.topTimeSignatureCharacter,
+          bottomTimeSignatureCharacter: note.bottomTimeSignatureCharacter);
 
       setState(() {
         // Add the note first

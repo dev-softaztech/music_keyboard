@@ -92,7 +92,7 @@ void drawTimeSignatureKey(
     Color noteColour) {
   final textPainterTop = TextPainter(
     text: TextSpan(
-      text: note.unicodeCharacter,
+      text: note.topTimeSignatureCharacter,
       style: TextStyle(
         fontFamily: 'Bravura',
         fontSize: 40,
@@ -101,10 +101,9 @@ void drawTimeSignatureKey(
     ),
     textDirection: TextDirection.ltr,
   );
-
   final textPainterBottom = TextPainter(
     text: TextSpan(
-      text: note.unicodeCharacter,
+      text: note.bottomTimeSignatureCharacter,
       style: TextStyle(
         fontFamily: 'Bravura',
         fontSize: 40,
