@@ -44,7 +44,7 @@ class MusicSheetPainter extends CustomPainter {
       BarLineCalculator.setNoteDurations(sheetNoteRows[rowIndex]);
 
       // Find the applicable time signature for this row
-      String? timeSignature;
+      MusicalNote? timeSignature;
 
       // First check for time signatures within the current row
       timeSignature =
@@ -68,7 +68,7 @@ class MusicSheetPainter extends CustomPainter {
       int barStartIndex = 0;
       double barStartX = 60.0;
       double currentBarDuration = 0.0;
-      String? currentBarTimeSignature = timeSignature;
+      MusicalNote? currentBarTimeSignature = timeSignature;
 
       // First pass: identify all bars and their properties
       for (int i = 0; i < sheetNoteRows[rowIndex].length; i++) {
@@ -76,15 +76,12 @@ class MusicSheetPainter extends CustomPainter {
         double currentX = barStartX + ((i - barStartIndex) * currentRowSpacing);
 
         // Check for time signature changes within the row
-        if (note.type == NoteType.clef &&
-            BarLineCalculator.timeSignatureValues
-                .containsKey(note.unicodeCharacter)) {
-          currentBarTimeSignature = note.unicodeCharacter;
+        if (note.type == NoteType.timeSignature) {
+          currentBarTimeSignature = note;
 
           // End the previous bar if there was one
           if (i > 0) {
-            bool isOverfilled = (currentBarTimeSignature != null &&
-                    currentBarTimeSignature != "") &&
+            bool isOverfilled = currentBarTimeSignature != null &&
                 BarLineCalculator.hasBarTooManyNotes(
                     currentBarDuration, currentBarTimeSignature);
 

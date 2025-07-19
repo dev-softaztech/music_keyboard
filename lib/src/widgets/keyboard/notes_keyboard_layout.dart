@@ -3,6 +3,7 @@ import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/src/providers/selected_accidental_provider.dart';
 import 'package:music_keyboard/src/widgets/keyboard/note_head_keyboard/keyboard_by_symbols.dart';
 import 'package:music_keyboard/src/providers/selected_unicode_provider.dart';
+import 'package:music_keyboard/src/widgets/keyboard/time_signature_popup.dart';
 import 'package:provider/provider.dart';
 
 class NotesKeyboardLayout extends StatefulWidget {
@@ -609,41 +610,45 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                       ),
                     ),
                     const SizedBox(height: 5),
-                    //4/4 time signature
+                    // Time signature button
                     SizedBox(
-                        width: 30,
-                        height: 40,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            widget.onKeyPress(MusicalNote(
-                                pitch: "",
-                                octave: 0,
-                                type: NoteType.timeSignature,
-                                isConnected: false,
-                                topTimeSignatureCharacter: '\uF5D1',
-                                bottomTimeSignatureCharacter: '\uF5D0'));
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.grey[100],
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              side: BorderSide(color: Colors.black, width: 1),
-                            ),
-                            padding: EdgeInsets.zero,
+                      width: 30,
+                      height: 40,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return TimeSignaturePopup(
+                                onTimeSignatureSelected: (note) {
+                                  widget.onKeyPress(note);
+                                },
+                              );
+                            },
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey[100],
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            side:
+                                const BorderSide(color: Colors.black, width: 1),
                           ),
-                          child: Transform.translate(
-                            offset: const Offset(0, 11),
-                            child: Text(
-                              '\uf5fe',
-                              style: const TextStyle(
-                                color: Colors.black,
-                                fontSize: 23,
-                                //fontWeight: FontWeight.bold,
-                                fontFamily: 'Bravura',
-                              ),
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: Transform.translate(
+                          offset: const Offset(0, 11),
+                          child: const Text(
+                            '\uf5fe', // Represents time signatures in general
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 23,
+                              fontFamily: 'Bravura',
                             ),
                           ),
-                        )),
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 5),
                     _buildShiftButton('rest', 'Rest', context),
                     const SizedBox(height: 5),

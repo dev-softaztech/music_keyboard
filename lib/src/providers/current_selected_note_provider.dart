@@ -53,7 +53,7 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
   /// **Handle automatic bar line placement based on time signature**
   void _handleAutomaticBarLines(List<MusicalNote> notes,
       [List<List<MusicalNote>>? allRows]) {
-    String? timeSignature;
+    MusicalNote? timeSignature;
 
     // First check for time signatures within the current row
     timeSignature = BarLineCalculator.findLastTimeSignature(notes);
@@ -70,7 +70,7 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
         }
       }
 
-      if (currentRowIndex >= 0) {
+      if (currentRowIndex > 0) {
         timeSignature = BarLineCalculator.findLastTimeSignatureAcrossRows(
             allRows, currentRowIndex - 1);
       }
@@ -78,10 +78,7 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
 
     // Only proceed if we have a time signature (either in this row or from previous rows)
     if (timeSignature != null ||
-        notes.any((note) =>
-            note.type == NoteType.clef &&
-            BarLineCalculator.timeSignatureValues
-                .containsKey(note.unicodeCharacter))) {
+        notes.any((note) => note.type == NoteType.timeSignature)) {
       // Calculate positions for automatic bar lines
       // This method now handles multiple time signatures within a row
       List<int> barLinePositions =
