@@ -18,7 +18,7 @@ class BarsKeyboardLayout extends StatelessWidget {
       ('\ue034', 20.0),
       ('\uf45c', 20.0),
       ('\ue032', 20.0),
-      ('\uf473', 0.0),
+      //('\uf473', 0.0),
     ];
 
     return Center(

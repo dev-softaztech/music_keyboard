@@ -50,6 +50,8 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   DateTime? _lastTapTime;
 
   String keyType = "clefs";
+  String _selectedBarUnicode = '\ue030';
+  OverlayEntry? _barOverlayEntry;
 
   void handleKeyPress(MusicalNote note) {
     try {
@@ -328,6 +330,115 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
       print("Screenshot error: $e");
       ToastUtils.showToast("Screenshot failed: ${e.toString()}", isError: true);
     }
+  }
+
+  void _showBarPopup(BuildContext context) {
+    _removeBarOverlay(); // Remove any existing overlay first
+
+    final screenSize = MediaQuery.of(context).size;
+    final List<String> unicodeOptions = [
+      '\ue030',
+      '\ue031',
+      '\ue032',
+      '\ue033',
+      '\ue034',
+      '\uf45c',
+      '\ue032'
+    ];
+    const double popupWidth = 200.0;
+    const double buttonSize = 80.0;
+    const int crossAxisCount = 3;
+    final int rowCount = (unicodeOptions.length / crossAxisCount).ceil();
+    final double popupHeight = (buttonSize * rowCount) + 32.0;
+
+    _barOverlayEntry = OverlayEntry(
+      builder: (context) => Stack(
+        children: [
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: _removeBarOverlay,
+              behavior: HitTestBehavior.opaque,
+              child: Container(color: Colors.transparent),
+            ),
+          ),
+          Positioned(
+            left: (screenSize.width - popupWidth) / 2,
+            top: (screenSize.height - popupHeight) / 2,
+            child: Material(
+              elevation: 8,
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white),
+                ),
+                width: popupWidth,
+                height: popupHeight,
+                child: _buildBarPopupContent(unicodeOptions),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    Overlay.of(context).insert(_barOverlayEntry!);
+  }
+
+  void _removeBarOverlay() {
+    _barOverlayEntry?.remove();
+    _barOverlayEntry = null;
+  }
+
+  Widget _buildBarPopupContent(List<String> unicodeOptions) {
+    return GridView.builder(
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+        childAspectRatio: 0.9,
+      ),
+      itemCount: unicodeOptions.length,
+      itemBuilder: (context, index) {
+        final unicode = unicodeOptions[index];
+        return InkWell(
+          onTap: () {
+            setState(() {
+              _selectedBarUnicode = unicode;
+            });
+            handleKeyPress(MusicalNote(
+              pitch: "",
+              octave: 0,
+              type: NoteType.bar,
+              isConnected: false,
+              unicodeCharacter: unicode,
+            ));
+            _removeBarOverlay();
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Center(
+                child: Transform.translate(
+              offset: const Offset(0, 20),
+              child: Text(
+                unicode,
+                style: const TextStyle(
+                  fontFamily: 'Bravura',
+                  fontSize: 40,
+                  color: Color(0xFF242038),
+                ),
+              ),
+            )),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -689,31 +800,59 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                     SizedBox(
                                       width: 180,
                                       height: 30,
-                                      child: ElevatedButton(
-                                        onPressed: () {
-                                          handleKeyPress(MusicalNote(
-                                              pitch: "",
-                                              octave: 0,
-                                              type: NoteType.bar,
-                                              isConnected: false,
-                                              unicodeCharacter: "\ue030"));
+                                      child: GestureDetector(
+                                        onLongPress: () {
+                                          _showBarPopup(context);
                                         },
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.grey[100],
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                            side: BorderSide(
-                                                color: Colors.black, width: 1),
+                                        child: ElevatedButton(
+                                          onPressed: () {
+                                            handleKeyPress(MusicalNote(
+                                                pitch: "",
+                                                octave: 0,
+                                                type: NoteType.bar,
+                                                isConnected: false,
+                                                unicodeCharacter:
+                                                    _selectedBarUnicode));
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.grey[100],
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              side: const BorderSide(
+                                                  color: Colors.black,
+                                                  width: 1),
+                                            ),
+                                            padding: EdgeInsets.zero,
                                           ),
-                                          padding: EdgeInsets.zero,
-                                        ),
-                                        child: Text(
-                                          'BARS',
-                                          style: const TextStyle(
-                                            color: Colors.black,
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.bold,
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              const Text(
+                                                'BARS',
+                                                style: TextStyle(
+                                                  color: Colors.black,
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              const SizedBox(
+                                                width: 10,
+                                              ),
+                                              Transform.translate(
+                                                offset: const Offset(0, 8),
+                                                child: Text(
+                                                  _selectedBarUnicode,
+                                                  style: const TextStyle(
+                                                    color: Colors.black,
+                                                    fontSize: 19,
+                                                    fontFamily: 'Bravura',
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              )
+                                            ],
                                           ),
                                         ),
                                       ),
