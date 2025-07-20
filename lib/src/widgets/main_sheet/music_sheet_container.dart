@@ -303,7 +303,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
           widget.sheetNoteRows[_dragRow!], tapX, _dragRow!);
 
       setState(() {
-        _dragEnd = closestNoteIndex;
+        _dragEnd = closestNoteIndex.clamp(
+            0, widget.sheetNoteRows[_dragRow!].length - 1);
       });
     }
   }
