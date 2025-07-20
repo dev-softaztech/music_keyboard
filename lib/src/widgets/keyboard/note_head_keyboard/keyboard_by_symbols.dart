@@ -9,14 +9,10 @@ import 'package:music_keyboard/models/music_note.dart';
 
 class KeyboardBySymbols extends StatefulWidget {
   final void Function(MusicalNote note) onKeyPress;
-  final String keyType;
   final bool showLowerPair;
 
   const KeyboardBySymbols(
-      {super.key,
-      required this.onKeyPress,
-      required this.keyType,
-      required this.showLowerPair});
+      {super.key, required this.onKeyPress, required this.showLowerPair});
 
   @override
   State<KeyboardBySymbols> createState() => _KeyboardBySymbolsState();
@@ -37,16 +33,7 @@ class _KeyboardBySymbolsState extends State<KeyboardBySymbols> {
     final selectedCharacter =
         context.watch<SelectedUnicodeProvider>().selectedCharacter;
 
-    NoteType noteType = NoteType.whole;
-    if (widget.keyType == "clefs") {
-      noteType = NoteType.clef;
-    } else if (widget.keyType == "rests") {
-      noteType = NoteType.rest;
-    } else if (widget.keyType == "accidentals") {
-      noteType = NoteType.accidental;
-    } else if (widget.keyType == "notes") {
-      noteType = mapUnicodeToNoteType(selectedCharacter);
-    }
+    NoteType noteType = mapUnicodeToNoteType(selectedCharacter);
 
     return Center(
       child: Column(

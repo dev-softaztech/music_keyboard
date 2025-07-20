@@ -10,14 +10,12 @@ class NotesKeyboardLayout extends StatefulWidget {
   final bool showNotesKeyboard;
   final void Function(bool) onToggleKeyboard;
   final void Function(MusicalNote) onKeyPress;
-  final String keyType;
 
   const NotesKeyboardLayout({
     super.key,
     required this.showNotesKeyboard,
     required this.onToggleKeyboard,
     required this.onKeyPress,
-    required this.keyType,
   });
 
   @override
@@ -59,7 +57,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
     }
     super.dispose();
   }
-
+/*
   @override
   void didUpdateWidget(NotesKeyboardLayout oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -71,7 +69,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
         _activeShiftButton = null;
       }
     }
-  }
+  }*/
 
   // Show the popup for a specific shift button
   void _showPopup(String buttonType, BuildContext context) {
@@ -429,52 +427,15 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
 
   @override
   Widget build(BuildContext context) {
-    List<String> unicodeCharacters = [];
-
-    if (widget.keyType == "meters") {
-      unicodeCharacters = [
-        '\uf5f9',
-        '\uf5fa',
-        '\uf5fb',
-        '\uf5fc',
-        '\uf5fd',
-        '\uf5fe',
-        '\uf5ff',
-        '\uf600',
-        '\uf601',
-        '\uf602',
-        '\uf603',
-        '\uf604',
-        '\uf605',
-        '\uf510',
-        '\uf511',
-      ];
-    } else if (widget.keyType == "rests") {
-      unicodeCharacters = [
-        '\ue1b3',
-        '\ue4e3',
-        '\ue4e4',
-        '\ue4e5',
-        '\ue4e6',
-        '\ue4e7',
-        '\ue4e8',
-        '\ue4e9',
-        //'\ue4ea',
-        //'\ue4eb',
-        //'\ue4ec',
-        //'\ue4ed',
-      ];
-    } else if (widget.keyType == "notes") {
-      unicodeCharacters = [
-        '\ue1d2',
-        '\ue1d3',
-        '\ue1d5',
-        '\ue1d7',
-        '\ue1d9',
-        '\ue1db',
-        '\ue1dd',
-      ];
-    }
+    List<String> unicodeCharacters = [
+      '\ue1d2',
+      '\ue1d3',
+      '\ue1d5',
+      '\ue1d7',
+      '\ue1d9',
+      '\ue1db',
+      '\ue1dd',
+    ];
 
     return Container(
       height: 315, // Increased height to accommodate the arrows
@@ -511,11 +472,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                             padding: EdgeInsets.zero,
                           ),
                           child: Transform.translate(
-                            offset: widget.keyType == "notes"
-                                ? const Offset(0, 16)
-                                : widget.keyType == "accidentals"
-                                    ? const Offset(0, 4)
-                                    : const Offset(0, 0),
+                            offset: const Offset(0, 16),
                             child: Text(
                               character,
                               style: TextStyle(
@@ -687,9 +644,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                 ),
               ),
               KeyboardBySymbols(
-                  onKeyPress: widget.onKeyPress,
-                  keyType: widget.keyType,
-                  showLowerPair: showLowerPair),
+                  onKeyPress: widget.onKeyPress, showLowerPair: showLowerPair),
               Container(
                 margin: EdgeInsets.all(5.0),
                 padding: EdgeInsets.all(5.0),

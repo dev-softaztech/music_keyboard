@@ -4,8 +4,6 @@ import 'package:music_keyboard/src/providers/current_selected_note_provider.dart
 import 'package:music_keyboard/src/providers/is_connected_provider.dart';
 import 'package:music_keyboard/src/providers/list_of_spacing_for_each_row.dart';
 import 'package:music_keyboard/src/providers/selected_accidental_provider.dart';
-import 'package:music_keyboard/src/widgets/keyboard/bars_keyboard_layout.dart';
-import 'package:music_keyboard/src/widgets/keyboard/clefs_keyboard_layout.dart';
 import 'package:music_keyboard/src/widgets/keyboard/notes_keyboard_layout.dart';
 import 'package:music_keyboard/src/widgets/main_sheet/music_sheet_container.dart';
 import 'package:music_keyboard/src/utils/screenshot_saver.dart';
@@ -49,7 +47,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   bool isBeamLockActive = false;
   DateTime? _lastTapTime;
 
-  String keyType = "clefs";
+  //String keyType = "clefs";
   String _selectedBarUnicode = '\ue030';
   OverlayEntry? _barOverlayEntry;
 
@@ -617,80 +615,21 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                       child: ColoredBox(
                         color: const Color.fromARGB(255, 255, 253, 253),
                         child: Container(
-                          height: 440,
+                          height: 370,
                           padding: const EdgeInsets.fromLTRB(0, 5, 0, 0),
                           child: Column(
                             children: [
-                              // Toggle Buttons for Keyboard Selection and Backspace
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Row(children: [
-                                    Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                            vertical: 4, horizontal: 5),
-                                        child: ToggleButtons(
-                                          textStyle: const TextStyle(
-                                            fontSize: 11,
-                                          ),
-                                          isSelected: [
-                                            showClefs,
-                                            showBars,
-                                            showTimeSignatures,
-                                            showNotes,
-                                          ],
-                                          onPressed: (int index) {
-                                            setState(() {
-                                              // Reset all selections first
-                                              showClefs = index == 0;
-                                              showBars = index == 1;
-                                              showTimeSignatures = index == 2;
-                                              showNotes = index == 3;
-                                              if (index == 0) keyType = "clefs";
-                                              if (index == 1) keyType = "bars";
-                                              if (index == 2) keyType = "rests";
-                                              if (index == 3) keyType = "notes";
-                                            });
-                                          },
-                                          borderRadius:
-                                              BorderRadius.circular(8.0),
-                                          selectedColor: Colors.white,
-                                          fillColor: Colors.black,
-                                          color: Colors.black,
-                                          constraints: const BoxConstraints(
-                                            minHeight: 28.0,
-                                            minWidth: 70.0,
-                                          ),
-                                          children: const [
-                                            Text("Clefs"),
-                                            Text("Bars"),
-                                            Text("Rests"),
-                                            Text("Notes"),
-                                          ],
-                                        ))
-                                  ]),
-                                ],
-                              ),
                               Stack(
                                 children: [
-                                  keyType == "clefs"
-                                      ? ClefsKeyboardLayout(
-                                          onKeyPress: handleKeyPress)
-                                      : keyType == "bars"
-                                          ? BarsKeyboardLayout(
-                                              onKeyPress: handleKeyPress)
-                                          : NotesKeyboardLayout(
-                                              showNotesKeyboard:
-                                                  showNotesKeyboard,
-                                              onToggleKeyboard: (isNotes) {
-                                                setState(() {
-                                                  showNotesKeyboard = isNotes;
-                                                });
-                                              },
-                                              onKeyPress: handleKeyPress,
-                                              keyType: keyType,
-                                            ),
+                                  NotesKeyboardLayout(
+                                    showNotesKeyboard: showNotesKeyboard,
+                                    onToggleKeyboard: (isNotes) {
+                                      setState(() {
+                                        showNotesKeyboard = isNotes;
+                                      });
+                                    },
+                                    onKeyPress: handleKeyPress,
+                                  ),
                                 ],
                               ),
                               Row(
@@ -885,7 +824,33 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                     )
                   ],
                 ),
-              )
+              ),
+
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Container(
+                  height: 50,
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    border: Border(
+                      top: BorderSide(
+                        color: Colors.black,
+                        width: 1,
+                      ),
+                    ),
+                    color: Colors.white,
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text(
+                    'AD BANNER',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+              ),
             ])));
   }
 }
