@@ -36,6 +36,10 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
   bool _showCursor = true;
   late Timer _cursorTimer;
   bool showMenu = false;
+  int? _dragStart;
+  int? _dragEnd;
+  int? _dragRow;
+  bool _isDragging = false;
 
   @override
   void initState() {
@@ -119,6 +123,53 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
   }
 
   void _handleTap(TapDownDetails details) {
+    if (_dragStart != null && _dragEnd != null && _dragRow != null) {
+      final RenderBox renderBox = context.findRenderObject() as RenderBox;
+      final Offset localOffset =
+          renderBox.globalToLocal(details.globalPosition);
+
+      final Matrix4 transformMatrix = _transformationController.value;
+      final Matrix4 inverseMatrix = Matrix4.inverted(transformMatrix);
+      final vector_math.Vector3 transformedPosition = inverseMatrix
+          .transform3(vector_math.Vector3(localOffset.dx, localOffset.dy, 0));
+
+      final double tapX = transformedPosition.x;
+      final double tapY = transformedPosition.y;
+
+      final rowNotes = widget.sheetNoteRows[_dragRow!];
+      final rowSpacingList =
+          context.read<ListOfSpacingForEachRow>().rowSpacingList;
+      final currentRowSpacing = rowSpacingList[_dragRow!];
+
+      final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
+      final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
+
+      final double startX =
+          calculateXPositionForIndex(start, rowNotes, currentRowSpacing);
+      final double endX =
+          calculateXPositionForIndex(end, rowNotes, currentRowSpacing);
+
+      double staffTop = _dragRow == 0
+          ? 130.0 / 2
+          : (_dragRow! * 130.0) + (_dragRow! * 40.0) + (130.0 / 2);
+
+      final Rect highlightRect = Rect.fromLTRB(
+        startX - 10,
+        staffTop - 20,
+        endX + 20,
+        staffTop + 60,
+      );
+
+      if (!highlightRect.inflate(20).contains(Offset(tapX, tapY))) {
+        setState(() {
+          _dragStart = null;
+          _dragEnd = null;
+          _dragRow = null;
+        });
+        return;
+      }
+    }
+
     final RenderBox renderBox = context.findRenderObject() as RenderBox;
     final Offset localOffset = renderBox.globalToLocal(details.globalPosition);
 
@@ -155,6 +206,114 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     }
   }
 
+  void _handleLongPressStart(LongPressStartDetails details) {
+    final RenderBox renderBox = context.findRenderObject() as RenderBox;
+    final Offset localOffset = renderBox.globalToLocal(details.globalPosition);
+
+    final Matrix4 transformMatrix = _transformationController.value;
+    final Matrix4 inverseMatrix = Matrix4.inverted(transformMatrix);
+    final vector_math.Vector3 transformedPosition = inverseMatrix
+        .transform3(vector_math.Vector3(localOffset.dx, localOffset.dy, 0));
+
+    final double tapX = transformedPosition.x;
+    final double tapY = transformedPosition.y;
+
+    int closestRowIndex = findClosestRow(widget.sheetNoteRows, tapY);
+    int noteIndex = findNoteIndexAtPosition(
+        widget.sheetNoteRows[closestRowIndex], tapX, closestRowIndex);
+
+    if (noteIndex != -1) {
+      setState(() {
+        _dragRow = closestRowIndex;
+        _dragStart = noteIndex;
+        _dragEnd = noteIndex;
+        _isDragging = true;
+      });
+    }
+  }
+
+  void _handleDragStart(DragStartDetails details) {
+    if (_dragStart != null && _dragEnd != null && _dragRow != null) {
+      final RenderBox renderBox = context.findRenderObject() as RenderBox;
+      final Offset localOffset =
+          renderBox.globalToLocal(details.globalPosition);
+
+      final Matrix4 transformMatrix = _transformationController.value;
+      final Matrix4 inverseMatrix = Matrix4.inverted(transformMatrix);
+      final vector_math.Vector3 transformedPosition = inverseMatrix
+          .transform3(vector_math.Vector3(localOffset.dx, localOffset.dy, 0));
+
+      final double tapX = transformedPosition.x;
+      final double tapY = transformedPosition.y;
+
+      final rowNotes = widget.sheetNoteRows[_dragRow!];
+      final rowSpacingList =
+          context.read<ListOfSpacingForEachRow>().rowSpacingList;
+      final currentRowSpacing = rowSpacingList[_dragRow!];
+
+      final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
+      final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
+
+      final double startX =
+          calculateXPositionForIndex(start, rowNotes, currentRowSpacing);
+      final double endX =
+          calculateXPositionForIndex(end, rowNotes, currentRowSpacing);
+
+      double staffTop = _dragRow == 0
+          ? 130.0 / 2
+          : (_dragRow! * 130.0) + (_dragRow! * 40.0) + (130.0 / 2);
+
+      final Rect highlightRect = Rect.fromLTRB(
+        startX - 10,
+        staffTop - 20,
+        endX + 20,
+        staffTop + 60,
+      );
+
+      final Rect leftHandle = Rect.fromCircle(
+          center: Offset(highlightRect.left, highlightRect.center.dy),
+          radius: 30);
+      final Rect rightHandle = Rect.fromCircle(
+          center: Offset(highlightRect.right, highlightRect.center.dy),
+          radius: 30);
+
+      if (leftHandle.contains(Offset(tapX, tapY)) ||
+          rightHandle.contains(Offset(tapX, tapY))) {
+        setState(() {
+          _isDragging = true;
+        });
+      }
+    }
+  }
+
+  void _handleDragUpdate(DragUpdateDetails details) {
+    if (_isDragging) {
+      final RenderBox renderBox = context.findRenderObject() as RenderBox;
+      final Offset localOffset =
+          renderBox.globalToLocal(details.globalPosition);
+
+      final Matrix4 transformMatrix = _transformationController.value;
+      final Matrix4 inverseMatrix = Matrix4.inverted(transformMatrix);
+      final vector_math.Vector3 transformedPosition = inverseMatrix
+          .transform3(vector_math.Vector3(localOffset.dx, localOffset.dy, 0));
+
+      final double tapX = transformedPosition.x;
+
+      int closestNoteIndex = findClosestNoteIndex(
+          widget.sheetNoteRows[_dragRow!], tapX, _dragRow!);
+
+      setState(() {
+        _dragEnd = closestNoteIndex;
+      });
+    }
+  }
+
+  void _handleDragEnd(DragEndDetails details) {
+    setState(() {
+      _isDragging = false;
+    });
+  }
+
   /// **Find the closest row based on the Y position**
   int findClosestRow(List<List<MusicalNote>> rows, double tapY) {
     const double sheetHeight = 40.0;
@@ -180,6 +339,29 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
 
     // Use the new calculateInsertionIndex function to determine the insertion point
     return calculateInsertionIndex(tapX, notes, currentRowSpacing);
+  }
+
+  int findNoteIndexAtPosition(
+      List<MusicalNote> notes, double tapX, int selectedRow) {
+    if (notes.isEmpty) return -1;
+
+    var rowSpacingList = context.read<ListOfSpacingForEachRow>().rowSpacingList;
+    var currentRowSpacing = rowSpacingList[selectedRow];
+    double currentX = 60.0;
+
+    for (int i = 0; i < notes.length; i++) {
+      double noteWidth = getNoteWidth(notes[i]);
+      if (notes[i].type != NoteType.clef) {
+        noteWidth = currentRowSpacing.toDouble();
+      }
+
+      if (tapX >= currentX && tapX < currentX + noteWidth) {
+        return i;
+      }
+      currentX += noteWidth;
+    }
+
+    return -1;
   }
 
   List<Widget> _buildCircularMenu() {
@@ -313,7 +495,11 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
       children: [
         Stack(children: [
           GestureDetector(
-            onTapDown: _handleTap, // Handle user tap
+            onTapDown: _handleTap,
+            onLongPressStart: _handleLongPressStart,
+            onHorizontalDragStart: _handleDragStart,
+            onHorizontalDragUpdate: _handleDragUpdate,
+            onHorizontalDragEnd: _handleDragEnd,
             child: Container(
               width: widget.screenSize.width,
               height: canvasHeight, // Adjust height as needed
@@ -366,15 +552,16 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                           ),
                           CustomPaint(
                             painter: MusicSheetPainter(
-                                widget.sheetNoteRows,
-                                selectedNoteProvider
-                                    .selectedRow, // Pass selected row
-                                selectedNoteProvider
-                                    .selectedIndex, // Pass selected index
-                                _showCursor,
-                                rowSpacingProvider.rowSpacingList),
-                            size: Size(widget.musicSheetWidth,
-                                totalHeight), // Dynamic height
+                              widget.sheetNoteRows,
+                              selectedNoteProvider.selectedRow,
+                              selectedNoteProvider.selectedIndex,
+                              _showCursor,
+                              rowSpacingProvider.rowSpacingList,
+                              selectionStart: _dragStart,
+                              selectionEnd: _dragEnd,
+                              selectionRow: _dragRow,
+                            ),
+                            size: Size(widget.musicSheetWidth, totalHeight),
                           )
                         ]),
                       );
@@ -384,6 +571,51 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
               ),
             ),
           ),
+          if (_dragStart != null && _dragEnd != null)
+            Positioned(
+              top: 150,
+              right: 5,
+              child: Material(
+                color: Colors.transparent,
+                elevation: 5,
+                shadowColor: Colors.black.withOpacity(0.3),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                child: RawMaterialButton(
+                  onPressed: () {
+                    if (_dragRow != null &&
+                        _dragStart != null &&
+                        _dragEnd != null) {
+                      context.read<CurrentSelectedNoteProvider>().beamNotes(
+                          _dragRow!,
+                          _dragStart!,
+                          _dragEnd!,
+                          widget.sheetNoteRows);
+                      setState(() {
+                        _dragStart = null;
+                        _dragEnd = null;
+                        _dragRow = null;
+                      });
+                    }
+                  },
+                  fillColor: Colors.white,
+                  constraints:
+                      const BoxConstraints.tightFor(width: 35, height: 35),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
+                    side: const BorderSide(color: Colors.black, width: 1),
+                  ),
+                  child: const Text(
+                    "BEAM",
+                    style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ),
           // Floating Reset Button (Only Shows When Zoomed)
           //if (isZoomed)
           //Reset zoom

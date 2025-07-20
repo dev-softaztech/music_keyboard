@@ -13,9 +13,13 @@ class MusicSheetPainter extends CustomPainter {
   final int selectedIndex;
   final bool showCursor;
   final List<int> rowSpacingList;
+  final int? selectionStart;
+  final int? selectionEnd;
+  final int? selectionRow;
 
   MusicSheetPainter(this.sheetNoteRows, this.selectedRow, this.selectedIndex,
-      this.showCursor, this.rowSpacingList);
+      this.showCursor, this.rowSpacingList,
+      {this.selectionStart, this.selectionEnd, this.selectionRow});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -192,6 +196,12 @@ class MusicSheetPainter extends CustomPainter {
 
         x +=
             note.type == NoteType.clef ? getNoteWidth(note) : currentRowSpacing;
+      }
+
+      if (selectionRow == rowIndex &&
+          selectionStart != null &&
+          selectionEnd != null) {
+        drawHighlight(canvas, size, rowIndex);
       }
 
       // We no longer add automatic bar lines here as it's now handled in CurrentSelectedNoteProvider
@@ -722,6 +732,55 @@ class MusicSheetPainter extends CustomPainter {
       maxThickness: 3,
       color: color,
     );
+  }
+
+  void drawHighlight(Canvas canvas, Size size, int rowIndex) {
+    if (selectionStart == null ||
+        selectionEnd == null ||
+        selectionRow == null) {
+      return;
+    }
+
+    final rowNotes = sheetNoteRows[selectionRow!];
+    if (rowNotes.isEmpty) {
+      return;
+    }
+
+    final int start =
+        selectionStart! < selectionEnd! ? selectionStart! : selectionEnd!;
+    final int end =
+        selectionStart! > selectionEnd! ? selectionStart! : selectionEnd!;
+
+    final double startX =
+        calculateXPositionForIndex(start, rowNotes, rowSpacingList[rowIndex]);
+    final double endX =
+        calculateXPositionForIndex(end, rowNotes, rowSpacingList[rowIndex]);
+
+    double staffTop = rowIndex == 0
+        ? 130.0 / 2
+        : (rowIndex * 130.0) + (rowIndex * 40.0) + (130.0 / 2);
+
+    final Rect highlightRect = Rect.fromLTRB(
+      startX - 10,
+      staffTop - 20,
+      endX + 20,
+      staffTop + 60,
+    );
+
+    final Paint highlightPaint = Paint()
+      ..color = Colors.blue.withOpacity(0.3)
+      ..style = PaintingStyle.fill;
+
+    canvas.drawRect(highlightRect, highlightPaint);
+
+    final Paint handlePaint = Paint()
+      ..color = Colors.blue
+      ..style = PaintingStyle.fill;
+
+    canvas.drawCircle(
+        Offset(highlightRect.left, highlightRect.center.dy), 5, handlePaint);
+    canvas.drawCircle(
+        Offset(highlightRect.right, highlightRect.center.dy), 5, handlePaint);
   }
 
   void drawVariableThicknessBezier({

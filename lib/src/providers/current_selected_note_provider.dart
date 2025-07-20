@@ -150,6 +150,25 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void beamNotes(int row, int startIndex, int endIndex,
+      List<List<MusicalNote>> sheetNoteRows) {
+    saveState(sheetNoteRows); // Save for undo
+
+    // Ensure selection is left-to-right
+    if (startIndex > endIndex) {
+      int tempIndex = startIndex;
+      startIndex = endIndex;
+      endIndex = tempIndex;
+    }
+
+    // Apply beaming to all notes in the range
+    for (int i = startIndex; i <= endIndex; i++) {
+      sheetNoteRows[row][i].isConnected = true;
+    }
+
+    notifyListeners();
+  }
+
   /// **Starts "Tie Notes" mode (first note is the selected note)**
   void enableSlurring() {
     isSlurring = true;
