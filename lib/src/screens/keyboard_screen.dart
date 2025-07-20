@@ -363,7 +363,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
           ),
           Positioned(
             left: (screenSize.width - popupWidth) / 2,
-            top: (screenSize.height - popupHeight) / 2,
+            bottom: 85,
             child: Material(
               elevation: 8,
               borderRadius: BorderRadius.circular(12),

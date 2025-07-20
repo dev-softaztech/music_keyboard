@@ -114,8 +114,8 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
           ),
           // The actual popup - centered on screen
           Positioned(
-            left: (screenSize.width - popupWidth) / 2,
-            top: (screenSize.height - popupHeight) / 2,
+            left: 50,
+            bottom: 85,
             child: Material(
               elevation: 8,
               borderRadius: BorderRadius.circular(12),
