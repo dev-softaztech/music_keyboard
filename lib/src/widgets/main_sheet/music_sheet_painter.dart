@@ -149,7 +149,20 @@ class MusicSheetPainter extends CustomPainter {
       for (int i = 0; i < sheetNoteRows[rowIndex].length; i++) {
         MusicalNote note = sheetNoteRows[rowIndex][i];
 
-        if (rowIndex == selectedRow && i == selectedIndex) {
+        bool isSelected = rowIndex == selectedRow && i == selectedIndex;
+        bool inHighlight = selectionRow == rowIndex &&
+            selectionStart != null &&
+            selectionEnd != null &&
+            i >=
+                (selectionStart! < selectionEnd!
+                    ? selectionStart!
+                    : selectionEnd!) &&
+            i <=
+                (selectionStart! > selectionEnd!
+                    ? selectionStart!
+                    : selectionEnd!);
+
+        if (isSelected || inHighlight) {
           paint = Paint()..color = const Color.fromARGB(255, 222, 15, 0);
           noteColour = const Color.fromARGB(255, 222, 15, 0);
         } else {
@@ -760,27 +773,61 @@ class MusicSheetPainter extends CustomPainter {
         ? 130.0 / 2
         : (rowIndex * 130.0) + (rowIndex * 40.0) + (130.0 / 2);
 
+    double min_y = double.infinity;
+    double max_y = double.negativeInfinity;
+
+    for (int i = start; i <= end; i++) {
+      final note = rowNotes[i];
+      double y = note.noteY;
+      min_y = math.min(min_y, y - 15);
+      max_y = math.max(max_y, y + 15);
+
+      if (note.type != NoteType.whole &&
+          note.type != NoteType.rest &&
+          note.type != NoteType.clef &&
+          note.type != NoteType.bar &&
+          note.type != NoteType.accidental) {
+        final bool isUpsideDownNote = y < staffTop + 20;
+        double stemHeight = 35.0;
+        if (note.type == NoteType.thirtySecond ||
+            note.type == NoteType.sixtyFourth) {
+          stemHeight += 20.0;
+        }
+        if (isUpsideDownNote) {
+          min_y = math.min(min_y, y + stemHeight);
+        } else {
+          max_y = math.max(max_y, y - stemHeight);
+        }
+      }
+    }
+
     final Rect highlightRect = Rect.fromLTRB(
       startX - 10,
-      staffTop - 20,
+      min_y - 20,
       endX + 20,
-      staffTop + 60,
+      max_y,
     );
 
     final Paint highlightPaint = Paint()
-      ..color = Colors.blue.withOpacity(0.3)
+      ..color = Colors.blue.withOpacity(0.15)
       ..style = PaintingStyle.fill;
 
+    final Paint borderPaint = Paint()
+      ..color = Colors.blue.withOpacity(0.5)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+
     canvas.drawRect(highlightRect, highlightPaint);
+    canvas.drawRect(highlightRect, borderPaint);
 
     final Paint handlePaint = Paint()
       ..color = Colors.blue
       ..style = PaintingStyle.fill;
 
     canvas.drawCircle(
-        Offset(highlightRect.left, highlightRect.center.dy), 5, handlePaint);
+        Offset(highlightRect.left, highlightRect.center.dy), 7, handlePaint);
     canvas.drawCircle(
-        Offset(highlightRect.right, highlightRect.center.dy), 5, handlePaint);
+        Offset(highlightRect.right, highlightRect.center.dy), 7, handlePaint);
   }
 
   void drawVariableThicknessBezier({
