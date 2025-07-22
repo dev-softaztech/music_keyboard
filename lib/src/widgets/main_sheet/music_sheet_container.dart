@@ -154,7 +154,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
           : (_dragRow! * 130.0) + (_dragRow! * 40.0) + (130.0 / 2);
 
       final Rect highlightRect = Rect.fromLTRB(
-        startX - 10,
+        startX - 20,
         staffTop - 20,
         endX + 20,
         staffTop + 60,
@@ -508,6 +508,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                   const Color.fromARGB(255, 199, 199, 199), // Background color
               child: InteractiveViewer(
                 transformationController: _transformationController,
+                panEnabled: !_isDragging,
+                scaleEnabled: !_isDragging,
                 minScale:
                     initialScale * 0.4, // Allows zooming out further if needed
                 maxScale: 3.0, // Allow zooming in up to 3x

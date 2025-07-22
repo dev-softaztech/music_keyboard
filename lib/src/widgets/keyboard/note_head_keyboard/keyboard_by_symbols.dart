@@ -436,8 +436,8 @@ class KeyboardSymbolsMusicStaffPainter extends CustomPainter {
           y >= noteY - lineSpacing / 2;
           y -= lineSpacing) {
         canvas.drawLine(
-          Offset(noteX - (noteWidth / 2) - 7, y),
-          Offset(noteX + (noteWidth / 2) + 7, y),
+          Offset(noteX - (noteWidth / 3) - 7, y),
+          Offset(noteX + (noteWidth / 3) + 7, y),
           paint..strokeWidth = 1.0,
         );
       }
