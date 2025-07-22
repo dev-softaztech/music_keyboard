@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/src/providers/current_selected_note_provider.dart';
 import 'package:music_keyboard/src/providers/list_of_spacing_for_each_row.dart';
+import 'package:music_keyboard/src/utils/music_sheet_utils/drawing_helpers.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/note_width_calculator.dart';
 import 'package:music_keyboard/src/widgets/main_sheet/music_sheet_painter.dart';
 import 'package:provider/provider.dart';
@@ -136,29 +137,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
       final double tapX = transformedPosition.x;
       final double tapY = transformedPosition.y;
 
-      final rowNotes = widget.sheetNoteRows[_dragRow!];
-      final rowSpacingList =
-          context.read<ListOfSpacingForEachRow>().rowSpacingList;
-      final currentRowSpacing = rowSpacingList[_dragRow!];
-
-      final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
-      final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
-
-      final double startX =
-          calculateXPositionForIndex(start, rowNotes, currentRowSpacing);
-      final double endX =
-          calculateXPositionForIndex(end, rowNotes, currentRowSpacing);
-
-      double staffTop = _dragRow == 0
-          ? 130.0 / 2
-          : (_dragRow! * 130.0) + (_dragRow! * 40.0) + (130.0 / 2);
-
-      final Rect highlightRect = Rect.fromLTRB(
-        startX - 20,
-        staffTop - 20,
-        endX + 20,
-        staffTop + 60,
-      );
+      final Rect highlightRect = _calculateHighlightRect();
 
       if (!highlightRect.inflate(20).contains(Offset(tapX, tapY))) {
         setState(() {
@@ -246,29 +225,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
       final double tapX = transformedPosition.x;
       final double tapY = transformedPosition.y;
 
-      final rowNotes = widget.sheetNoteRows[_dragRow!];
-      final rowSpacingList =
-          context.read<ListOfSpacingForEachRow>().rowSpacingList;
-      final currentRowSpacing = rowSpacingList[_dragRow!];
-
-      final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
-      final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
-
-      final double startX =
-          calculateXPositionForIndex(start, rowNotes, currentRowSpacing);
-      final double endX =
-          calculateXPositionForIndex(end, rowNotes, currentRowSpacing);
-
-      double staffTop = _dragRow == 0
-          ? 130.0 / 2
-          : (_dragRow! * 130.0) + (_dragRow! * 40.0) + (130.0 / 2);
-
-      final Rect highlightRect = Rect.fromLTRB(
-        startX - 10,
-        staffTop - 20,
-        endX + 20,
-        staffTop + 60,
-      );
+      final Rect highlightRect = _calculateHighlightRect();
 
       final Rect leftHandle = Rect.fromCircle(
           center: Offset(highlightRect.left, highlightRect.center.dy),
@@ -340,6 +297,88 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
 
     // Use the new calculateInsertionIndex function to determine the insertion point
     return calculateInsertionIndex(tapX, notes, currentRowSpacing);
+  }
+
+  Rect _calculateHighlightRect() {
+    final rowNotes = widget.sheetNoteRows[_dragRow!];
+    final rowSpacingList =
+        context.read<ListOfSpacingForEachRow>().rowSpacingList;
+    final currentRowSpacing = rowSpacingList[_dragRow!];
+
+    final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
+    final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
+
+    final double startX =
+        calculateXPositionForIndex(start, rowNotes, currentRowSpacing);
+    final double endX =
+        calculateXPositionForIndex(end, rowNotes, currentRowSpacing);
+
+    double staffTop = _dragRow == 0
+        ? 130.0 / 2
+        : (_dragRow! * 130.0) + (_dragRow! * 40.0) + (130.0 / 2);
+    double staffCenter = staffTop + 20;
+
+    double min_y = double.infinity;
+    double max_y = double.negativeInfinity;
+
+    for (int i = start; i <= end; i++) {
+      final note = rowNotes[i];
+      double y = note.noteY;
+      min_y = math.min(min_y, y - 15);
+      max_y = math.max(max_y, y + 15);
+
+      if (note.type != NoteType.whole &&
+          note.type != NoteType.rest &&
+          note.type != NoteType.clef &&
+          note.type != NoteType.bar &&
+          note.type != NoteType.accidental) {
+        final bool isUpsideDownNote = y < staffCenter;
+        double stemHeight = 35.0;
+        if (note.type == NoteType.thirtySecond ||
+            note.type == NoteType.sixtyFourth) {
+          stemHeight += 10.0;
+        }
+
+        if ((note.type == NoteType.eighth ||
+                note.type == NoteType.sixteenth ||
+                note.type == NoteType.thirtySecond ||
+                note.type == NoteType.sixtyFourth) &&
+            note.isConnected) {
+          var notesGroup = getConnectedNotesGroup(i, rowNotes);
+          var connectedNotesGroup = notesGroup.notesGroup;
+          if (connectedNotesGroup.isNotEmpty) {
+            var notesGroupYs = getConnectedNotesGroupHighestY(
+                connectedNotesGroup, 10.0, staffCenter);
+            double connectedGroupHighestY = notesGroupYs.highestY;
+            double connectedGroupLowestY = notesGroupYs.lowestY;
+            bool firstNoteUpsideDown = notesGroupYs.firstNoteY < staffCenter;
+
+            if (!firstNoteUpsideDown) {
+              stemHeight = (note.noteY - connectedGroupHighestY) + stemHeight;
+            } else {
+              stemHeight = (connectedGroupLowestY - note.noteY) + stemHeight;
+            }
+
+            if (notesGroupYs.doesGroupContain32ndOr64thNote) {
+              stemHeight += 10.0;
+            }
+          }
+        }
+
+        if (isUpsideDownNote) {
+          min_y = math.min(min_y, y - stemHeight);
+        } else {
+          max_y = math.max(max_y, y + stemHeight);
+        }
+      }
+    }
+
+    return Rect.fromLTRB(
+      startX - 20,
+      min_y,
+      endX + 20,
+      max_y,
+    );
   }
 
   int findNoteIndexAtPosition(
