@@ -34,6 +34,18 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
     if (insertionIndex <= sheetNoteRows[selectedRow].length) {
       sheetNoteRows[selectedRow].insert(insertionIndex, note);
 
+      // Adjust indices for dynamics
+      for (var n in sheetNoteRows[selectedRow]) {
+        if (n.crescendoEndIndex != null &&
+            n.crescendoEndIndex! >= insertionIndex - 1) {
+          n.crescendoEndIndex = n.crescendoEndIndex! + 1;
+        }
+        if (n.decrescendoEndIndex != null &&
+            n.decrescendoEndIndex! >= insertionIndex - 1) {
+          n.decrescendoEndIndex = n.decrescendoEndIndex! + 1;
+        }
+      }
+
       // Set duration for the new note
       note.duration = BarLineCalculator.noteDurations[note.type] ?? 0.0;
 

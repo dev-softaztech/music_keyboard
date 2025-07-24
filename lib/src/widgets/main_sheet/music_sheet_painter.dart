@@ -31,7 +31,7 @@ class MusicSheetPainter extends CustomPainter {
     Color noteColour = Colors.black;
     const double lineSpacing = 10;
     const double sheetHeight = lineSpacing * 4;
-    const double rowSpacing = 150.0;
+    const double rowSpacing = 160.0;
 
     for (int rowIndex = 0; rowIndex < sheetNoteRows.length; rowIndex++) {
       double staffTop = rowIndex == 0
@@ -933,7 +933,7 @@ class MusicSheetPainter extends CustomPainter {
       int startIndex,
       int endIndex,
       List<MusicalNote> notes) {
-    if (startIndex == endIndex) {
+    if (startIndex == endIndex || endX < startX || endIndex >= notes.length) {
       endX = startX + 10;
     }
     double lowestY = double.negativeInfinity;
@@ -943,7 +943,9 @@ class MusicSheetPainter extends CustomPainter {
       }
     }
 
-    double y = lowestY + 40; // Position below the lowest note
+    double staffBottomLineY = staffTop + 40; // 4 lines * 10 spacing
+    double minDynamicY = staffBottomLineY + 20;
+    double y = math.max(lowestY + 40, minDynamicY);
 
     double openWidth = 15.0;
     Path path = Path();
