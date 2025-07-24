@@ -207,6 +207,23 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void slurNotes(int row, int startIndex, int endIndex,
+      List<List<MusicalNote>> sheetNoteRows) {
+    saveState(sheetNoteRows); // Save for undo
+
+    // Ensure selection is left-to-right
+    if (startIndex > endIndex) {
+      int tempIndex = startIndex;
+      startIndex = endIndex;
+      endIndex = tempIndex;
+    }
+
+    MusicalNote firstNote = sheetNoteRows[row][startIndex];
+    firstNote.slurEndIndex = endIndex;
+
+    notifyListeners();
+  }
+
   /// **Saves the current state for undo**
   void saveState(List<List<MusicalNote>> sheetNoteRows) {
     List<List<MusicalNote>> deepCopy = sheetNoteRows

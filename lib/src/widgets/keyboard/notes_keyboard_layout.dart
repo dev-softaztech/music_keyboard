@@ -725,11 +725,11 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                     // Shift buttons
                     _buildSharpButton(context),
                     const SizedBox(height: 5),
-                    _buildFlatButton(context),
+                    _buildNaturalButton(context),
                     const SizedBox(height: 5),
                     Transform.translate(
                       offset: const Offset(-4, 0),
-                      child: _buildNaturalButton(context),
+                      child: _buildFlatButton(context),
                     ),
                   ],
                 ),

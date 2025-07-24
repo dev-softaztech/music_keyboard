@@ -36,7 +36,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
   bool isZoomed = false;
   bool _showCursor = true;
   late Timer _cursorTimer;
-  bool showMenu = false;
+  bool _showSlurAndBeamButtons = false;
+  bool _showTieButton = false;
   int? _dragStart;
   int? _dragEnd;
   int? _dragRow;
@@ -144,9 +145,11 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
           _dragStart = null;
           _dragEnd = null;
           _dragRow = null;
+          _showSlurAndBeamButtons = false;
         });
         return;
       }
+      return; // Do nothing if tap is inside highlight
     }
 
     final RenderBox renderBox = context.findRenderObject() as RenderBox;
@@ -183,6 +186,28 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
       selectedNoteProvider.updateInsertionPoint(
           closestRowIndex, closestNoteIndex);
     }
+
+    // Reset buttons
+    setState(() {
+      _showSlurAndBeamButtons = false;
+      _showTieButton = false;
+    });
+
+    // Check for TIE condition
+    if (closestNoteIndex > 0 &&
+        closestNoteIndex <= widget.sheetNoteRows[closestRowIndex].length) {
+      MusicalNote currentNote =
+          widget.sheetNoteRows[closestRowIndex][closestNoteIndex - 1];
+      if (closestNoteIndex < widget.sheetNoteRows[closestRowIndex].length) {
+        MusicalNote nextNote =
+            widget.sheetNoteRows[closestRowIndex][closestNoteIndex];
+        if (currentNote.pitch == nextNote.pitch) {
+          setState(() {
+            _showTieButton = true;
+          });
+        }
+      }
+    }
   }
 
   void _handleLongPressStart(LongPressStartDetails details) {
@@ -207,6 +232,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
         _dragStart = noteIndex;
         _dragEnd = noteIndex;
         _isDragging = true;
+        _showSlurAndBeamButtons = true;
+        _showTieButton = false; // Ensure TIE is hidden during range selection
       });
     }
   }
@@ -404,126 +431,11 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     return -1;
   }
 
-  List<Widget> _buildCircularMenu() {
-    const double radius = 50.0;
-    const double startAngle = (math.pi / 2); // Start from the top
-    const double angleIncrement = math.pi / 4; // 45 degrees between items
-
-    final selectedNoteProvider =
-        Provider.of<CurrentSelectedNoteProvider>(context);
-    MusicalNote selectedNote = MusicalNote(
-        pitch: "",
-        octave: 0,
-        type: NoteType.clef,
-        isConnected: false,
-        unicodeCharacter: "");
-
-    if (widget.sheetNoteRows[selectedNoteProvider.selectedRow].isNotEmpty) {
-      selectedNote = widget.sheetNoteRows[selectedNoteProvider.selectedRow]
-          [selectedNoteProvider.selectedIndex];
-    }
-
-    final List<Map<String, dynamic>> menuItems = [
-      {'label': 'ff', 'type': 'dynamics'},
-      {'label': '4/4', 'type': '__'},
-      {'label': 'BEAM', 'type': 'beam'},
-      {'label': 'SLUR', 'type': 'slur'},
-      {'label': 'TIE', 'type': 'tie'},
-    ];
-
-    return List.generate(menuItems.length, (index) {
-      final double angle = startAngle + (index * angleIncrement);
-      final double x = radius * math.cos(angle);
-      final double y = radius * math.sin(angle);
-
-      return Positioned(
-        bottom: 50 + y,
-        right: 4 - x,
-        child: AnimatedOpacity(
-          opacity: showMenu ? 1.0 : 0.0,
-          duration: const Duration(milliseconds: 300),
-          child: Material(
-            color: Colors.transparent,
-            elevation: 5,
-            shadowColor: Colors.black.withOpacity(0.3),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(25),
-            ),
-            child: RawMaterialButton(
-              onPressed: () {
-                if (menuItems[index]['type'] == "tie") {
-                  setState(() {
-                    MusicalNote nextNote =
-                        widget.sheetNoteRows[selectedNoteProvider.selectedRow]
-                            [selectedNoteProvider.selectedIndex + 1];
-
-                    if (selectedNote.pitch == nextNote.pitch) {
-                      selectedNote.isTiedToNext = !selectedNote.isTiedToNext;
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text(
-                                "Cannot Tie to a note with a different pitch.")),
-                      );
-                    }
-                  });
-                } else if (menuItems[index]['type'] == "beam") {
-                  setState(() {
-                    context.read<CurrentSelectedNoteProvider>().enableBeaming();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text("Select a second note to beam to.")),
-                    );
-                  });
-                } else if (menuItems[index]['type'] == "slur") {
-                  setState(() {
-                    context
-                        .read<CurrentSelectedNoteProvider>()
-                        .enableSlurring();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text("Select a second note to add slur.")),
-                    );
-                  });
-                }
-              },
-              fillColor: Colors.white,
-              constraints: const BoxConstraints.tightFor(width: 35, height: 35),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(25),
-                side: const BorderSide(color: Colors.black, width: 1),
-              ),
-              child: Text(
-                menuItems[index]['label'],
-                style: const TextStyle(
-                    fontSize: 10,
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
-        ),
-      );
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final selectedNoteProvider =
         Provider.of<CurrentSelectedNoteProvider>(context);
     final rowSpacingProvider = Provider.of<ListOfSpacingForEachRow>(context);
-
-    MusicalNote selectedNote = MusicalNote(
-        pitch: "",
-        octave: 0,
-        type: NoteType.clef,
-        isConnected: false,
-        unicodeCharacter: "");
-
-    if (widget.sheetNoteRows[selectedNoteProvider.selectedRow].isNotEmpty) {
-      selectedNote = widget.sheetNoteRows[selectedNoteProvider.selectedRow]
-          [selectedNoteProvider.selectedIndex];
-    }
 
     var keyboardHeight = 366;
     var canvasHeight = widget.screenSize.height -
@@ -552,7 +464,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                 minScale:
                     initialScale * 0.4, // Allows zooming out further if needed
                 maxScale: 3.0, // Allow zooming in up to 3x
-                boundaryMargin: EdgeInsets.fromLTRB(
+                boundaryMargin: const EdgeInsets.fromLTRB(
                     200, 200, 200, 9999), // Allow scrolling outside bounds
                 constrained: false,
                 child: Align(
@@ -613,51 +525,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
               ),
             ),
           ),
-          if (_dragStart != null && _dragEnd != null)
-            Positioned(
-              top: 150,
-              right: 5,
-              child: Material(
-                color: Colors.transparent,
-                elevation: 5,
-                shadowColor: Colors.black.withOpacity(0.3),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25),
-                ),
-                child: RawMaterialButton(
-                  onPressed: () {
-                    if (_dragRow != null &&
-                        _dragStart != null &&
-                        _dragEnd != null) {
-                      context.read<CurrentSelectedNoteProvider>().beamNotes(
-                          _dragRow!,
-                          _dragStart!,
-                          _dragEnd!,
-                          widget.sheetNoteRows);
-                      setState(() {
-                        _dragStart = null;
-                        _dragEnd = null;
-                        _dragRow = null;
-                      });
-                    }
-                  },
-                  fillColor: Colors.white,
-                  constraints:
-                      const BoxConstraints.tightFor(width: 35, height: 35),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25),
-                    side: const BorderSide(color: Colors.black, width: 1),
-                  ),
-                  child: const Text(
-                    "BEAM",
-                    style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-            ),
+
           // Floating Reset Button (Only Shows When Zoomed)
           //if (isZoomed)
           //Reset zoom
@@ -718,43 +586,84 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                   ),
                 ),
               )),
-          if (showMenu) ..._buildCircularMenu(),
-          Positioned(
-            bottom: 55,
-            right: 11,
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  showMenu = !showMenu;
-                });
-              },
-              child: Container(
-                width: 35,
-                height: 35,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(25),
-                  border: Border.all(
-                    color: Colors.black,
-                    width: 1,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
-                      spreadRadius: 2,
-                      blurRadius: 5,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  showMenu ? Icons.close : Icons.album_outlined,
-                  color: const Color.fromARGB(255, 0, 0, 0),
-                  size: 24,
-                ),
+          if (_showSlurAndBeamButtons)
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildStyledButton('SLUR', () {
+                    if (_dragRow != null &&
+                        _dragStart != null &&
+                        _dragEnd != null) {
+                      context.read<CurrentSelectedNoteProvider>().slurNotes(
+                          _dragRow!,
+                          _dragStart!,
+                          _dragEnd!,
+                          widget.sheetNoteRows);
+                      setState(() {
+                        _dragStart = null;
+                        _dragEnd = null;
+                        _dragRow = null;
+                        _showSlurAndBeamButtons = false;
+                      });
+                    }
+                  }),
+                  const SizedBox(width: 5),
+                  _buildStyledButton('BEAM', () {
+                    if (_dragRow != null &&
+                        _dragStart != null &&
+                        _dragEnd != null) {
+                      context.read<CurrentSelectedNoteProvider>().beamNotes(
+                          _dragRow!,
+                          _dragStart!,
+                          _dragEnd!,
+                          widget.sheetNoteRows);
+                      setState(() {
+                        _dragStart = null;
+                        _dragEnd = null;
+                        _dragRow = null;
+                        _showSlurAndBeamButtons = false;
+                      });
+                    }
+                  }),
+                ],
               ),
             ),
-          ),
+          if (_showTieButton)
+            Positioned(
+              bottom: 15,
+              left: 0,
+              right: 0,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildStyledButton('TIE', () {
+                    final selectedNoteProvider =
+                        context.read<CurrentSelectedNoteProvider>();
+                    final row = selectedNoteProvider.selectedRow;
+                    final index = selectedNoteProvider.insertionIndex - 1;
+
+                    if (index >= 0 &&
+                        index + 1 < widget.sheetNoteRows[row].length) {
+                      MusicalNote currentNote =
+                          widget.sheetNoteRows[row][index];
+                      MusicalNote nextNote =
+                          widget.sheetNoteRows[row][index + 1];
+
+                      if (currentNote.pitch == nextNote.pitch) {
+                        setState(() {
+                          currentNote.isTiedToNext = !currentNote.isTiedToNext;
+                          _showTieButton = false;
+                        });
+                      }
+                    }
+                  }),
+                ],
+              ),
+            ),
         ]),
         PreferredSize(
           preferredSize: const Size.fromHeight(2.0), // Border thickness
@@ -764,6 +673,31 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildStyledButton(String label, VoidCallback onPressed) {
+    return Material(
+      color: Colors.transparent,
+      elevation: 5,
+      shadowColor: Colors.black.withOpacity(0.3),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(25),
+      ),
+      child: RawMaterialButton(
+        onPressed: onPressed,
+        fillColor: Colors.white,
+        constraints: const BoxConstraints.tightFor(width: 50, height: 35),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(25),
+          side: const BorderSide(color: Colors.black, width: 1),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+              fontSize: 10, color: Colors.black, fontWeight: FontWeight.bold),
+        ),
+      ),
     );
   }
 }
