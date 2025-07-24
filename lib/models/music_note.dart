@@ -4,6 +4,10 @@ class MusicalNote {
   final NoteType type; // e.g., Whole, Half, Quarter, Eighth, Sixteenth
   bool isConnected; // Whether this note is connected to others
   bool isTiedToNext;
+  bool isCrescendoStart;
+  bool isDecrescendoStart;
+  int? crescendoEndIndex;
+  int? decrescendoEndIndex;
   final String unicodeCharacter;
   final String accidentalCharacter; // Unicode character for the accidental
   int? slurEndIndex;
@@ -18,6 +22,10 @@ class MusicalNote {
       required this.type,
       this.isConnected = false,
       this.isTiedToNext = false,
+      this.isCrescendoStart = false,
+      this.isDecrescendoStart = false,
+      this.crescendoEndIndex,
+      this.decrescendoEndIndex,
       this.unicodeCharacter = "",
       this.accidentalCharacter = "",
       this.noteY = 0.0,
@@ -32,6 +40,10 @@ class MusicalNote {
         type: type,
         isConnected: isConnected,
         isTiedToNext: isTiedToNext,
+        isCrescendoStart: isCrescendoStart,
+        isDecrescendoStart: isDecrescendoStart,
+        crescendoEndIndex: crescendoEndIndex,
+        decrescendoEndIndex: decrescendoEndIndex,
         unicodeCharacter: unicodeCharacter,
         accidentalCharacter: accidentalCharacter,
         noteY: noteY,

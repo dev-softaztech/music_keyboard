@@ -207,6 +207,32 @@ class MusicSheetPainter extends CustomPainter {
               sheetNoteRows[rowIndex]);
         }
 
+        if (note.isCrescendoStart && note.crescendoEndIndex != null) {
+          _drawDynamicMarking(
+              canvas,
+              paint,
+              x,
+              endXForIndex(note.crescendoEndIndex!, currentRowSpacing),
+              staffTop,
+              true,
+              i,
+              note.crescendoEndIndex!,
+              sheetNoteRows[rowIndex]);
+        }
+
+        if (note.isDecrescendoStart && note.decrescendoEndIndex != null) {
+          _drawDynamicMarking(
+              canvas,
+              paint,
+              x,
+              endXForIndex(note.decrescendoEndIndex!, currentRowSpacing),
+              staffTop,
+              false,
+              i,
+              note.decrescendoEndIndex!,
+              sheetNoteRows[rowIndex]);
+        }
+
         x +=
             note.type == NoteType.clef ? getNoteWidth(note) : currentRowSpacing;
       }
@@ -891,5 +917,48 @@ class MusicSheetPainter extends CustomPainter {
         ..isAntiAlias = true
         ..strokeWidth = 1.0,
     );
+  }
+
+  double endXForIndex(int index, int currentRowSpacing) {
+    return 60.0 + (index * currentRowSpacing);
+  }
+
+  void _drawDynamicMarking(
+      Canvas canvas,
+      Paint paint,
+      double startX,
+      double endX,
+      double staffTop,
+      bool isCrescendo,
+      int startIndex,
+      int endIndex,
+      List<MusicalNote> notes) {
+    double lowestY = double.negativeInfinity;
+    for (int i = startIndex; i <= endIndex; i++) {
+      if (notes[i].noteY > lowestY) {
+        lowestY = notes[i].noteY;
+      }
+    }
+
+    double y = lowestY + 40; // Position below the lowest note
+
+    double openWidth = 15.0;
+    Path path = Path();
+
+    if (isCrescendo) {
+      path.moveTo(startX, y);
+      path.lineTo(endX, y - openWidth / 2);
+      path.moveTo(startX, y);
+      path.lineTo(endX, y + openWidth / 2);
+    } else {
+      path.moveTo(startX, y - openWidth / 2);
+      path.lineTo(endX, y);
+      path.moveTo(startX, y + openWidth / 2);
+      path.lineTo(endX, y);
+    }
+
+    paint.style = PaintingStyle.stroke;
+    paint.strokeWidth = 1.5;
+    canvas.drawPath(path, paint);
   }
 }

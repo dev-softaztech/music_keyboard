@@ -224,6 +224,40 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void crescendoNotes(int row, int startIndex, int endIndex,
+      List<List<MusicalNote>> sheetNoteRows) {
+    saveState(sheetNoteRows); // Save for undo
+
+    if (startIndex > endIndex) {
+      int temp = startIndex;
+      startIndex = endIndex;
+      endIndex = temp;
+    }
+
+    MusicalNote firstNote = sheetNoteRows[row][startIndex];
+    firstNote.isCrescendoStart = true;
+    firstNote.crescendoEndIndex = endIndex;
+
+    notifyListeners();
+  }
+
+  void decrescendoNotes(int row, int startIndex, int endIndex,
+      List<List<MusicalNote>> sheetNoteRows) {
+    saveState(sheetNoteRows); // Save for undo
+
+    if (startIndex > endIndex) {
+      int temp = startIndex;
+      startIndex = endIndex;
+      endIndex = temp;
+    }
+
+    MusicalNote firstNote = sheetNoteRows[row][startIndex];
+    firstNote.isDecrescendoStart = true;
+    firstNote.decrescendoEndIndex = endIndex;
+
+    notifyListeners();
+  }
+
   /// **Saves the current state for undo**
   void saveState(List<List<MusicalNote>> sheetNoteRows) {
     List<List<MusicalNote>> deepCopy = sheetNoteRows

@@ -629,6 +629,40 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                       });
                     }
                   }),
+                  const SizedBox(width: 10),
+                  _buildStyledButton('>', () {
+                    if (_dragRow != null &&
+                        _dragStart != null &&
+                        _dragEnd != null) {
+                      context
+                          .read<CurrentSelectedNoteProvider>()
+                          .decrescendoNotes(_dragRow!, _dragStart!, _dragEnd!,
+                              widget.sheetNoteRows);
+                      setState(() {
+                        _dragStart = null;
+                        _dragEnd = null;
+                        _dragRow = null;
+                        _showSlurAndBeamButtons = false;
+                      });
+                    }
+                  }),
+                  const SizedBox(width: 10),
+                  _buildStyledButton('<', () {
+                    if (_dragRow != null &&
+                        _dragStart != null &&
+                        _dragEnd != null) {
+                      context
+                          .read<CurrentSelectedNoteProvider>()
+                          .crescendoNotes(_dragRow!, _dragStart!, _dragEnd!,
+                              widget.sheetNoteRows);
+                      setState(() {
+                        _dragStart = null;
+                        _dragEnd = null;
+                        _dragRow = null;
+                        _showSlurAndBeamButtons = false;
+                      });
+                    }
+                  }),
                 ],
               ),
             ),
