@@ -246,6 +246,27 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
       endIndex = temp;
     }
 
+    // Remove any overlapping dynamics
+    for (int i = 0; i < sheetNoteRows[row].length; i++) {
+      final note = sheetNoteRows[row][i];
+      if (note.isCrescendoStart && note.crescendoEndIndex != null) {
+        if ((i >= startIndex && i <= endIndex) ||
+            (note.crescendoEndIndex! >= startIndex &&
+                note.crescendoEndIndex! <= endIndex)) {
+          note.isCrescendoStart = false;
+          note.crescendoEndIndex = null;
+        }
+      }
+      if (note.isDecrescendoStart && note.decrescendoEndIndex != null) {
+        if ((i >= startIndex && i <= endIndex) ||
+            (note.decrescendoEndIndex! >= startIndex &&
+                note.decrescendoEndIndex! <= endIndex)) {
+          note.isDecrescendoStart = false;
+          note.decrescendoEndIndex = null;
+        }
+      }
+    }
+
     MusicalNote firstNote = sheetNoteRows[row][startIndex];
     firstNote.isCrescendoStart = true;
     firstNote.crescendoEndIndex = endIndex;
@@ -261,6 +282,27 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
       int temp = startIndex;
       startIndex = endIndex;
       endIndex = temp;
+    }
+
+    // Remove any overlapping dynamics
+    for (int i = 0; i < sheetNoteRows[row].length; i++) {
+      final note = sheetNoteRows[row][i];
+      if (note.isCrescendoStart && note.crescendoEndIndex != null) {
+        if ((i >= startIndex && i <= endIndex) ||
+            (note.crescendoEndIndex! >= startIndex &&
+                note.crescendoEndIndex! <= endIndex)) {
+          note.isCrescendoStart = false;
+          note.crescendoEndIndex = null;
+        }
+      }
+      if (note.isDecrescendoStart && note.decrescendoEndIndex != null) {
+        if ((i >= startIndex && i <= endIndex) ||
+            (note.decrescendoEndIndex! >= startIndex &&
+                note.decrescendoEndIndex! <= endIndex)) {
+          note.isDecrescendoStart = false;
+          note.decrescendoEndIndex = null;
+        }
+      }
     }
 
     MusicalNote firstNote = sheetNoteRows[row][startIndex];
