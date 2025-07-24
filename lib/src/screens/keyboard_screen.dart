@@ -6,6 +6,7 @@ import 'package:music_keyboard/src/providers/list_of_spacing_for_each_row.dart';
 import 'package:music_keyboard/src/providers/selected_accidental_provider.dart';
 import 'package:music_keyboard/src/widgets/keyboard/notes_keyboard_layout.dart';
 import 'package:music_keyboard/src/widgets/main_sheet/music_sheet_container.dart';
+import 'package:music_keyboard/src/utils/pdf_exporter.dart';
 import 'package:music_keyboard/src/utils/screenshot_saver.dart';
 import 'package:music_keyboard/src/utils/toast_utils.dart';
 import 'package:provider/provider.dart';
@@ -330,6 +331,22 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     }
   }
 
+  // Export the current screenshot to a PDF
+  Future<void> handleExportPress() async {
+    try {
+      final image = await screenshotController.capture();
+      if (image != null) {
+        await PdfExporter.exportToPdf(image);
+      } else {
+        ToastUtils.showToast("Export failed: could not capture image.",
+            isError: true);
+      }
+    } catch (e) {
+      print("Export error: $e");
+      ToastUtils.showToast("Export failed: ${e.toString()}", isError: true);
+    }
+  }
+
   void _showBarPopup(BuildContext context) {
     _removeBarOverlay(); // Remove any existing overlay first
 
@@ -565,6 +582,33 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                             size: 20, color: Colors.black),
                                         SizedBox(width: 8),
                                         Text('Save',
+                                            style: TextStyle(fontSize: 14)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                // Divider
+                                Container(
+                                  height: 1,
+                                  color: Colors.grey[300],
+                                ),
+                                // Export Button
+                                InkWell(
+                                  onTap: () {
+                                    setState(() {
+                                      showMenu = false;
+                                    });
+                                    handleExportPress();
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 12, horizontal: 16),
+                                    child: const Row(
+                                      children: [
+                                        Icon(Icons.picture_as_pdf,
+                                            size: 20, color: Colors.black),
+                                        SizedBox(width: 8),
+                                        Text('Export',
                                             style: TextStyle(fontSize: 14)),
                                       ],
                                     ),
