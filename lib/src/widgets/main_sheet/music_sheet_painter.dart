@@ -16,10 +16,16 @@ class MusicSheetPainter extends CustomPainter {
   final int? selectionStart;
   final int? selectionEnd;
   final int? selectionRow;
+  final int? editingDynamicIndex;
+  final int? editingDynamicRow;
 
   MusicSheetPainter(this.sheetNoteRows, this.selectedRow, this.selectedIndex,
       this.showCursor, this.rowSpacingList,
-      {this.selectionStart, this.selectionEnd, this.selectionRow});
+      {this.selectionStart,
+      this.selectionEnd,
+      this.selectionRow,
+      this.editingDynamicIndex,
+      this.editingDynamicRow});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -217,7 +223,8 @@ class MusicSheetPainter extends CustomPainter {
               true,
               i,
               note.crescendoEndIndex!,
-              sheetNoteRows[rowIndex]);
+              sheetNoteRows[rowIndex],
+              rowIndex);
         }
 
         if (note.isDecrescendoStart && note.decrescendoEndIndex != null) {
@@ -230,7 +237,8 @@ class MusicSheetPainter extends CustomPainter {
               false,
               i,
               note.decrescendoEndIndex!,
-              sheetNoteRows[rowIndex]);
+              sheetNoteRows[rowIndex],
+              rowIndex);
         }
 
         x +=
@@ -932,7 +940,8 @@ class MusicSheetPainter extends CustomPainter {
       bool isCrescendo,
       int startIndex,
       int endIndex,
-      List<MusicalNote> notes) {
+      List<MusicalNote> notes,
+      int rowIndex) {
     if (startIndex == endIndex || endX < startX || endIndex >= notes.length) {
       endX = startX + 10;
     }
@@ -945,9 +954,9 @@ class MusicSheetPainter extends CustomPainter {
 
     double staffBottomLineY = staffTop + 40; // 4 lines * 10 spacing
     double minDynamicY = staffBottomLineY + 20;
-    double y = math.max(lowestY + 40, minDynamicY);
+    double y = math.max(lowestY + 50, minDynamicY);
 
-    double openWidth = 15.0;
+    double openWidth = 20.0;
     Path path = Path();
 
     if (isCrescendo) {
@@ -965,5 +974,12 @@ class MusicSheetPainter extends CustomPainter {
     paint.style = PaintingStyle.stroke;
     paint.strokeWidth = 1.5;
     canvas.drawPath(path, paint);
+
+    if (editingDynamicRow == rowIndex && editingDynamicIndex == startIndex) {
+      final Paint handlePaint = Paint()
+        ..color = Colors.blue
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(Offset(endX + 10, y), 10, handlePaint);
+    }
   }
 }

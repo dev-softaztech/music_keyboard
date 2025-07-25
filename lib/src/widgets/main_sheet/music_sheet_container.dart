@@ -42,6 +42,9 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
   int? _dragEnd;
   int? _dragRow;
   bool _isDragging = false;
+  int? _editingDynamicIndex;
+  int? _editingDynamicRow;
+  bool _isEditingDynamic = false;
 
   @override
   void initState() {
@@ -191,6 +194,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     setState(() {
       _showSlurAndBeamButtons = false;
       _showTieButton = false;
+      _editingDynamicIndex = null;
+      _editingDynamicRow = null;
     });
 
     // Check for TIE condition
@@ -205,6 +210,26 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
           setState(() {
             _showTieButton = true;
           });
+        }
+      }
+    }
+
+    // Check if a dynamic marking was tapped
+    for (int i = 0; i < widget.sheetNoteRows[closestRowIndex].length; i++) {
+      final note = widget.sheetNoteRows[closestRowIndex][i];
+      if (note.isCrescendoStart || note.isDecrescendoStart) {
+        final rect = getDynamicMarkingRect(
+            i,
+            note.isCrescendoStart
+                ? note.crescendoEndIndex!
+                : note.decrescendoEndIndex!,
+            closestRowIndex);
+        if (rect.contains(Offset(tapX, tapY))) {
+          setState(() {
+            _editingDynamicIndex = i;
+            _editingDynamicRow = closestRowIndex;
+          });
+          return;
         }
       }
     }
@@ -239,19 +264,32 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
   }
 
   void _handleDragStart(DragStartDetails details) {
-    if (_dragStart != null && _dragEnd != null && _dragRow != null) {
-      final RenderBox renderBox = context.findRenderObject() as RenderBox;
-      final Offset localOffset =
-          renderBox.globalToLocal(details.globalPosition);
+    final RenderBox renderBox = context.findRenderObject() as RenderBox;
+    final Offset localOffset = renderBox.globalToLocal(details.globalPosition);
+    final Matrix4 transformMatrix = _transformationController.value;
+    final Matrix4 inverseMatrix = Matrix4.inverted(transformMatrix);
+    final vector_math.Vector3 transformedPosition = inverseMatrix
+        .transform3(vector_math.Vector3(localOffset.dx, localOffset.dy, 0));
+    final double tapX = transformedPosition.x;
+    final double tapY = transformedPosition.y;
 
-      final Matrix4 transformMatrix = _transformationController.value;
-      final Matrix4 inverseMatrix = Matrix4.inverted(transformMatrix);
-      final vector_math.Vector3 transformedPosition = inverseMatrix
-          .transform3(vector_math.Vector3(localOffset.dx, localOffset.dy, 0));
-
-      final double tapX = transformedPosition.x;
-      final double tapY = transformedPosition.y;
-
+    if (_editingDynamicIndex != null && _editingDynamicRow != null) {
+      final note =
+          widget.sheetNoteRows[_editingDynamicRow!][_editingDynamicIndex!];
+      final rect = getDynamicMarkingRect(
+          _editingDynamicIndex!,
+          note.isCrescendoStart
+              ? note.crescendoEndIndex!
+              : note.decrescendoEndIndex!,
+          _editingDynamicRow!);
+      final handleRect = Rect.fromCircle(
+          center: Offset(rect.right, rect.center.dy), radius: 100);
+      if (handleRect.contains(Offset(tapX, tapY))) {
+        setState(() {
+          _isEditingDynamic = true;
+        });
+      }
+    } else if (_dragStart != null && _dragEnd != null && _dragRow != null) {
       final Rect highlightRect = _calculateHighlightRect();
 
       final Rect leftHandle = Rect.fromCircle(
@@ -271,18 +309,30 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
   }
 
   void _handleDragUpdate(DragUpdateDetails details) {
-    if (_isDragging) {
-      final RenderBox renderBox = context.findRenderObject() as RenderBox;
-      final Offset localOffset =
-          renderBox.globalToLocal(details.globalPosition);
+    final RenderBox renderBox = context.findRenderObject() as RenderBox;
+    final Offset localOffset = renderBox.globalToLocal(details.globalPosition);
+    final Matrix4 transformMatrix = _transformationController.value;
+    final Matrix4 inverseMatrix = Matrix4.inverted(transformMatrix);
+    final vector_math.Vector3 transformedPosition = inverseMatrix
+        .transform3(vector_math.Vector3(localOffset.dx, localOffset.dy, 0));
+    final double tapX = transformedPosition.x;
 
-      final Matrix4 transformMatrix = _transformationController.value;
-      final Matrix4 inverseMatrix = Matrix4.inverted(transformMatrix);
-      final vector_math.Vector3 transformedPosition = inverseMatrix
-          .transform3(vector_math.Vector3(localOffset.dx, localOffset.dy, 0));
-
-      final double tapX = transformedPosition.x;
-
+    if (_isEditingDynamic) {
+      int closestNoteIndex = findClosestNoteIndex(
+          widget.sheetNoteRows[_editingDynamicRow!], tapX, _editingDynamicRow!);
+      setState(() {
+        final note =
+            widget.sheetNoteRows[_editingDynamicRow!][_editingDynamicIndex!];
+        if (note.isCrescendoStart) {
+          note.crescendoEndIndex = closestNoteIndex.clamp(_editingDynamicIndex!,
+              widget.sheetNoteRows[_editingDynamicRow!].length - 1);
+        } else {
+          note.decrescendoEndIndex = closestNoteIndex.clamp(
+              _editingDynamicIndex!,
+              widget.sheetNoteRows[_editingDynamicRow!].length - 1);
+        }
+      });
+    } else if (_isDragging) {
       int closestNoteIndex = findClosestNoteIndex(
           widget.sheetNoteRows[_dragRow!], tapX, _dragRow!);
 
@@ -296,6 +346,9 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
   void _handleDragEnd(DragEndDetails details) {
     setState(() {
       _isDragging = false;
+      _isEditingDynamic = false;
+      _editingDynamicIndex = null;
+      _editingDynamicRow = null;
     });
   }
 
@@ -431,6 +484,29 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     return -1;
   }
 
+  Rect getDynamicMarkingRect(int startIndex, int endIndex, int rowIndex) {
+    final rowNotes = widget.sheetNoteRows[rowIndex];
+    final rowSpacingList =
+        context.read<ListOfSpacingForEachRow>().rowSpacingList;
+    final currentRowSpacing = rowSpacingList[rowIndex];
+
+    final double startX =
+        calculateXPositionForIndex(startIndex, rowNotes, currentRowSpacing);
+    final double endX =
+        calculateXPositionForIndex(endIndex, rowNotes, currentRowSpacing);
+
+    double lowestY = double.negativeInfinity;
+    for (int i = startIndex; i <= endIndex; i++) {
+      if (rowNotes[i].noteY > lowestY) {
+        lowestY = rowNotes[i].noteY;
+      }
+    }
+
+    double y = lowestY + 50;
+
+    return Rect.fromLTRB(startX, y - 7.5, endX + 20, y + 7.5);
+  }
+
   @override
   Widget build(BuildContext context) {
     final selectedNoteProvider =
@@ -494,11 +570,14 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                               controller: widget.screenshotController,
                               child: CustomPaint(
                                 painter: MusicSheetPainter(
-                                    widget.sheetNoteRows,
-                                    -1, // No selected row in screenshot
-                                    -1, // No selected index in screenshot
-                                    false, // Never show cursor in screenshot
-                                    rowSpacingProvider.rowSpacingList),
+                                  widget.sheetNoteRows,
+                                  -1, // No selected row in screenshot
+                                  -1, // No selected index in screenshot
+                                  false, // Never show cursor in screenshot
+                                  rowSpacingProvider.rowSpacingList,
+                                  editingDynamicIndex: _editingDynamicIndex,
+                                  editingDynamicRow: _editingDynamicRow,
+                                ),
                                 size: Size(widget.musicSheetWidth,
                                     totalHeight), // Dynamic height
                               ),
@@ -514,6 +593,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                               selectionStart: _dragStart,
                               selectionEnd: _dragEnd,
                               selectionRow: _dragRow,
+                              editingDynamicIndex: _editingDynamicIndex,
+                              editingDynamicRow: _editingDynamicRow,
                             ),
                             size: Size(widget.musicSheetWidth, totalHeight),
                           )
