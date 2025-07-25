@@ -68,7 +68,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
 
     // Then create a matrix with translation
     final Matrix4 translationMatrix = Matrix4.identity()
-      ..setTranslationRaw(translationX, 0, 0);
+      ..setTranslationRaw(translationX, 50.0, 0);
 
     // Combine the matrices: first scale, then translate
     _transformationController.value = translationMatrix * scaleMatrix;
@@ -111,7 +111,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
 
       // Then create a matrix with translation
       final Matrix4 translationMatrix = Matrix4.identity()
-        ..setTranslationRaw(translationX, 0, 0);
+        ..setTranslationRaw(translationX, 50.0, 0);
 
       // Combine the matrices: first scale, then translate
       _transformationController.value = translationMatrix * scaleMatrix;
