@@ -438,92 +438,78 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
     ];
 
     return Container(
-      height: 315, // Increased height to accommodate the arrows
-      padding: const EdgeInsets.fromLTRB(0, 5, 0, 0),
+      height: 290, // Increased height to accommodate the arrows
+      padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
       child: Column(
         children: [
           // For notes, show the horizontal scroll of unicode characters
           if (unicodeCharacters.isNotEmpty)
-            Consumer<SelectedUnicodeProvider>(
-              builder: (context, provider, _) => Container(
-                height: 50,
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: unicodeCharacters.length,
-                  itemBuilder: (context, index) {
-                    final character = unicodeCharacters[index];
-                    final isSelected = provider.selectedCharacter == character;
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 5.0),
-                      child: SizedBox(
+            Row(
+              children: [
+                Container(
+                  margin: EdgeInsets.fromLTRB(8, 0, 0, 0),
+                  padding: EdgeInsets.fromLTRB(8, 0, 0, 0),
+                  child: Row(
+                    children: [
+                      SizedBox(
                         width: 30,
-                        height: 30,
+                        height: 40,
                         child: ElevatedButton(
                           onPressed: () {
-                            provider.updateSelectedCharacter(character);
+                            widget.onKeyPress(MusicalNote(
+                                pitch: "",
+                                octave: 0,
+                                type: NoteType.clef,
+                                isConnected: false,
+                                unicodeCharacter: "\uf472"));
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                isSelected ? Colors.black : Colors.white,
+                            backgroundColor: Colors.grey[100],
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
+                              side: BorderSide(color: Colors.black, width: 1),
                             ),
                             padding: EdgeInsets.zero,
                           ),
                           child: Transform.translate(
-                            offset: const Offset(0, 16),
+                            offset: const Offset(0, 4),
                             child: Text(
-                              character,
-                              style: TextStyle(
+                              '\uf472',
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontSize: 20,
+                                //fontWeight: FontWeight.bold,
                                 fontFamily: 'Bravura',
-                                fontSize: 30,
-                                color: isSelected ? Colors.white : Colors.black,
-                                height: 1.0,
                               ),
                             ),
                           ),
                         ),
                       ),
-                    );
-                  },
-                ),
-              ),
-            ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                margin: EdgeInsets.all(5.0),
-                padding: EdgeInsets.all(5.0),
-                child: Column(
-                  children: [
-                    //Clef
-                    SizedBox(
-                      width: 30,
-                      height: 40,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          widget.onKeyPress(MusicalNote(
-                              pitch: "",
-                              octave: 0,
-                              type: NoteType.clef,
-                              isConnected: false,
-                              unicodeCharacter: "\uf472"));
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey[100],
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            side: BorderSide(color: Colors.black, width: 1),
+                      const SizedBox(width: 5),
+                      //Bass cleff
+                      SizedBox(
+                        width: 30,
+                        height: 40,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            widget.onKeyPress(MusicalNote(
+                                pitch: "",
+                                octave: 0,
+                                type: NoteType.clef,
+                                isConnected: false,
+                                unicodeCharacter: "\uf474"));
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey[100],
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              side: BorderSide(color: Colors.black, width: 1),
+                            ),
+                            padding: EdgeInsets.zero,
                           ),
-                          padding: EdgeInsets.zero,
-                        ),
-                        child: Transform.translate(
-                          offset: const Offset(0, 4),
                           child: Text(
-                            '\uf472',
-                            style: const TextStyle(
+                            '\uf474',
+                            style: TextStyle(
                               color: Colors.black,
                               fontSize: 20,
                               //fontWeight: FontWeight.bold,
@@ -532,41 +518,72 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 5),
-                    //Bass cleff
-                    SizedBox(
-                      width: 30,
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 5),
+                Expanded(
+                  child: Consumer<SelectedUnicodeProvider>(
+                    builder: (context, provider, _) => Container(
                       height: 40,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          widget.onKeyPress(MusicalNote(
-                              pitch: "",
-                              octave: 0,
-                              type: NoteType.clef,
-                              isConnected: false,
-                              unicodeCharacter: "\uf474"));
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: unicodeCharacters.length,
+                        itemBuilder: (context, index) {
+                          final character = unicodeCharacters[index];
+                          final isSelected =
+                              provider.selectedCharacter == character;
+                          return Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 5.0),
+                            child: SizedBox(
+                              width: 35,
+                              height: 30,
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  provider.updateSelectedCharacter(character);
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor:
+                                      isSelected ? Colors.black : Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  padding: EdgeInsets.zero,
+                                ),
+                                child: Transform.translate(
+                                  offset: const Offset(0, 14),
+                                  child: Text(
+                                    character,
+                                    style: TextStyle(
+                                      fontFamily: 'Bravura',
+                                      fontSize: 26,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : Colors.black,
+                                      height: 1.0,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
                         },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey[100],
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            side: BorderSide(color: Colors.black, width: 1),
-                          ),
-                          padding: EdgeInsets.zero,
-                        ),
-                        child: Text(
-                          '\uf474',
-                          style: const TextStyle(
-                            color: Colors.black,
-                            fontSize: 20,
-                            //fontWeight: FontWeight.bold,
-                            fontFamily: 'Bravura',
-                          ),
-                        ),
                       ),
                     ),
-                    const SizedBox(height: 5),
+                  ),
+                ),
+              ],
+            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                margin: EdgeInsets.fromLTRB(5, 0, 5, 5),
+                padding: EdgeInsets.fromLTRB(5, 0, 5, 5),
+                child: Column(
+                  children: [
                     // Time signature button
                     SizedBox(
                       width: 30,
@@ -607,11 +624,61 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                       ),
                     ),
                     const SizedBox(height: 5),
+                    //Clef
+                    SizedBox(
+                      width: 30,
+                      height: 40,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          widget.onKeyPress(MusicalNote(
+                              pitch: "",
+                              octave: 0,
+                              type: NoteType.clef,
+                              isConnected: false,
+                              unicodeCharacter: "\uf472"));
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey[100],
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            side: BorderSide(color: Colors.black, width: 1),
+                          ),
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: Column(children: [
+                          Transform.translate(
+                            offset: const Offset(-4, 8),
+                            child: Text(
+                              '\uF4DE',
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontSize: 21,
+                                //fontWeight: FontWeight.bold,
+                                fontFamily: 'Bravura',
+                              ),
+                            ),
+                          ),
+                          Transform.translate(
+                            offset: const Offset(4, -12),
+                            child: Text(
+                              '\uF4DE',
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontSize: 21,
+                                //fontWeight: FontWeight.bold,
+                                fontFamily: 'Bravura',
+                              ),
+                            ),
+                          ),
+                        ]),
+                      ),
+                    ),
+                    const SizedBox(height: 5),
                     _buildShiftButton('rest', 'Rest', context),
                     const SizedBox(height: 5),
                     // Octave cycle button
                     Transform.translate(
-                      offset: const Offset(4, 0),
+                      offset: const Offset(0, 0), //4
                       child: SizedBox(
                         width: 30,
                         height: 40,
@@ -640,14 +707,49 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 5),
+                    //Bass cleff
+                    SizedBox(
+                      width: 30,
+                      height: 40,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          widget.onKeyPress(MusicalNote(
+                              pitch: "",
+                              octave: 0,
+                              type: NoteType.clef,
+                              isConnected: false,
+                              unicodeCharacter: "\uf474"));
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey[100],
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            side: BorderSide(color: Colors.black, width: 1),
+                          ),
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: Transform.translate(
+                            offset: const Offset(2, 5),
+                            child: Text(
+                              '\uE52F',
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontSize: 27,
+                                //fontWeight: FontWeight.bold,
+                                fontFamily: 'Bravura',
+                              ),
+                            )),
+                      ),
+                    ),
                   ],
                 ),
               ),
               KeyboardBySymbols(
                   onKeyPress: widget.onKeyPress, showLowerPair: showLowerPair),
               Container(
-                margin: EdgeInsets.all(5.0),
-                padding: EdgeInsets.all(5.0),
+                margin: EdgeInsets.fromLTRB(5, 0, 0, 0),
+                padding: EdgeInsets.fromLTRB(5, 0, 0, 0),
                 child: Column(
                   children: [
                     SizedBox(

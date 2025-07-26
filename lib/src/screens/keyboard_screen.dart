@@ -659,7 +659,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                       child: ColoredBox(
                         color: const Color.fromARGB(255, 255, 253, 253),
                         child: Container(
-                          height: 370,
+                          height: 335,
                           padding: const EdgeInsets.fromLTRB(0, 5, 0, 0),
                           child: Column(
                             children: [

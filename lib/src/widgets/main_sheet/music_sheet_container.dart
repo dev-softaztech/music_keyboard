@@ -508,7 +508,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
         Provider.of<CurrentSelectedNoteProvider>(context);
     final rowSpacingProvider = Provider.of<ListOfSpacingForEachRow>(context);
 
-    var keyboardHeight = 366;
+    var keyboardHeight = 333;
     var canvasHeight = widget.screenSize.height -
         AppBar().preferredSize.height -
         keyboardHeight -
@@ -687,7 +687,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                         _showSlurAndBeamButtons = false;
                       });
                     }
-                  }),
+                  }, false),
                   const SizedBox(width: 5),
                   _buildStyledButton('BEAM', () {
                     if (_dragRow != null &&
@@ -705,9 +705,9 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                         _showSlurAndBeamButtons = false;
                       });
                     }
-                  }),
+                  }, false),
                   const SizedBox(width: 10),
-                  _buildStyledButton('>', () {
+                  _buildStyledButton('\uE53F', () {
                     if (_dragRow != null &&
                         _dragStart != null &&
                         _dragEnd != null) {
@@ -722,9 +722,9 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                         _showSlurAndBeamButtons = false;
                       });
                     }
-                  }),
+                  }, true),
                   const SizedBox(width: 10),
-                  _buildStyledButton('<', () {
+                  _buildStyledButton('\uE53E', () {
                     if (_dragRow != null &&
                         _dragStart != null &&
                         _dragEnd != null) {
@@ -739,7 +739,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                         _showSlurAndBeamButtons = false;
                       });
                     }
-                  }),
+                  }, true),
                 ],
               ),
             ),
@@ -771,7 +771,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                         });
                       }
                     }
-                  }),
+                  }, false),
                 ],
               ),
             ),
@@ -787,7 +787,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     );
   }
 
-  Widget _buildStyledButton(String label, VoidCallback onPressed) {
+  Widget _buildStyledButton(
+      String label, VoidCallback onPressed, bool useBravura) {
     return Material(
       color: Colors.transparent,
       elevation: 5,
@@ -803,11 +804,24 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
           borderRadius: BorderRadius.circular(25),
           side: const BorderSide(color: Colors.black, width: 1),
         ),
-        child: Text(
-          label,
-          style: const TextStyle(
-              fontSize: 10, color: Colors.black, fontWeight: FontWeight.bold),
-        ),
+        child: useBravura
+            ? Transform.translate(
+                offset: const Offset(1, 5),
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontSize: 27,
+                    fontFamily: 'Bravura',
+                  ),
+                ))
+            : Text(
+                label,
+                style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold),
+              ),
       ),
     );
   }
