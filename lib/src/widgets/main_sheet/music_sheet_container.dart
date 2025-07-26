@@ -171,6 +171,27 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     final double tapY = transformedPosition.y;
 
     int closestRowIndex = findClosestRow(widget.sheetNoteRows, tapY);
+
+    // Check if a dynamic marking was tapped
+    for (int i = 0; i < widget.sheetNoteRows[closestRowIndex].length; i++) {
+      final note = widget.sheetNoteRows[closestRowIndex][i];
+      if (note.isCrescendoStart || note.isDecrescendoStart) {
+        final rect = getDynamicMarkingRect(
+            i,
+            note.isCrescendoStart
+                ? note.crescendoEndIndex!
+                : note.decrescendoEndIndex!,
+            closestRowIndex);
+        if (rect.contains(Offset(tapX, tapY))) {
+          setState(() {
+            _editingDynamicIndex = i;
+            _editingDynamicRow = closestRowIndex;
+          });
+          return;
+        }
+      }
+    }
+
     int closestNoteIndex = findClosestNoteIndex(
         widget.sheetNoteRows[closestRowIndex], tapX, closestRowIndex);
 
@@ -210,26 +231,6 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
           setState(() {
             _showTieButton = true;
           });
-        }
-      }
-    }
-
-    // Check if a dynamic marking was tapped
-    for (int i = 0; i < widget.sheetNoteRows[closestRowIndex].length; i++) {
-      final note = widget.sheetNoteRows[closestRowIndex][i];
-      if (note.isCrescendoStart || note.isDecrescendoStart) {
-        final rect = getDynamicMarkingRect(
-            i,
-            note.isCrescendoStart
-                ? note.crescendoEndIndex!
-                : note.decrescendoEndIndex!,
-            closestRowIndex);
-        if (rect.contains(Offset(tapX, tapY))) {
-          setState(() {
-            _editingDynamicIndex = i;
-            _editingDynamicRow = closestRowIndex;
-          });
-          return;
         }
       }
     }
@@ -504,7 +505,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
 
     double y = lowestY + 50;
 
-    return Rect.fromLTRB(startX, y - 7.5, endX + 20, y + 7.5);
+    return Rect.fromLTRB(startX, y - 7.5, endX + 35, y + 40);
   }
 
   @override
