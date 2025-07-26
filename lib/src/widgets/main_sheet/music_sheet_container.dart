@@ -45,6 +45,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
   int? _editingDynamicIndex;
   int? _editingDynamicRow;
   bool _isEditingDynamic = false;
+  Offset _totalDragDelta = Offset.zero;
 
   @override
   void initState() {
@@ -186,6 +187,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
           setState(() {
             _editingDynamicIndex = i;
             _editingDynamicRow = closestRowIndex;
+            _totalDragDelta = Offset.zero;
           });
           return;
         }
@@ -257,100 +259,92 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
         _dragRow = closestRowIndex;
         _dragStart = noteIndex;
         _dragEnd = noteIndex;
-        _isDragging = true;
         _showSlurAndBeamButtons = true;
         _showTieButton = false; // Ensure TIE is hidden during range selection
+        _totalDragDelta = Offset.zero;
       });
     }
   }
 
-  void _handleDragStart(DragStartDetails details) {
-    final RenderBox renderBox = context.findRenderObject() as RenderBox;
-    final Offset localOffset = renderBox.globalToLocal(details.globalPosition);
-    final Matrix4 transformMatrix = _transformationController.value;
-    final Matrix4 inverseMatrix = Matrix4.inverted(transformMatrix);
-    final vector_math.Vector3 transformedPosition = inverseMatrix
-        .transform3(vector_math.Vector3(localOffset.dx, localOffset.dy, 0));
-    final double tapX = transformedPosition.x;
-    final double tapY = transformedPosition.y;
+  void _handlePointerMove(PointerMoveEvent event) {
+    // If a drag is already active, just update its position.
+    if (_isDragging || _isEditingDynamic) {
+      final RenderBox renderBox = context.findRenderObject() as RenderBox;
+      final Offset localOffset = renderBox.globalToLocal(event.position);
+      final Matrix4 transformMatrix = _transformationController.value;
+      final Matrix4 inverseMatrix = Matrix4.inverted(transformMatrix);
+      final vector_math.Vector3 transformedPosition = inverseMatrix
+          .transform3(vector_math.Vector3(localOffset.dx, localOffset.dy, 0));
+      final double tapX = transformedPosition.x;
 
-    if (_editingDynamicIndex != null && _editingDynamicRow != null) {
-      final note =
-          widget.sheetNoteRows[_editingDynamicRow!][_editingDynamicIndex!];
-      final rect = getDynamicMarkingRect(
-          _editingDynamicIndex!,
-          note.isCrescendoStart
-              ? note.crescendoEndIndex!
-              : note.decrescendoEndIndex!,
-          _editingDynamicRow!);
-      final handleRect = Rect.fromCircle(
-          center: Offset(rect.right, rect.center.dy), radius: 100);
-      if (handleRect.contains(Offset(tapX, tapY))) {
+      if (_isEditingDynamic) {
+        int closestNoteIndex = findClosestNoteIndex(
+            widget.sheetNoteRows[_editingDynamicRow!],
+            tapX,
+            _editingDynamicRow!);
         setState(() {
-          _isEditingDynamic = true;
+          final note =
+              widget.sheetNoteRows[_editingDynamicRow!][_editingDynamicIndex!];
+          if (note.isCrescendoStart) {
+            note.crescendoEndIndex = closestNoteIndex.clamp(
+                _editingDynamicIndex!,
+                widget.sheetNoteRows[_editingDynamicRow!].length - 1);
+          } else {
+            note.decrescendoEndIndex = closestNoteIndex.clamp(
+                _editingDynamicIndex!,
+                widget.sheetNoteRows[_editingDynamicRow!].length - 1);
+          }
+        });
+      } else if (_isDragging) {
+        int closestNoteIndex = findClosestNoteIndex(
+            widget.sheetNoteRows[_dragRow!], tapX, _dragRow!);
+        setState(() {
+          _dragEnd = closestNoteIndex.clamp(
+              0, widget.sheetNoteRows[_dragRow!].length - 1);
         });
       }
-    } else if (_dragStart != null && _dragEnd != null && _dragRow != null) {
-      final Rect highlightRect = _calculateHighlightRect();
+      return;
+    }
 
-      final Rect leftHandle = Rect.fromCircle(
-          center: Offset(highlightRect.left, highlightRect.center.dy),
-          radius: 30);
-      final Rect rightHandle = Rect.fromCircle(
-          center: Offset(highlightRect.right, highlightRect.center.dy),
-          radius: 30);
+    // If no drag is active, but a selection is primed, accumulate the delta
+    // and decide whether to start a drag or allow a scroll.
+    if (_dragStart != null || _editingDynamicIndex != null) {
+      _totalDragDelta += event.delta;
 
-      if (leftHandle.contains(Offset(tapX, tapY)) ||
-          rightHandle.contains(Offset(tapX, tapY))) {
+      // Use a threshold to avoid accidental drags from a tap.
+      if (_totalDragDelta.distance < 10.0) return;
+
+      // If movement is clearly horizontal, start a drag.
+      if (_totalDragDelta.dx.abs() > _totalDragDelta.dy.abs() * 2.0) {
         setState(() {
-          _isDragging = true;
+          if (_dragStart != null) _isDragging = true;
+          if (_editingDynamicIndex != null) _isEditingDynamic = true;
+        });
+      }
+      // Otherwise (if vertical or diagonal), it's a scroll. Cancel the primed selection.
+      else {
+        setState(() {
+          _dragStart = null;
+          _dragEnd = null;
+          _dragRow = null;
+          _showSlurAndBeamButtons = false;
+          _editingDynamicIndex = null;
+          _editingDynamicRow = null;
         });
       }
     }
   }
 
-  void _handleDragUpdate(DragUpdateDetails details) {
-    final RenderBox renderBox = context.findRenderObject() as RenderBox;
-    final Offset localOffset = renderBox.globalToLocal(details.globalPosition);
-    final Matrix4 transformMatrix = _transformationController.value;
-    final Matrix4 inverseMatrix = Matrix4.inverted(transformMatrix);
-    final vector_math.Vector3 transformedPosition = inverseMatrix
-        .transform3(vector_math.Vector3(localOffset.dx, localOffset.dy, 0));
-    final double tapX = transformedPosition.x;
-
-    if (_isEditingDynamic) {
-      int closestNoteIndex = findClosestNoteIndex(
-          widget.sheetNoteRows[_editingDynamicRow!], tapX, _editingDynamicRow!);
+  void _handlePointerUp(PointerUpEvent event) {
+    _totalDragDelta = Offset.zero;
+    // If we were dragging, stop. The selection itself (_dragStart) remains
+    // until the user taps a button or taps away.
+    if (_isDragging || _isEditingDynamic) {
       setState(() {
-        final note =
-            widget.sheetNoteRows[_editingDynamicRow!][_editingDynamicIndex!];
-        if (note.isCrescendoStart) {
-          note.crescendoEndIndex = closestNoteIndex.clamp(_editingDynamicIndex!,
-              widget.sheetNoteRows[_editingDynamicRow!].length - 1);
-        } else {
-          note.decrescendoEndIndex = closestNoteIndex.clamp(
-              _editingDynamicIndex!,
-              widget.sheetNoteRows[_editingDynamicRow!].length - 1);
-        }
-      });
-    } else if (_isDragging) {
-      int closestNoteIndex = findClosestNoteIndex(
-          widget.sheetNoteRows[_dragRow!], tapX, _dragRow!);
-
-      setState(() {
-        _dragEnd = closestNoteIndex.clamp(
-            0, widget.sheetNoteRows[_dragRow!].length - 1);
+        _isDragging = false;
+        _isEditingDynamic = false;
       });
     }
-  }
-
-  void _handleDragEnd(DragEndDetails details) {
-    setState(() {
-      _isDragging = false;
-      _isEditingDynamic = false;
-      _editingDynamicIndex = null;
-      _editingDynamicRow = null;
-    });
   }
 
   /// **Find the closest row based on the Y position**
@@ -524,89 +518,90 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
       children: [
         Stack(children: [
           GestureDetector(
-            onTapDown: _handleTap,
-            onLongPressStart: _handleLongPressStart,
-            onHorizontalDragStart: _handleDragStart,
-            onHorizontalDragUpdate: _handleDragUpdate,
-            onHorizontalDragEnd: _handleDragEnd,
-            child: Container(
-              width: widget.screenSize.width,
-              height: canvasHeight, // Adjust height as needed
-              color:
-                  const Color.fromARGB(255, 199, 199, 199), // Background color
-              child: InteractiveViewer(
-                transformationController: _transformationController,
-                panEnabled: !_isDragging,
-                scaleEnabled: !_isDragging,
-                minScale:
-                    initialScale * 0.4, // Allows zooming out further if needed
-                maxScale: 3.0, // Allow zooming in up to 3x
-                boundaryMargin: const EdgeInsets.fromLTRB(
-                    200, 200, 200, 9999), // Allow scrolling outside bounds
-                constrained: false,
-                child: Align(
-                  // Ensures content is aligned properly
-                  alignment: Alignment.topLeft,
-                  child: Builder(
-                    builder: (context) {
-                      // Calculate dynamic height based on number of rows
-                      const double sheetHeight = 40.0;
-                      const double topGap = 65.0;
-                      const double bottomGap = 65.0;
-                      const double rowTotalHeight =
-                          topGap + sheetHeight + bottomGap; // = 170px per row
+              onTapDown: _handleTap,
+              onLongPressStart: _handleLongPressStart,
+              child: Listener(
+                onPointerMove: _handlePointerMove,
+                onPointerUp: _handlePointerUp,
+                child: Container(
+                  width: widget.screenSize.width,
+                  height: canvasHeight, // Adjust height as needed
+                  color: const Color.fromARGB(
+                      255, 199, 199, 199), // Background color
+                  child: InteractiveViewer(
+                    transformationController: _transformationController,
+                    panEnabled: !_isDragging && !_isEditingDynamic,
+                    scaleEnabled: !_isDragging && !_isEditingDynamic,
+                    minScale: initialScale *
+                        0.4, // Allows zooming out further if needed
+                    maxScale: 3.0, // Allow zooming in up to 3x
+                    boundaryMargin: const EdgeInsets.fromLTRB(
+                        200, 200, 200, 9999), // Allow scrolling outside bounds
+                    constrained: false,
+                    child: Align(
+                      // Ensures content is aligned properly
+                      alignment: Alignment.topLeft,
+                      child: Builder(
+                        builder: (context) {
+                          // Calculate dynamic height based on number of rows
+                          const double sheetHeight = 40.0;
+                          const double topGap = 65.0;
+                          const double bottomGap = 65.0;
+                          const double rowTotalHeight = topGap +
+                              sheetHeight +
+                              bottomGap; // = 170px per row
 
-                      // Calculate total height based on number of rows
-                      final double totalHeight = math.max(
-                          rowTotalHeight * widget.sheetNoteRows.length,
-                          1000.0 // Minimum height of 300px
-                          );
+                          // Calculate total height based on number of rows
+                          final double totalHeight = math.max(
+                              rowTotalHeight * widget.sheetNoteRows.length,
+                              1000.0 // Minimum height of 300px
+                              );
 
-                      return SizedBox(
-                        width: widget.musicSheetWidth, // Force width
-                        height: totalHeight, // Dynamic height based on rows
-                        child: Stack(children: [
-                          Positioned.fill(
-                            child: Screenshot(
-                              controller: widget.screenshotController,
-                              child: CustomPaint(
+                          return SizedBox(
+                            width: widget.musicSheetWidth, // Force width
+                            height: totalHeight, // Dynamic height based on rows
+                            child: Stack(children: [
+                              Positioned.fill(
+                                child: Screenshot(
+                                  controller: widget.screenshotController,
+                                  child: CustomPaint(
+                                    painter: MusicSheetPainter(
+                                      widget.sheetNoteRows,
+                                      -1, // No selected row in screenshot
+                                      -1, // No selected index in screenshot
+                                      false, // Never show cursor in screenshot
+                                      rowSpacingProvider.rowSpacingList,
+                                      editingDynamicIndex: _editingDynamicIndex,
+                                      editingDynamicRow: _editingDynamicRow,
+                                    ),
+                                    size: Size(widget.musicSheetWidth,
+                                        totalHeight), // Dynamic height
+                                  ),
+                                ),
+                              ),
+                              CustomPaint(
                                 painter: MusicSheetPainter(
                                   widget.sheetNoteRows,
-                                  -1, // No selected row in screenshot
-                                  -1, // No selected index in screenshot
-                                  false, // Never show cursor in screenshot
+                                  selectedNoteProvider.selectedRow,
+                                  selectedNoteProvider.selectedIndex,
+                                  _showCursor,
                                   rowSpacingProvider.rowSpacingList,
+                                  selectionStart: _dragStart,
+                                  selectionEnd: _dragEnd,
+                                  selectionRow: _dragRow,
                                   editingDynamicIndex: _editingDynamicIndex,
                                   editingDynamicRow: _editingDynamicRow,
                                 ),
-                                size: Size(widget.musicSheetWidth,
-                                    totalHeight), // Dynamic height
-                              ),
-                            ),
-                          ),
-                          CustomPaint(
-                            painter: MusicSheetPainter(
-                              widget.sheetNoteRows,
-                              selectedNoteProvider.selectedRow,
-                              selectedNoteProvider.selectedIndex,
-                              _showCursor,
-                              rowSpacingProvider.rowSpacingList,
-                              selectionStart: _dragStart,
-                              selectionEnd: _dragEnd,
-                              selectionRow: _dragRow,
-                              editingDynamicIndex: _editingDynamicIndex,
-                              editingDynamicRow: _editingDynamicRow,
-                            ),
-                            size: Size(widget.musicSheetWidth, totalHeight),
-                          )
-                        ]),
-                      );
-                    },
+                                size: Size(widget.musicSheetWidth, totalHeight),
+                              )
+                            ]),
+                          );
+                        },
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-          ),
+              )),
 
           // Floating Reset Button (Only Shows When Zoomed)
           //if (isZoomed)
