@@ -504,9 +504,7 @@ class MusicSheetPainter extends CustomPainter {
       }
 
       // Determine if the note's stem is upside down (pointing up)
-      final bool isUpsideDownNote = note.noteY < staffCentre;
-
-      if (isUpsideDownNote) {
+      if (note.isUpsideDown) {
         hasUpsideDownStems = true;
       } else {
         hasDownwardStems = true;
@@ -558,11 +556,11 @@ class MusicSheetPainter extends CustomPainter {
       stemHeight += 10.0;
 
       // Calculate stem position and dimensions
-      double stemX = isUpsideDownNote ? noteX - 5.0 : noteX + 5.0;
+      double stemX = note.isUpsideDown ? noteX - 5.0 : noteX + 5.0;
       double stemWidth = 1.5; // Stem width
       double stemTop, stemBottom;
 
-      if (isUpsideDownNote) {
+      if (note.isUpsideDown) {
         // Stem points up
         stemTop = note.noteY - stemHeight;
         stemBottom = note.noteY;
@@ -578,7 +576,7 @@ class MusicSheetPainter extends CustomPainter {
         y: note.noteY,
         width: stemWidth,
         height: stemHeight,
-        isUpsideDown: isUpsideDownNote,
+        isUpsideDown: note.isUpsideDown,
         isStem: true,
         obstacleTop: stemTop,
         obstacleBottom: stemBottom
@@ -946,15 +944,23 @@ class MusicSheetPainter extends CustomPainter {
       endX = startX + 10;
     }
     double lowestY = double.negativeInfinity;
+    bool hasUpsideDownNoteOnStaff = false;
     for (int i = startIndex; i <= endIndex; i++) {
       if (notes[i].noteY > lowestY) {
         lowestY = notes[i].noteY;
+      }
+      if (notes[i].isUpsideDown && notes[i].noteY >= staffTop) {
+        hasUpsideDownNoteOnStaff = true;
       }
     }
 
     double staffBottomLineY = staffTop + 40; // 4 lines * 10 spacing
     double minDynamicY = staffBottomLineY + 20;
     double y = math.max(lowestY + 50, minDynamicY);
+
+    if (hasUpsideDownNoteOnStaff) {
+      y += 20;
+    }
 
     double openWidth = 20.0;
     Path path = Path();

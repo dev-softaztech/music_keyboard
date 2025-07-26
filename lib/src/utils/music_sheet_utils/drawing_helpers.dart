@@ -174,7 +174,7 @@ void drawNoteKey(
   bool isAConnectedNote = false;
   bool doesGroupContain32ndOr64thNote = false;
   final double sheetCenter = staffTop + (lineSpacing * 2);
-  final bool isUpsideDownNote = noteY < sheetCenter;
+  note.isUpsideDown = noteY < sheetCenter;
 
   if (note.type == NoteType.eighth ||
       note.type == NoteType.sixteenth ||
@@ -284,7 +284,7 @@ void drawNoteKey(
     double stemX = 0.0;
 
     if ((note.isConnected && !firstNoteUpsideDown) ||
-        (!isUpsideDownNote && !(note.isConnected && firstNoteUpsideDown))) {
+        (!note.isUpsideDown && !(note.isConnected && firstNoteUpsideDown))) {
       stemX = noteX + 5.0;
       canvas.drawLine(
         Offset(stemX, noteY - 1),
@@ -316,25 +316,25 @@ void drawNoteKey(
           note.type == NoteType.sixtyFourth) &&
       connectedNotesGroup.length <= 1) {
     String flagCharacter = "";
-    double flagY = !isUpsideDownNote
+    double flagY = !note.isUpsideDown
         ? (noteY - stemHeight - 64)
         : (noteY + stemHeight - 68);
 
     switch (note.type) {
       case NoteType.eighth:
-        flagCharacter = !isUpsideDownNote ? '\uE240' : '\uE241';
+        flagCharacter = !note.isUpsideDown ? '\uE240' : '\uE241';
         break;
       case NoteType.sixteenth:
-        flagCharacter = !isUpsideDownNote ? '\uE242' : '\uE243';
+        flagCharacter = !note.isUpsideDown ? '\uE242' : '\uE243';
         break;
       case NoteType.thirtySecond:
-        flagCharacter = !isUpsideDownNote ? '\ue244' : '\uE245';
+        flagCharacter = !note.isUpsideDown ? '\ue244' : '\uE245';
         break;
       case NoteType.sixtyFourth:
-        flagCharacter = !isUpsideDownNote ? '\ue246' : '\uE247';
+        flagCharacter = !note.isUpsideDown ? '\ue246' : '\uE247';
         break;
       default:
-        flagCharacter = !isUpsideDownNote ? '\uE240' : '\uE241';
+        flagCharacter = !note.isUpsideDown ? '\uE240' : '\uE241';
     }
 
     final textPainter = TextPainter(
@@ -351,8 +351,9 @@ void drawNoteKey(
 
     textPainter.layout();
 
-    double flagX =
-        !isUpsideDownNote ? (noteX + noteRadius - 4) : (noteX - noteRadius + 2);
+    double flagX = !note.isUpsideDown
+        ? (noteX + noteRadius - 4)
+        : (noteX - noteRadius + 2);
 
     textPainter.paint(canvas, Offset(flagX, flagY));
   }

@@ -12,6 +12,7 @@ class MusicalNote {
   final String accidentalCharacter; // Unicode character for the accidental
   int? slurEndIndex;
   double noteY;
+  bool isUpsideDown;
   double duration; // Duration value for bar line calculation
   String topTimeSignatureCharacter;
   String bottomTimeSignatureCharacter;
@@ -29,6 +30,7 @@ class MusicalNote {
       this.unicodeCharacter = "",
       this.accidentalCharacter = "",
       this.noteY = 0.0,
+      this.isUpsideDown = false,
       this.duration = 0.0,
       this.topTimeSignatureCharacter = "",
       this.bottomTimeSignatureCharacter = ""});
@@ -47,6 +49,7 @@ class MusicalNote {
         unicodeCharacter: unicodeCharacter,
         accidentalCharacter: accidentalCharacter,
         noteY: noteY,
+        isUpsideDown: isUpsideDown,
         duration: duration,
         topTimeSignatureCharacter: topTimeSignatureCharacter,
         bottomTimeSignatureCharacter: bottomTimeSignatureCharacter);
