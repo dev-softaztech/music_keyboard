@@ -10,12 +10,14 @@ class NotesKeyboardLayout extends StatefulWidget {
   final bool showNotesKeyboard;
   final void Function(bool) onToggleKeyboard;
   final void Function(MusicalNote) onKeyPress;
+  final VoidCallback onToggleDynamicsKeyboard;
 
   const NotesKeyboardLayout({
     super.key,
     required this.showNotesKeyboard,
     required this.onToggleKeyboard,
     required this.onKeyPress,
+    required this.onToggleDynamicsKeyboard,
   });
 
   @override
@@ -486,7 +488,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                         ),
                       ),
                       const SizedBox(width: 5),
-                      //Bass cleff
+                      //Bass clef
                       SizedBox(
                         width: 30,
                         height: 40,
@@ -580,8 +582,8 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                margin: EdgeInsets.fromLTRB(5, 0, 5, 5),
-                padding: EdgeInsets.fromLTRB(5, 0, 5, 5),
+                margin: EdgeInsets.fromLTRB(0, 0, 5, 5),
+                padding: EdgeInsets.fromLTRB(0, 0, 5, 5),
                 child: Column(
                   children: [
                     // Time signature button
@@ -624,7 +626,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                       ),
                     ),
                     const SizedBox(height: 5),
-                    //Clef
+                    //Key signatures
                     SizedBox(
                       width: 30,
                       height: 40,
@@ -707,20 +709,13 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 5),
-                    //Bass cleff
+                    const SizedBox(height: 9),
+                    //Dynamics button
                     SizedBox(
                       width: 30,
                       height: 40,
                       child: ElevatedButton(
-                        onPressed: () {
-                          widget.onKeyPress(MusicalNote(
-                              pitch: "",
-                              octave: 0,
-                              type: NoteType.clef,
-                              isConnected: false,
-                              unicodeCharacter: "\uf474"));
-                        },
+                        onPressed: widget.onToggleDynamicsKeyboard,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.grey[100],
                           shape: RoundedRectangleBorder(

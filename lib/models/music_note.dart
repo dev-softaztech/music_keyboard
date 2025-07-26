@@ -16,6 +16,7 @@ class MusicalNote {
   double duration; // Duration value for bar line calculation
   String topTimeSignatureCharacter;
   String bottomTimeSignatureCharacter;
+  String dynamicCharacter;
 
   MusicalNote(
       {required this.pitch,
@@ -33,7 +34,8 @@ class MusicalNote {
       this.isUpsideDown = false,
       this.duration = 0.0,
       this.topTimeSignatureCharacter = "",
-      this.bottomTimeSignatureCharacter = ""});
+      this.bottomTimeSignatureCharacter = "",
+      this.dynamicCharacter = ""});
 
   MusicalNote copy() {
     return MusicalNote(
@@ -52,7 +54,8 @@ class MusicalNote {
         isUpsideDown: isUpsideDown,
         duration: duration,
         topTimeSignatureCharacter: topTimeSignatureCharacter,
-        bottomTimeSignatureCharacter: bottomTimeSignatureCharacter);
+        bottomTimeSignatureCharacter: bottomTimeSignatureCharacter,
+        dynamicCharacter: dynamicCharacter);
   }
 }
 

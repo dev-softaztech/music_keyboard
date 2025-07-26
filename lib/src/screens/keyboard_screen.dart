@@ -4,6 +4,7 @@ import 'package:music_keyboard/src/providers/current_selected_note_provider.dart
 import 'package:music_keyboard/src/providers/is_connected_provider.dart';
 import 'package:music_keyboard/src/providers/list_of_spacing_for_each_row.dart';
 import 'package:music_keyboard/src/providers/selected_accidental_provider.dart';
+import 'package:music_keyboard/src/widgets/keyboard/dynamics_keyboard.dart';
 import 'package:music_keyboard/src/widgets/keyboard/notes_keyboard_layout.dart';
 import 'package:music_keyboard/src/widgets/main_sheet/music_sheet_container.dart';
 import 'package:music_keyboard/src/utils/pdf_exporter.dart';
@@ -42,6 +43,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   bool showNotes = false;
 
   bool showNotesKeyboard = false;
+  bool _showDynamicsKeyboard = false;
   bool showSymbolsKeyboard = false;
   bool isTieing = false;
   bool showMenu = false;
@@ -236,6 +238,12 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     //}
 
     rowSpacingProvider.updateRowSpacingList(rowSpacingList);
+  }
+
+  void _toggleDynamicsKeyboard() {
+    setState(() {
+      _showDynamicsKeyboard = !_showDynamicsKeyboard;
+    });
   }
 
   void forceNewRow() {
@@ -665,202 +673,217 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                             children: [
                               Stack(
                                 children: [
-                                  NotesKeyboardLayout(
-                                    showNotesKeyboard: showNotesKeyboard,
-                                    onToggleKeyboard: (isNotes) {
-                                      setState(() {
-                                        showNotesKeyboard = isNotes;
-                                      });
-                                    },
-                                    onKeyPress: handleKeyPress,
-                                  ),
+                                  if (_showDynamicsKeyboard)
+                                    DynamicsKeyboard(
+                                      onToggleKeyboard: _toggleDynamicsKeyboard,
+                                      sheetNoteRows: sheetNoteRows,
+                                    )
+                                  else
+                                    NotesKeyboardLayout(
+                                      showNotesKeyboard: showNotesKeyboard,
+                                      onToggleKeyboard: (isNotes) {
+                                        setState(() {
+                                          showNotesKeyboard = isNotes;
+                                        });
+                                      },
+                                      onKeyPress: handleKeyPress,
+                                      onToggleDynamicsKeyboard:
+                                          _toggleDynamicsKeyboard,
+                                    ),
                                 ],
                               ),
-                              Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Consumer<CurrentSelectedNoteProvider>(
-                                      builder:
-                                          (context, selectedNoteProvider, _) =>
-                                              GestureDetector(
-                                        onTap: () {
-                                          final now = DateTime.now();
-                                          if (_lastTapTime != null &&
-                                              now.difference(_lastTapTime!) <
-                                                  const Duration(seconds: 1)) {
-                                            // Double tap
-                                            setState(() {
-                                              isBeamLockActive =
-                                                  !isBeamLockActive;
-                                              final isConnectedProvider =
-                                                  context.read<
-                                                      IsConnectedProvider>();
-                                              isConnectedProvider
-                                                  .toggleConnection(true);
-                                            });
-                                          } else {
-                                            // Single tap
-                                            if (isBeamLockActive) {
+                              if (!_showDynamicsKeyboard)
+                                Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Consumer<CurrentSelectedNoteProvider>(
+                                        builder: (context, selectedNoteProvider,
+                                                _) =>
+                                            GestureDetector(
+                                          onTap: () {
+                                            final now = DateTime.now();
+                                            if (_lastTapTime != null &&
+                                                now.difference(_lastTapTime!) <
+                                                    const Duration(
+                                                        seconds: 1)) {
+                                              // Double tap
                                               setState(() {
-                                                isBeamLockActive = false;
+                                                isBeamLockActive =
+                                                    !isBeamLockActive;
                                                 final isConnectedProvider =
                                                     context.read<
                                                         IsConnectedProvider>();
                                                 isConnectedProvider
-                                                    .toggleConnection(false);
+                                                    .toggleConnection(true);
                                               });
                                             } else {
-                                              if (sheetNoteRows[
-                                                      selectedNoteProvider
-                                                          .selectedRow]
-                                                  .isNotEmpty) {
+                                              // Single tap
+                                              if (isBeamLockActive) {
                                                 setState(() {
-                                                  final selectedNote =
-                                                      sheetNoteRows[
-                                                              selectedNoteProvider
-                                                                  .selectedRow][
-                                                          selectedNoteProvider
-                                                              .selectedIndex];
-                                                  selectedNote.isConnected =
-                                                      !selectedNote.isConnected;
+                                                  isBeamLockActive = false;
+                                                  final isConnectedProvider =
+                                                      context.read<
+                                                          IsConnectedProvider>();
+                                                  isConnectedProvider
+                                                      .toggleConnection(false);
                                                 });
+                                              } else {
+                                                if (sheetNoteRows[
+                                                        selectedNoteProvider
+                                                            .selectedRow]
+                                                    .isNotEmpty) {
+                                                  setState(() {
+                                                    final selectedNote =
+                                                        sheetNoteRows[
+                                                                selectedNoteProvider
+                                                                    .selectedRow]
+                                                            [
+                                                            selectedNoteProvider
+                                                                .selectedIndex];
+                                                    selectedNote.isConnected =
+                                                        !selectedNote
+                                                            .isConnected;
+                                                  });
+                                                }
                                               }
                                             }
-                                          }
-                                          _lastTapTime = now;
-                                        },
-                                        child: Container(
-                                          width: 60,
-                                          height: 30,
-                                          decoration: BoxDecoration(
-                                            color: isBeamLockActive
-                                                ? Colors.black
-                                                : (sheetNoteRows[selectedNoteProvider
-                                                                .selectedRow]
-                                                            .isNotEmpty &&
-                                                        sheetNoteRows[selectedNoteProvider
-                                                                    .selectedRow]
-                                                                [
-                                                                selectedNoteProvider
-                                                                    .selectedIndex]
-                                                            .isConnected)
-                                                    ? Colors.grey[400]
-                                                    : Colors.grey[100],
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                            border: Border.all(
-                                              color: Colors.black,
-                                              width: 1,
+                                            _lastTapTime = now;
+                                          },
+                                          child: Container(
+                                            width: 60,
+                                            height: 30,
+                                            decoration: BoxDecoration(
+                                              color: isBeamLockActive
+                                                  ? Colors.black
+                                                  : (sheetNoteRows[selectedNoteProvider
+                                                                  .selectedRow]
+                                                              .isNotEmpty &&
+                                                          sheetNoteRows[selectedNoteProvider
+                                                                      .selectedRow]
+                                                                  [
+                                                                  selectedNoteProvider
+                                                                      .selectedIndex]
+                                                              .isConnected)
+                                                      ? Colors.grey[400]
+                                                      : Colors.grey[100],
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              border: Border.all(
+                                                color: Colors.black,
+                                                width: 1,
+                                              ),
                                             ),
-                                          ),
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              Transform.translate(
-                                                offset: const Offset(0, 4),
-                                                child: Text(
-                                                  '\u266B',
-                                                  style: TextStyle(
-                                                    color: isBeamLockActive
-                                                        ? Colors.white
-                                                        : Colors.black,
-                                                    fontSize: 23,
-                                                    fontFamily: 'Bravura',
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Transform.translate(
+                                                  offset: const Offset(0, 4),
+                                                  child: Text(
+                                                    '\u266B',
+                                                    style: TextStyle(
+                                                      color: isBeamLockActive
+                                                          ? Colors.white
+                                                          : Colors.black,
+                                                      fontSize: 23,
+                                                      fontFamily: 'Bravura',
+                                                    ),
                                                   ),
                                                 ),
-                                              ),
-                                              if (isBeamLockActive)
-                                                const Icon(Icons.lock,
-                                                    color: Colors.white,
-                                                    size: 12),
-                                            ],
+                                                if (isBeamLockActive)
+                                                  const Icon(Icons.lock,
+                                                      color: Colors.white,
+                                                      size: 12),
+                                              ],
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                    const SizedBox(width: 15),
-                                    SizedBox(
-                                      width: 180,
-                                      height: 30,
-                                      child: GestureDetector(
-                                        onLongPress: () {
-                                          _showBarPopup(context);
-                                        },
-                                        child: ElevatedButton(
-                                          onPressed: () {
-                                            handleKeyPress(MusicalNote(
-                                                pitch: "",
-                                                octave: 0,
-                                                type: NoteType.bar,
-                                                isConnected: false,
-                                                unicodeCharacter:
-                                                    _selectedBarUnicode));
+                                      const SizedBox(width: 15),
+                                      SizedBox(
+                                        width: 180,
+                                        height: 30,
+                                        child: GestureDetector(
+                                          onLongPress: () {
+                                            _showBarPopup(context);
                                           },
+                                          child: ElevatedButton(
+                                            onPressed: () {
+                                              handleKeyPress(MusicalNote(
+                                                  pitch: "",
+                                                  octave: 0,
+                                                  type: NoteType.bar,
+                                                  isConnected: false,
+                                                  unicodeCharacter:
+                                                      _selectedBarUnicode));
+                                            },
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.grey[100],
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                                side: const BorderSide(
+                                                    color: Colors.black,
+                                                    width: 1),
+                                              ),
+                                              padding: EdgeInsets.zero,
+                                            ),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                const Text(
+                                                  'BARS',
+                                                  style: TextStyle(
+                                                    color: Colors.black,
+                                                    fontSize: 13,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                const SizedBox(
+                                                  width: 10,
+                                                ),
+                                                Transform.translate(
+                                                  offset: const Offset(0, 8),
+                                                  child: Text(
+                                                    _selectedBarUnicode,
+                                                    style: const TextStyle(
+                                                      color: Colors.black,
+                                                      fontSize: 19,
+                                                      fontFamily: 'Bravura',
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                )
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 15),
+                                      SizedBox(
+                                        width: 60,
+                                        height: 30,
+                                        child: ElevatedButton(
+                                          onPressed: handleBackspacePress,
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: Colors.grey[100],
                                             shape: RoundedRectangleBorder(
                                               borderRadius:
                                                   BorderRadius.circular(8),
-                                              side: const BorderSide(
+                                              side: BorderSide(
                                                   color: Colors.black,
                                                   width: 1),
                                             ),
                                             padding: EdgeInsets.zero,
                                           ),
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              const Text(
-                                                'BARS',
-                                                style: TextStyle(
-                                                  color: Colors.black,
-                                                  fontSize: 13,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                              const SizedBox(
-                                                width: 10,
-                                              ),
-                                              Transform.translate(
-                                                offset: const Offset(0, 8),
-                                                child: Text(
-                                                  _selectedBarUnicode,
-                                                  style: const TextStyle(
-                                                    color: Colors.black,
-                                                    fontSize: 19,
-                                                    fontFamily: 'Bravura',
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              )
-                                            ],
-                                          ),
+                                          child: const Icon(Icons.backspace,
+                                              color: Color(0xFF242038),
+                                              size: 25),
                                         ),
                                       ),
-                                    ),
-                                    const SizedBox(width: 15),
-                                    SizedBox(
-                                      width: 60,
-                                      height: 30,
-                                      child: ElevatedButton(
-                                        onPressed: handleBackspacePress,
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.grey[100],
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                            side: BorderSide(
-                                                color: Colors.black, width: 1),
-                                          ),
-                                          padding: EdgeInsets.zero,
-                                        ),
-                                        child: const Icon(Icons.backspace,
-                                            color: Color(0xFF242038), size: 25),
-                                      ),
-                                    ),
-                                  ])
+                                    ])
                             ],
                           ),
                         ),
