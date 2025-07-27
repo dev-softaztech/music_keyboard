@@ -470,7 +470,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
 
     var rowSpacingList = context.read<ListOfSpacingForEachRow>().rowSpacingList;
     var currentRowSpacing = rowSpacingList[selectedRow];
-    double currentX = 60.0;
+    double currentX = 80.0;
 
     for (int i = 0; i < notes.length; i++) {
       double noteWidth = getNoteWidth(notes[i]);
