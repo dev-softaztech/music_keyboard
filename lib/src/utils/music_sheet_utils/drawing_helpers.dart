@@ -195,25 +195,33 @@ void drawNoteKey(
 
   // Draw accidental if present
   if (note.accidentalCharacter.isNotEmpty) {
-    final accidentalPainter = TextPainter(
-      text: TextSpan(
-        text: note.accidentalCharacter,
-        style: TextStyle(
-          fontFamily: 'Bravura',
-          fontSize: 30, // Slightly smaller than the note
-          color: noteColour,
+    if (note.accidentalCharacter == 'dotted_rest') {
+      final Paint handlePaint = Paint()
+        ..color = Colors.black
+        ..style = PaintingStyle.fill;
+
+      canvas.drawCircle(Offset(noteX + 15, noteY), 2, handlePaint);
+    } else {
+      final accidentalPainter = TextPainter(
+        text: TextSpan(
+          text: note.accidentalCharacter,
+          style: TextStyle(
+            fontFamily: 'Bravura',
+            fontSize: 30, // Slightly smaller than the note
+            color: noteColour,
+          ),
         ),
-      ),
-      textDirection: TextDirection.ltr,
-    );
+        textDirection: TextDirection.ltr,
+      );
 
-    accidentalPainter.layout();
+      accidentalPainter.layout();
 
-    final accidentalX = noteX -
-        (accidentalPainter.width / 2) -
-        15; // Position to the left of the note
-    final accidentalY = noteY - (accidentalPainter.height / 2);
-    accidentalPainter.paint(canvas, Offset(accidentalX, accidentalY));
+      final accidentalX = noteX -
+          (accidentalPainter.width / 2) -
+          15; // Position to the left of the note
+      final accidentalY = noteY - (accidentalPainter.height / 2);
+      accidentalPainter.paint(canvas, Offset(accidentalX, accidentalY));
+    }
   }
 
   // Draw note head

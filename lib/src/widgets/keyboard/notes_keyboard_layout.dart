@@ -40,6 +40,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
   int _sharpState = 0; // 0: off, 1: sharp, 2: double sharp
   int _flatState = 0; // 0: off, 1: flat, 2: double flat
   int _naturalState = 0; // 0: off, 1: natural
+  int _dottedRestState = 0;
 
   // Octave pair state - false = Middle+Top pair, true = Bottom+Middle pair
   bool showLowerPair = false;
@@ -292,6 +293,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
             _sharpState = (_sharpState + 1) % 3;
             _flatState = 0;
             _naturalState = 0;
+            _dottedRestState = 0;
             String accidental = '';
             if (_sharpState == 1) {
               accidental = '\uF4DE';
@@ -349,6 +351,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
             _flatState = (_flatState + 1) % 3;
             _sharpState = 0;
             _naturalState = 0;
+            _dottedRestState = 0;
             String accidental = '';
             if (_flatState == 1) {
               accidental = '\uF4DC';
@@ -394,6 +397,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
             _naturalState = (_naturalState + 1) % 2;
             _sharpState = 0;
             _flatState = 0;
+            _dottedRestState = 0;
             String accidental = '';
             if (_naturalState == 1) {
               accidental = '\uF4DD';
@@ -427,6 +431,67 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
     );
   }
 
+  Widget _buildDottedRestButton(BuildContext context) {
+    return SizedBox(
+      width: 30,
+      height: 40,
+      child: ElevatedButton(
+        onPressed: () {
+          setState(() {
+            _naturalState = 0;
+            _sharpState = 0;
+            _flatState = 0;
+            _dottedRestState = (_naturalState + 1) % 2;
+            String accidental = '';
+            if (_dottedRestState == 1) {
+              accidental = 'dotted_rest';
+            }
+            context
+                .read<SelectedAccidentalProvider>()
+                .updateSelectedAccidental(accidental);
+          });
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor:
+              _dottedRestState != 0 ? Colors.grey[300] : Colors.grey[100],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: const BorderSide(color: Colors.black, width: 1),
+          ),
+          padding: EdgeInsets.zero,
+        ),
+        child: Transform.translate(
+          offset: const Offset(7, 8),
+          child: Row(
+            children: [
+              Text(
+                '\uE1F0 ',
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontSize: 25,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Bravura',
+                ),
+              ),
+              Transform.translate(
+                offset: const Offset(0, -2),
+                child: Text(
+                  '\uE110',
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontSize: 8,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Bravura',
+                  ),
+                ),
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     List<String> unicodeCharacters = [
@@ -440,7 +505,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
     ];
 
     return Container(
-      height: 290, // Increased height to accommodate the arrows
+      height: 294, // Increased height to accommodate the arrows
       padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
       child: Column(
         children: [
@@ -582,8 +647,8 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                margin: EdgeInsets.fromLTRB(0, 0, 5, 5),
-                padding: EdgeInsets.fromLTRB(0, 0, 5, 5),
+                margin: EdgeInsets.fromLTRB(0, 2, 5, 5),
+                padding: EdgeInsets.fromLTRB(0, 2, 5, 5),
                 child: Column(
                   children: [
                     // Time signature button
@@ -775,49 +840,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                       ),
                     ),
                     const SizedBox(height: 5),
-                    SizedBox(
-                      width: 30,
-                      height: 40,
-                      child: ElevatedButton(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey[100],
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            side: BorderSide(color: Colors.black, width: 1),
-                          ),
-                          padding: EdgeInsets.zero,
-                        ),
-                        child: Transform.translate(
-                          offset: const Offset(7, 8),
-                          child: Row(
-                            children: [
-                              Text(
-                                '\uE1F0 ',
-                                style: const TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 25,
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: 'Bravura',
-                                ),
-                              ),
-                              Transform.translate(
-                                offset: const Offset(0, -2),
-                                child: Text(
-                                  '\uE110',
-                                  style: const TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 8,
-                                    fontWeight: FontWeight.bold,
-                                    fontFamily: 'Bravura',
-                                  ),
-                                ),
-                              )
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
+                    _buildDottedRestButton(context),
                     const SizedBox(height: 5),
                     // Shift buttons
                     _buildSharpButton(context),

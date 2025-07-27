@@ -318,7 +318,8 @@ class KeyboardSymbolsMusicStaffPainter extends CustomPainter {
         unicodeCharacter == '\uF4DF' || // sharp
         unicodeCharacter == '\uF4DC' || // flat
         unicodeCharacter == '\uF4E0' || // flat
-        unicodeCharacter == '\uF4DD'; // natural
+        unicodeCharacter == '\uF4DD' || // natural
+        unicodeCharacter == 'dotted_rest';
 
     if (musicalNote.type == NoteType.accidental ||
         (musicalNote.type != NoteType.clef &&
@@ -338,7 +339,7 @@ class KeyboardSymbolsMusicStaffPainter extends CustomPainter {
       );
 
       // Use the selected unicode character for the note symbol
-      String noteSymbol;
+      String noteSymbol = unicodeCharacter;
 
       // If it's an accidental, we need to use the note symbol from the selected unicode
       if (isAccidental) {
@@ -377,7 +378,6 @@ class KeyboardSymbolsMusicStaffPainter extends CustomPainter {
         textDirection: TextDirection.ltr,
       );
 
-      accidentalPainter.layout();
       notePainter.layout();
 
       // Calculate positions
@@ -386,14 +386,25 @@ class KeyboardSymbolsMusicStaffPainter extends CustomPainter {
           (notePainter.height / 2) +
           0.5;
 
-      // Position the accidental to the left of the note
-      final accidentalX =
-          (size.width - notePainter.width) / 2 - accidentalPainter.width * 0.8;
-      final noteX =
-          (size.width - notePainter.width) / 2 + accidentalPainter.width * 0.2;
+      double noteX = 0.0;
+      if (unicodeCharacter != 'dotted_rest') {
+        accidentalPainter.layout();
+        final accidentalX = (size.width - notePainter.width) / 2 -
+            accidentalPainter.width * 0.8;
+        noteX = (size.width - notePainter.width) / 2 +
+            accidentalPainter.width * 0.2;
 
-      // Draw the accidental and the note
-      accidentalPainter.paint(canvas, Offset(accidentalX, noteY));
+        accidentalPainter.paint(canvas, Offset(accidentalX, noteY));
+      } else {
+        noteX = (size.width - notePainter.width) / 2 * 1.2;
+
+        final Paint handlePaint = Paint()
+          ..color = Colors.black
+          ..style = PaintingStyle.fill;
+
+        canvas.drawCircle(Offset(noteX + 12, noteY + 44), 1.5, handlePaint);
+      }
+
       notePainter.paint(canvas, Offset(noteX, noteY));
     } else {
       // For other types, just draw the unicode character
