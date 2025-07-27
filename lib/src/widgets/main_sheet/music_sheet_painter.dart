@@ -1103,6 +1103,23 @@ class MusicSheetPainter extends CustomPainter {
     if (staffTop + 20 < tripletY) tripletY = staffTop - 20;
     if (staffTop - 40 > tripletY) tripletY = tripletY + 30;
 
+    bool isAnyNoteInTripletBeamed =
+        note1.isConnected || note2.isConnected || note3.isConnected;
+
+    if (isAnyNoteInTripletBeamed) {
+      int beamStartIndex = noteIndex;
+      // Find the actual start of the beamed group by looking backwards
+      while (beamStartIndex > 0 && notes[beamStartIndex - 1].isConnected) {
+        beamStartIndex--;
+      }
+      MusicalNote firstNoteOfBeam = notes[beamStartIndex];
+
+      // Apply the condition using the first note of the entire beamed group
+      if (!firstNoteOfBeam.isUpsideDown && y1 < staffTop - 20) {
+        tripletY = tripletY - 40;
+      }
+    }
+
     final textStyle = TextStyle(
       color: paint.color,
       fontSize: 40,
