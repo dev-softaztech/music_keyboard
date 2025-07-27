@@ -374,6 +374,13 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     return calculateInsertionIndex(tapX, notes, currentRowSpacing);
   }
 
+  double _getStaffTop(int rowIndex) {
+    // This calculation is based on the row height and gaps used in the painter.
+    // It determines the Y coordinate of the top line of the staff for a given row.
+    // Row height is 130, gap is 40. The first row starts at y=65 (130/2).
+    return (rowIndex * 170.0) + 65.0;
+  }
+
   Rect _calculateHighlightRect() {
     final rowNotes = widget.sheetNoteRows[_dragRow!];
     final rowSpacingList =
@@ -388,9 +395,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     final double endX =
         calculateXPositionForIndex(end, rowNotes, currentRowSpacing);
 
-    double staffTop = _dragRow == 0
-        ? 130.0 / 2
-        : (_dragRow! * 130.0) + (_dragRow! * 40.0) + (130.0 / 2);
+    double staffTop = _getStaffTop(_dragRow!);
     double staffCenter = staffTop + 20;
 
     double min_y = double.infinity;
@@ -491,13 +496,27 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
         calculateXPositionForIndex(endIndex, rowNotes, currentRowSpacing);
 
     double lowestY = double.negativeInfinity;
+    bool hasUpsideDownNoteOnStaff = false;
+    double staffTop = _getStaffTop(rowIndex);
+
     for (int i = startIndex; i <= endIndex; i++) {
       if (rowNotes[i].noteY > lowestY) {
         lowestY = rowNotes[i].noteY;
       }
+      if (rowNotes[i].isUpsideDown && rowNotes[i].noteY >= staffTop) {
+        hasUpsideDownNoteOnStaff = true;
+      }
     }
 
-    double y = lowestY + 50;
+    double staffBottomLineY = staffTop + 40; // 4 lines * 10 spacing
+    double minDynamicY = staffBottomLineY + 20;
+    double y = math.max(lowestY + 50, minDynamicY);
+
+    if (hasUpsideDownNoteOnStaff) {
+      y += 20;
+    }
+
+    //double y = lowestY + 50;
 
     return Rect.fromLTRB(startX, y - 7.5, endX + 35, y + 40);
   }
