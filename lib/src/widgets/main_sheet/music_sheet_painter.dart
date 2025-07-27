@@ -179,6 +179,11 @@ class MusicSheetPainter extends CustomPainter {
         drawNote(canvas, paint, note, lineSpacing, staffTop, x,
             sheetNoteRows[rowIndex], i, currentRowSpacing, noteColour);
 
+        if (note.dynamicCharacter.isNotEmpty) {
+          _drawDynamicCharacter(canvas, note, noteColour, x, staffTop,
+              lineSpacing, sheetNoteRows[rowIndex], i);
+        }
+
         var staffCenter = staffTop + (lineSpacing * 2);
 
         if (note.isTiedToNext && i < sheetNoteRows[rowIndex].length - 1) {
@@ -929,6 +934,53 @@ class MusicSheetPainter extends CustomPainter {
     return 60.0 + (index * currentRowSpacing);
   }
 
+  void _drawDynamicCharacter(
+      Canvas canvas,
+      MusicalNote note,
+      Color noteColour,
+      double x,
+      double staffTop,
+      double lineSpacing,
+      List<MusicalNote> notes,
+      int noteIndex) {
+    final textStyle = TextStyle(
+      color: noteColour,
+      fontSize: 30,
+      fontFamily: 'Bravura',
+    );
+    final textSpan = TextSpan(
+      text: note.dynamicCharacter,
+      style: textStyle,
+    );
+    final textPainter = TextPainter(
+      text: textSpan,
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+
+    double lowestY = double.negativeInfinity;
+    bool hasUpsideDownNoteOnStaff = false;
+
+    if (note.noteY > lowestY) {
+      lowestY = note.noteY;
+    }
+    if (note.isUpsideDown && note.noteY >= staffTop) {
+      hasUpsideDownNoteOnStaff = true;
+    }
+
+    double staffBottomLineY = staffTop + 40; // 4 lines * 10 spacing
+    double minDynamicY = staffBottomLineY + 20;
+    double yPos = math.max(lowestY + 50, minDynamicY);
+
+    if (hasUpsideDownNoteOnStaff) {
+      yPos += 20;
+    }
+
+    double xPos = x - (textPainter.width / 2);
+
+    textPainter.paint(canvas, Offset(xPos, yPos - 57));
+  }
+
   void _drawDynamicMarking(
       Canvas canvas,
       Paint paint,
@@ -943,6 +995,17 @@ class MusicSheetPainter extends CustomPainter {
     if (startIndex == endIndex || endX < startX || endIndex >= notes.length) {
       endX = startX + 10;
     }
+
+    // Offset logic
+    if (notes[startIndex].dynamicCharacter.isNotEmpty) {
+      startX += 20;
+    }
+    if (notes[startIndex] == notes[endIndex]) {
+      endX += 20;
+    } else if (notes[endIndex].dynamicCharacter.isNotEmpty) {
+      endX -= 20;
+    }
+
     double lowestY = double.negativeInfinity;
     bool hasUpsideDownNoteOnStaff = false;
     for (int i = startIndex; i <= endIndex; i++) {
@@ -962,7 +1025,7 @@ class MusicSheetPainter extends CustomPainter {
       y += 20;
     }
 
-    double openWidth = 20.0;
+    double openWidth = 15.0;
     Path path = Path();
 
     if (isCrescendo) {

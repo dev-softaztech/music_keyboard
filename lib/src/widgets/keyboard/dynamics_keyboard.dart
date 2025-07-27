@@ -168,7 +168,11 @@ class DynamicsKeyboard extends StatelessWidget {
                       return GestureDetector(
                         onTap: () {
                           if (selectedNote != null) {
-                            selectedNote.dynamicCharacter = character;
+                            if (selectedNote.dynamicCharacter == character) {
+                              selectedNote.dynamicCharacter = '';
+                            } else {
+                              selectedNote.dynamicCharacter = character;
+                            }
                             currentSelectedNoteProvider.notifyListeners();
                           }
                         },
