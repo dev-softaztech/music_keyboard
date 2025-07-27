@@ -521,9 +521,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
       y += 20;
     }
 
-    //double y = lowestY + 50;
-
-    return Rect.fromLTRB(startX, y - 7.5, endX + 35, y + 40);
+    return Rect.fromLTRB(startX, y - 7.5, endX + 70, y + 40);
   }
 
   @override
