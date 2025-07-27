@@ -459,8 +459,8 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                         child: ElevatedButton(
                           onPressed: () {
                             widget.onKeyPress(MusicalNote(
-                                pitch: "",
-                                octave: 0,
+                                pitch: "A",
+                                octave: 4,
                                 type: NoteType.clef,
                                 isConnected: false,
                                 unicodeCharacter: "\uf472"));
@@ -495,8 +495,8 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                         child: ElevatedButton(
                           onPressed: () {
                             widget.onKeyPress(MusicalNote(
-                                pitch: "",
-                                octave: 0,
+                                pitch: "A",
+                                octave: 4,
                                 type: NoteType.clef,
                                 isConnected: false,
                                 unicodeCharacter: "\uf474"));
@@ -633,8 +633,8 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                       child: ElevatedButton(
                         onPressed: () {
                           widget.onKeyPress(MusicalNote(
-                              pitch: "",
-                              octave: 0,
+                              pitch: "A",
+                              octave: 4,
                               type: NoteType.clef,
                               isConnected: false,
                               unicodeCharacter: "\uf472"));

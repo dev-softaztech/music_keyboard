@@ -819,6 +819,11 @@ class MusicSheetPainter extends CustomPainter {
       min_y = math.min(min_y, y - 15);
       max_y = math.max(max_y, y + 15);
 
+      if (note.type == NoteType.clef) {
+        min_y = min_y + 100;
+        max_y = max_y + 125;
+      }
+
       if (note.type != NoteType.whole &&
           note.type != NoteType.rest &&
           note.type != NoteType.clef &&

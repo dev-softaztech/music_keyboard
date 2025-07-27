@@ -42,13 +42,6 @@ void drawClefKey(
     List<MusicalNote> notes,
     int index,
     Color noteColour) {
-  // Determine if this is a time signature
-  // bool isTimeSignature =
-  //    BarLineCalculator.timeSignatureValues.containsKey(note.unicodeCharacter);
-
-  // Use same font size for clefs and time signatures
-  // double fontSize = 40;
-
   final textPainter = TextPainter(
     text: TextSpan(
       text: note.unicodeCharacter,
@@ -72,10 +65,6 @@ void drawClefKey(
   if (note.unicodeCharacter == "\ue08a" || note.unicodeCharacter == "\ue08b") {
     offsetY = offsetY - 20;
   }
-  // Adjust Y position for time signatures
-  //if (isTimeSignature) {
-  //  offsetY = offsetY - 20;
-  //}
 
   textPainter.paint(canvas, Offset(offsetX, offsetY + 0.5));
 }

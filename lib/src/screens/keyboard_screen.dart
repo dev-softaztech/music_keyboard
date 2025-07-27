@@ -317,6 +317,19 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
         // Remove the note
         sheetNoteRows[selectedNoteProvider.selectedRow].remove(noteToRemove);
+
+        // After removing the note, check and update crescendo/decrescendo end indices
+        final int removedNoteIndex = selectedNoteProvider.insertionIndex;
+        for (var note in sheetNoteRows[selectedNoteProvider.selectedRow]) {
+          if (note.crescendoEndIndex != null &&
+              note.crescendoEndIndex == removedNoteIndex) {
+            note.crescendoEndIndex = note.crescendoEndIndex! - 1;
+          }
+          if (note.decrescendoEndIndex != null &&
+              note.decrescendoEndIndex == removedNoteIndex) {
+            note.decrescendoEndIndex = note.decrescendoEndIndex! - 1;
+          }
+        }
       }
 
       updateRowSpacing(selectedNoteProvider.selectedRow);
