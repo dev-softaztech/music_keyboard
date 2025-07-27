@@ -693,6 +693,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                     )
                                   else
                                     NotesKeyboardLayout(
+                                      sheetNoteRows: sheetNoteRows,
                                       showNotesKeyboard: showNotesKeyboard,
                                       onToggleKeyboard: (isNotes) {
                                         setState(() {

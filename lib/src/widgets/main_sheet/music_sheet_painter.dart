@@ -179,6 +179,11 @@ class MusicSheetPainter extends CustomPainter {
         drawNote(canvas, paint, note, lineSpacing, staffTop, x,
             sheetNoteRows[rowIndex], i, currentRowSpacing, noteColour);
 
+        if (note.isTriplet) {
+          _drawTriplet(canvas, paint, x, staffTop, lineSpacing,
+              sheetNoteRows[rowIndex], i, currentRowSpacing);
+        }
+
         if (note.dynamicCharacter.isNotEmpty) {
           _drawDynamicCharacter(canvas, note, noteColour, x, staffTop,
               lineSpacing, sheetNoteRows[rowIndex], i);
@@ -1055,5 +1060,75 @@ class MusicSheetPainter extends CustomPainter {
         ..style = PaintingStyle.fill;
       canvas.drawCircle(Offset(endX + 10, y), 10, handlePaint);
     }
+  }
+
+  void _drawTriplet(
+      Canvas canvas,
+      Paint paint,
+      double x,
+      double staffTop,
+      double lineSpacing,
+      List<MusicalNote> notes,
+      int noteIndex,
+      int currentRowSpacing) {
+    if (noteIndex + 2 >= notes.length) {
+      return;
+    }
+
+    MusicalNote note1 = notes[noteIndex];
+    MusicalNote note2 = notes[noteIndex + 1];
+    MusicalNote note3 = notes[noteIndex + 2];
+
+    double x1 = x;
+    double x2 = x + currentRowSpacing;
+    double x3 = x + (2 * currentRowSpacing);
+
+    double y1 = calculateNoteYMainSheet(
+        note1.pitch, note1.octave, lineSpacing, staffTop);
+    double y2 = calculateNoteYMainSheet(
+        note2.pitch, note2.octave, lineSpacing, staffTop);
+    double y3 = calculateNoteYMainSheet(
+        note3.pitch, note3.octave, lineSpacing, staffTop);
+
+    double highestNoteY = math.min(y1, math.min(y2, y3));
+    double tripletY = highestNoteY - 50;
+
+    // Adjust Y to avoid overlap with notes above
+    for (int i = noteIndex; i <= noteIndex + 2; i++) {
+      if (notes[i].noteY < tripletY + 10) {
+        tripletY = notes[i].noteY - 20;
+      }
+    }
+
+    if (staffTop + 20 < tripletY) tripletY = staffTop - 20;
+    if (staffTop - 40 > tripletY) tripletY = tripletY + 30;
+
+    final textStyle = TextStyle(
+      color: paint.color,
+      fontSize: 40,
+      fontFamily: 'Bravura',
+    );
+    final textSpan = TextSpan(
+      text: '\uE202', // Triplet '3'
+      style: textStyle,
+    );
+    final textPainter = TextPainter(
+      text: textSpan,
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+
+    double middleX = x2;
+    double textX = middleX - (textPainter.width / 2);
+
+    textPainter.paint(canvas, Offset(textX, tripletY - 33));
+
+    paint.strokeWidth = 1.0;
+    canvas.drawLine(Offset(x1, tripletY), Offset(textX - 4, tripletY), paint);
+    canvas.drawLine(Offset(textX + textPainter.width + 4, tripletY),
+        Offset(x3, tripletY), paint);
+
+    canvas.drawLine(Offset(x1, tripletY), Offset(x1, tripletY + 7), paint);
+    canvas.drawLine(Offset(x3, tripletY), Offset(x3, tripletY + 7), paint);
   }
 }

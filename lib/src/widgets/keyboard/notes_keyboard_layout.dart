@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/music_note.dart';
+import 'package:music_keyboard/src/providers/current_selected_note_provider.dart';
 import 'package:music_keyboard/src/providers/selected_accidental_provider.dart';
 import 'package:music_keyboard/src/widgets/keyboard/note_head_keyboard/keyboard_by_symbols.dart';
 import 'package:music_keyboard/src/providers/selected_unicode_provider.dart';
@@ -11,6 +12,7 @@ class NotesKeyboardLayout extends StatefulWidget {
   final void Function(bool) onToggleKeyboard;
   final void Function(MusicalNote) onKeyPress;
   final VoidCallback onToggleDynamicsKeyboard;
+  final List<List<MusicalNote>> sheetNoteRows;
 
   const NotesKeyboardLayout({
     super.key,
@@ -18,6 +20,7 @@ class NotesKeyboardLayout extends StatefulWidget {
     required this.onToggleKeyboard,
     required this.onKeyPress,
     required this.onToggleDynamicsKeyboard,
+    required this.sheetNoteRows,
   });
 
   @override
@@ -494,6 +497,15 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
 
   @override
   Widget build(BuildContext context) {
+    final currentSelectedNoteProvider =
+        Provider.of<CurrentSelectedNoteProvider>(context);
+    final selectedNoteIndex = currentSelectedNoteProvider.selectedIndex;
+    final selectedRow = currentSelectedNoteProvider.selectedRow;
+    final selectedNote = (widget.sheetNoteRows.isNotEmpty &&
+            widget.sheetNoteRows[selectedRow].length > selectedNoteIndex)
+        ? widget.sheetNoteRows[selectedRow][selectedNoteIndex]
+        : null;
+
     List<String> unicodeCharacters = [
       '\ue1d2',
       '\ue1d3',
@@ -812,16 +824,31 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                 padding: EdgeInsets.fromLTRB(5, 0, 0, 0),
                 child: Column(
                   children: [
+                    //Triplets button
                     SizedBox(
                       width: 30,
                       height: 40,
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          if (selectedNote != null) {
+                            if (selectedNoteIndex <
+                                widget.sheetNoteRows[selectedRow].length - 2) {
+                              setState(() {
+                                selectedNote.isTriplet =
+                                    !selectedNote.isTriplet;
+                              });
+                            }
+                          }
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.grey[100],
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
-                            side: BorderSide(color: Colors.black, width: 1),
+                            side: BorderSide(
+                                color: selectedNote?.isTriplet == true
+                                    ? Colors.red
+                                    : Colors.black,
+                                width: 1),
                           ),
                           padding: EdgeInsets.zero,
                         ),

@@ -44,7 +44,7 @@ class DynamicsKeyboard extends StatelessWidget {
           Column(
             children: [
               const SizedBox(
-                height: 237,
+                height: 243,
                 //width: 40,
               ),
               Container(
