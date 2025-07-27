@@ -349,15 +349,13 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
 
   /// **Find the closest row based on the Y position**
   int findClosestRow(List<List<MusicalNote>> rows, double tapY) {
+    const double rowSpacing = 160.0;
     const double sheetHeight = 40.0;
-    const double topGap = 65.0;
-    const double bottomGap = 65.0;
-    const double rowTotalHeight =
-        topGap + sheetHeight + bottomGap; // = 170px per row
+    const double rowTotalHeight = rowSpacing + sheetHeight;
+    const double verticalOffset = 250.0;
+    const double startY = verticalOffset - (rowSpacing / 2);
 
-    // Determine the closest row index
-    int rowIndex =
-        (tapY / rowTotalHeight).floor(); // Find which row region was tapped
+    int rowIndex = ((tapY - startY) / rowTotalHeight).floor();
 
     // Ensure the row index is within valid bounds
     return rowIndex.clamp(0, rows.length - 1);
@@ -375,10 +373,10 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
   }
 
   double _getStaffTop(int rowIndex) {
-    // This calculation is based on the row height and gaps used in the painter.
-    // It determines the Y coordinate of the top line of the staff for a given row.
-    // Row height is 130, gap is 40. The first row starts at y=65 (130/2).
-    return (rowIndex * 170.0) + 65.0;
+    const double rowSpacing = 160.0;
+    const double sheetHeight = 40.0;
+    const double verticalOffset = 150.0;
+    return verticalOffset + (rowIndex * (rowSpacing + sheetHeight));
   }
 
   Rect _calculateHighlightRect() {
@@ -567,15 +565,16 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                         builder: (context) {
                           // Calculate dynamic height based on number of rows
                           const double sheetHeight = 40.0;
-                          const double topGap = 65.0;
-                          const double bottomGap = 65.0;
-                          const double rowTotalHeight = topGap +
-                              sheetHeight +
-                              bottomGap; // = 170px per row
+                          const double rowSpacing = 160.0;
+                          const double rowTotalHeight =
+                              rowSpacing + sheetHeight;
+                          const double verticalOffset = 150.0;
 
                           // Calculate total height based on number of rows
                           final double totalHeight = math.max(
-                              rowTotalHeight * widget.sheetNoteRows.length,
+                              verticalOffset +
+                                  (rowTotalHeight *
+                                      widget.sheetNoteRows.length),
                               1000.0 // Minimum height of 300px
                               );
 

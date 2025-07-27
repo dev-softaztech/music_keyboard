@@ -40,11 +40,8 @@ class MusicSheetPainter extends CustomPainter {
     const double rowSpacing = 160.0;
 
     for (int rowIndex = 0; rowIndex < sheetNoteRows.length; rowIndex++) {
-      double staffTop = rowIndex == 0
-          ? rowSpacing / 2
-          : (rowIndex * rowSpacing) +
-              (rowIndex * sheetHeight) +
-              (rowSpacing / 2);
+      const double verticalOffset = 250.0;
+      final staffTop = verticalOffset + (rowIndex * (rowSpacing + sheetHeight));
       drawStaffLines(canvas, paint, staffTop, lineSpacing, sheetHeight, size);
 
       double x = 60.0;
@@ -258,7 +255,7 @@ class MusicSheetPainter extends CustomPainter {
       if (selectionRow == rowIndex &&
           selectionStart != null &&
           selectionEnd != null) {
-        drawHighlight(canvas, size, rowIndex);
+        drawHighlight(canvas, size, rowIndex, staffTop);
       }
 
       // We no longer add automatic bar lines here as it's now handled in CurrentSelectedNoteProvider
@@ -789,7 +786,7 @@ class MusicSheetPainter extends CustomPainter {
     );
   }
 
-  void drawHighlight(Canvas canvas, Size size, int rowIndex) {
+  void drawHighlight(Canvas canvas, Size size, int rowIndex, double staffTop) {
     if (selectionStart == null ||
         selectionEnd == null ||
         selectionRow == null) {
@@ -810,10 +807,6 @@ class MusicSheetPainter extends CustomPainter {
         calculateXPositionForIndex(start, rowNotes, rowSpacingList[rowIndex]);
     final double endX =
         calculateXPositionForIndex(end, rowNotes, rowSpacingList[rowIndex]);
-
-    double staffTop = rowIndex == 0
-        ? 130.0 / 2
-        : (rowIndex * 130.0) + (rowIndex * 40.0) + (130.0 / 2);
 
     double min_y = double.infinity;
     double max_y = double.negativeInfinity;
