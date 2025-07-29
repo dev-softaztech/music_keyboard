@@ -8,6 +8,8 @@ import 'package:music_keyboard/src/utils/music_sheet_utils/note_position_calcula
 import 'package:music_keyboard/src/utils/music_sheet_utils/note_width_calculator.dart';
 
 class MusicSheetPainter extends CustomPainter {
+  final String title;
+  final String composer;
   final List<List<MusicalNote>> sheetNoteRows;
   final int selectedRow;
   final int selectedIndex;
@@ -18,14 +20,23 @@ class MusicSheetPainter extends CustomPainter {
   final int? selectionRow;
   final int? editingDynamicIndex;
   final int? editingDynamicRow;
+  double verticalOffset;
 
-  MusicSheetPainter(this.sheetNoteRows, this.selectedRow, this.selectedIndex,
-      this.showCursor, this.rowSpacingList,
-      {this.selectionStart,
-      this.selectionEnd,
-      this.selectionRow,
-      this.editingDynamicIndex,
-      this.editingDynamicRow});
+  MusicSheetPainter({
+    required this.title,
+    required this.composer,
+    required this.sheetNoteRows,
+    required this.selectedRow,
+    required this.selectedIndex,
+    required this.showCursor,
+    required this.rowSpacingList,
+    this.selectionStart,
+    this.selectionEnd,
+    this.selectionRow,
+    this.editingDynamicIndex,
+    this.editingDynamicRow,
+    this.verticalOffset = 250.0,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -39,8 +50,10 @@ class MusicSheetPainter extends CustomPainter {
     const double sheetHeight = lineSpacing * 4;
     const double rowSpacing = 160.0;
 
+    // Draw title and composer
+    _drawTitleAndComposer(canvas, size);
+
     for (int rowIndex = 0; rowIndex < sheetNoteRows.length; rowIndex++) {
-      const double verticalOffset = 250.0;
       final staffTop = verticalOffset + (rowIndex * (rowSpacing + sheetHeight));
       drawStaffLines(canvas, paint, staffTop, lineSpacing, sheetHeight, size);
 
@@ -329,6 +342,41 @@ class MusicSheetPainter extends CustomPainter {
 
     // Draw the warning text
     textPainter.paint(canvas, Offset(x, y));
+  }
+
+  void _drawTitleAndComposer(Canvas canvas, Size size) {
+    if (title.isNotEmpty) {
+      final titlePainter = TextPainter(
+        text: TextSpan(
+          text: title,
+          style: const TextStyle(
+            color: Colors.black,
+            fontSize: 30,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      titlePainter.layout(minWidth: 0, maxWidth: size.width);
+      final titleX = (size.width - titlePainter.width) / 2;
+      titlePainter.paint(canvas, Offset(titleX, 80));
+    }
+
+    if (composer.isNotEmpty) {
+      final composerPainter = TextPainter(
+        text: TextSpan(
+          text: 'By $composer',
+          style: const TextStyle(
+            color: Colors.black,
+            fontSize: 20,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      composerPainter.layout(minWidth: 0, maxWidth: size.width);
+      final composerX = (size.width - composerPainter.width) / 2;
+      composerPainter.paint(canvas, Offset(composerX, 120));
+    }
   }
 
   @override

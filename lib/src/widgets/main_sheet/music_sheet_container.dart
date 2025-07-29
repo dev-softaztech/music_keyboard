@@ -17,14 +17,19 @@ class MusicSheetContainer extends StatefulWidget {
   final List<List<MusicalNote>> sheetNoteRows;
   final double musicSheetWidth;
   final double statusBarHeight;
+  final String title;
+  final String composer;
 
-  const MusicSheetContainer(
-      {super.key,
-      required this.screenSize,
-      required this.screenshotController,
-      required this.sheetNoteRows,
-      required this.musicSheetWidth,
-      required this.statusBarHeight});
+  const MusicSheetContainer({
+    super.key,
+    required this.screenSize,
+    required this.screenshotController,
+    required this.sheetNoteRows,
+    required this.musicSheetWidth,
+    required this.statusBarHeight,
+    required this.title,
+    required this.composer,
+  });
 
   @override
   _MusicSheetContainerState createState() => _MusicSheetContainerState();
@@ -277,7 +282,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
           .transform3(vector_math.Vector3(localOffset.dx, localOffset.dy, 0));
       final double tapX = transformedPosition.x;
 
-      if (_isEditingDynamic) {
+      if (_isEditingDynamic && _editingDynamicRow != null) {
         int closestNoteIndex = findClosestNoteIndex(
             widget.sheetNoteRows[_editingDynamicRow!],
             tapX,
@@ -587,11 +592,17 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                                   controller: widget.screenshotController,
                                   child: CustomPaint(
                                     painter: MusicSheetPainter(
-                                      widget.sheetNoteRows,
-                                      -1, // No selected row in screenshot
-                                      -1, // No selected index in screenshot
-                                      false, // Never show cursor in screenshot
-                                      rowSpacingProvider.rowSpacingList,
+                                      title: widget.title,
+                                      composer: widget.composer,
+                                      sheetNoteRows: widget.sheetNoteRows,
+                                      selectedRow:
+                                          -1, // No selected row in screenshot
+                                      selectedIndex:
+                                          -1, // No selected index in screenshot
+                                      showCursor:
+                                          false, // Never show cursor in screenshot
+                                      rowSpacingList:
+                                          rowSpacingProvider.rowSpacingList,
                                       editingDynamicIndex: _editingDynamicIndex,
                                       editingDynamicRow: _editingDynamicRow,
                                     ),
@@ -602,11 +613,15 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                               ),
                               CustomPaint(
                                 painter: MusicSheetPainter(
-                                  widget.sheetNoteRows,
-                                  selectedNoteProvider.selectedRow,
-                                  selectedNoteProvider.selectedIndex,
-                                  _showCursor,
-                                  rowSpacingProvider.rowSpacingList,
+                                  title: widget.title,
+                                  composer: widget.composer,
+                                  sheetNoteRows: widget.sheetNoteRows,
+                                  selectedRow: selectedNoteProvider.selectedRow,
+                                  selectedIndex:
+                                      selectedNoteProvider.selectedIndex,
+                                  showCursor: _showCursor,
+                                  rowSpacingList:
+                                      rowSpacingProvider.rowSpacingList,
                                   selectionStart: _dragStart,
                                   selectionEnd: _dragEnd,
                                   selectionRow: _dragRow,

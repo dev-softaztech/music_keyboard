@@ -10,6 +10,7 @@ import 'package:music_keyboard/src/widgets/main_sheet/music_sheet_container.dart
 import 'package:music_keyboard/src/utils/pdf_exporter.dart';
 import 'package:music_keyboard/src/utils/screenshot_saver.dart';
 import 'package:music_keyboard/src/utils/toast_utils.dart';
+import 'package:music_keyboard/src/widgets/main_sheet/title_popup.dart';
 import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
 
@@ -49,6 +50,8 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   bool showMenu = false;
   bool isBeamLockActive = false;
   DateTime? _lastTapTime;
+  String _title = '';
+  String _composer = '';
 
   //String keyType = "clefs";
   String _selectedBarUnicode = '\ue030';
@@ -484,11 +487,14 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                       child: Column(
                         children: [
                           MusicSheetContainer(
-                              screenSize: screenSize,
-                              screenshotController: screenshotController,
-                              sheetNoteRows: sheetNoteRows,
-                              musicSheetWidth: musicSheetWidth,
-                              statusBarHeight: statusBarHeight),
+                            screenSize: screenSize,
+                            screenshotController: screenshotController,
+                            sheetNoteRows: sheetNoteRows,
+                            musicSheetWidth: musicSheetWidth,
+                            statusBarHeight: statusBarHeight,
+                            title: _title,
+                            composer: _composer,
+                          ),
                           const Spacer(), // Pushes the keyboard container to the bottom
                         ],
                       ),
@@ -630,10 +636,6 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                     });
                                     forceNewRow();
                                   },
-                                  borderRadius: const BorderRadius.only(
-                                    bottomLeft: Radius.circular(8),
-                                    bottomRight: Radius.circular(8),
-                                  ),
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(
                                         vertical: 12, horizontal: 16),
@@ -643,6 +645,49 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                             size: 20, color: Colors.black),
                                         SizedBox(width: 8),
                                         Text('Add',
+                                            style: TextStyle(fontSize: 14)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                // Divider
+                                Container(
+                                  height: 1,
+                                  color: Colors.grey[300],
+                                ),
+                                // Title Button
+                                InkWell(
+                                  onTap: () {
+                                    setState(() {
+                                      showMenu = false;
+                                    });
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => TitlePopup(
+                                        initialTitle: _title,
+                                        initialComposer: _composer,
+                                        onSave: (newTitle, newComposer) {
+                                          setState(() {
+                                            _title = newTitle;
+                                            _composer = newComposer;
+                                          });
+                                        },
+                                      ),
+                                    );
+                                  },
+                                  borderRadius: const BorderRadius.only(
+                                    bottomLeft: Radius.circular(8),
+                                    bottomRight: Radius.circular(8),
+                                  ),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 12, horizontal: 16),
+                                    child: const Row(
+                                      children: [
+                                        Icon(Icons.title,
+                                            size: 20, color: Colors.black),
+                                        SizedBox(width: 8),
+                                        Text('Title',
                                             style: TextStyle(fontSize: 14)),
                                       ],
                                     ),
