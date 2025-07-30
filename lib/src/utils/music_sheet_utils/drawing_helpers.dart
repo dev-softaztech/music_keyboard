@@ -13,6 +13,9 @@ void drawNote(
     int index,
     int noteSpacing,
     Color noteColour) {
+  final double noteY =
+      calculateNoteYMainSheet(note.pitch, note.octave, lineSpacing, staffTop);
+  note.noteY = noteY;
   if (note.type == NoteType.clef || note.type == NoteType.bar) {
     drawClefKey(canvas, paint, note, lineSpacing, staffTop, noteX, notes, index,
         noteColour);
@@ -24,9 +27,6 @@ void drawNote(
     drawRestKey(canvas, paint, note, lineSpacing, staffTop, noteX, notes, index,
         noteColour);
   } else {
-    final double noteY =
-        calculateNoteYMainSheet(note.pitch, note.octave, lineSpacing, staffTop);
-    note.noteY = noteY;
     drawNoteKey(canvas, paint, note, lineSpacing, staffTop, noteX, notes, index,
         noteY, noteSpacing, noteColour);
   }

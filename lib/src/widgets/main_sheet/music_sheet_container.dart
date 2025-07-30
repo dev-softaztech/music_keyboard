@@ -300,7 +300,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                 widget.sheetNoteRows[_editingDynamicRow!].length - 1);
           }
         });
-      } else if (_isDragging) {
+      } else if (_isDragging && _dragRow != null) {
         int closestNoteIndex = findClosestNoteIndex(
             widget.sheetNoteRows[_dragRow!], tapX, _dragRow!);
         setState(() {

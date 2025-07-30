@@ -1113,6 +1113,57 @@ class MusicSheetPainter extends CustomPainter {
       int noteIndex,
       int currentRowSpacing) {
     if (noteIndex + 2 >= notes.length) {
+      double y = calculateNoteYMainSheet(notes[noteIndex].pitch,
+          notes[noteIndex].octave, lineSpacing, staffTop);
+      double tripletPlaceholderY = y - 50;
+
+      if (notes[noteIndex].noteY < tripletPlaceholderY + 10) {
+        tripletPlaceholderY = notes[noteIndex].noteY - 20;
+      }
+
+      if (staffTop + 20 < tripletPlaceholderY) {
+        tripletPlaceholderY = staffTop - 20;
+      }
+      if (staffTop - 40 > tripletPlaceholderY) {
+        tripletPlaceholderY = tripletPlaceholderY + 30;
+      }
+
+      final textStyle = TextStyle(
+        color: paint.color,
+        fontSize: 40,
+        fontFamily: 'Bravura',
+      );
+      final textSpan = TextSpan(
+        text: '\uE202', // Triplet '3'
+        style: textStyle,
+      );
+      final textPainter = TextPainter(
+        text: textSpan,
+        textDirection: TextDirection.ltr,
+      );
+      textPainter.layout();
+
+      double x1 = x;
+      double x2 = x + currentRowSpacing;
+      double x3 = x + (2 * currentRowSpacing);
+
+      double middleX = x2;
+      double textX = middleX - (textPainter.width / 2);
+
+      textPainter.paint(canvas, Offset(textX, tripletPlaceholderY - 33));
+
+      paint.strokeWidth = 1.0;
+      canvas.drawLine(Offset(x1, tripletPlaceholderY),
+          Offset(textX - 4, tripletPlaceholderY), paint);
+      canvas.drawLine(
+          Offset(textX + textPainter.width + 4, tripletPlaceholderY),
+          Offset(x3, tripletPlaceholderY),
+          paint);
+
+      canvas.drawLine(Offset(x1, tripletPlaceholderY),
+          Offset(x1, tripletPlaceholderY + 7), paint);
+      canvas.drawLine(Offset(x3, tripletPlaceholderY),
+          Offset(x3, tripletPlaceholderY + 7), paint);
       return;
     }
 

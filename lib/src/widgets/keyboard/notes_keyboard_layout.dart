@@ -192,7 +192,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
               });
               widget.onKeyPress(MusicalNote(
                 pitch: "D",
-                octave: 4,
+                octave: 5,
                 type: NoteType.rest,
                 isConnected: false,
                 unicodeCharacter: unicode,
@@ -245,8 +245,8 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
               _removeOverlay();
             } else if (buttonType == 'rest') {
               widget.onKeyPress(MusicalNote(
-                pitch: "",
-                octave: 0,
+                pitch: "D",
+                octave: 5,
                 type: NoteType.rest,
                 isConnected: false,
                 unicodeCharacter: _selectedRestUnicode,
@@ -536,8 +536,8 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                         child: ElevatedButton(
                           onPressed: () {
                             widget.onKeyPress(MusicalNote(
-                                pitch: "A",
-                                octave: 4,
+                                pitch: "D",
+                                octave: 5,
                                 type: NoteType.clef,
                                 isConnected: false,
                                 unicodeCharacter: "\uf472"));
@@ -572,8 +572,8 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                         child: ElevatedButton(
                           onPressed: () {
                             widget.onKeyPress(MusicalNote(
-                                pitch: "A",
-                                octave: 4,
+                                pitch: "D",
+                                octave: 5,
                                 type: NoteType.clef,
                                 isConnected: false,
                                 unicodeCharacter: "\uf474"));
@@ -710,8 +710,8 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                       child: ElevatedButton(
                         onPressed: () {
                           widget.onKeyPress(MusicalNote(
-                              pitch: "A",
-                              octave: 4,
+                              pitch: "D",
+                              octave: 5,
                               type: NoteType.clef,
                               isConnected: false,
                               unicodeCharacter: "\uf472"));
@@ -831,13 +831,12 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                       child: ElevatedButton(
                         onPressed: () {
                           if (selectedNote != null) {
-                            if (selectedNoteIndex <
-                                widget.sheetNoteRows[selectedRow].length - 2) {
-                              setState(() {
-                                selectedNote.isTriplet =
-                                    !selectedNote.isTriplet;
-                              });
-                            }
+                            //if (selectedNoteIndex <
+                            //    widget.sheetNoteRows[selectedRow].length - 2) {
+                            setState(() {
+                              selectedNote.isTriplet = !selectedNote.isTriplet;
+                            });
+                            //}
                           }
                         },
                         style: ElevatedButton.styleFrom(
