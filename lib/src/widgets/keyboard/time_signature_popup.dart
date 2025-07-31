@@ -61,8 +61,8 @@ class _TimeSignaturePopupState extends State<TimeSignaturePopup> {
   void _selectTimeSignature(String top, String bottom) {
     widget.onTimeSignatureSelected(
       MusicalNote(
-        pitch: "",
-        octave: 0,
+        pitch: "D",
+        octave: 5,
         type: NoteType.timeSignature,
         isConnected: false,
         topTimeSignatureCharacter: top,
@@ -199,7 +199,7 @@ class _TimeSignaturePopupState extends State<TimeSignaturePopup> {
               ),
             ],
           ),
-
+/*
           // 🔷 Line overlay
           Positioned(
             left: 95, // adjust: slightly left of center (200 / 2 = 100)
@@ -220,7 +220,44 @@ class _TimeSignaturePopupState extends State<TimeSignaturePopup> {
               height: 70, // only cover top half of 60
               color: Colors.black,
             ),
-          ),
+          ),*/
+          Positioned(
+              left: 1, // adjust: slightly left of center (200 / 2 = 100)
+              top: 0,
+              bottom: null,
+              child: IgnorePointer(
+                ignoring: true,
+                child: Container(
+                  width: 95,
+                  height: 70, // only cover top half of 60
+                  decoration: BoxDecoration(
+                    color: const Color.fromARGB(112, 200, 200, 200),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(16),
+                      bottomLeft: Radius.circular(16),
+                    ),
+                  ),
+                ),
+              )),
+          Positioned(
+            right: 1, // adjust: slightly left of center (200 / 2 = 100)
+            top: 0,
+            bottom: null,
+            child: IgnorePointer(
+              ignoring: true,
+              child: Container(
+                width: 95,
+                height: 70, // only cover top half of 60
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(112, 200, 200, 200),
+                  borderRadius: const BorderRadius.only(
+                    topRight: Radius.circular(16),
+                    bottomRight: Radius.circular(16),
+                  ),
+                ),
+              ),
+            ),
+          )
         ],
       ),
     );
