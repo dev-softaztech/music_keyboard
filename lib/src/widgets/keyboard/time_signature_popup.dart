@@ -24,9 +24,21 @@ class _TimeSignaturePopupState extends State<TimeSignaturePopup> {
     '\uF5D7', // 7
     '\uF5D9', // 8
     '\uF5DB', // 9
+    '\uF5CB\uF5C9', // 10
+    '\uF5CB\uF5CB', // 11
+    '\uF5CB\uF5CD', // 12
+    '\uF5CB\uF5CF', // 13
+    '\uF5CB\uF5D1', // 14
+    '\uF5CB\uF5D3', // 15
+    '\uF5CB\uF5D5', // 16
+    '\uF5CB\uF5D7', // 17
+    '\uF5CB\uF5D9', // 18
+    '\uF5CB\uF5DB', // 19
+    '\uF5CD\uF5C9', // 20
   ];
 
-  final List<String> _bottomUnicodes = [
+  //Using bottom unicodes with the index to reference _topUnicodes as top unicodes get cut off in horizontal wheel.
+  final List<String> _topUnicodesForHorizontalWheel = [
     '\uF5C8', // 0
     '\uF5CA', // 1
     '\uF5CC', // 2
@@ -37,6 +49,26 @@ class _TimeSignaturePopupState extends State<TimeSignaturePopup> {
     '\uF5D6', // 7
     '\uF5D8', // 8
     '\uF5DA', // 9
+    '\uF5CA\uF5C8', // 10
+    '\uF5CA\uF5CA', // 11
+    '\uF5CA\uF5CC', // 12
+    '\uF5CA\uF5CE', // 13
+    '\uF5CA\uF5D0', // 14
+    '\uF5CA\uF5D2', // 15
+    '\uF5CA\uF5D4', // 16
+    '\uF5CA\uF5D6', // 17
+    '\uF5CA\uF5D8', // 18
+    '\uF5CA\uF5DA', // 19
+    '\uF5CC\uF5C8', // 20
+  ];
+
+  final List<String> _bottomUnicodes = [
+    '\uF5CA', // 1
+    '\uF5CC', // 2
+    '\uF5D0', // 4
+    '\uF5D8', // 8
+    '\uF5CA\uF5D4', // 16
+    '\uF5CE\uF5CC', // 32
   ];
 
   late PageController _topController;
@@ -187,7 +219,8 @@ class _TimeSignaturePopupState extends State<TimeSignaturePopup> {
                 height: 60,
                 child: Column(
                   children: [
-                    _buildHorizontalWheel(_topController, _bottomUnicodes,
+                    _buildHorizontalWheel(
+                        _topController, _topUnicodesForHorizontalWheel,
                         (index) {
                       setState(() {
                         _selectedTopIndex = index;

@@ -125,11 +125,13 @@ void drawTimeSignatureKey(
     textPainterTop.layout();
     textPainterBottom.layout();
 
-    final offsetX = noteX - textPainterTop.width / 2;
+    final offsetXTop = noteX - textPainterTop.width / 2;
     double offsetY = staffTop - (lineSpacing * 4) - 1;
+    textPainterTop.paint(canvas, Offset(offsetXTop, offsetY));
 
-    textPainterTop.paint(canvas, Offset(offsetX, offsetY + 0.5));
-    textPainterBottom.paint(canvas, Offset(offsetX, offsetY + 0.5));
+    final offsetXBottom = noteX - textPainterBottom.width / 2;
+
+    textPainterBottom.paint(canvas, Offset(offsetXBottom, offsetY));
   }
 }
 
@@ -221,7 +223,7 @@ void drawNoteKey(
         ..color = Colors.black
         ..style = PaintingStyle.fill;
 
-      canvas.drawCircle(Offset(noteX + 15, noteY), 2, handlePaint);
+      canvas.drawCircle(Offset(noteX + 15, noteY - 2.5), 2, handlePaint);
     } else {
       final accidentalPainter = TextPainter(
         text: TextSpan(
