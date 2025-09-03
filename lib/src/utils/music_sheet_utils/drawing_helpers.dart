@@ -79,37 +79,58 @@ void drawTimeSignatureKey(
     List<MusicalNote> notes,
     int index,
     Color noteColour) {
-  final textPainterTop = TextPainter(
-    text: TextSpan(
-      text: note.topTimeSignatureCharacter,
-      style: TextStyle(
-        fontFamily: 'Bravura',
-        fontSize: 40,
-        color: noteColour,
+  if (note.topTimeSignatureCharacter == '\uE08A') {
+    final cTimeSignatureTextPainter = TextPainter(
+      text: TextSpan(
+        text: note.topTimeSignatureCharacter,
+        style: TextStyle(
+          fontFamily: 'Bravura',
+          fontSize: 40,
+          color: noteColour,
+        ),
       ),
-    ),
-    textDirection: TextDirection.ltr,
-  );
-  final textPainterBottom = TextPainter(
-    text: TextSpan(
-      text: note.bottomTimeSignatureCharacter,
-      style: TextStyle(
-        fontFamily: 'Bravura',
-        fontSize: 40,
-        color: noteColour,
+      textDirection: TextDirection.ltr,
+    );
+
+    cTimeSignatureTextPainter.layout();
+
+    final offsetX = noteX - cTimeSignatureTextPainter.width / 2;
+    double offsetY = staffTop - 60;
+
+    cTimeSignatureTextPainter.paint(canvas, Offset(offsetX, offsetY));
+  } else {
+    final textPainterTop = TextPainter(
+      text: TextSpan(
+        text: note.topTimeSignatureCharacter,
+        style: TextStyle(
+          fontFamily: 'Bravura',
+          fontSize: 40,
+          color: noteColour,
+        ),
       ),
-    ),
-    textDirection: TextDirection.ltr,
-  );
+      textDirection: TextDirection.ltr,
+    );
+    final textPainterBottom = TextPainter(
+      text: TextSpan(
+        text: note.bottomTimeSignatureCharacter,
+        style: TextStyle(
+          fontFamily: 'Bravura',
+          fontSize: 40,
+          color: noteColour,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
 
-  textPainterTop.layout();
-  textPainterBottom.layout();
+    textPainterTop.layout();
+    textPainterBottom.layout();
 
-  final offsetX = noteX - textPainterTop.width / 2;
-  double offsetY = staffTop - (lineSpacing * 4) - 1;
+    final offsetX = noteX - textPainterTop.width / 2;
+    double offsetY = staffTop - (lineSpacing * 4) - 1;
 
-  textPainterTop.paint(canvas, Offset(offsetX, offsetY + 0.5));
-  textPainterBottom.paint(canvas, Offset(offsetX, offsetY + 0.5));
+    textPainterTop.paint(canvas, Offset(offsetX, offsetY + 0.5));
+    textPainterBottom.paint(canvas, Offset(offsetX, offsetY + 0.5));
+  }
 }
 
 void drawRestKey(

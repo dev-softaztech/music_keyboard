@@ -74,36 +74,48 @@ class _TimeSignaturePopupState extends State<TimeSignaturePopup> {
 
   Widget _buildCommonButton(String top, String bottom, String displayText) {
     return SizedBox(
-      width: 60,
+      width: 80,
       height: 70,
       child: ElevatedButton(
           onPressed: () => _selectTimeSignature(top, bottom),
-          child: Column(
-            children: [
-              Transform.translate(
-                offset: const Offset(-3, 25),
-                child: Text(
-                  top,
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 40,
-                    fontFamily: 'Bravura',
+          child: top == '\uE08A'
+              ? Transform.translate(
+                  offset: const Offset(0, 0),
+                  child: Text(
+                    top,
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 50,
+                      fontFamily: 'Bravura',
+                    ),
                   ),
-                ),
-              ),
-              Transform.translate(
-                offset: const Offset(-3, -32),
-                child: Text(
-                  bottom,
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 40,
-                    fontFamily: 'Bravura',
-                  ),
-                ),
-              ),
-            ],
-          )),
+                )
+              : Column(
+                  children: [
+                    Transform.translate(
+                      offset: const Offset(0, 25),
+                      child: Text(
+                        top,
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 40,
+                          fontFamily: 'Bravura',
+                        ),
+                      ),
+                    ),
+                    Transform.translate(
+                      offset: const Offset(0, -32),
+                      child: Text(
+                        bottom,
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 40,
+                          fontFamily: 'Bravura',
+                        ),
+                      ),
+                    ),
+                  ],
+                )),
     );
   }
 
@@ -118,18 +130,29 @@ class _TimeSignaturePopupState extends State<TimeSignaturePopup> {
 
   Widget _buildCommonSelector() {
     return SizedBox(
-      height: 140,
+      height: 220,
       child: Column(
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              _buildCommonButton('\uE08A', '', 'c'),
+              const SizedBox(width: 5),
               _buildCommonButton('\uF5D1', '\uF5D0', '4/4'),
               const SizedBox(width: 5),
               _buildCommonButton('\uF5CF', '\uF5D0', '3/4'),
+            ],
+          ),
+          const SizedBox(height: 15),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
               const SizedBox(width: 5),
               _buildCommonButton('\uF5CD', '\uF5D0', '2/4'),
               const SizedBox(width: 5),
               _buildCommonButton('\uF5D5', '\uF5D8', '6/8'),
+              const SizedBox(width: 5),
+              _buildCommonButton('\uF5CB\uF5CD', '\uF5D8', '12/8'),
             ],
           ),
           const SizedBox(height: 15),
