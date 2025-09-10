@@ -396,23 +396,17 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
           final Offset rightHandle =
               Offset(highlightRect.right, highlightRect.center.dy);
 
-          const double handleRadius =
-              25.0; // Larger radius for easier detection during drag
+          // Determine which handle to drag based on which half of the highlight area the user clicked
+          double highlightCenter =
+              (highlightRect.left + highlightRect.right) / 2;
 
-          // Check which handle is closer to the current drag position
-          double distanceToLeft =
-              (Offset(currentX, leftHandle.dy) - leftHandle).distance;
-          double distanceToRight =
-              (Offset(currentX, rightHandle.dy) - rightHandle).distance;
-
-          if (distanceToLeft <= handleRadius &&
-              distanceToLeft < distanceToRight) {
-            // Dragging left handle
+          if (currentX < highlightCenter) {
+            // Dragging from left half - drag left handle
             _isDraggingLeftHandle = true;
             _isDraggingRightHandle = false;
             _fixedBoundary = _dragEnd;
-          } else if (distanceToRight <= handleRadius) {
-            // Dragging right handle
+          } else {
+            // Dragging from right half - drag right handle
             _isDraggingLeftHandle = false;
             _isDraggingRightHandle = true;
             _fixedBoundary = _dragStart;
