@@ -152,12 +152,12 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
 
       final Rect highlightRect = _calculateHighlightRect();
       final Offset leftHandle =
-          Offset(highlightRect.left, highlightRect.center.dy);
+          Offset(highlightRect.left, highlightRect.center.dx);
       final Offset rightHandle =
-          Offset(highlightRect.right, highlightRect.center.dy);
+          Offset(highlightRect.right, highlightRect.center.dx);
 
       const double handleRadius =
-          15.0; // Slightly larger than visual handle for easier clicking
+          50.0; // Slightly larger than visual handle for easier clicking
 
       // Check if clicking near left handle
       if ((Offset(tapX, tapY) - leftHandle).distance <= handleRadius) {
@@ -345,21 +345,13 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
         setState(() {
           // Handle different drag scenarios
           if (_isDraggingLeftHandle) {
-            // Dragging left handle - update _dragStart, keep _dragEnd fixed at _fixedBoundary
+            // Dragging left handle - update _dragStart, keep _dragEnd fixed
             _dragStart = closestNoteIndex.clamp(
                 0, widget.sheetNoteRows[_dragRow!].length - 1);
-            // Ensure _dragEnd stays at the fixed boundary
-            if (_fixedBoundary != null) {
-              _dragEnd = _fixedBoundary;
-            }
           } else if (_isDraggingRightHandle) {
-            // Dragging right handle - update _dragEnd, keep _dragStart fixed at _fixedBoundary
+            // Dragging right handle - update _dragEnd, keep _dragStart fixed
             _dragEnd = closestNoteIndex.clamp(
                 0, widget.sheetNoteRows[_dragRow!].length - 1);
-            // Ensure _dragStart stays at the fixed boundary
-            if (_fixedBoundary != null) {
-              _dragStart = _fixedBoundary;
-            }
           } else {
             // Default behavior for new selections
             _dragEnd = closestNoteIndex.clamp(
@@ -383,6 +375,50 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
 
       // If movement is clearly horizontal, start a drag.
       if (_totalDragDelta.dx.abs() > _totalDragDelta.dy.abs() * 2.0) {
+        // Before starting the drag, check if we need to detect which handle is being dragged
+        if (_dragStart != null &&
+            _dragEnd != null &&
+            _dragRow != null &&
+            !_isDraggingLeftHandle &&
+            !_isDraggingRightHandle) {
+          final RenderBox renderBox = context.findRenderObject() as RenderBox;
+          final Offset localOffset = renderBox.globalToLocal(event.position);
+          final Matrix4 transformMatrix = _transformationController.value;
+          final Matrix4 inverseMatrix = Matrix4.inverted(transformMatrix);
+          final vector_math.Vector3 transformedPosition =
+              inverseMatrix.transform3(
+                  vector_math.Vector3(localOffset.dx, localOffset.dy, 0));
+          final double currentX = transformedPosition.x;
+
+          final Rect highlightRect = _calculateHighlightRect();
+          final Offset leftHandle =
+              Offset(highlightRect.left, highlightRect.center.dy);
+          final Offset rightHandle =
+              Offset(highlightRect.right, highlightRect.center.dy);
+
+          const double handleRadius =
+              25.0; // Larger radius for easier detection during drag
+
+          // Check which handle is closer to the current drag position
+          double distanceToLeft =
+              (Offset(currentX, leftHandle.dy) - leftHandle).distance;
+          double distanceToRight =
+              (Offset(currentX, rightHandle.dy) - rightHandle).distance;
+
+          if (distanceToLeft <= handleRadius &&
+              distanceToLeft < distanceToRight) {
+            // Dragging left handle
+            _isDraggingLeftHandle = true;
+            _isDraggingRightHandle = false;
+            _fixedBoundary = _dragEnd;
+          } else if (distanceToRight <= handleRadius) {
+            // Dragging right handle
+            _isDraggingLeftHandle = false;
+            _isDraggingRightHandle = true;
+            _fixedBoundary = _dragStart;
+          }
+        }
+
         setState(() {
           if (_dragStart != null ||
               _isDraggingLeftHandle ||
