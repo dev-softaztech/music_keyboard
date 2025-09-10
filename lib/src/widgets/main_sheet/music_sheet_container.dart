@@ -47,6 +47,9 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
   int? _dragEnd;
   int? _dragRow;
   bool _isDragging = false;
+  bool _isDraggingLeftHandle = false;
+  bool _isDraggingRightHandle = false;
+  int? _fixedBoundary;
   int? _editingDynamicIndex;
   int? _editingDynamicRow;
   bool _isEditingDynamic = false;
@@ -148,12 +151,44 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
       final double tapY = transformedPosition.y;
 
       final Rect highlightRect = _calculateHighlightRect();
+      final Offset leftHandle =
+          Offset(highlightRect.left, highlightRect.center.dy);
+      final Offset rightHandle =
+          Offset(highlightRect.right, highlightRect.center.dy);
+
+      const double handleRadius =
+          15.0; // Slightly larger than visual handle for easier clicking
+
+      // Check if clicking near left handle
+      if ((Offset(tapX, tapY) - leftHandle).distance <= handleRadius) {
+        setState(() {
+          _isDraggingLeftHandle = true;
+          _isDraggingRightHandle = false;
+          _fixedBoundary = _dragEnd;
+          _totalDragDelta = Offset.zero;
+        });
+        return;
+      }
+
+      // Check if clicking near right handle
+      if ((Offset(tapX, tapY) - rightHandle).distance <= handleRadius) {
+        setState(() {
+          _isDraggingLeftHandle = false;
+          _isDraggingRightHandle = true;
+          _fixedBoundary = _dragStart;
+          _totalDragDelta = Offset.zero;
+        });
+        return;
+      }
 
       if (!highlightRect.inflate(20).contains(Offset(tapX, tapY))) {
         setState(() {
           _dragStart = null;
           _dragEnd = null;
           _dragRow = null;
+          _isDraggingLeftHandle = false;
+          _isDraggingRightHandle = false;
+          _fixedBoundary = null;
           _showSlurAndBeamButtons = false;
         });
         return;
@@ -264,6 +299,9 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
         _dragRow = closestRowIndex;
         _dragStart = noteIndex;
         _dragEnd = noteIndex;
+        _isDraggingLeftHandle = false;
+        _isDraggingRightHandle = false;
+        _fixedBoundary = null;
         _showSlurAndBeamButtons = true;
         _showTieButton = false; // Ensure TIE is hidden during range selection
         _totalDragDelta = Offset.zero;
@@ -303,9 +341,30 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
       } else if (_isDragging && _dragRow != null) {
         int closestNoteIndex = findClosestNoteIndex(
             widget.sheetNoteRows[_dragRow!], tapX, _dragRow!);
+
         setState(() {
-          _dragEnd = closestNoteIndex.clamp(
-              0, widget.sheetNoteRows[_dragRow!].length - 1);
+          // Handle different drag scenarios
+          if (_isDraggingLeftHandle) {
+            // Dragging left handle - update _dragStart, keep _dragEnd fixed at _fixedBoundary
+            _dragStart = closestNoteIndex.clamp(
+                0, widget.sheetNoteRows[_dragRow!].length - 1);
+            // Ensure _dragEnd stays at the fixed boundary
+            if (_fixedBoundary != null) {
+              _dragEnd = _fixedBoundary;
+            }
+          } else if (_isDraggingRightHandle) {
+            // Dragging right handle - update _dragEnd, keep _dragStart fixed at _fixedBoundary
+            _dragEnd = closestNoteIndex.clamp(
+                0, widget.sheetNoteRows[_dragRow!].length - 1);
+            // Ensure _dragStart stays at the fixed boundary
+            if (_fixedBoundary != null) {
+              _dragStart = _fixedBoundary;
+            }
+          } else {
+            // Default behavior for new selections
+            _dragEnd = closestNoteIndex.clamp(
+                0, widget.sheetNoteRows[_dragRow!].length - 1);
+          }
         });
       }
       return;
@@ -313,7 +372,10 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
 
     // If no drag is active, but a selection is primed, accumulate the delta
     // and decide whether to start a drag or allow a scroll.
-    if (_dragStart != null || _editingDynamicIndex != null) {
+    if (_dragStart != null ||
+        _editingDynamicIndex != null ||
+        _isDraggingLeftHandle ||
+        _isDraggingRightHandle) {
       _totalDragDelta += event.delta;
 
       // Use a threshold to avoid accidental drags from a tap.
@@ -322,7 +384,9 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
       // If movement is clearly horizontal, start a drag.
       if (_totalDragDelta.dx.abs() > _totalDragDelta.dy.abs() * 2.0) {
         setState(() {
-          if (_dragStart != null) _isDragging = true;
+          if (_dragStart != null ||
+              _isDraggingLeftHandle ||
+              _isDraggingRightHandle) _isDragging = true;
           if (_editingDynamicIndex != null) _isEditingDynamic = true;
         });
       }
@@ -332,6 +396,9 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
           _dragStart = null;
           _dragEnd = null;
           _dragRow = null;
+          _isDraggingLeftHandle = false;
+          _isDraggingRightHandle = false;
+          _fixedBoundary = null;
           _showSlurAndBeamButtons = false;
           _editingDynamicIndex = null;
           _editingDynamicRow = null;
@@ -348,6 +415,9 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
       setState(() {
         _isDragging = false;
         _isEditingDynamic = false;
+        _isDraggingLeftHandle = false;
+        _isDraggingRightHandle = false;
+        _fixedBoundary = null;
       });
     }
   }
