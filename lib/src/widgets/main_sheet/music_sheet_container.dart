@@ -743,8 +743,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
           //if (isZoomed)
           //Reset zoom
           Positioned(
-              top: 70,
-              right: 5,
+              top: 47.5,
+              right: 0,
               child: Material(
                 color: Colors.transparent,
                 elevation: 5,
@@ -770,8 +770,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
               )),
           //Undo
           Positioned(
-              top: 110,
-              right: 5,
+              top: 90,
+              right: 0,
               child: Material(
                 color: Colors.transparent,
                 elevation: 5,
@@ -801,12 +801,48 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
               )),
           if (_showSlurAndBeamButtons)
             Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Row(
+              //height: 180,
+              bottom: 5,
+              //left: 0,//continue moving buttons around
+              right: 5,
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  const SizedBox(height: 5),
+                  _buildStyledButton('\uE53F', () {
+                    if (_dragRow != null &&
+                        _dragStart != null &&
+                        _dragEnd != null) {
+                      context
+                          .read<CurrentSelectedNoteProvider>()
+                          .decrescendoNotes(_dragRow!, _dragStart!, _dragEnd!,
+                              widget.sheetNoteRows);
+                      setState(() {
+                        _dragStart = null;
+                        _dragEnd = null;
+                        _dragRow = null;
+                        _showSlurAndBeamButtons = false;
+                      });
+                    }
+                  }, true, true),
+                  const SizedBox(height: 5),
+                  _buildStyledButton('\uE53E', () {
+                    if (_dragRow != null &&
+                        _dragStart != null &&
+                        _dragEnd != null) {
+                      context
+                          .read<CurrentSelectedNoteProvider>()
+                          .crescendoNotes(_dragRow!, _dragStart!, _dragEnd!,
+                              widget.sheetNoteRows);
+                      setState(() {
+                        _dragStart = null;
+                        _dragEnd = null;
+                        _dragRow = null;
+                        _showSlurAndBeamButtons = false;
+                      });
+                    }
+                  }, true, true),
+                  const SizedBox(height: 5),
                   _buildStyledButton('SLUR', () {
                     if (_dragRow != null &&
                         _dragStart != null &&
@@ -823,8 +859,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                         _showSlurAndBeamButtons = false;
                       });
                     }
-                  }, false),
-                  const SizedBox(width: 5),
+                  }, false, true),
+                  const SizedBox(height: 5),
                   _buildStyledButton('BEAM', () {
                     if (_dragRow != null &&
                         _dragStart != null &&
@@ -841,49 +877,15 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                         _showSlurAndBeamButtons = false;
                       });
                     }
-                  }, false),
-                  const SizedBox(width: 10),
-                  _buildStyledButton('\uE53F', () {
-                    if (_dragRow != null &&
-                        _dragStart != null &&
-                        _dragEnd != null) {
-                      context
-                          .read<CurrentSelectedNoteProvider>()
-                          .decrescendoNotes(_dragRow!, _dragStart!, _dragEnd!,
-                              widget.sheetNoteRows);
-                      setState(() {
-                        _dragStart = null;
-                        _dragEnd = null;
-                        _dragRow = null;
-                        _showSlurAndBeamButtons = false;
-                      });
-                    }
-                  }, true),
-                  const SizedBox(width: 10),
-                  _buildStyledButton('\uE53E', () {
-                    if (_dragRow != null &&
-                        _dragStart != null &&
-                        _dragEnd != null) {
-                      context
-                          .read<CurrentSelectedNoteProvider>()
-                          .crescendoNotes(_dragRow!, _dragStart!, _dragEnd!,
-                              widget.sheetNoteRows);
-                      setState(() {
-                        _dragStart = null;
-                        _dragEnd = null;
-                        _dragRow = null;
-                        _showSlurAndBeamButtons = false;
-                      });
-                    }
-                  }, true),
+                  }, false, true),
                 ],
               ),
             ),
           if (_showTieButton)
             Positioned(
-              bottom: 15,
-              left: 0,
-              right: 0,
+              bottom: 5,
+              //left: 0,
+              right: 5,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -907,7 +909,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                         });
                       }
                     }
-                  }, false),
+                  }, false, true),
                 ],
               ),
             ),
@@ -924,41 +926,55 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
   }
 
   Widget _buildStyledButton(
-      String label, VoidCallback onPressed, bool useBravura) {
-    return Material(
-      color: Colors.transparent,
-      elevation: 5,
-      shadowColor: Colors.black.withOpacity(0.3),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(25),
-      ),
-      child: RawMaterialButton(
-        onPressed: onPressed,
-        fillColor: Colors.white,
-        constraints: const BoxConstraints.tightFor(width: 50, height: 35),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(25),
-          side: const BorderSide(color: Colors.black, width: 1),
+      String label, VoidCallback onPressed, bool useBravura, bool isAdd) {
+    return Row(
+      children: [
+        Text(
+          isAdd ? '+' : 'x',
+          style: TextStyle(
+            color: isAdd ? Color.fromARGB(255, 63, 63, 63) : Colors.red,
+            fontSize: 21,
+          ),
         ),
-        child: useBravura
-            ? Transform.translate(
-                offset: const Offset(1, 5),
-                child: Text(
-                  label,
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 27,
-                    fontFamily: 'Bravura',
+        const SizedBox(width: 2),
+        Material(
+          color: Colors.transparent,
+          elevation: 5,
+          shadowColor: Colors.black.withOpacity(0.3),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(25),
+          ),
+          child: RawMaterialButton(
+            onPressed: onPressed,
+            fillColor: Colors.white,
+            constraints: const BoxConstraints.tightFor(width: 50, height: 35),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(25),
+              side: BorderSide(
+                  color: isAdd ? Colors.black : Colors.red, width: 1),
+            ),
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            child: useBravura
+                ? Transform.translate(
+                    offset: const Offset(1, 5),
+                    child: Text(
+                      label,
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 27,
+                        fontFamily: 'Bravura',
+                      ),
+                    ))
+                : Text(
+                    label,
+                    style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold),
                   ),
-                ))
-            : Text(
-                label,
-                style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold),
-              ),
-      ),
+          ),
+        ),
+      ],
     );
   }
 }
