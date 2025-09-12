@@ -41,14 +41,22 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
   bool isZoomed = false;
   bool _showCursor = true;
   late Timer _cursorTimer;
-  bool _showSlurAndBeamButtons = false;
+  bool _showHighlightButtons = false;
   bool _showTieButton = false;
+  bool _showDynamicRemoveButton = false;
+  bool _showBeamAddButton = false;
+  bool _showBeamRemoveButton = false;
+  bool _showSlurRemoveButton = false;
+  bool _showDecrescendoRemoveButton = false;
+  bool _showCrescendoRemoveButton = false;
+  bool _showTieRemoveState = false;
   int? _dragStart;
   int? _dragEnd;
   int? _dragRow;
   bool _isDragging = false;
   bool _isDraggingLeftHandle = false;
   bool _isDraggingRightHandle = false;
+  // ignore: unused_field
   int? _fixedBoundary;
   int? _editingDynamicIndex;
   int? _editingDynamicRow;
@@ -189,7 +197,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
           _isDraggingLeftHandle = false;
           _isDraggingRightHandle = false;
           _fixedBoundary = null;
-          _showSlurAndBeamButtons = false;
+          _showHighlightButtons = false;
         });
         return;
       }
@@ -255,8 +263,14 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
 
     // Reset buttons
     setState(() {
-      _showSlurAndBeamButtons = false;
+      _showHighlightButtons = false;
       _showTieButton = false;
+      _showDynamicRemoveButton = false;
+      _showBeamAddButton = false;
+      _showBeamRemoveButton = false;
+      _showSlurRemoveButton = false;
+      _showDecrescendoRemoveButton = false;
+      _showCrescendoRemoveButton = false;
       _editingDynamicIndex = null;
       _editingDynamicRow = null;
     });
@@ -276,6 +290,24 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
         }
       }
     }
+
+    var showDynamicRemoveButton = _shouldShowDynamicRemove();
+    var showBeamRemoveButton = _shouldShowBeamRemove();
+    var showBeamAddButton = _shouldShowBeamAdd();
+    var showSlurRemoveButton = _shouldShowSlurRemove();
+    var showDecrescendoRemoveButton = _shouldShowDecrescendoRemove();
+    var showCrescendoRemoveButton = _shouldShowCrescendoRemove();
+    var showTieRemoveState = _shouldShowTieRemove();
+
+    setState(() {
+      _showDynamicRemoveButton = showDynamicRemoveButton;
+      _showBeamAddButton = showBeamAddButton;
+      _showBeamRemoveButton = showBeamRemoveButton;
+      _showSlurRemoveButton = showSlurRemoveButton;
+      _showDecrescendoRemoveButton = showDecrescendoRemoveButton;
+      _showCrescendoRemoveButton = showCrescendoRemoveButton;
+      _showTieRemoveState = showTieRemoveState;
+    });
   }
 
   void _handleLongPressStart(LongPressStartDetails details) {
@@ -302,8 +334,10 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
         _isDraggingLeftHandle = false;
         _isDraggingRightHandle = false;
         _fixedBoundary = null;
-        _showSlurAndBeamButtons = true;
-        _showTieButton = false; // Ensure TIE is hidden during range selection
+        _showHighlightButtons = true;
+        //_showBeamAddButton = true;
+        _showTieButton = false;
+        _showDynamicRemoveButton = false;
         _totalDragDelta = Offset.zero;
       });
     }
@@ -359,6 +393,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
           }
         });
       }
+      _showBeamAddButton = _shouldShowBeamAdd();
       return;
     }
 
@@ -429,7 +464,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
           _isDraggingLeftHandle = false;
           _isDraggingRightHandle = false;
           _fixedBoundary = null;
-          _showSlurAndBeamButtons = false;
+          _showHighlightButtons = false;
           _editingDynamicIndex = null;
           _editingDynamicRow = null;
         });
@@ -756,6 +791,20 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     return false;
   }
 
+  bool _shouldShowBeamAdd() {
+    if (_dragStart != null && _dragEnd != null && _dragRow != null) {
+      final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
+      final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
+
+      for (int i = start; i <= end; i++) {
+        if (!widget.sheetNoteRows[_dragRow!][i].isConnected) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   bool _shouldShowBeamRemove() {
     if (_dragStart != null && _dragEnd != null && _dragRow != null) {
       // Check if any note in active highlighted range has isConnected = true
@@ -766,6 +815,14 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
         if (widget.sheetNoteRows[_dragRow!][i].isConnected) {
           return true;
         }
+      }
+    } else {
+      final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+      final row = selectedNoteProvider.selectedRow;
+      final index = selectedNoteProvider.insertionIndex - 1;
+
+      if (index >= 0 && index < widget.sheetNoteRows[row].length) {
+        return widget.sheetNoteRows[row][index].isConnected;
       }
     }
     return false;
@@ -810,6 +867,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
       setState(() {
         widget.sheetNoteRows[row][index].isTiedToNext = false;
       });
+      _showTieRemoveState = false;
     }
   }
 
@@ -850,6 +908,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
         }
       }
     }
+
+    _showDecrescendoRemoveButton = false;
   }
 
   void _removeCrescendo() {
@@ -889,6 +949,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
         }
       }
     }
+
+    _showCrescendoRemoveButton = false;
   }
 
   void _removeSlur() {
@@ -925,10 +987,12 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
         }
       }
     }
+
+    _showSlurRemoveButton = false;
   }
 
   void _removeBeam() {
-    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+    //final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
     //selectedNoteProvider.saveState(widget.sheetNoteRows);
 
     if (_dragStart != null && _dragEnd != null && _dragRow != null) {
@@ -939,7 +1003,18 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
       for (int i = start; i <= end; i++) {
         widget.sheetNoteRows[_dragRow!][i].isConnected = false;
       }
+    } else {
+      final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+      final row = selectedNoteProvider.selectedRow;
+      final index = selectedNoteProvider.insertionIndex - 1;
+
+      if (index >= 0 && index < widget.sheetNoteRows[row].length) {
+        widget.sheetNoteRows[row][index].isConnected = false;
+      }
     }
+
+    _showBeamRemoveButton = false;
+    _showBeamAddButton = true;
   }
 
   void _removeDynamicCharacter() {
@@ -954,6 +1029,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
         widget.sheetNoteRows[row][index].dynamicCharacter = "";
       });
     }
+
+    _showDynamicRemoveButton = false;
   }
 
   @override
@@ -1129,18 +1206,22 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                   ),
                 ),
               )),*/
-          if (_showSlurAndBeamButtons)
-            Positioned(
-              //height: 180,
-              bottom: 5,
-              //left: 0,//continue moving buttons around
-              right: 5,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
+          Positioned(
+            bottom: 5,
+            right: 5,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (_showDynamicRemoveButton) ...[
+                  const SizedBox(height: 5),
+                  _buildStyledButton(_getDynamicCharacter(), () {
+                    _removeDynamicCharacter();
+                  }, true, false),
+                ],
+                if (_showHighlightButtons || _showDecrescendoRemoveButton) ...[
                   const SizedBox(height: 5),
                   _buildStyledButton('\uE53F', () {
-                    if (_shouldShowDecrescendoRemove()) {
+                    if (_showDecrescendoRemoveButton) {
                       _removeDecrescendo();
                     } else {
                       if (_dragRow != null &&
@@ -1150,12 +1231,16 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                             .read<CurrentSelectedNoteProvider>()
                             .decrescendoNotes(_dragRow!, _dragStart!, _dragEnd!,
                                 widget.sheetNoteRows);
+
+                        _showDecrescendoRemoveButton = true;
                       }
                     }
-                  }, true, !_shouldShowDecrescendoRemove()),
+                  }, true, !_showDecrescendoRemoveButton)
+                ],
+                if (_showHighlightButtons || _showCrescendoRemoveButton) ...[
                   const SizedBox(height: 5),
                   _buildStyledButton('\uE53E', () {
-                    if (_shouldShowCrescendoRemove()) {
+                    if (_showCrescendoRemoveButton) {
                       _removeCrescendo();
                     } else {
                       if (_dragRow != null &&
@@ -1165,12 +1250,16 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                             .read<CurrentSelectedNoteProvider>()
                             .crescendoNotes(_dragRow!, _dragStart!, _dragEnd!,
                                 widget.sheetNoteRows);
+
+                        _showCrescendoRemoveButton = true;
                       }
                     }
-                  }, true, !_shouldShowCrescendoRemove()),
+                  }, true, !_showCrescendoRemoveButton)
+                ],
+                if (_showHighlightButtons || _showSlurRemoveButton) ...[
                   const SizedBox(height: 5),
                   _buildStyledButton('SLUR', () {
-                    if (_shouldShowSlurRemove()) {
+                    if (_showSlurRemoveButton) {
                       _removeSlur();
                     } else {
                       if (_dragRow != null &&
@@ -1181,9 +1270,12 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                             _dragStart!,
                             _dragEnd!,
                             widget.sheetNoteRows);
+                        _showSlurRemoveButton = true;
                       }
                     }
-                  }, false, !_shouldShowSlurRemove()),
+                  }, false, !_showSlurRemoveButton)
+                ],
+                if (_showHighlightButtons && _showBeamAddButton) ...[
                   const SizedBox(height: 5),
                   _buildStyledButton('BEAM', () {
                     if (_dragRow != null &&
@@ -1194,42 +1286,22 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                           _dragStart!,
                           _dragEnd!,
                           widget.sheetNoteRows);
+
+                      _showBeamRemoveButton = true;
+                      _showBeamAddButton = false;
                     }
-                  }, false, true),
-                  // Add additional BEAM remove button if remove conditions are met
-                  if (_shouldShowBeamRemove()) ...[
-                    const SizedBox(height: 5),
-                    _buildStyledButton('BEAM', () {
-                      _removeBeam();
-                    }, false, false),
-                  ],
+                  }, false, true)
                 ],
-              ),
-            ),
-          // Dynamic character remove button - shows above TIE button
-          if (_shouldShowDynamicRemove())
-            Positioned(
-              bottom: 50, // Position above TIE button
-              right: 5,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildStyledButton(_getDynamicCharacter(), () {
-                    _removeDynamicCharacter();
-                  }, true, false),
+                if (_showBeamRemoveButton) ...[
+                  const SizedBox(height: 5),
+                  _buildStyledButton('BEAM', () {
+                    _removeBeam();
+                  }, false, false),
                 ],
-              ),
-            ),
-          if (_showTieButton)
-            Positioned(
-              bottom: 5,
-              //left: 0,
-              right: 5,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
+                if (_showTieButton) ...[
+                  const SizedBox(height: 5),
                   _buildStyledButton('TIE', () {
-                    if (_shouldShowTieRemove()) {
+                    if (_showTieRemoveState) {
                       _removeTie();
                     } else {
                       final selectedNoteProvider =
@@ -1249,13 +1321,15 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                             currentNote.isTiedToNext =
                                 !currentNote.isTiedToNext;
                           });
+                          _showTieRemoveState = true;
                         }
                       }
                     }
-                  }, false, !_shouldShowTieRemove()),
+                  }, false, !_showTieRemoveState),
                 ],
-              ),
+              ],
             ),
+          ),
         ]),
         PreferredSize(
           preferredSize: const Size.fromHeight(2.0), // Border thickness
