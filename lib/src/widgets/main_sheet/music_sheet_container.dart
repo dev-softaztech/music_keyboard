@@ -627,6 +627,323 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     return Rect.fromLTRB(startX, y - 7.5, endX + 70, y + 40);
   }
 
+  // Helper methods for remove condition detection
+  bool _shouldShowTieRemove() {
+    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+
+    // Check if there's no active highlighted notes AND current selected note has isTiedToNext = true
+    if (_dragStart == null && _dragEnd == null) {
+      final row = selectedNoteProvider.selectedRow;
+      final index = selectedNoteProvider.insertionIndex - 1;
+
+      if (index >= 0 && index < widget.sheetNoteRows[row].length) {
+        return widget.sheetNoteRows[row][index].isTiedToNext;
+      }
+    }
+    return false;
+  }
+
+  bool _shouldShowDecrescendoRemove() {
+    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+
+    if (_dragStart != null && _dragEnd != null && _dragRow != null) {
+      // Check if active highlighted range contains a decrescendo
+      final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
+      final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
+
+      for (int i = 0; i < widget.sheetNoteRows[_dragRow!].length; i++) {
+        final note = widget.sheetNoteRows[_dragRow!][i];
+        if (note.isDecrescendoStart && note.decrescendoEndIndex != null) {
+          // Check if decrescendo overlaps with highlight range
+          if ((i >= start && i <= end) ||
+              (note.decrescendoEndIndex! >= start &&
+                  note.decrescendoEndIndex! <= end)) {
+            return true;
+          }
+        }
+      }
+    } else {
+      // Check if current selected note is in range of existing decrescendo
+      final row = selectedNoteProvider.selectedRow;
+      final index = selectedNoteProvider.insertionIndex - 1;
+
+      if (index >= 0) {
+        for (int i = 0; i < widget.sheetNoteRows[row].length; i++) {
+          final note = widget.sheetNoteRows[row][i];
+          if (note.isDecrescendoStart && note.decrescendoEndIndex != null) {
+            if (i < index && note.decrescendoEndIndex! >= index) {
+              return true;
+            }
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  bool _shouldShowCrescendoRemove() {
+    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+
+    if (_dragStart != null && _dragEnd != null && _dragRow != null) {
+      // Check if active highlighted range contains a crescendo
+      final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
+      final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
+
+      for (int i = 0; i < widget.sheetNoteRows[_dragRow!].length; i++) {
+        final note = widget.sheetNoteRows[_dragRow!][i];
+        if (note.isCrescendoStart && note.crescendoEndIndex != null) {
+          // Check if crescendo overlaps with highlight range
+          if ((i >= start && i <= end) ||
+              (note.crescendoEndIndex! >= start &&
+                  note.crescendoEndIndex! <= end)) {
+            return true;
+          }
+        }
+      }
+    } else {
+      // Check if current selected note is in range of existing crescendo
+      final row = selectedNoteProvider.selectedRow;
+      final index = selectedNoteProvider.insertionIndex - 1;
+
+      if (index >= 0) {
+        for (int i = 0; i < widget.sheetNoteRows[row].length; i++) {
+          final note = widget.sheetNoteRows[row][i];
+          if (note.isCrescendoStart && note.crescendoEndIndex != null) {
+            if (i < index && note.crescendoEndIndex! >= index) {
+              return true;
+            }
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  bool _shouldShowSlurRemove() {
+    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+
+    if (_dragStart != null && _dragEnd != null && _dragRow != null) {
+      // Check if active highlighted range contains a slur
+      final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
+      final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
+
+      for (int i = 0; i < widget.sheetNoteRows[_dragRow!].length; i++) {
+        final note = widget.sheetNoteRows[_dragRow!][i];
+        if (note.slurEndIndex != null) {
+          // Check if slur overlaps with highlight range
+          if ((i >= start && i <= end) ||
+              (note.slurEndIndex! >= start && note.slurEndIndex! <= end)) {
+            return true;
+          }
+        }
+      }
+    } else {
+      // Check if current selected note is in range of existing slur
+      final row = selectedNoteProvider.selectedRow;
+      final index = selectedNoteProvider.insertionIndex - 1;
+
+      if (index >= 0) {
+        for (int i = 0; i < widget.sheetNoteRows[row].length; i++) {
+          final note = widget.sheetNoteRows[row][i];
+          if (note.slurEndIndex != null) {
+            if (i < index && note.slurEndIndex! >= index) {
+              return true;
+            }
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  bool _shouldShowBeamRemove() {
+    if (_dragStart != null && _dragEnd != null && _dragRow != null) {
+      // Check if any note in active highlighted range has isConnected = true
+      final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
+      final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
+
+      for (int i = start; i <= end; i++) {
+        if (widget.sheetNoteRows[_dragRow!][i].isConnected) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  // Remove action methods
+  void _removeTie() {
+    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+    selectedNoteProvider.saveState(widget.sheetNoteRows);
+
+    final row = selectedNoteProvider.selectedRow;
+    final index = selectedNoteProvider.insertionIndex - 1;
+
+    if (index >= 0 && index < widget.sheetNoteRows[row].length) {
+      setState(() {
+        widget.sheetNoteRows[row][index].isTiedToNext = false;
+        //_showTieButton = false;
+      });
+    }
+  }
+
+  void _removeDecrescendo() {
+    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+    selectedNoteProvider.saveState(widget.sheetNoteRows);
+
+    if (_dragStart != null && _dragEnd != null && _dragRow != null) {
+      // Remove decrescendos in highlighted range
+      final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
+      final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
+
+      for (int i = 0; i < widget.sheetNoteRows[_dragRow!].length; i++) {
+        final note = widget.sheetNoteRows[_dragRow!][i];
+        if (note.isDecrescendoStart && note.decrescendoEndIndex != null) {
+          if ((i >= start && i <= end) ||
+              (note.decrescendoEndIndex! >= start &&
+                  note.decrescendoEndIndex! <= end)) {
+            note.isDecrescendoStart = false;
+            note.decrescendoEndIndex = null;
+          }
+        }
+      }
+    } else {
+      // Remove decrescendo affecting current selected note
+      final row = selectedNoteProvider.selectedRow;
+      final index = selectedNoteProvider.insertionIndex - 1;
+
+      if (index >= 0) {
+        for (int i = 0; i < widget.sheetNoteRows[row].length; i++) {
+          final note = widget.sheetNoteRows[row][i];
+          if (note.isDecrescendoStart && note.decrescendoEndIndex != null) {
+            if (i < index && note.decrescendoEndIndex! >= index) {
+              note.isDecrescendoStart = false;
+              note.decrescendoEndIndex = null;
+            }
+          }
+        }
+      }
+    }
+
+    /*setState(() {
+      _dragStart = null;
+      _dragEnd = null;
+      _dragRow = null;
+      _showSlurAndBeamButtons = false;
+    });*/
+  }
+
+  void _removeCrescendo() {
+    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+    selectedNoteProvider.saveState(widget.sheetNoteRows);
+
+    if (_dragStart != null && _dragEnd != null && _dragRow != null) {
+      // Remove crescendos in highlighted range
+      final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
+      final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
+
+      for (int i = 0; i < widget.sheetNoteRows[_dragRow!].length; i++) {
+        final note = widget.sheetNoteRows[_dragRow!][i];
+        if (note.isCrescendoStart && note.crescendoEndIndex != null) {
+          if ((i >= start && i <= end) ||
+              (note.crescendoEndIndex! >= start &&
+                  note.crescendoEndIndex! <= end)) {
+            note.isCrescendoStart = false;
+            note.crescendoEndIndex = null;
+          }
+        }
+      }
+    } else {
+      // Remove crescendo affecting current selected note
+      final row = selectedNoteProvider.selectedRow;
+      final index = selectedNoteProvider.insertionIndex - 1;
+
+      if (index >= 0) {
+        for (int i = 0; i < widget.sheetNoteRows[row].length; i++) {
+          final note = widget.sheetNoteRows[row][i];
+          if (note.isCrescendoStart && note.crescendoEndIndex != null) {
+            if (i < index && note.crescendoEndIndex! >= index) {
+              note.isCrescendoStart = false;
+              note.crescendoEndIndex = null;
+            }
+          }
+        }
+      }
+    }
+
+    /*setState(() {
+      _dragStart = null;
+      _dragEnd = null;
+      _dragRow = null;
+      _showSlurAndBeamButtons = false;
+    });*/
+  }
+
+  void _removeSlur() {
+    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+    selectedNoteProvider.saveState(widget.sheetNoteRows);
+
+    if (_dragStart != null && _dragEnd != null && _dragRow != null) {
+      // Remove slurs in highlighted range
+      final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
+      final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
+
+      for (int i = 0; i < widget.sheetNoteRows[_dragRow!].length; i++) {
+        final note = widget.sheetNoteRows[_dragRow!][i];
+        if (note.slurEndIndex != null) {
+          if ((i >= start && i <= end) ||
+              (note.slurEndIndex! >= start && note.slurEndIndex! <= end)) {
+            note.slurEndIndex = null;
+          }
+        }
+      }
+    } else {
+      // Remove slur affecting current selected note
+      final row = selectedNoteProvider.selectedRow;
+      final index = selectedNoteProvider.insertionIndex - 1;
+
+      if (index >= 0) {
+        for (int i = 0; i < widget.sheetNoteRows[row].length; i++) {
+          final note = widget.sheetNoteRows[row][i];
+          if (note.slurEndIndex != null) {
+            if (i < index && note.slurEndIndex! >= index) {
+              note.slurEndIndex = null;
+            }
+          }
+        }
+      }
+    }
+
+    /*setState(() {
+      _dragStart = null;
+      _dragEnd = null;
+      _dragRow = null;
+      _showSlurAndBeamButtons = false;
+    });*/
+  }
+
+  void _removeBeam() {
+    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+    selectedNoteProvider.saveState(widget.sheetNoteRows);
+
+    if (_dragStart != null && _dragEnd != null && _dragRow != null) {
+      // Set all notes in highlight range to isConnected = false
+      final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
+      final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
+
+      for (int i = start; i <= end; i++) {
+        widget.sheetNoteRows[_dragRow!][i].isConnected = false;
+      }
+    }
+/*
+    setState(() {
+      _dragStart = null;
+      _dragEnd = null;
+      _dragRow = null;
+      _showSlurAndBeamButtons = false;
+    });*/
+  }
+
   @override
   Widget build(BuildContext context) {
     final selectedNoteProvider =
@@ -810,56 +1127,68 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                 children: [
                   const SizedBox(height: 5),
                   _buildStyledButton('\uE53F', () {
-                    if (_dragRow != null &&
-                        _dragStart != null &&
-                        _dragEnd != null) {
-                      context
-                          .read<CurrentSelectedNoteProvider>()
-                          .decrescendoNotes(_dragRow!, _dragStart!, _dragEnd!,
-                              widget.sheetNoteRows);
-                      setState(() {
-                        _dragStart = null;
-                        _dragEnd = null;
-                        _dragRow = null;
-                        _showSlurAndBeamButtons = false;
-                      });
+                    if (_shouldShowDecrescendoRemove()) {
+                      _removeDecrescendo();
+                    } else {
+                      if (_dragRow != null &&
+                          _dragStart != null &&
+                          _dragEnd != null) {
+                        context
+                            .read<CurrentSelectedNoteProvider>()
+                            .decrescendoNotes(_dragRow!, _dragStart!, _dragEnd!,
+                                widget.sheetNoteRows);
+                        /*setState(() {
+                          _dragStart = null;
+                          _dragEnd = null;
+                          _dragRow = null;
+                          _showSlurAndBeamButtons = false;
+                        });*/
+                      }
                     }
-                  }, true, true),
+                  }, true, !_shouldShowDecrescendoRemove()),
                   const SizedBox(height: 5),
                   _buildStyledButton('\uE53E', () {
-                    if (_dragRow != null &&
-                        _dragStart != null &&
-                        _dragEnd != null) {
-                      context
-                          .read<CurrentSelectedNoteProvider>()
-                          .crescendoNotes(_dragRow!, _dragStart!, _dragEnd!,
-                              widget.sheetNoteRows);
-                      setState(() {
-                        _dragStart = null;
-                        _dragEnd = null;
-                        _dragRow = null;
-                        _showSlurAndBeamButtons = false;
-                      });
+                    if (_shouldShowCrescendoRemove()) {
+                      _removeCrescendo();
+                    } else {
+                      if (_dragRow != null &&
+                          _dragStart != null &&
+                          _dragEnd != null) {
+                        context
+                            .read<CurrentSelectedNoteProvider>()
+                            .crescendoNotes(_dragRow!, _dragStart!, _dragEnd!,
+                                widget.sheetNoteRows);
+                        /*setState(() {
+                          _dragStart = null;
+                          _dragEnd = null;
+                          _dragRow = null;
+                          _showSlurAndBeamButtons = false;
+                        });*/
+                      }
                     }
-                  }, true, true),
+                  }, true, !_shouldShowCrescendoRemove()),
                   const SizedBox(height: 5),
                   _buildStyledButton('SLUR', () {
-                    if (_dragRow != null &&
-                        _dragStart != null &&
-                        _dragEnd != null) {
-                      context.read<CurrentSelectedNoteProvider>().slurNotes(
-                          _dragRow!,
-                          _dragStart!,
-                          _dragEnd!,
-                          widget.sheetNoteRows);
-                      setState(() {
-                        _dragStart = null;
-                        _dragEnd = null;
-                        _dragRow = null;
-                        _showSlurAndBeamButtons = false;
-                      });
+                    if (_shouldShowSlurRemove()) {
+                      _removeSlur();
+                    } else {
+                      if (_dragRow != null &&
+                          _dragStart != null &&
+                          _dragEnd != null) {
+                        context.read<CurrentSelectedNoteProvider>().slurNotes(
+                            _dragRow!,
+                            _dragStart!,
+                            _dragEnd!,
+                            widget.sheetNoteRows);
+                        /*setState(() {
+                          _dragStart = null;
+                          _dragEnd = null;
+                          _dragRow = null;
+                          _showSlurAndBeamButtons = false;
+                        });*/
+                      }
                     }
-                  }, false, true),
+                  }, false, !_shouldShowSlurRemove()),
                   const SizedBox(height: 5),
                   _buildStyledButton('BEAM', () {
                     if (_dragRow != null &&
@@ -870,14 +1199,21 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                           _dragStart!,
                           _dragEnd!,
                           widget.sheetNoteRows);
-                      setState(() {
+                      /*setState(() {
                         _dragStart = null;
                         _dragEnd = null;
                         _dragRow = null;
                         _showSlurAndBeamButtons = false;
-                      });
+                      });*/
                     }
                   }, false, true),
+                  // Add additional BEAM remove button if remove conditions are met
+                  if (_shouldShowBeamRemove()) ...[
+                    const SizedBox(height: 5),
+                    _buildStyledButton('BEAM', () {
+                      _removeBeam();
+                    }, false, false),
+                  ],
                 ],
               ),
             ),
@@ -890,26 +1226,31 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   _buildStyledButton('TIE', () {
-                    final selectedNoteProvider =
-                        context.read<CurrentSelectedNoteProvider>();
-                    final row = selectedNoteProvider.selectedRow;
-                    final index = selectedNoteProvider.insertionIndex - 1;
+                    if (_shouldShowTieRemove()) {
+                      _removeTie();
+                    } else {
+                      final selectedNoteProvider =
+                          context.read<CurrentSelectedNoteProvider>();
+                      final row = selectedNoteProvider.selectedRow;
+                      final index = selectedNoteProvider.insertionIndex - 1;
 
-                    if (index >= 0 &&
-                        index + 1 < widget.sheetNoteRows[row].length) {
-                      MusicalNote currentNote =
-                          widget.sheetNoteRows[row][index];
-                      MusicalNote nextNote =
-                          widget.sheetNoteRows[row][index + 1];
+                      if (index >= 0 &&
+                          index + 1 < widget.sheetNoteRows[row].length) {
+                        MusicalNote currentNote =
+                            widget.sheetNoteRows[row][index];
+                        MusicalNote nextNote =
+                            widget.sheetNoteRows[row][index + 1];
 
-                      if (currentNote.pitch == nextNote.pitch) {
-                        setState(() {
-                          currentNote.isTiedToNext = !currentNote.isTiedToNext;
-                          _showTieButton = false;
-                        });
+                        if (currentNote.pitch == nextNote.pitch) {
+                          setState(() {
+                            currentNote.isTiedToNext =
+                                !currentNote.isTiedToNext;
+                            //_showTieButton = false;
+                          });
+                        }
                       }
                     }
-                  }, false, true),
+                  }, false, !_shouldShowTieRemove()),
                 ],
               ),
             ),
