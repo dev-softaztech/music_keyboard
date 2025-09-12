@@ -801,7 +801,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
   // Remove action methods
   void _removeTie() {
     final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
-    selectedNoteProvider.saveState(widget.sheetNoteRows);
+    //selectedNoteProvider.saveState(widget.sheetNoteRows);
 
     final row = selectedNoteProvider.selectedRow;
     final index = selectedNoteProvider.insertionIndex - 1;
@@ -815,7 +815,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
 
   void _removeDecrescendo() {
     final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
-    selectedNoteProvider.saveState(widget.sheetNoteRows);
+    //selectedNoteProvider.saveState(widget.sheetNoteRows);
 
     if (_dragStart != null && _dragEnd != null && _dragRow != null) {
       // Remove decrescendos in highlighted range
@@ -854,7 +854,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
 
   void _removeCrescendo() {
     final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
-    selectedNoteProvider.saveState(widget.sheetNoteRows);
+    //selectedNoteProvider.saveState(widget.sheetNoteRows);
 
     if (_dragStart != null && _dragEnd != null && _dragRow != null) {
       // Remove crescendos in highlighted range
@@ -893,7 +893,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
 
   void _removeSlur() {
     final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
-    selectedNoteProvider.saveState(widget.sheetNoteRows);
+    //selectedNoteProvider.saveState(widget.sheetNoteRows);
 
     if (_dragStart != null && _dragEnd != null && _dragRow != null) {
       // Remove slurs in highlighted range
@@ -929,7 +929,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
 
   void _removeBeam() {
     final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
-    selectedNoteProvider.saveState(widget.sheetNoteRows);
+    //selectedNoteProvider.saveState(widget.sheetNoteRows);
 
     if (_dragStart != null && _dragEnd != null && _dragRow != null) {
       // Set all notes in highlight range to isConnected = false
@@ -944,7 +944,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
 
   void _removeDynamicCharacter() {
     final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
-    selectedNoteProvider.saveState(widget.sheetNoteRows);
+    //selectedNoteProvider.saveState(widget.sheetNoteRows);
 
     final row = selectedNoteProvider.selectedRow;
     final index = selectedNoteProvider.insertionIndex - 1;
@@ -1069,35 +1069,36 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
               )),
 
           // Floating Reset Button (Only Shows When Zoomed)
-          //if (isZoomed)
-          //Reset zoom
-          Positioned(
-              top: 47.5,
-              right: 0,
-              child: Material(
-                color: Colors.transparent,
-                elevation: 5,
-                shadowColor: Colors.black.withOpacity(0.3),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25),
-                ),
-                child: RawMaterialButton(
-                  onPressed: _resetZoom,
-                  fillColor: Colors.white,
-                  constraints:
-                      const BoxConstraints.tightFor(width: 35, height: 35),
+          if (isZoomed)
+            //Reset zoom
+            Positioned(
+                top: 55,
+                right: 5,
+                child: Material(
+                  color: Colors.transparent,
+                  elevation: 5,
+                  shadowColor: Colors.black.withOpacity(0.3),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(25),
-                    side: const BorderSide(color: Colors.black, width: 1),
                   ),
-                  child: const Icon(
-                    Icons.zoom_out_map,
-                    color: Colors.black,
-                    size: 24,
+                  child: RawMaterialButton(
+                    onPressed: _resetZoom,
+                    fillColor: Colors.white,
+                    constraints:
+                        const BoxConstraints.tightFor(width: 35, height: 35),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25),
+                      side: const BorderSide(color: Colors.black, width: 1),
+                    ),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    child: const Icon(
+                      Icons.zoom_out_map,
+                      color: Colors.black,
+                      size: 24,
+                    ),
                   ),
-                ),
-              )),
-          //Undo
+                )),
+          /*//Undo
           Positioned(
               top: 90,
               right: 0,
@@ -1127,7 +1128,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                     size: 24,
                   ),
                 ),
-              )),
+              )),*/
           if (_showSlurAndBeamButtons)
             Positioned(
               //height: 180,

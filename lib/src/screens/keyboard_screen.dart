@@ -158,7 +158,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
             }
 
             // Save state for undo before moving the bar
-            selectedNoteProvider.saveState(sheetNoteRows);
+            //selectedNoteProvider.saveState(sheetNoteRows);
 
             // Move the entire bar to the next row
             List<MusicalNote> notesToMove = [];
@@ -298,7 +298,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         }
 
         // Save state for undo before removing the note
-        selectedNoteProvider.saveState(sheetNoteRows);
+        //selectedNoteProvider.saveState(sheetNoteRows);
 
         // Remove the note
         sheetNoteRows[selectedNoteProvider.selectedRow].remove(noteToRemove);
@@ -503,7 +503,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                     // Floating Menu Button - Top Right
                     Positioned(
                       top: 10,
-                      right: 15,
+                      right: 5,
                       child: GestureDetector(
                         onTap: () {
                           setState(() {
