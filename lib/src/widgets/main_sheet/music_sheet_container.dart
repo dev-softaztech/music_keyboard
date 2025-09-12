@@ -782,7 +782,6 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     if (index >= 0 && index < widget.sheetNoteRows[row].length) {
       setState(() {
         widget.sheetNoteRows[row][index].isTiedToNext = false;
-        //_showTieButton = false;
       });
     }
   }
@@ -824,13 +823,6 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
         }
       }
     }
-
-    /*setState(() {
-      _dragStart = null;
-      _dragEnd = null;
-      _dragRow = null;
-      _showSlurAndBeamButtons = false;
-    });*/
   }
 
   void _removeCrescendo() {
@@ -870,13 +862,6 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
         }
       }
     }
-
-    /*setState(() {
-      _dragStart = null;
-      _dragEnd = null;
-      _dragRow = null;
-      _showSlurAndBeamButtons = false;
-    });*/
   }
 
   void _removeSlur() {
@@ -913,13 +898,6 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
         }
       }
     }
-
-    /*setState(() {
-      _dragStart = null;
-      _dragEnd = null;
-      _dragRow = null;
-      _showSlurAndBeamButtons = false;
-    });*/
   }
 
   void _removeBeam() {
@@ -935,13 +913,6 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
         widget.sheetNoteRows[_dragRow!][i].isConnected = false;
       }
     }
-/*
-    setState(() {
-      _dragStart = null;
-      _dragEnd = null;
-      _dragRow = null;
-      _showSlurAndBeamButtons = false;
-    });*/
   }
 
   @override
@@ -1137,12 +1108,6 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                             .read<CurrentSelectedNoteProvider>()
                             .decrescendoNotes(_dragRow!, _dragStart!, _dragEnd!,
                                 widget.sheetNoteRows);
-                        /*setState(() {
-                          _dragStart = null;
-                          _dragEnd = null;
-                          _dragRow = null;
-                          _showSlurAndBeamButtons = false;
-                        });*/
                       }
                     }
                   }, true, !_shouldShowDecrescendoRemove()),
@@ -1158,12 +1123,6 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                             .read<CurrentSelectedNoteProvider>()
                             .crescendoNotes(_dragRow!, _dragStart!, _dragEnd!,
                                 widget.sheetNoteRows);
-                        /*setState(() {
-                          _dragStart = null;
-                          _dragEnd = null;
-                          _dragRow = null;
-                          _showSlurAndBeamButtons = false;
-                        });*/
                       }
                     }
                   }, true, !_shouldShowCrescendoRemove()),
@@ -1180,12 +1139,6 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                             _dragStart!,
                             _dragEnd!,
                             widget.sheetNoteRows);
-                        /*setState(() {
-                          _dragStart = null;
-                          _dragEnd = null;
-                          _dragRow = null;
-                          _showSlurAndBeamButtons = false;
-                        });*/
                       }
                     }
                   }, false, !_shouldShowSlurRemove()),
@@ -1199,12 +1152,6 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                           _dragStart!,
                           _dragEnd!,
                           widget.sheetNoteRows);
-                      /*setState(() {
-                        _dragStart = null;
-                        _dragEnd = null;
-                        _dragRow = null;
-                        _showSlurAndBeamButtons = false;
-                      });*/
                     }
                   }, false, true),
                   // Add additional BEAM remove button if remove conditions are met
@@ -1245,7 +1192,6 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                           setState(() {
                             currentNote.isTiedToNext =
                                 !currentNote.isTiedToNext;
-                            //_showTieButton = false;
                           });
                         }
                       }
