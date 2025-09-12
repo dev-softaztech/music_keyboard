@@ -771,6 +771,33 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     return false;
   }
 
+  bool _shouldShowDynamicRemove() {
+    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+
+    // Check if there's no active highlighted notes AND current selected note has dynamicCharacter
+    if (_dragStart == null && _dragEnd == null) {
+      final row = selectedNoteProvider.selectedRow;
+      final index = selectedNoteProvider.insertionIndex - 1;
+
+      if (index >= 0 && index < widget.sheetNoteRows[row].length) {
+        final dynamicChar = widget.sheetNoteRows[row][index].dynamicCharacter;
+        return dynamicChar.isNotEmpty;
+      }
+    }
+    return false;
+  }
+
+  String _getDynamicCharacter() {
+    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+    final row = selectedNoteProvider.selectedRow;
+    final index = selectedNoteProvider.insertionIndex - 1;
+
+    if (index >= 0 && index < widget.sheetNoteRows[row].length) {
+      return widget.sheetNoteRows[row][index].dynamicCharacter;
+    }
+    return "";
+  }
+
   // Remove action methods
   void _removeTie() {
     final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
@@ -912,6 +939,20 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
       for (int i = start; i <= end; i++) {
         widget.sheetNoteRows[_dragRow!][i].isConnected = false;
       }
+    }
+  }
+
+  void _removeDynamicCharacter() {
+    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+    selectedNoteProvider.saveState(widget.sheetNoteRows);
+
+    final row = selectedNoteProvider.selectedRow;
+    final index = selectedNoteProvider.insertionIndex - 1;
+
+    if (index >= 0 && index < widget.sheetNoteRows[row].length) {
+      setState(() {
+        widget.sheetNoteRows[row][index].dynamicCharacter = "";
+      });
     }
   }
 
@@ -1164,6 +1205,20 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                 ],
               ),
             ),
+          // Dynamic character remove button - shows above TIE button
+          if (_shouldShowDynamicRemove())
+            Positioned(
+              bottom: 50, // Position above TIE button
+              right: 5,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildStyledButton(_getDynamicCharacter(), () {
+                    _removeDynamicCharacter();
+                  }, true, false),
+                ],
+              ),
+            ),
           if (_showTieButton)
             Positioned(
               bottom: 5,
@@ -1243,12 +1298,15 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             child: useBravura
                 ? Transform.translate(
-                    offset: const Offset(1, 5),
+                    offset: label == '\uE53F' || label == '\uE53E'
+                        ? const Offset(1, 5)
+                        : const Offset(2, 2),
                     child: Text(
                       label,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.black,
-                        fontSize: 27,
+                        fontSize:
+                            label == '\uE53F' || label == '\uE53E' ? 27 : 22,
                         fontFamily: 'Bravura',
                       ),
                     ))
