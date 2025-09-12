@@ -153,7 +153,7 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
       for (int i = (r == startRow ? startIndex : 0);
           i < (r == endRow ? endIndex : sheetNoteRows[r].length - 1);
           i++) {
-        sheetNoteRows[r][i].isConnected = true;
+        sheetNoteRows[r][i].isBeamed = true;
       }
     }
 
@@ -175,7 +175,7 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
 
     // Apply beaming to all notes in the range
     for (int i = startIndex; i <= endIndex; i++) {
-      sheetNoteRows[row][i].isConnected = true;
+      sheetNoteRows[row][i].isBeamed = true;
     }
 
     notifyListeners();

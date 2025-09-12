@@ -96,7 +96,7 @@ class _TimeSignaturePopupState extends State<TimeSignaturePopup> {
         pitch: "D",
         octave: 5,
         type: NoteType.timeSignature,
-        isConnected: false,
+        isBeamed: false,
         topTimeSignatureCharacter: top,
         bottomTimeSignatureCharacter: bottom,
       ),

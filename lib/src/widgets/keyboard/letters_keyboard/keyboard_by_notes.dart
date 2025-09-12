@@ -56,7 +56,7 @@ class KeyboardByNotes extends StatelessWidget {
                       pitch: key,
                       octave: selectedNumberProvider.selectedNumber,
                       type: noteType,
-                      isConnected: isConnected,
+                      isBeamed: isConnected,
                       unicodeCharacter: selectedCharacter);
 
                   onKeyPress(note);

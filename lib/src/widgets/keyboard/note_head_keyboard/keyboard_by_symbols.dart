@@ -229,7 +229,7 @@ class _MusicKeyState extends State<MusicKey> {
         pitch: widget.pitch,
         octave: widget.octave,
         type: widget.type,
-        isConnected: widget.isConnected,
+        isBeamed: widget.isConnected,
         unicodeCharacter: widget.selectedCharacter));
   }
 
@@ -260,7 +260,7 @@ class _MusicKeyState extends State<MusicKey> {
               pitch: widget.pitch,
               octave: widget.octave,
               type: widget.type,
-              isConnected: widget.isConnected,
+              isBeamed: widget.isConnected,
             ),
             index: widget.index,
             context: context,

@@ -2,7 +2,7 @@ class MusicalNote {
   final String pitch; // e.g., C, D, E
   final int octave; // e.g., 4 (Middle C is in octave 4)
   final NoteType type; // e.g., Whole, Half, Quarter, Eighth, Sixteenth
-  bool isConnected; // Whether this note is connected to others
+  bool isBeamed; // Whether this note is connected to others
   bool isTiedToNext;
   bool isCrescendoStart;
   bool isDecrescendoStart;
@@ -23,7 +23,7 @@ class MusicalNote {
       {required this.pitch,
       required this.octave,
       required this.type,
-      this.isConnected = false,
+      this.isBeamed = false,
       this.isTiedToNext = false,
       this.isCrescendoStart = false,
       this.isDecrescendoStart = false,
@@ -44,7 +44,7 @@ class MusicalNote {
         pitch: pitch,
         octave: octave,
         type: type,
-        isConnected: isConnected,
+        isBeamed: isBeamed,
         isTiedToNext: isTiedToNext,
         isCrescendoStart: isCrescendoStart,
         isDecrescendoStart: isDecrescendoStart,

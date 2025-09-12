@@ -72,8 +72,8 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
           pitch: note.pitch,
           octave: note.octave,
           type: note.type,
-          isConnected: note
-              .isConnected, //isConnected: isBeamLockActive ? true : note.isConnected,
+          isBeamed: note
+              .isBeamed, //isConnected: isBeamLockActive ? true : note.isConnected,
           unicodeCharacter: note.unicodeCharacter,
           accidentalCharacter: selectedAccidental,
           noteY: note.noteY,
@@ -434,7 +434,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
               pitch: "",
               octave: 0,
               type: NoteType.bar,
-              isConnected: false,
+              isBeamed: false,
               unicodeCharacter: unicode,
             ));
             _removeBarOverlay();
@@ -781,9 +781,8 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                                             [
                                                             selectedNoteProvider
                                                                 .selectedIndex];
-                                                    selectedNote.isConnected =
-                                                        !selectedNote
-                                                            .isConnected;
+                                                    selectedNote.isBeamed =
+                                                        !selectedNote.isBeamed;
                                                   });
                                                 }
                                               }
@@ -804,7 +803,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                                                   [
                                                                   selectedNoteProvider
                                                                       .selectedIndex]
-                                                              .isConnected)
+                                                              .isBeamed)
                                                       ? Colors.grey[400]
                                                       : Colors.grey[100],
                                               borderRadius:
@@ -854,7 +853,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                                   pitch: "",
                                                   octave: 0,
                                                   type: NoteType.bar,
-                                                  isConnected: false,
+                                                  isBeamed: false,
                                                   unicodeCharacter:
                                                       _selectedBarUnicode));
                                             },

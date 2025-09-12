@@ -579,7 +579,7 @@ class MusicSheetPainter extends CustomPainter {
               note.type == NoteType.sixteenth ||
               note.type == NoteType.thirtySecond ||
               note.type == NoteType.sixtyFourth) &&
-          note.isConnected) {
+          note.isBeamed) {
         // Get the connected notes group to determine actual stem height
         var notesGroup = getConnectedNotesGroup(i, rowNotes);
         var connectedNotesGroup = notesGroup.notesGroup;
@@ -1196,12 +1196,12 @@ class MusicSheetPainter extends CustomPainter {
     if (staffTop - 40 > tripletY) tripletY = tripletY + 30;
 
     bool isAnyNoteInTripletBeamed =
-        note1.isConnected || note2.isConnected || note3.isConnected;
+        note1.isBeamed || note2.isBeamed || note3.isBeamed;
 
     if (isAnyNoteInTripletBeamed) {
       int beamStartIndex = noteIndex;
       // Find the actual start of the beamed group by looking backwards
-      while (beamStartIndex > 0 && notes[beamStartIndex - 1].isConnected) {
+      while (beamStartIndex > 0 && notes[beamStartIndex - 1].isBeamed) {
         beamStartIndex--;
       }
       MusicalNote firstNoteOfBeam = notes[beamStartIndex];

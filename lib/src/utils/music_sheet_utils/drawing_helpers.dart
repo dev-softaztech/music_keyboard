@@ -195,7 +195,7 @@ void drawNoteKey(
     isAConnectedNote = true;
   }
 
-  if (isAConnectedNote && note.isConnected) {
+  if (isAConnectedNote && note.isBeamed) {
     ({bool isFirst, List<MusicalNote> notesGroup}) notesGroup =
         getConnectedNotesGroup(index, notes);
     connectedNotesGroup = notesGroup.notesGroup;
@@ -288,11 +288,11 @@ void drawNoteKey(
     textPainter.paint(canvas, Offset(offsetX, offsetY));
     noteWidth = textPainter.width;
 
-    if (note.isConnected && doesGroupContain32ndOr64thNote) {
+    if (note.isBeamed && doesGroupContain32ndOr64thNote) {
       stemHeight = stemHeight + 10;
     }
 
-    if (isAConnectedNote && note.isConnected) {
+    if (isAConnectedNote && note.isBeamed) {
       if (!firstNoteUpsideDown) {
         stemHeight = (noteY - connectedGroupHighestY) + stemHeight;
       }
@@ -303,8 +303,8 @@ void drawNoteKey(
 
     double stemX = 0.0;
 
-    if ((note.isConnected && !firstNoteUpsideDown) ||
-        (!note.isUpsideDown && !(note.isConnected && firstNoteUpsideDown))) {
+    if ((note.isBeamed && !firstNoteUpsideDown) ||
+        (!note.isUpsideDown && !(note.isBeamed && firstNoteUpsideDown))) {
       stemX = noteX + 5.0;
       canvas.drawLine(
         Offset(stemX, noteY - 1),
@@ -429,7 +429,7 @@ void drawConnectedNotes(Canvas canvas, Paint paint, MusicalNote note,
 
   // Traverse backwards to find connected notes before the index
   for (int i = index - 1; i >= 0; i--) {
-    if (notes[i].isConnected &&
+    if (notes[i].isBeamed &&
         (notes[i].type == NoteType.eighth ||
             notes[i].type == NoteType.sixteenth ||
             notes[i].type == NoteType.thirtySecond ||
@@ -443,7 +443,7 @@ void drawConnectedNotes(Canvas canvas, Paint paint, MusicalNote note,
 
   // Traverse forwards to find connected notes after the index
   for (int i = index + 1; i < notes.length; i++) {
-    if (notes[i].isConnected &&
+    if (notes[i].isBeamed &&
         (notes[i].type == NoteType.eighth ||
             notes[i].type == NoteType.sixteenth ||
             notes[i].type == NoteType.thirtySecond ||

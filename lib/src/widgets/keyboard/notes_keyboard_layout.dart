@@ -194,7 +194,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                 pitch: "D",
                 octave: 5,
                 type: NoteType.rest,
-                isConnected: false,
+                isBeamed: false,
                 unicodeCharacter: unicode,
               ));
             } else {
@@ -248,7 +248,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                 pitch: "D",
                 octave: 5,
                 type: NoteType.rest,
-                isConnected: false,
+                isBeamed: false,
                 unicodeCharacter: _selectedRestUnicode,
               ));
             }
@@ -539,7 +539,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                                 pitch: "D",
                                 octave: 5,
                                 type: NoteType.clef,
-                                isConnected: false,
+                                isBeamed: false,
                                 unicodeCharacter: "\uf472"));
                           },
                           style: ElevatedButton.styleFrom(
@@ -575,7 +575,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                                 pitch: "D",
                                 octave: 5,
                                 type: NoteType.clef,
-                                isConnected: false,
+                                isBeamed: false,
                                 unicodeCharacter: "\uf474"));
                           },
                           style: ElevatedButton.styleFrom(
@@ -713,7 +713,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                               pitch: "D",
                               octave: 5,
                               type: NoteType.clef,
-                              isConnected: false,
+                              isBeamed: false,
                               unicodeCharacter: "\uf472"));
                         },
                         style: ElevatedButton.styleFrom(

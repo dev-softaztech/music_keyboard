@@ -566,7 +566,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                 note.type == NoteType.sixteenth ||
                 note.type == NoteType.thirtySecond ||
                 note.type == NoteType.sixtyFourth) &&
-            note.isConnected) {
+            note.isBeamed) {
           var notesGroup = getConnectedNotesGroup(i, rowNotes);
           var connectedNotesGroup = notesGroup.notesGroup;
           if (connectedNotesGroup.isNotEmpty) {
@@ -797,7 +797,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
       final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
 
       for (int i = start; i <= end; i++) {
-        if (!widget.sheetNoteRows[_dragRow!][i].isConnected) {
+        if (!widget.sheetNoteRows[_dragRow!][i].isBeamed) {
           return true;
         }
       }
@@ -812,7 +812,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
       final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
 
       for (int i = start; i <= end; i++) {
-        if (widget.sheetNoteRows[_dragRow!][i].isConnected) {
+        if (widget.sheetNoteRows[_dragRow!][i].isBeamed) {
           return true;
         }
       }
@@ -822,7 +822,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
       final index = selectedNoteProvider.insertionIndex - 1;
 
       if (index >= 0 && index < widget.sheetNoteRows[row].length) {
-        return widget.sheetNoteRows[row][index].isConnected;
+        return widget.sheetNoteRows[row][index].isBeamed;
       }
     }
     return false;
@@ -1001,7 +1001,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
       final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
 
       for (int i = start; i <= end; i++) {
-        widget.sheetNoteRows[_dragRow!][i].isConnected = false;
+        widget.sheetNoteRows[_dragRow!][i].isBeamed = false;
       }
     } else {
       final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
@@ -1009,7 +1009,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
       final index = selectedNoteProvider.insertionIndex - 1;
 
       if (index >= 0 && index < widget.sheetNoteRows[row].length) {
-        widget.sheetNoteRows[row][index].isConnected = false;
+        widget.sheetNoteRows[row][index].isBeamed = false;
       }
     }
 
