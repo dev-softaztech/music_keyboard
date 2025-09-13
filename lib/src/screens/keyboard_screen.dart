@@ -431,8 +431,8 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
               _selectedBarUnicode = unicode;
             });
             handleKeyPress(MusicalNote(
-              pitch: "",
-              octave: 0,
+              pitch: "D",
+              octave: 4,
               type: NoteType.bar,
               isBeamed: false,
               unicodeCharacter: unicode,
@@ -850,8 +850,8 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                           child: ElevatedButton(
                                             onPressed: () {
                                               handleKeyPress(MusicalNote(
-                                                  pitch: "",
-                                                  octave: 0,
+                                                  pitch: "D",
+                                                  octave: 4,
                                                   type: NoteType.bar,
                                                   isBeamed: false,
                                                   unicodeCharacter:

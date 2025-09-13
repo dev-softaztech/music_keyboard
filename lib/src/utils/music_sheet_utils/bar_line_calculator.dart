@@ -131,9 +131,9 @@ class BarLineCalculator {
   }
 
   /// Calculate positions where bar lines should be automatically placed
-  static List<int> calculateBarLinePositions(List<MusicalNote> notes) {
+  static List<int> calculateBarLinePositions(
+      List<MusicalNote> notes, MusicalNote? currentTimeSignature) {
     List<int> barPositions = [];
-    MusicalNote? currentTimeSignature;
     double currentBarDuration = 0.0;
 
     // Set duration for each note

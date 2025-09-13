@@ -94,7 +94,7 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
       // Calculate positions for automatic bar lines
       // This method now handles multiple time signatures within a row
       List<int> barLinePositions =
-          BarLineCalculator.calculateBarLinePositions(notes);
+          BarLineCalculator.calculateBarLinePositions(notes, timeSignature);
 
       // Add bar lines at calculated positions (in reverse order to maintain correct indices)
       for (int i = barLinePositions.length - 1; i >= 0; i--) {
@@ -102,8 +102,8 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
 
         // Create a bar line note
         MusicalNote barLineNote = MusicalNote(
-          pitch: "",
-          octave: 0,
+          pitch: "D",
+          octave: 4,
           type: NoteType.bar,
           unicodeCharacter: '\ue030', // Standard bar line
         );
