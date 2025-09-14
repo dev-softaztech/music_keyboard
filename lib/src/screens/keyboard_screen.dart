@@ -72,8 +72,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
           pitch: note.pitch,
           octave: note.octave,
           type: note.type,
-          isBeamed: note
-              .isBeamed, //isConnected: isBeamLockActive ? true : note.isConnected,
+          isBeamed: note.isBeamed,
           unicodeCharacter: note.unicodeCharacter,
           accidentalCharacter: selectedAccidental,
           noteY: note.noteY,
@@ -157,25 +156,25 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     // Find the last bar boundaries in the row
     final barBoundaries =
         _findLastBarBoundaries(selectedNoteProvider.selectedRow);
-    int currentBarStartIndex = barBoundaries['startIndex']!;
-    int currentBarEndIndex = barBoundaries['endIndex']!;
+    int lastBarStartIndex = barBoundaries['startIndex']!;
+    int lastBarEndIndex = barBoundaries['endIndex']!;
 
     // Calculate the number of notes in the current bar
-    int notesInCurrentBar = currentBarEndIndex - currentBarStartIndex + 1;
+    int notesInLastBar = lastBarEndIndex - lastBarStartIndex + 1;
 
     // Ensure we have a next row to move to
     _ensureNextRowExists(selectedNoteProvider, rowSpacingProvider,
-        rowSpacingList, notesInCurrentBar);
+        rowSpacingList, notesInLastBar);
 
     // Move the entire last bar to the next row
     _moveLastBarToNextRow(
-        selectedNoteProvider, currentBarStartIndex, currentBarEndIndex);
+        selectedNoteProvider, lastBarStartIndex, lastBarEndIndex);
   }
 
   /// Finds the boundaries of the last bar in the specified row
   Map<String, int> _findLastBarBoundaries(int rowIndex) {
-    int currentBarStartIndex = 0;
-    int currentBarEndIndex = sheetNoteRows[rowIndex].length - 1;
+    int lastBarStartIndex = 0;
+    int lastBarEndIndex = sheetNoteRows[rowIndex].length - 1;
 
     // Find the last bar line in the current row
     int lastBarLineIndex = -1;
@@ -188,17 +187,17 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
     // Set the start of the last bar
     if (lastBarLineIndex != -1) {
-      currentBarStartIndex = lastBarLineIndex + 1;
+      lastBarStartIndex = lastBarLineIndex + 1;
     } else {
-      currentBarStartIndex = 0; // No bar lines found, start from beginning
+      lastBarStartIndex = 0; // No bar lines found, start from beginning
     }
 
     // The end is always the end of the row
-    currentBarEndIndex = sheetNoteRows[rowIndex].length - 1;
+    lastBarEndIndex = sheetNoteRows[rowIndex].length - 1;
 
     return {
-      'startIndex': currentBarStartIndex,
-      'endIndex': currentBarEndIndex,
+      'startIndex': lastBarStartIndex,
+      'endIndex': lastBarEndIndex,
     };
   }
 
@@ -227,17 +226,17 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   /// Moves the last bar from the current row to the next row
   void _moveLastBarToNextRow(
     CurrentSelectedNoteProvider selectedNoteProvider,
-    int currentBarStartIndex,
-    int currentBarEndIndex,
+    int lastBarStartIndex,
+    int lastBarEndIndex,
   ) {
     // Collect all notes in the current bar
     List<MusicalNote> notesToMove = [];
-    for (int i = currentBarStartIndex; i <= currentBarEndIndex; i++) {
+    for (int i = lastBarStartIndex; i <= lastBarEndIndex; i++) {
       notesToMove.add(sheetNoteRows[selectedNoteProvider.selectedRow][i]);
     }
 
     // Remove the notes from the current row (in reverse order to maintain indices)
-    for (int i = currentBarEndIndex; i >= currentBarStartIndex; i--) {
+    for (int i = lastBarEndIndex; i >= lastBarStartIndex; i--) {
       sheetNoteRows[selectedNoteProvider.selectedRow].removeAt(i);
     }
 
