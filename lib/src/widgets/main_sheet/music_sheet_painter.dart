@@ -3,6 +3,7 @@ import 'package:vector_math/vector_math.dart' as vec;
 import 'dart:math' as math;
 import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/bar_line_calculator.dart';
+import 'package:music_keyboard/src/utils/music_sheet_utils/bar_number_calculator.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/drawing_helpers.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/note_position_calculator.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/note_width_calculator.dart';
@@ -56,6 +57,9 @@ class MusicSheetPainter extends CustomPainter {
     for (int rowIndex = 0; rowIndex < sheetNoteRows.length; rowIndex++) {
       final staffTop = verticalOffset + (rowIndex * (rowSpacing + sheetHeight));
       drawStaffLines(canvas, paint, staffTop, lineSpacing, sheetHeight, size);
+
+      // Draw bar number above the start of this row
+      _drawBarNumber(canvas, rowIndex, staffTop);
 
       double x = 80.0;
       int currentRowSpacing = rowSpacingList[rowIndex];
@@ -341,6 +345,35 @@ class MusicSheetPainter extends CustomPainter {
     );
 
     // Draw the warning text
+    textPainter.paint(canvas, Offset(x, y));
+  }
+
+  /// Draw bar number above the start of a row
+  void _drawBarNumber(Canvas canvas, int rowIndex, double staffTop) {
+    // Calculate the bar number for this row
+    int barNumber =
+        BarNumberCalculator.calculateBarNumberForRow(sheetNoteRows, rowIndex);
+
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: barNumber.toString(),
+        style: const TextStyle(
+          color: Colors.black,
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+
+    textPainter.layout();
+
+    // Position the bar number above and to the left of the staff start
+    // X position: slightly to the right of the staff start (60 is where staff lines start)
+    final double x = 75 - textPainter.width;
+    // Y position: above the staff with some padding
+    final double y = staffTop - 35;
+
     textPainter.paint(canvas, Offset(x, y));
   }
 
