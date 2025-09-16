@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/music_note.dart';
+import 'package:music_keyboard/models/sheet_rows.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/bar_line_calculator.dart';
 
 class CurrentSelectedNoteProvider extends ChangeNotifier {
@@ -9,7 +10,7 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
   bool isBeaming = false;
   bool isSlurring = false;
 
-  final List<List<List<MusicalNote>>> _history = [];
+  //final List<List<SheetRows>> _history = [];
 
   // Track if we need to check for automatic bar line placement
   bool _checkForBarLines = false;
@@ -27,15 +28,15 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
   }
 
   /// **Add a note to the sheet and handle automatic bar line placement**
-  void addNote(MusicalNote note, List<List<MusicalNote>> sheetNoteRows) {
+  void addNote(MusicalNote note, List<SheetRows> sheetNoteRows) {
     //saveState(sheetNoteRows);
 
     // Insert the note at the current insertion point
-    if (insertionIndex <= sheetNoteRows[selectedRow].length) {
-      sheetNoteRows[selectedRow].insert(insertionIndex, note);
+    if (insertionIndex <= sheetNoteRows[selectedRow].notes.length) {
+      sheetNoteRows[selectedRow].notes.insert(insertionIndex, note);
 
       // Adjust indices for dynamics
-      for (var n in sheetNoteRows[selectedRow]) {
+      for (var n in sheetNoteRows[selectedRow].notes) {
         if (n.crescendoEndIndex != null &&
             n.crescendoEndIndex! >= insertionIndex - 1) {
           n.crescendoEndIndex = n.crescendoEndIndex! + 1;
@@ -55,7 +56,8 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
 
       // Check if we need to add automatic bar lines
       if (_checkForBarLines && note.type != NoteType.bar) {
-        _handleAutomaticBarLines(sheetNoteRows[selectedRow], sheetNoteRows);
+        _handleAutomaticBarLines(
+            sheetNoteRows[selectedRow].notes, sheetNoteRows);
       }
 
       notifyListeners();
@@ -64,7 +66,7 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
 
   /// **Handle automatic bar line placement based on time signature**
   void _handleAutomaticBarLines(List<MusicalNote> notes,
-      [List<List<MusicalNote>>? allRows]) {
+      [List<SheetRows>? allRows]) {
     MusicalNote? timeSignature;
 
     // First check for time signatures within the current row
@@ -129,8 +131,7 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
   }
 
   /// **Handles "Beam Notes" when second note is tapped**
-  void handleBeamSelection(
-      int row, int index, List<List<MusicalNote>> sheetNoteRows) {
+  void handleBeamSelection(int row, int index, List<SheetRows> sheetNoteRows) {
     //saveState(sheetNoteRows); // Save for undo
 
     int startRow = selectedRow;
@@ -151,9 +152,9 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
     // Apply beaming to all notes in the range
     for (int r = startRow; r <= endRow; r++) {
       for (int i = (r == startRow ? startIndex : 0);
-          i < (r == endRow ? endIndex : sheetNoteRows[r].length - 1);
+          i < (r == endRow ? endIndex : sheetNoteRows[r].notes.length - 1);
           i++) {
-        sheetNoteRows[r][i].isBeamed = true;
+        sheetNoteRows[r].notes[i].isBeamed = true;
       }
     }
 
@@ -162,8 +163,8 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void beamNotes(int row, int startIndex, int endIndex,
-      List<List<MusicalNote>> sheetNoteRows) {
+  void beamNotes(
+      int row, int startIndex, int endIndex, List<SheetRows> sheetNoteRows) {
     //saveState(sheetNoteRows); // Save for undo
 
     // Ensure selection is left-to-right
@@ -175,7 +176,7 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
 
     // Apply beaming to all notes in the range
     for (int i = startIndex; i <= endIndex; i++) {
-      sheetNoteRows[row][i].isBeamed = true;
+      sheetNoteRows[row].notes[i].isBeamed = true;
     }
 
     notifyListeners();
@@ -187,8 +188,7 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void handleSlurSelection(
-      int row, int index, List<List<MusicalNote>> sheetNoteRows) {
+  void handleSlurSelection(int row, int index, List<SheetRows> sheetNoteRows) {
     //saveState(sheetNoteRows);
 
     int startRow = selectedRow;
@@ -207,10 +207,10 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
       endIndex = tempIndex;
     }
 
-    MusicalNote firstNote = sheetNoteRows[startRow][startIndex];
+    MusicalNote firstNote = sheetNoteRows[startRow].notes[startIndex];
 
-    if (sheetNoteRows[startRow].length < endIndex) {
-      endIndex = sheetNoteRows[startRow].length - 1;
+    if (sheetNoteRows[startRow].notes.length < endIndex) {
+      endIndex = sheetNoteRows[startRow].notes.length - 1;
     }
 
     firstNote.slurEndIndex = endIndex;
@@ -219,8 +219,8 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void slurNotes(int row, int startIndex, int endIndex,
-      List<List<MusicalNote>> sheetNoteRows) {
+  void slurNotes(
+      int row, int startIndex, int endIndex, List<SheetRows> sheetNoteRows) {
     //saveState(sheetNoteRows); // Save for undo
 
     // Ensure selection is left-to-right
@@ -230,14 +230,14 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
       endIndex = tempIndex;
     }
 
-    MusicalNote firstNote = sheetNoteRows[row][startIndex];
+    MusicalNote firstNote = sheetNoteRows[row].notes[startIndex];
     firstNote.slurEndIndex = endIndex;
 
     notifyListeners();
   }
 
-  void crescendoNotes(int row, int startIndex, int endIndex,
-      List<List<MusicalNote>> sheetNoteRows) {
+  void crescendoNotes(
+      int row, int startIndex, int endIndex, List<SheetRows> sheetNoteRows) {
     //saveState(sheetNoteRows); // Save for undo
 
     if (startIndex > endIndex) {
@@ -247,8 +247,8 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
     }
 
     // Remove any overlapping dynamics
-    for (int i = 0; i < sheetNoteRows[row].length; i++) {
-      final note = sheetNoteRows[row][i];
+    for (int i = 0; i < sheetNoteRows[row].notes.length; i++) {
+      final note = sheetNoteRows[row].notes[i];
       if (note.isCrescendoStart && note.crescendoEndIndex != null) {
         if ((i >= startIndex && i <= endIndex) ||
             (note.crescendoEndIndex! >= startIndex &&
@@ -267,15 +267,15 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
       }
     }
 
-    MusicalNote firstNote = sheetNoteRows[row][startIndex];
+    MusicalNote firstNote = sheetNoteRows[row].notes[startIndex];
     firstNote.isCrescendoStart = true;
     firstNote.crescendoEndIndex = endIndex;
 
     notifyListeners();
   }
 
-  void decrescendoNotes(int row, int startIndex, int endIndex,
-      List<List<MusicalNote>> sheetNoteRows) {
+  void decrescendoNotes(
+      int row, int startIndex, int endIndex, List<SheetRows> sheetNoteRows) {
     //saveState(sheetNoteRows); // Save for undo
 
     if (startIndex > endIndex) {
@@ -285,8 +285,8 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
     }
 
     // Remove any overlapping dynamics
-    for (int i = 0; i < sheetNoteRows[row].length; i++) {
-      final note = sheetNoteRows[row][i];
+    for (int i = 0; i < sheetNoteRows[row].notes.length; i++) {
+      final note = sheetNoteRows[row].notes[i];
       if (note.isCrescendoStart && note.crescendoEndIndex != null) {
         if ((i >= startIndex && i <= endIndex) ||
             (note.crescendoEndIndex! >= startIndex &&
@@ -305,7 +305,7 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
       }
     }
 
-    MusicalNote firstNote = sheetNoteRows[row][startIndex];
+    MusicalNote firstNote = sheetNoteRows[row].notes[startIndex];
     firstNote.isDecrescendoStart = true;
     firstNote.decrescendoEndIndex = endIndex;
 
@@ -313,17 +313,17 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
   }
 /*
   /// **Saves the current state for undo**
-  void saveState(List<List<MusicalNote>> sheetNoteRows) {
-    List<List<MusicalNote>> deepCopy = sheetNoteRows
+  void saveState(List<SheetRows> sheetNoteRows) {
+    List<SheetRows> deepCopy = sheetNoteRows
         .map((row) => row.map((note) => note.copy()).toList())
         .toList();
     _history.add(deepCopy);
   }
 
   /// **Undo the last change**
-  void undo(List<List<MusicalNote>> sheetNoteRows) {
+  void undo(List<SheetRows> sheetNoteRows) {
     if (_history.isNotEmpty) {
-      List<List<MusicalNote>> lastState = _history.removeLast();
+      List<SheetRows> lastState = _history.removeLast();
       for (int i = 0; i < sheetNoteRows.length; i++) {
         for (int j = 0; j < sheetNoteRows[i].length - 1; j++) {
           sheetNoteRows[i][j] = lastState[i][j]; // Restore previous state

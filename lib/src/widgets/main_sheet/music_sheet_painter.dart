@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:music_keyboard/models/sheet_rows.dart';
 import 'package:vector_math/vector_math.dart' as vec;
 import 'dart:math' as math;
 import 'package:music_keyboard/models/music_note.dart';
@@ -11,7 +12,7 @@ import 'package:music_keyboard/src/utils/music_sheet_utils/note_width_calculator
 class MusicSheetPainter extends CustomPainter {
   final String title;
   final String composer;
-  final List<List<MusicalNote>> sheetNoteRows;
+  final List<SheetRows> sheetNoteRows;
   final int selectedRow;
   final int selectedIndex;
   final bool showCursor;
@@ -65,14 +66,14 @@ class MusicSheetPainter extends CustomPainter {
       int currentRowSpacing = rowSpacingList[rowIndex];
 
       // Set duration values for notes in this row
-      BarLineCalculator.setNoteDurations(sheetNoteRows[rowIndex]);
+      BarLineCalculator.setNoteDurations(sheetNoteRows[rowIndex].notes);
 
       // Find the applicable time signature for this row
       MusicalNote? timeSignature;
 
       // First check for time signatures within the current row
-      timeSignature =
-          BarLineCalculator.findLastTimeSignature(sheetNoteRows[rowIndex]);
+      timeSignature = BarLineCalculator.findLastTimeSignature(
+          sheetNoteRows[rowIndex].notes);
 
       // If no time signature found in current row, check previous rows
       if (timeSignature == null && rowIndex > 0) {
@@ -95,8 +96,8 @@ class MusicSheetPainter extends CustomPainter {
       MusicalNote? currentBarTimeSignature = timeSignature;
 
       // First pass: identify all bars and their properties
-      for (int i = 0; i < sheetNoteRows[rowIndex].length; i++) {
-        MusicalNote note = sheetNoteRows[rowIndex][i];
+      for (int i = 0; i < sheetNoteRows[rowIndex].notes.length; i++) {
+        MusicalNote note = sheetNoteRows[rowIndex].notes[i];
         double currentX = barStartX + ((i - barStartIndex) * currentRowSpacing);
 
         // Check for time signature changes within the row
@@ -148,16 +149,16 @@ class MusicSheetPainter extends CustomPainter {
       }
 
       // Add the final bar if there are notes after the last bar line
-      if (barStartIndex < sheetNoteRows[rowIndex].length) {
+      if (barStartIndex < sheetNoteRows[rowIndex].notes.length) {
         double endX =
-            80.0 + (sheetNoteRows[rowIndex].length * currentRowSpacing);
+            80.0 + (sheetNoteRows[rowIndex].notes.length * currentRowSpacing);
         bool isOverfilled = currentBarTimeSignature != null &&
             BarLineCalculator.hasBarTooManyNotes(
                 currentBarDuration, currentBarTimeSignature);
 
         bars.add((
           startIndex: barStartIndex,
-          endIndex: sheetNoteRows[rowIndex].length - 1,
+          endIndex: sheetNoteRows[rowIndex].notes.length - 1,
           xStart: barStartX,
           xEnd: endX,
           isOverfilled: isOverfilled
@@ -166,8 +167,8 @@ class MusicSheetPainter extends CustomPainter {
 
       // Second pass: draw all notes
       x = 80.0; // Reset x position for drawing
-      for (int i = 0; i < sheetNoteRows[rowIndex].length; i++) {
-        MusicalNote note = sheetNoteRows[rowIndex][i];
+      for (int i = 0; i < sheetNoteRows[rowIndex].notes.length; i++) {
+        MusicalNote note = sheetNoteRows[rowIndex].notes[i];
 
         bool isSelected = rowIndex == selectedRow && i == selectedIndex;
         bool inHighlight = selectionRow == rowIndex &&
@@ -191,21 +192,21 @@ class MusicSheetPainter extends CustomPainter {
         }
 
         drawNote(canvas, paint, note, lineSpacing, staffTop, x,
-            sheetNoteRows[rowIndex], i, currentRowSpacing, noteColour);
+            sheetNoteRows[rowIndex].notes, i, currentRowSpacing, noteColour);
 
         if (note.isTriplet) {
           _drawTriplet(canvas, paint, x, staffTop, lineSpacing,
-              sheetNoteRows[rowIndex], i, currentRowSpacing);
+              sheetNoteRows[rowIndex].notes, i, currentRowSpacing);
         }
 
         if (note.dynamicCharacter.isNotEmpty) {
           _drawDynamicCharacter(canvas, note, noteColour, x, staffTop,
-              lineSpacing, sheetNoteRows[rowIndex], i);
+              lineSpacing, sheetNoteRows[rowIndex].notes, i);
         }
 
         var staffCenter = staffTop + (lineSpacing * 2);
 
-        if (note.isTiedToNext && i < sheetNoteRows[rowIndex].length - 1) {
+        if (note.isTiedToNext && i < sheetNoteRows[rowIndex].notes.length - 1) {
           double y = calculateNoteYMainSheet(
               note.pitch, note.octave, lineSpacing, staffTop);
           drawTie(canvas, paint, x, staffCenter, x + currentRowSpacing, y);
@@ -218,8 +219,8 @@ class MusicSheetPainter extends CustomPainter {
 
           double endX = 80.0 + (note.slurEndIndex! * currentRowSpacing);
           double endY = calculateNoteYMainSheet(
-              sheetNoteRows[rowIndex][note.slurEndIndex!].pitch,
-              sheetNoteRows[rowIndex][note.slurEndIndex!].octave,
+              sheetNoteRows[rowIndex].notes[note.slurEndIndex!].pitch,
+              sheetNoteRows[rowIndex].notes[note.slurEndIndex!].octave,
               lineSpacing,
               staffTop);
 
@@ -234,7 +235,7 @@ class MusicSheetPainter extends CustomPainter {
               i,
               note.slurEndIndex!,
               noteColour,
-              sheetNoteRows[rowIndex]);
+              sheetNoteRows[rowIndex].notes);
         }
 
         if (note.isCrescendoStart && note.crescendoEndIndex != null) {
@@ -247,7 +248,7 @@ class MusicSheetPainter extends CustomPainter {
               true,
               i,
               note.crescendoEndIndex!,
-              sheetNoteRows[rowIndex],
+              sheetNoteRows[rowIndex].notes,
               rowIndex);
         }
 
@@ -261,7 +262,7 @@ class MusicSheetPainter extends CustomPainter {
               false,
               i,
               note.decrescendoEndIndex!,
-              sheetNoteRows[rowIndex],
+              sheetNoteRows[rowIndex].notes,
               rowIndex);
         }
 
@@ -279,6 +280,7 @@ class MusicSheetPainter extends CustomPainter {
 
       if (rowIndex == selectedRow) {
         int clefCount = sheetNoteRows[rowIndex]
+            .notes
             .where((x) => x.type == NoteType.clef)
             .length;
 
@@ -292,7 +294,7 @@ class MusicSheetPainter extends CustomPainter {
               size,
               currentRowSpacing,
               clefCount,
-              sheetNoteRows[rowIndex],
+              sheetNoteRows[rowIndex].notes,
               lineSpacing);
         }
 
@@ -874,7 +876,7 @@ class MusicSheetPainter extends CustomPainter {
       return;
     }
 
-    final rowNotes = sheetNoteRows[selectionRow!];
+    final rowNotes = sheetNoteRows[selectionRow!].notes;
     if (rowNotes.isEmpty) {
       return;
     }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/music_note.dart';
+import 'package:music_keyboard/models/row_properties.dart';
+import 'package:music_keyboard/models/sheet_rows.dart';
 import 'package:music_keyboard/src/providers/current_selected_note_provider.dart';
 import 'package:music_keyboard/src/providers/is_connected_provider.dart';
 import 'package:music_keyboard/src/providers/list_of_spacing_for_each_row.dart';
@@ -34,7 +36,9 @@ class NoteInputScreen extends StatefulWidget {
 
 class _NoteInputScreenState extends State<NoteInputScreen> {
   final ScreenshotController screenshotController = ScreenshotController();
-  List<List<MusicalNote>> sheetNoteRows = [[]];
+  List<SheetRows> sheetNoteRows = [
+    SheetRows(notes: [], rowProperties: RowProperties(tempoNumber: 0))
+  ];
   int maxNotesPerRow = 18;
   int defaultNoteSpacing = 26;
 
@@ -100,7 +104,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     List<int> rowSpacingList,
   ) {
     // Check if we need to handle row overflow
-    if (sheetNoteRows[selectedNoteProvider.selectedRow].length - 1 >=
+    if (sheetNoteRows[selectedNoteProvider.selectedRow].notes.length - 1 >=
         maxNotesPerRow) {
       // Check if there are any bar notes in the current row
       bool hasBarNotes = _hasBarNotesInRow(selectedNoteProvider.selectedRow);
@@ -120,7 +124,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
   /// Checks if the specified row contains any bar notes
   bool _hasBarNotesInRow(int rowIndex) {
-    for (var note in sheetNoteRows[rowIndex]) {
+    for (var note in sheetNoteRows[rowIndex].notes) {
       if (note.type == NoteType.bar) {
         return true;
       }
@@ -135,7 +139,8 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     List<int> rowSpacingList,
   ) {
     // Create a new row
-    sheetNoteRows.insert(selectedNoteProvider.selectedRow + 1, []);
+    sheetNoteRows.insert(selectedNoteProvider.selectedRow + 1,
+        SheetRows(notes: [], rowProperties: RowProperties(tempoNumber: 0)));
     rowSpacingList.insert(
         selectedNoteProvider.selectedRow + 1, defaultNoteSpacing);
     rowSpacingProvider.updateRowSpacingList(rowSpacingList);
@@ -175,12 +180,12 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   /// Finds the boundaries of the last bar in the specified row
   Map<String, int> _findLastBarBoundaries(int rowIndex) {
     int lastBarStartIndex = 0;
-    int lastBarEndIndex = sheetNoteRows[rowIndex].length - 1;
+    int lastBarEndIndex = sheetNoteRows[rowIndex].notes.length - 1;
 
     // Find the last bar line in the current row
     int lastBarLineIndex = -1;
-    for (int i = sheetNoteRows[rowIndex].length - 1; i >= 0; i--) {
-      if (sheetNoteRows[rowIndex][i].type == NoteType.bar) {
+    for (int i = sheetNoteRows[rowIndex].notes.length - 1; i >= 0; i--) {
+      if (sheetNoteRows[rowIndex].notes[i].type == NoteType.bar) {
         lastBarLineIndex = i;
         break;
       }
@@ -194,7 +199,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     }
 
     // The end is always the end of the row
-    lastBarEndIndex = sheetNoteRows[rowIndex].length - 1;
+    lastBarEndIndex = sheetNoteRows[rowIndex].notes.length - 1;
 
     return {
       'startIndex': lastBarStartIndex,
@@ -211,14 +216,18 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   ) {
     if (sheetNoteRows.length - 1 <= selectedNoteProvider.selectedRow) {
       // Create a new row if we're at the last row
-      sheetNoteRows.insert(selectedNoteProvider.selectedRow + 1, []);
+      sheetNoteRows.insert(selectedNoteProvider.selectedRow + 1,
+          SheetRows(notes: [], rowProperties: RowProperties(tempoNumber: 0)));
       rowSpacingList.insert(rowSpacingList.length, defaultNoteSpacing);
       rowSpacingProvider.updateRowSpacingList(rowSpacingList);
-    } else if (sheetNoteRows[selectedNoteProvider.selectedRow + 1].length +
+    } else if (sheetNoteRows[selectedNoteProvider.selectedRow + 1]
+                .notes
+                .length +
             notesInCurrentBar >
         maxNotesPerRow) {
       // If the next row doesn't have enough space, create a new row
-      sheetNoteRows.insert(selectedNoteProvider.selectedRow + 1, []);
+      sheetNoteRows.insert(selectedNoteProvider.selectedRow + 1,
+          SheetRows(notes: [], rowProperties: RowProperties(tempoNumber: 0)));
       rowSpacingList.insert(rowSpacingList.length, defaultNoteSpacing);
       rowSpacingProvider.updateRowSpacingList(rowSpacingList);
     }
@@ -233,23 +242,24 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     // Collect all notes in the current bar
     List<MusicalNote> notesToMove = [];
     for (int i = lastBarStartIndex; i <= lastBarEndIndex; i++) {
-      notesToMove.add(sheetNoteRows[selectedNoteProvider.selectedRow][i]);
+      notesToMove.add(sheetNoteRows[selectedNoteProvider.selectedRow].notes[i]);
     }
 
     // Remove the notes from the current row (in reverse order to maintain indices)
     for (int i = lastBarEndIndex; i >= lastBarStartIndex; i--) {
-      sheetNoteRows[selectedNoteProvider.selectedRow].removeAt(i);
+      sheetNoteRows[selectedNoteProvider.selectedRow].notes.removeAt(i);
     }
 
     // Insert the notes at the beginning of the next row
     for (int i = 0; i < notesToMove.length; i++) {
       sheetNoteRows[selectedNoteProvider.selectedRow + 1]
+          .notes
           .insert(i, notesToMove[i]);
     }
 
-    if (sheetNoteRows[selectedNoteProvider.selectedRow].last.type ==
+    if (sheetNoteRows[selectedNoteProvider.selectedRow].notes.last.type ==
         NoteType.bar) {
-      sheetNoteRows[selectedNoteProvider.selectedRow].removeLast();
+      sheetNoteRows[selectedNoteProvider.selectedRow].notes.removeLast();
     }
 
     // Update spacing for both the current row and the next row
@@ -269,21 +279,21 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
     //here work out how many clefs/time signatures and affect the spacing in some way based on this?
 
-    if (sheetNoteRows[rowIndex].length < 12) {
+    if (sheetNoteRows[rowIndex].notes.length < 12) {
       rowSpacingList[rowIndex] = 65;
-    } else if (sheetNoteRows[rowIndex].length < 13) {
+    } else if (sheetNoteRows[rowIndex].notes.length < 13) {
       rowSpacingList[rowIndex] = 59;
-    } else if (sheetNoteRows[rowIndex].length < 14) {
+    } else if (sheetNoteRows[rowIndex].notes.length < 14) {
       rowSpacingList[rowIndex] = 54;
-    } else if (sheetNoteRows[rowIndex].length < 15) {
+    } else if (sheetNoteRows[rowIndex].notes.length < 15) {
       rowSpacingList[rowIndex] = 50;
-    } else if (sheetNoteRows[rowIndex].length < 16) {
+    } else if (sheetNoteRows[rowIndex].notes.length < 16) {
       rowSpacingList[rowIndex] = 42;
-    } else if (sheetNoteRows[rowIndex].length < 17) {
+    } else if (sheetNoteRows[rowIndex].notes.length < 17) {
       rowSpacingList[rowIndex] = 38;
-    } else if (sheetNoteRows[rowIndex].length < 18) {
+    } else if (sheetNoteRows[rowIndex].notes.length < 18) {
       rowSpacingList[rowIndex] = 35;
-    } else if (sheetNoteRows[rowIndex].length < 19) {
+    } else if (sheetNoteRows[rowIndex].notes.length < 19) {
       rowSpacingList[rowIndex] = 33;
     }
 
@@ -305,7 +315,8 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         var rowSpacingList = rowSpacingProvider.rowSpacingList;
 
         // Insert new row after current row
-        sheetNoteRows.insert(selectedNoteProvider.selectedRow + 1, []);
+        sheetNoteRows.insert(selectedNoteProvider.selectedRow + 1,
+            SheetRows(notes: [], rowProperties: RowProperties(tempoNumber: 0)));
         rowSpacingList.insert(
             selectedNoteProvider.selectedRow + 1, defaultNoteSpacing);
         rowSpacingProvider.updateRowSpacingList(rowSpacingList);
@@ -332,7 +343,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
       final rowSpacingProvider = context.read<ListOfSpacingForEachRow>();
       var rowSpacingList = rowSpacingProvider.rowSpacingList;
 
-      if (sheetNoteRows[selectedNoteProvider.selectedRow].isEmpty) {
+      if (sheetNoteRows[selectedNoteProvider.selectedRow].notes.isEmpty) {
         sheetNoteRows.remove(sheetNoteRows[selectedNoteProvider.selectedRow]);
 
         rowSpacingList.remove(rowSpacingList[selectedNoteProvider.selectedRow]);
@@ -340,15 +351,19 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
         selectedNoteProvider.updateInsertionPoint(
             selectedNoteProvider.selectedRow - 1,
-            sheetNoteRows[selectedNoteProvider.selectedRow - 1].isEmpty
+            sheetNoteRows[selectedNoteProvider.selectedRow - 1].notes.isEmpty
                 ? 0
-                : sheetNoteRows[selectedNoteProvider.selectedRow - 1].length);
-      } else if (sheetNoteRows[selectedNoteProvider.selectedRow].isNotEmpty &&
+                : sheetNoteRows[selectedNoteProvider.selectedRow - 1]
+                    .notes
+                    .length);
+      } else if (sheetNoteRows[selectedNoteProvider.selectedRow]
+              .notes
+              .isNotEmpty &&
           selectedNoteProvider.insertionIndex > 0) {
         // Get the note that will be removed
         MusicalNote noteToRemove =
             sheetNoteRows[selectedNoteProvider.selectedRow]
-                [selectedNoteProvider.insertionIndex - 1];
+                .notes[selectedNoteProvider.insertionIndex - 1];
 
         // Update cursor position before removing the note
         selectedNoteProvider.updateInsertionPoint(
@@ -356,7 +371,8 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
             selectedNoteProvider.insertionIndex - 1);
 
         // Handle slur indices
-        for (var note in sheetNoteRows[selectedNoteProvider.selectedRow]) {
+        for (var note
+            in sheetNoteRows[selectedNoteProvider.selectedRow].notes) {
           if (note.slurEndIndex == selectedNoteProvider.insertionIndex) {
             note.slurEndIndex = null;
           }
@@ -366,11 +382,14 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         //selectedNoteProvider.saveState(sheetNoteRows);
 
         // Remove the note
-        sheetNoteRows[selectedNoteProvider.selectedRow].remove(noteToRemove);
+        sheetNoteRows[selectedNoteProvider.selectedRow]
+            .notes
+            .remove(noteToRemove);
 
         // After removing the note, check and update crescendo/decrescendo end indices
         final int removedNoteIndex = selectedNoteProvider.insertionIndex;
-        for (var note in sheetNoteRows[selectedNoteProvider.selectedRow]) {
+        for (var note
+            in sheetNoteRows[selectedNoteProvider.selectedRow].notes) {
           if (note.crescendoEndIndex != null &&
               note.crescendoEndIndex == removedNoteIndex) {
             note.crescendoEndIndex = note.crescendoEndIndex! - 1;
@@ -913,13 +932,13 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                                 if (sheetNoteRows[
                                                         selectedNoteProvider
                                                             .selectedRow]
+                                                    .notes
                                                     .isNotEmpty) {
                                                   setState(() {
                                                     final selectedNote =
-                                                        sheetNoteRows[
-                                                                selectedNoteProvider
+                                                        sheetNoteRows[selectedNoteProvider
                                                                     .selectedRow]
-                                                            [
+                                                                .notes[
                                                             selectedNoteProvider
                                                                 .selectedIndex];
                                                     selectedNote.isBeamed =
@@ -938,12 +957,13 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                                   ? Colors.black
                                                   : (sheetNoteRows[selectedNoteProvider
                                                                   .selectedRow]
+                                                              .notes
                                                               .isNotEmpty &&
-                                                          sheetNoteRows[selectedNoteProvider
-                                                                      .selectedRow]
-                                                                  [
+                                                          sheetNoteRows[
                                                                   selectedNoteProvider
-                                                                      .selectedIndex]
+                                                                      .selectedRow]
+                                                              .notes[selectedNoteProvider
+                                                                  .selectedIndex]
                                                               .isBeamed)
                                                       ? Colors.grey[400]
                                                       : Colors.grey[100],

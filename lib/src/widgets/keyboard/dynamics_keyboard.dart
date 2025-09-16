@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/music_note.dart';
+import 'package:music_keyboard/models/sheet_rows.dart';
 import 'package:music_keyboard/src/providers/current_selected_note_provider.dart';
 import 'package:provider/provider.dart';
 
 class DynamicsKeyboard extends StatelessWidget {
   final VoidCallback onToggleKeyboard;
-  final List<List<MusicalNote>> sheetNoteRows;
+  final List<SheetRows> sheetNoteRows;
 
   const DynamicsKeyboard(
       {super.key, required this.onToggleKeyboard, required this.sheetNoteRows});
@@ -16,8 +17,8 @@ class DynamicsKeyboard extends StatelessWidget {
         Provider.of<CurrentSelectedNoteProvider>(context);
     final selectedIndex = currentSelectedNoteProvider.selectedIndex;
     final selectedRow = currentSelectedNoteProvider.selectedRow;
-    final selectedNote = sheetNoteRows[selectedRow].length > selectedIndex
-        ? sheetNoteRows[selectedRow][selectedIndex]
+    final selectedNote = sheetNoteRows[selectedRow].notes.length > selectedIndex
+        ? sheetNoteRows[selectedRow].notes[selectedIndex]
         : null;
 
     final List<String> cresendoCharacters = [

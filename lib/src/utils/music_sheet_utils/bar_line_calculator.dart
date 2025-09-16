@@ -1,4 +1,5 @@
 import 'package:music_keyboard/models/music_note.dart';
+import 'package:music_keyboard/models/sheet_rows.dart';
 
 /// Utility class for handling time signatures and bar line calculations
 class BarLineCalculator {
@@ -57,10 +58,10 @@ class BarLineCalculator {
 
   /// Find the last time signature across all rows up to the current row
   static MusicalNote? findLastTimeSignatureAcrossRows(
-      List<List<MusicalNote>> allRows, int currentRowIndex) {
+      List<SheetRows> allRows, int currentRowIndex) {
     MusicalNote? lastTimeSignature;
     for (int i = 0; i <= currentRowIndex; i++) {
-      MusicalNote? rowTimeSignature = findLastTimeSignature(allRows[i]);
+      MusicalNote? rowTimeSignature = findLastTimeSignature(allRows[i].notes);
       if (rowTimeSignature != null) {
         lastTimeSignature = rowTimeSignature;
       }

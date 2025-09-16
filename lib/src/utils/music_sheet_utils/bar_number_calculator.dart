@@ -1,16 +1,17 @@
 import 'package:music_keyboard/models/music_note.dart';
+import 'package:music_keyboard/models/sheet_rows.dart';
 
 /// Utility class for calculating bar numbers for each row
 class BarNumberCalculator {
   /// Calculate the bar number for a specific row
   /// This is the total number of bars in all previous rows + 1
   static int calculateBarNumberForRow(
-      List<List<MusicalNote>> sheetNoteRows, int rowIndex) {
+      List<SheetRows> sheetNoteRows, int rowIndex) {
     int totalBarsInPreviousRows = 0;
 
     // Count bars in all previous rows
     for (int i = 0; i < rowIndex; i++) {
-      totalBarsInPreviousRows += countBarsInRow(sheetNoteRows[i]);
+      totalBarsInPreviousRows += countBarsInRow(sheetNoteRows[i].notes);
     }
 
     // Return the bar number for this row (previous bars + 1)
@@ -48,7 +49,7 @@ class BarNumberCalculator {
 
   /// Get bar numbers for all rows in the sheet
   static List<int> calculateBarNumbersForAllRows(
-      List<List<MusicalNote>> sheetNoteRows) {
+      List<SheetRows> sheetNoteRows) {
     List<int> barNumbers = [];
 
     for (int i = 0; i < sheetNoteRows.length; i++) {

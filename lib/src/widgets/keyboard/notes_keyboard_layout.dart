@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/music_note.dart';
+import 'package:music_keyboard/models/sheet_rows.dart';
 import 'package:music_keyboard/src/providers/current_selected_note_provider.dart';
 import 'package:music_keyboard/src/providers/selected_accidental_provider.dart';
 import 'package:music_keyboard/src/widgets/keyboard/note_head_keyboard/keyboard_by_symbols.dart';
@@ -12,7 +13,7 @@ class NotesKeyboardLayout extends StatefulWidget {
   final void Function(bool) onToggleKeyboard;
   final void Function(MusicalNote) onKeyPress;
   final VoidCallback onToggleDynamicsKeyboard;
-  final List<List<MusicalNote>> sheetNoteRows;
+  final List<SheetRows> sheetNoteRows;
 
   const NotesKeyboardLayout({
     super.key,
@@ -502,8 +503,8 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
     final selectedNoteIndex = currentSelectedNoteProvider.selectedIndex;
     final selectedRow = currentSelectedNoteProvider.selectedRow;
     final selectedNote = (widget.sheetNoteRows.isNotEmpty &&
-            widget.sheetNoteRows[selectedRow].length > selectedNoteIndex)
-        ? widget.sheetNoteRows[selectedRow][selectedNoteIndex]
+            widget.sheetNoteRows[selectedRow].notes.length > selectedNoteIndex)
+        ? widget.sheetNoteRows[selectedRow].notes[selectedNoteIndex]
         : null;
 
     List<String> unicodeCharacters = [
