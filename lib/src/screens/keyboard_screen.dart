@@ -48,6 +48,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   bool showSymbolsKeyboard = false;
   bool isTieing = false;
   bool showMenu = false;
+  bool showToolsMenu = false;
   bool isBeamLockActive = false;
   DateTime? _lastTapTime;
   String _title = '';
@@ -564,14 +565,159 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                       ),
                     ),
 
-                    // Floating Menu Button - Top Right
+                    // Floating Tools Menu Button - Top Right
                     Positioned(
                       top: 10,
                       right: 5,
                       child: GestureDetector(
                         onTap: () {
                           setState(() {
+                            showToolsMenu = !showToolsMenu;
+                            showMenu = false;
+                          });
+                        },
+                        child: Container(
+                          width: 35,
+                          height: 35,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(25),
+                            border: Border.all(
+                              color: Colors.black,
+                              width: 1,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.3),
+                                spreadRadius: 2,
+                                blurRadius: 5,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.build,
+                            color: Color.fromARGB(255, 0, 0, 0),
+                            size: 24,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Tap outside to close menu (positioned first so it's behind the menu)
+                    if (showToolsMenu)
+                      Positioned.fill(
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              showToolsMenu = false;
+                              showMenu = false;
+                            });
+                          },
+                          child: Container(
+                            color: Colors.transparent,
+                          ),
+                        ),
+                      ),
+
+                    // Popup Menu - appears next to the menu button (positioned after overlay so it's on top)
+                    if (showToolsMenu)
+                      Positioned(
+                        top: statusBarHeight + 15, // Below the menu button
+                        right: 15,
+                        child: Material(
+                          elevation: 8,
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            width: 150,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                InkWell(
+                                  onTap: () {
+                                    setState(() {
+                                      showToolsMenu = false;
+                                    });
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => TitlePopup(
+                                        initialTitle: _title,
+                                        initialComposer: _composer,
+                                        onSave: (newTitle, newComposer) {
+                                          setState(() {
+                                            _title = newTitle;
+                                            _composer = newComposer;
+                                          });
+                                        },
+                                      ),
+                                    );
+                                  },
+                                  borderRadius: const BorderRadius.only(
+                                    bottomLeft: Radius.circular(8),
+                                    bottomRight: Radius.circular(8),
+                                  ),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 12, horizontal: 16),
+                                    child: const Row(
+                                      children: [
+                                        Icon(Icons.title,
+                                            size: 20, color: Colors.black),
+                                        SizedBox(width: 8),
+                                        Text('Title',
+                                            style: TextStyle(fontSize: 14)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                // Divider
+                                Container(
+                                  height: 1,
+                                  color: Colors.grey[300],
+                                ),
+                                // Add Button
+                                InkWell(
+                                  onTap: () {
+                                    setState(() {
+                                      showToolsMenu = false;
+                                    });
+                                    forceNewRow();
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 12, horizontal: 16),
+                                    child: const Row(
+                                      children: [
+                                        Icon(Icons.add,
+                                            size: 20, color: Colors.black),
+                                        SizedBox(width: 8),
+                                        Text('Add New Line',
+                                            style: TextStyle(fontSize: 14)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+
+                                // Title Button
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+
+                    // Floating Menu Button - Top left
+                    Positioned(
+                      top: 10,
+                      left: 5,
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
                             showMenu = !showMenu;
+                            showToolsMenu = false;
                           });
                         },
                         child: Container(
@@ -609,6 +755,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                           onTap: () {
                             setState(() {
                               showMenu = false;
+                              showToolsMenu = false;
                             });
                           },
                           child: Container(
@@ -621,7 +768,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                     if (showMenu)
                       Positioned(
                         top: statusBarHeight + 15, // Below the menu button
-                        right: 15,
+                        left: 15,
                         child: Material(
                           elevation: 8,
                           borderRadius: BorderRadius.circular(8),
@@ -682,76 +829,6 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                             size: 20, color: Colors.black),
                                         SizedBox(width: 8),
                                         Text('Export',
-                                            style: TextStyle(fontSize: 14)),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                // Divider
-                                Container(
-                                  height: 1,
-                                  color: Colors.grey[300],
-                                ),
-                                // Add Button
-                                InkWell(
-                                  onTap: () {
-                                    setState(() {
-                                      showMenu = false;
-                                    });
-                                    forceNewRow();
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 12, horizontal: 16),
-                                    child: const Row(
-                                      children: [
-                                        Icon(Icons.add,
-                                            size: 20, color: Colors.black),
-                                        SizedBox(width: 8),
-                                        Text('Add',
-                                            style: TextStyle(fontSize: 14)),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                // Divider
-                                Container(
-                                  height: 1,
-                                  color: Colors.grey[300],
-                                ),
-                                // Title Button
-                                InkWell(
-                                  onTap: () {
-                                    setState(() {
-                                      showMenu = false;
-                                    });
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) => TitlePopup(
-                                        initialTitle: _title,
-                                        initialComposer: _composer,
-                                        onSave: (newTitle, newComposer) {
-                                          setState(() {
-                                            _title = newTitle;
-                                            _composer = newComposer;
-                                          });
-                                        },
-                                      ),
-                                    );
-                                  },
-                                  borderRadius: const BorderRadius.only(
-                                    bottomLeft: Radius.circular(8),
-                                    bottomRight: Radius.circular(8),
-                                  ),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 12, horizontal: 16),
-                                    child: const Row(
-                                      children: [
-                                        Icon(Icons.title,
-                                            size: 20, color: Colors.black),
-                                        SizedBox(width: 8),
-                                        Text('Title',
                                             style: TextStyle(fontSize: 14)),
                                       ],
                                     ),
