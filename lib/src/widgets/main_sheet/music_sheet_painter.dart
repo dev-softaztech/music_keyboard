@@ -62,6 +62,9 @@ class MusicSheetPainter extends CustomPainter {
       // Draw bar number above the start of this row
       _drawBarNumber(canvas, rowIndex, staffTop);
 
+      // Draw tempo above the left side of this row if set
+      _drawTempo(canvas, rowIndex, staffTop);
+
       double x = 80.0;
       int currentRowSpacing = rowSpacingList[rowIndex];
 
@@ -375,6 +378,37 @@ class MusicSheetPainter extends CustomPainter {
     final double x = 75 - textPainter.width;
     // Y position: above the staff with some padding
     final double y = staffTop - 35;
+
+    textPainter.paint(canvas, Offset(x, y));
+  }
+
+  /// Draw tempo above the left side of a row if set
+  void _drawTempo(Canvas canvas, int rowIndex, double staffTop) {
+    // Check if this row has a tempo set
+    final tempo = sheetNoteRows[rowIndex].rowProperties.tempoNumber;
+    if (tempo <= 0) {
+      return; // Don't draw tempo if it's 0 or negative
+    }
+
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: 'Tempo = ${tempo.round()}bpm',
+        style: const TextStyle(
+          color: Colors.black,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+
+    textPainter.layout();
+
+    // Position the tempo above the left side of the staff
+    // X position: aligned with the start of the staff (80 is where notes start)
+    final double x = 80;
+    // Y position: above the staff with some padding, but below bar numbers
+    final double y = staffTop - 55;
 
     textPainter.paint(canvas, Offset(x, y));
   }

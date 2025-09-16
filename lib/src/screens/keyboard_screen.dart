@@ -13,6 +13,7 @@ import 'package:music_keyboard/src/utils/pdf_exporter.dart';
 import 'package:music_keyboard/src/utils/screenshot_saver.dart';
 import 'package:music_keyboard/src/utils/toast_utils.dart';
 import 'package:music_keyboard/src/widgets/main_sheet/title_popup.dart';
+import 'package:music_keyboard/src/widgets/keyboard/tempo_popup.dart';
 import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
 
@@ -715,6 +716,52 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                             size: 20, color: Colors.black),
                                         SizedBox(width: 8),
                                         Text('Add New Line',
+                                            style: TextStyle(fontSize: 14)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                // Divider
+                                Container(
+                                  height: 1,
+                                  color: Colors.grey[300],
+                                ),
+                                // Tempo Button
+                                InkWell(
+                                  onTap: () {
+                                    setState(() {
+                                      showToolsMenu = false;
+                                    });
+                                    final selectedNoteProvider = context
+                                        .read<CurrentSelectedNoteProvider>();
+                                    final currentTempo = sheetNoteRows[
+                                            selectedNoteProvider.selectedRow]
+                                        .rowProperties
+                                        .tempoNumber;
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => TempoPopup(
+                                        initialTempo: currentTempo,
+                                        onSave: (tempo) {
+                                          setState(() {
+                                            sheetNoteRows[selectedNoteProvider
+                                                    .selectedRow]
+                                                .rowProperties
+                                                .tempoNumber = tempo;
+                                          });
+                                        },
+                                      ),
+                                    );
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 12, horizontal: 16),
+                                    child: const Row(
+                                      children: [
+                                        Icon(Icons.speed,
+                                            size: 20, color: Colors.black),
+                                        SizedBox(width: 8),
+                                        Text('Tempo',
                                             style: TextStyle(fontSize: 14)),
                                       ],
                                     ),
