@@ -39,21 +39,21 @@ class DynamicsKeyboard extends StatelessWidget {
     ];
 
     return SizedBox(
-      height: 290,
+      height: 330,
       child: Row(
         children: [
           Column(
             children: [
               const SizedBox(
-                height: 243,
+                height: 293,
                 //width: 40,
               ),
               Container(
-                margin: EdgeInsets.fromLTRB(8, 0, 0, 0),
-                padding: EdgeInsets.fromLTRB(8, 0, 0, 0),
+                margin: EdgeInsets.fromLTRB(7, 0, 0, 0),
+                padding: EdgeInsets.fromLTRB(7, 0, 0, 0),
                 child: SizedBox(
-                  width: 30,
-                  height: 40,
+                  width: 40,
+                  height: 30,
                   child: ElevatedButton(
                     onPressed: onToggleKeyboard,
                     style: ElevatedButton.styleFrom(
@@ -65,7 +65,7 @@ class DynamicsKeyboard extends StatelessWidget {
                       padding: EdgeInsets.zero,
                     ),
                     child: Transform.translate(
-                      offset: Offset(0, 10),
+                      offset: Offset(0, 4),
                       child: Text(
                         '\ue1d5',
                         style: TextStyle(

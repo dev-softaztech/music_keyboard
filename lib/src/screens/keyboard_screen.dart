@@ -941,8 +941,6 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                         });
                                       },
                                       onKeyPress: handleKeyPress,
-                                      onToggleDynamicsKeyboard:
-                                          _toggleDynamicsKeyboard,
                                     ),
                                 ],
                               ),
@@ -950,6 +948,37 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                 Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
+                                      //Dynamics button
+                                      SizedBox(
+                                        width: 40,
+                                        height: 30,
+                                        child: ElevatedButton(
+                                          onPressed: _toggleDynamicsKeyboard,
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.grey[100],
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              side: BorderSide(
+                                                  color: Colors.black,
+                                                  width: 1),
+                                            ),
+                                            padding: EdgeInsets.zero,
+                                          ),
+                                          child: Transform.translate(
+                                              offset: const Offset(-1, 1),
+                                              child: Text(
+                                                '  \uE52F',
+                                                style: const TextStyle(
+                                                  color: Colors.black,
+                                                  fontSize: 27,
+                                                  //fontWeight: FontWeight.bold,
+                                                  fontFamily: 'Bravura',
+                                                ),
+                                              )),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
                                       Consumer<CurrentSelectedNoteProvider>(
                                         builder: (context, selectedNoteProvider,
                                                 _) =>
@@ -1003,7 +1032,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                             _lastTapTime = now;
                                           },
                                           child: Container(
-                                            width: 60,
+                                            width: 50,
                                             height: 30,
                                             decoration: BoxDecoration(
                                               color: isBeamLockActive
@@ -1053,9 +1082,50 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                           ),
                                         ),
                                       ),
-                                      const SizedBox(width: 15),
+                                      const SizedBox(width: 10),
                                       SizedBox(
-                                        width: 180,
+                                        width: 95,
+                                        height: 30,
+                                        child: ElevatedButton(
+                                          onPressed: () {
+                                            handleKeyPress(MusicalNote(
+                                                pitch: "D",
+                                                octave: 4,
+                                                type: NoteType.space,
+                                                isBeamed: false,
+                                                unicodeCharacter:
+                                                    _selectedBarUnicode));
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.grey[100],
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              side: const BorderSide(
+                                                  color: Colors.black,
+                                                  width: 1),
+                                            ),
+                                            padding: EdgeInsets.zero,
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              const Text(
+                                                'SPACE',
+                                                style: TextStyle(
+                                                  color: Colors.black,
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      SizedBox(
+                                        width: 105,
                                         height: 30,
                                         child: GestureDetector(
                                           onLongPress: () {
@@ -1115,9 +1185,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                           ),
                                         ),
                                       ),
-                                      const SizedBox(width: 15),
+                                      const SizedBox(width: 10),
                                       SizedBox(
-                                        width: 60,
+                                        width: 50,
                                         height: 30,
                                         child: ElevatedButton(
                                           onPressed: handleBackspacePress,

@@ -12,7 +12,6 @@ class NotesKeyboardLayout extends StatefulWidget {
   final bool showNotesKeyboard;
   final void Function(bool) onToggleKeyboard;
   final void Function(MusicalNote) onKeyPress;
-  final VoidCallback onToggleDynamicsKeyboard;
   final List<SheetRows> sheetNoteRows;
 
   const NotesKeyboardLayout({
@@ -20,7 +19,6 @@ class NotesKeyboardLayout extends StatefulWidget {
     required this.showNotesKeyboard,
     required this.onToggleKeyboard,
     required this.onKeyPress,
-    required this.onToggleDynamicsKeyboard,
     required this.sheetNoteRows,
   });
 
@@ -527,8 +525,8 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
             Row(
               children: [
                 Container(
-                  margin: EdgeInsets.fromLTRB(8, 0, 0, 0),
-                  padding: EdgeInsets.fromLTRB(8, 0, 0, 0),
+                  margin: EdgeInsets.fromLTRB(7, 0, 0, 0),
+                  padding: EdgeInsets.fromLTRB(7, 0, 0, 0),
                   child: Row(
                     children: [
                       SizedBox(
@@ -561,39 +559,6 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                                 //fontWeight: FontWeight.bold,
                                 fontFamily: 'Bravura',
                               ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 5),
-                      //Bass clef
-                      SizedBox(
-                        width: 30,
-                        height: 40,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            widget.onKeyPress(MusicalNote(
-                                pitch: "D",
-                                octave: 5,
-                                type: NoteType.clef,
-                                isBeamed: false,
-                                unicodeCharacter: "\uf474"));
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.grey[100],
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              side: BorderSide(color: Colors.black, width: 1),
-                            ),
-                            padding: EdgeInsets.zero,
-                          ),
-                          child: Text(
-                            '\uf474',
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 20,
-                              //fontWeight: FontWeight.bold,
-                              fontFamily: 'Bravura',
                             ),
                           ),
                         ),
@@ -664,6 +629,39 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                 padding: EdgeInsets.fromLTRB(0, 2, 5, 5),
                 child: Column(
                   children: [
+                    //Bass clef
+                    SizedBox(
+                      width: 30,
+                      height: 40,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          widget.onKeyPress(MusicalNote(
+                              pitch: "D",
+                              octave: 5,
+                              type: NoteType.clef,
+                              isBeamed: false,
+                              unicodeCharacter: "\uf474"));
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey[100],
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            side: BorderSide(color: Colors.black, width: 1),
+                          ),
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: Text(
+                          '\uf474',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 20,
+                            //fontWeight: FontWeight.bold,
+                            fontFamily: 'Bravura',
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 5),
                     // Time signature button
                     SizedBox(
                       width: 30,
@@ -785,34 +783,6 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: 9),
-                    //Dynamics button
-                    SizedBox(
-                      width: 30,
-                      height: 40,
-                      child: ElevatedButton(
-                        onPressed: widget.onToggleDynamicsKeyboard,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey[100],
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            side: BorderSide(color: Colors.black, width: 1),
-                          ),
-                          padding: EdgeInsets.zero,
-                        ),
-                        child: Transform.translate(
-                            offset: const Offset(2, 5),
-                            child: Text(
-                              '\uE52F',
-                              style: const TextStyle(
-                                color: Colors.black,
-                                fontSize: 27,
-                                //fontWeight: FontWeight.bold,
-                                fontFamily: 'Bravura',
-                              ),
-                            )),
                       ),
                     ),
                   ],

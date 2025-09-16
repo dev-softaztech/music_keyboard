@@ -74,5 +74,6 @@ enum NoteType {
   rest,
   accidental,
   bar,
-  timeSignature
+  timeSignature,
+  space
 }
