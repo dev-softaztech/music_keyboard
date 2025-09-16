@@ -734,20 +734,26 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                     });
                                     final selectedNoteProvider = context
                                         .read<CurrentSelectedNoteProvider>();
-                                    final currentTempo = sheetNoteRows[
+                                    final currentRowProperties = sheetNoteRows[
                                             selectedNoteProvider.selectedRow]
-                                        .rowProperties
-                                        .tempoNumber;
+                                        .rowProperties;
                                     showDialog(
                                       context: context,
                                       builder: (context) => TempoPopup(
-                                        initialTempo: currentTempo,
-                                        onSave: (tempo) {
+                                        initialTempo:
+                                            currentRowProperties.tempoNumber,
+                                        initialSwing:
+                                            currentRowProperties.swing,
+                                        onSave: (tempo, swing) {
                                           setState(() {
                                             sheetNoteRows[selectedNoteProvider
                                                     .selectedRow]
                                                 .rowProperties
                                                 .tempoNumber = tempo;
+                                            sheetNoteRows[selectedNoteProvider
+                                                    .selectedRow]
+                                                .rowProperties
+                                                .swing = swing;
                                           });
                                         },
                                       ),

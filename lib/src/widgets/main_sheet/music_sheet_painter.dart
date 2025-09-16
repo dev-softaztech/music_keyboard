@@ -65,6 +65,9 @@ class MusicSheetPainter extends CustomPainter {
       // Draw tempo above the left side of this row if set
       _drawTempo(canvas, rowIndex, staffTop);
 
+      // Draw swing below the tempo if set
+      _drawSwing(canvas, rowIndex, staffTop);
+
       double x = 80.0;
       int currentRowSpacing = rowSpacingList[rowIndex];
 
@@ -409,6 +412,37 @@ class MusicSheetPainter extends CustomPainter {
     final double x = 80;
     // Y position: above the staff with some padding, but below bar numbers
     final double y = staffTop - 55;
+
+    textPainter.paint(canvas, Offset(x, y));
+  }
+
+  /// Draw swing below the tempo if set
+  void _drawSwing(Canvas canvas, int rowIndex, double staffTop) {
+    // Check if this row has swing set
+    final swing = sheetNoteRows[rowIndex].rowProperties.swing;
+    if (!swing) {
+      return; // Don't draw swing if it's false
+    }
+
+    final textPainter = TextPainter(
+      text: const TextSpan(
+        text: 'Swing',
+        style: TextStyle(
+          color: Colors.black,
+          fontSize: 16,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+
+    textPainter.layout();
+
+    // Position the swing below the tempo
+    // X position: aligned with the start of the staff (80 is where notes start)
+    final double x = 80;
+    // Y position: below the tempo text
+    final double y = staffTop - 40;
 
     textPainter.paint(canvas, Offset(x, y));
   }
