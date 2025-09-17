@@ -4,12 +4,14 @@ import 'package:flutter/services.dart';
 class TempoPopup extends StatefulWidget {
   final double initialTempo;
   final bool initialSwing;
-  final void Function(double, bool) onSave;
+  final String initialSwingText;
+  final void Function(double, bool, String) onSave;
 
   const TempoPopup({
     super.key,
     required this.initialTempo,
     required this.initialSwing,
+    required this.initialSwingText,
     required this.onSave,
   });
 
@@ -19,7 +21,8 @@ class TempoPopup extends StatefulWidget {
 
 class _TempoPopupState extends State<TempoPopup> {
   late TextEditingController _tempoController;
-  late bool _swingValue;
+  late TextEditingController _swungController;
+  late bool _swungValue;
   final _formKey = GlobalKey<FormState>();
 
   @override
@@ -29,7 +32,12 @@ class _TempoPopupState extends State<TempoPopup> {
       text:
           widget.initialTempo > 0 ? widget.initialTempo.round().toString() : '',
     );
-    _swingValue = widget.initialSwing;
+
+    _swungController = TextEditingController(
+      text: widget.initialSwingText == '' ? 'Swung' : widget.initialSwingText,
+    );
+
+    _swungValue = widget.initialSwing;
   }
 
   @override
@@ -41,7 +49,8 @@ class _TempoPopupState extends State<TempoPopup> {
   void _saveTempo() {
     if (_formKey.currentState!.validate()) {
       final tempo = double.tryParse(_tempoController.text) ?? 0;
-      widget.onSave(tempo, _swingValue);
+      final swungText = _swungController.text;
+      widget.onSave(tempo, _swungValue, swungText);
       Navigator.of(context).pop();
     }
   }
@@ -99,23 +108,38 @@ class _TempoPopupState extends State<TempoPopup> {
                   ),
                 ],
               ),
-              const SizedBox(height: 5),
+              const SizedBox(height: 15),
               // Swing row
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text(
-                    'Swing',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                  ),
-                  const SizedBox(width: 5),
                   Checkbox(
-                    value: _swingValue,
+                    value: _swungValue,
                     onChanged: (bool? value) {
                       setState(() {
-                        _swingValue = value ?? false;
+                        _swungValue = value ?? false;
                       });
                     },
+                  ),
+                  SizedBox(
+                    width: 120,
+                    child: TextFormField(
+                      controller: _swungController,
+                      keyboardType: TextInputType.text,
+                      enabled: _swungValue,
+                      textAlign: TextAlign.center,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        contentPadding:
+                            EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                      ),
+                      validator: (value) {
+                        if (value == null) {
+                          return 'Required';
+                        }
+                        return null;
+                      },
+                    ),
                   ),
                 ],
               ),

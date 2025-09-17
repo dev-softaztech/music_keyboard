@@ -425,8 +425,8 @@ class MusicSheetPainter extends CustomPainter {
     }
 
     final textPainter = TextPainter(
-      text: const TextSpan(
-        text: 'Swing',
+      text: TextSpan(
+        text: sheetNoteRows[rowIndex].rowProperties.swingText,
         style: TextStyle(
           color: Colors.black,
           fontSize: 16,

@@ -744,7 +744,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                             currentRowProperties.tempoNumber,
                                         initialSwing:
                                             currentRowProperties.swing,
-                                        onSave: (tempo, swing) {
+                                        initialSwingText:
+                                            currentRowProperties.swingText,
+                                        onSave: (tempo, swing, swingText) {
                                           setState(() {
                                             sheetNoteRows[selectedNoteProvider
                                                     .selectedRow]
@@ -754,6 +756,10 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                                     .selectedRow]
                                                 .rowProperties
                                                 .swing = swing;
+                                            sheetNoteRows[selectedNoteProvider
+                                                    .selectedRow]
+                                                .rowProperties
+                                                .swingText = swingText;
                                           });
                                         },
                                       ),
