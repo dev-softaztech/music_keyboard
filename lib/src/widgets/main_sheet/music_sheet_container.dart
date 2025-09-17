@@ -20,6 +20,7 @@ class MusicSheetContainer extends StatefulWidget {
   final double statusBarHeight;
   final String title;
   final String composer;
+  final Function(VoidCallback)? onClearHighlightingCallback;
 
   const MusicSheetContainer({
     super.key,
@@ -30,6 +31,7 @@ class MusicSheetContainer extends StatefulWidget {
     required this.statusBarHeight,
     required this.title,
     required this.composer,
+    this.onClearHighlightingCallback,
   });
 
   @override
@@ -99,6 +101,36 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
       setState(() {
         _showCursor = !_showCursor; // Toggle cursor visibility
       });
+    });
+
+    // Set up the callback for clearing highlighting
+    if (widget.onClearHighlightingCallback != null) {
+      widget.onClearHighlightingCallback!(clearHighlighting);
+    }
+  }
+
+  /// Method to clear any active highlighting
+  void clearHighlighting() {
+    setState(() {
+      _dragStart = null;
+      _dragEnd = null;
+      _dragRow = null;
+      _isDraggingLeftHandle = false;
+      _isDraggingRightHandle = false;
+      _fixedBoundary = null;
+      _showHighlightButtons = false;
+      _showTieButton = false;
+      _showDynamicRemoveButton = false;
+      _showBeamAddButton = false;
+      _showBeamRemoveButton = false;
+      _showSlurRemoveButton = false;
+      _showDecrescendoRemoveButton = false;
+      _showCrescendoRemoveButton = false;
+      _showTieRemoveState = false;
+      _editingDynamicIndex = null;
+      _editingDynamicRow = null;
+      _isEditingDynamic = false;
+      _isDragging = false;
     });
   }
 

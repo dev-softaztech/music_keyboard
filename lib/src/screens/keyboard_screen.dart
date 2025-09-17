@@ -63,6 +63,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   String _selectedBarUnicode = '\ue030';
   OverlayEntry? _barOverlayEntry;
 
+  // Callback function to clear highlighting
+  VoidCallback? _clearHighlightingCallback;
+
   void handleKeyPress(MusicalNote note) {
     try {
       final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
@@ -333,6 +336,10 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
   // Remove the last note from the list
   void handleBackspacePress() {
+    // Clear any active highlighting first to prevent app crashes
+    // when notes in the highlight range get removed
+    _clearHighlighting();
+
     setState(() {
       final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
 
@@ -404,6 +411,14 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
       updateRowSpacing(selectedNoteProvider.selectedRow);
     });
+  }
+
+  // Helper method to clear any active highlighting
+  void _clearHighlighting() {
+    // Use the callback to clear highlighting in MusicSheetContainer
+    if (_clearHighlightingCallback != null) {
+      _clearHighlightingCallback!();
+    }
   }
 
   // Save the current screenshot to the gallery and show a toast
@@ -579,6 +594,11 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                             statusBarHeight: statusBarHeight,
                             title: _title,
                             composer: _composer,
+                            onClearHighlightingCallback:
+                                (clearHighlightingCallback) {
+                              _clearHighlightingCallback =
+                                  clearHighlightingCallback;
+                            },
                           ),
                           const Spacer(), // Pushes the keyboard container to the bottom
                         ],
