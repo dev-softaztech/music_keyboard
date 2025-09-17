@@ -26,6 +26,8 @@ void drawNote(
   } else if (note.type == NoteType.rest) {
     drawRestKey(canvas, paint, note, lineSpacing, staffTop, noteX, notes, index,
         noteColour);
+  } else if (note.type == NoteType.space) {
+    return;
   } else {
     drawNoteKey(canvas, paint, note, lineSpacing, staffTop, noteX, notes, index,
         noteY, noteSpacing, noteColour);
@@ -433,7 +435,8 @@ void drawConnectedNotes(Canvas canvas, Paint paint, MusicalNote note,
         (notes[i].type == NoteType.eighth ||
             notes[i].type == NoteType.sixteenth ||
             notes[i].type == NoteType.thirtySecond ||
-            notes[i].type == NoteType.sixtyFourth)) {
+            notes[i].type == NoteType.sixtyFourth) &&
+        notes[i].type != NoteType.space) {
       // && notes[i].type == firstNote.type) {
       connectedNotesGroup.insert(0, notes[i]); // Insert at the beginning
     } else {
@@ -447,7 +450,8 @@ void drawConnectedNotes(Canvas canvas, Paint paint, MusicalNote note,
         (notes[i].type == NoteType.eighth ||
             notes[i].type == NoteType.sixteenth ||
             notes[i].type == NoteType.thirtySecond ||
-            notes[i].type == NoteType.sixtyFourth)) {
+            notes[i].type == NoteType.sixtyFourth) &&
+        notes[i].type != NoteType.space) {
       // && notes[i].type == firstNote.type) {
       connectedNotesGroup.add(notes[i]); // Append normally
     } else {
