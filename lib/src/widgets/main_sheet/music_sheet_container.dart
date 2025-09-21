@@ -6,6 +6,7 @@ import 'package:music_keyboard/src/providers/list_of_spacing_for_each_row.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/drawing_helpers.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/note_width_calculator.dart';
 import 'package:music_keyboard/src/widgets/main_sheet/music_sheet_painter.dart';
+import 'package:music_keyboard/src/widgets/keyboard/tempo_popup.dart';
 import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
 import 'dart:async';
@@ -1088,6 +1089,34 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     _showDynamicRemoveButton = false;
   }
 
+  void _showTempoPopup() {
+    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+    final row = selectedNoteProvider.selectedRow;
+    final index = selectedNoteProvider.insertionIndex - 1;
+
+    if (index >= 0 && index < widget.sheetNoteRows[row].notes.length) {
+      final barNote = widget.sheetNoteRows[row].notes[index];
+
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return TempoPopup(
+            initialTempo: barNote.tempoNumber,
+            initialSwing: barNote.swing,
+            initialSwingText: barNote.swingText,
+            onSave: (double tempo, bool swing, String swingText) {
+              setState(() {
+                barNote.tempoNumber = tempo;
+                barNote.swing = swing;
+                barNote.swingText = swingText;
+              });
+            },
+          );
+        },
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final selectedNoteProvider =
@@ -1385,8 +1414,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                 if (_showTempoEditButton) ...[
                   const SizedBox(height: 5),
                   _buildStyledButton('TEMPO', () {
-                    _shouldShowTempoEdit();
-                  }, false, false),
+                    _showTempoPopup();
+                  }, false, true),
                 ],
               ],
             ),

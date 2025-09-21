@@ -270,7 +270,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     updateRowSpacing(selectedNoteProvider.selectedRow);
     updateRowSpacing(selectedNoteProvider.selectedRow + 1);
 
-    if (selectedNoteProvider.insertionIndex >= maxNotesPerRow) {
+    if (selectedNoteProvider.insertionIndex >= maxNotesPerRow ||
+        selectedNoteProvider.insertionIndex >
+            (maxNotesPerRow - notesToMove.length)) {
       // Update the insertion point to the next row
       selectedNoteProvider.updateInsertionPoint(
           selectedNoteProvider.selectedRow + 1, notesToMove.length);

@@ -210,6 +210,26 @@ class MusicSheetPainter extends CustomPainter {
               lineSpacing, sheetNoteRows[rowIndex].notes, i);
         }
 
+        if (note.type == NoteType.bar) {
+          double textY = staffTop - 35;
+
+          for (int x = i + 1; x < i + 3; x++) {
+            if (sheetNoteRows[rowIndex].notes[x].noteY - 10 <= textY) {
+              textY = sheetNoteRows[rowIndex].notes[x].noteY - 30;
+            }
+          }
+
+          // Draw bar-level tempo markings above bar notes
+          if (note.tempoNumber > 0) {
+            _drawBarTempo(canvas, note, x, textY);
+          }
+
+          // Draw bar-level swing markings below bar tempo if set
+          if (note.swing) {
+            _drawBarSwing(canvas, note, x, textY);
+          }
+        }
+
         var staffCenter = staffTop + (lineSpacing * 2);
 
         if (note.isTiedToNext && i < sheetNoteRows[rowIndex].notes.length - 1) {
@@ -445,6 +465,48 @@ class MusicSheetPainter extends CustomPainter {
     final double y = staffTop - 40;
 
     textPainter.paint(canvas, Offset(x, y));
+  }
+
+  /// Draw tempo above a specific bar note
+  void _drawBarTempo(
+      Canvas canvas, MusicalNote barNote, double x, double textY) {
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: 'Tempo = ${barNote.tempoNumber.round()}bpm',
+        style: const TextStyle(
+          color: Colors.black,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+
+    textPainter.layout();
+
+    textY = textY - 15;
+
+    textPainter.paint(canvas, Offset(x, textY));
+  }
+
+  /// Draw swing below the bar tempo if set
+  void _drawBarSwing(
+      Canvas canvas, MusicalNote barNote, double x, double textY) {
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: barNote.swingText,
+        style: const TextStyle(
+          color: Colors.black,
+          fontSize: 16,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+
+    textPainter.layout();
+
+    textPainter.paint(canvas, Offset(x, textY));
   }
 
   void _drawTitleAndComposer(Canvas canvas, Size size) {

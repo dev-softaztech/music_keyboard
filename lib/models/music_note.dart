@@ -18,6 +18,9 @@ class MusicalNote {
   String bottomTimeSignatureCharacter;
   String dynamicCharacter;
   bool isTriplet;
+  double tempoNumber;
+  bool swing;
+  String swingText;
 
   MusicalNote(
       {required this.pitch,
@@ -37,7 +40,10 @@ class MusicalNote {
       this.topTimeSignatureCharacter = "",
       this.bottomTimeSignatureCharacter = "",
       this.dynamicCharacter = "",
-      this.isTriplet = false});
+      this.isTriplet = false,
+      this.tempoNumber = 0.0,
+      this.swing = false,
+      this.swingText = ""});
 
   MusicalNote copy() {
     return MusicalNote(
@@ -58,7 +64,10 @@ class MusicalNote {
         topTimeSignatureCharacter: topTimeSignatureCharacter,
         bottomTimeSignatureCharacter: bottomTimeSignatureCharacter,
         dynamicCharacter: dynamicCharacter,
-        isTriplet: isTriplet);
+        isTriplet: isTriplet,
+        tempoNumber: tempoNumber,
+        swing: swing,
+        swingText: swingText);
   }
 }
 
