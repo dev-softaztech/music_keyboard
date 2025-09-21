@@ -1004,7 +1004,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                               )),
                                         ),
                                       ),
-                                      const SizedBox(width: 10),
+                                      const SizedBox(width: 7),
                                       Consumer<CurrentSelectedNoteProvider>(
                                         builder: (context, selectedNoteProvider,
                                                 _) =>
@@ -1058,7 +1058,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                             _lastTapTime = now;
                                           },
                                           child: Container(
-                                            width: 50,
+                                            width: 45,
                                             height: 30,
                                             decoration: BoxDecoration(
                                               color: isBeamLockActive
@@ -1094,7 +1094,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                                       color: isBeamLockActive
                                                           ? Colors.white
                                                           : Colors.black,
-                                                      fontSize: 23,
+                                                      fontSize: 22,
                                                       fontFamily: 'Bravura',
                                                     ),
                                                   ),
@@ -1108,9 +1108,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                           ),
                                         ),
                                       ),
-                                      const SizedBox(width: 10),
+                                      const SizedBox(width: 7),
                                       SizedBox(
-                                        width: 95,
+                                        width: 85,
                                         height: 30,
                                         child: ElevatedButton(
                                           onPressed: () {
@@ -1149,9 +1149,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                           ),
                                         ),
                                       ),
-                                      const SizedBox(width: 10),
+                                      const SizedBox(width: 7),
                                       SizedBox(
-                                        width: 105,
+                                        width: 95,
                                         height: 30,
                                         child: GestureDetector(
                                           onLongPress: () {
@@ -1211,9 +1211,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                           ),
                                         ),
                                       ),
-                                      const SizedBox(width: 10),
+                                      const SizedBox(width: 7),
                                       SizedBox(
-                                        width: 50,
+                                        width: 45,
                                         height: 30,
                                         child: ElevatedButton(
                                           onPressed: handleBackspacePress,
@@ -1230,7 +1230,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                           ),
                                           child: const Icon(Icons.backspace,
                                               color: Color(0xFF242038),
-                                              size: 25),
+                                              size: 20),
                                         ),
                                       ),
                                     ])

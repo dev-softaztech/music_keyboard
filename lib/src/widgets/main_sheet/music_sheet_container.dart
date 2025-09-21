@@ -53,6 +53,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
   bool _showDecrescendoRemoveButton = false;
   bool _showCrescendoRemoveButton = false;
   bool _showTieRemoveState = false;
+  bool _showTempoEditButton = false;
   int? _dragStart;
   int? _dragEnd;
   int? _dragRow;
@@ -127,6 +128,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
       _showDecrescendoRemoveButton = false;
       _showCrescendoRemoveButton = false;
       _showTieRemoveState = false;
+      _showTempoEditButton = false;
       _editingDynamicIndex = null;
       _editingDynamicRow = null;
       _isEditingDynamic = false;
@@ -304,6 +306,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
       _showBeamAddButton = false;
       _showBeamRemoveButton = false;
       _showSlurRemoveButton = false;
+      _showTempoEditButton = false;
       _showDecrescendoRemoveButton = false;
       _showCrescendoRemoveButton = false;
       _editingDynamicIndex = null;
@@ -335,6 +338,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     var showDecrescendoRemoveButton = _shouldShowDecrescendoRemove();
     var showCrescendoRemoveButton = _shouldShowCrescendoRemove();
     var showTieRemoveState = _shouldShowTieRemove();
+    var showTempoEditButton = _shouldShowTempoEdit();
 
     setState(() {
       _showDynamicRemoveButton = showDynamicRemoveButton;
@@ -344,6 +348,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
       _showDecrescendoRemoveButton = showDecrescendoRemoveButton;
       _showCrescendoRemoveButton = showCrescendoRemoveButton;
       _showTieRemoveState = showTieRemoveState;
+      _showTempoEditButton = showTempoEditButton;
     });
   }
 
@@ -865,6 +870,18 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     return false;
   }
 
+  bool _shouldShowTempoEdit() {
+    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+    final row = selectedNoteProvider.selectedRow;
+    final index = selectedNoteProvider.insertionIndex - 1;
+
+    if (widget.sheetNoteRows[row].notes[index].type == NoteType.bar) {
+      return true;
+    }
+
+    return false;
+  }
+
   bool _shouldShowDynamicRemove() {
     final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
 
@@ -1364,6 +1381,12 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                       }
                     }
                   }, false, !_showTieRemoveState),
+                ],
+                if (_showTempoEditButton) ...[
+                  const SizedBox(height: 5),
+                  _buildStyledButton('TEMPO', () {
+                    _shouldShowTempoEdit();
+                  }, false, false),
                 ],
               ],
             ),

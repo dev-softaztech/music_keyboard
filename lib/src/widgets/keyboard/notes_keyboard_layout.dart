@@ -570,7 +570,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                 Expanded(
                   child: Consumer<SelectedUnicodeProvider>(
                     builder: (context, provider, _) => Container(
-                      height: 40,
+                      height: 42,
                       margin: const EdgeInsets.symmetric(vertical: 8),
                       child: ListView.builder(
                         scrollDirection: Axis.horizontal,
