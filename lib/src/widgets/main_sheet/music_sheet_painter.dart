@@ -65,7 +65,12 @@ class MusicSheetPainter extends CustomPainter {
       var tempoTextY = staffTop - 55;
 
       if (sheetNoteRows[rowIndex].notes.isNotEmpty) {
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0;
+            i <
+                (3 > sheetNoteRows[rowIndex].notes.length
+                    ? sheetNoteRows[rowIndex].notes.length
+                    : 3);
+            i++) {
           if (sheetNoteRows[rowIndex].notes[i].noteY - 20 <= tempoTextY) {
             tempoTextY = sheetNoteRows[rowIndex].notes[i].noteY - 40;
           }
