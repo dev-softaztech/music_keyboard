@@ -463,10 +463,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
       '\ue030',
       '\ue031',
       '\ue032',
-      '\ue033',
-      '\ue034',
-      '\uf45c',
-      '\ue032'
+      '\ue040',
+      '\ue041',
+      '\ue042',
     ];
     const double popupWidth = 200.0;
     const double buttonSize = 80.0;
