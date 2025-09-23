@@ -225,6 +225,20 @@ class MusicSheetPainter extends CustomPainter {
               lineSpacing, sheetNoteRows[rowIndex].notes, i);
         }
 
+        if (note.rehearsalMarking.isNotEmpty) {
+          double textY = staffTop - 30;
+
+          for (int x = i; x < i + 3; x++) {
+            if (sheetNoteRows[rowIndex].notes.length > x &&
+                sheetNoteRows[rowIndex].notes[x].noteY - 10 <= textY) {
+              textY = sheetNoteRows[rowIndex].notes[x].noteY - 30;
+            }
+          }
+
+          _drawRehearsalMarking(
+              canvas, note, noteColour, x, staffTop, lineSpacing, textY);
+        }
+
         if (note.type == NoteType.bar) {
           double textY = staffTop - 35;
 
@@ -1275,6 +1289,39 @@ class MusicSheetPainter extends CustomPainter {
         ..style = PaintingStyle.fill;
       canvas.drawCircle(Offset(endX + 10, y), 10, handlePaint);
     }
+  }
+
+  /// Draw rehearsal marking above the staff at the note's position
+  void _drawRehearsalMarking(Canvas canvas, MusicalNote note, Color noteColour,
+      double x, double staffTop, double lineSpacing, double yPos) {
+    // Determine if this is a unicode character (from Bravura font)
+    final bool isUnicode =
+        note.rehearsalMarking == '\uE047' || note.rehearsalMarking == '\uE048';
+
+    final textStyle = TextStyle(
+      color: noteColour,
+      fontSize: isUnicode ? 32 : 20,
+      fontFamily: isUnicode ? 'Bravura' : null,
+      fontStyle: isUnicode ? FontStyle.normal : FontStyle.italic,
+      fontWeight: isUnicode ? FontWeight.w200 : FontWeight.w600,
+    );
+
+    final textSpan = TextSpan(
+      text: note.rehearsalMarking,
+      style: textStyle,
+    );
+
+    final textPainter = TextPainter(
+      text: textSpan,
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+
+    // Center the text horizontally over the note
+    double xPos = x - (textPainter.width / 2);
+    if (isUnicode) yPos = yPos - 40;
+
+    textPainter.paint(canvas, Offset(xPos, yPos));
   }
 
   void _drawTriplet(

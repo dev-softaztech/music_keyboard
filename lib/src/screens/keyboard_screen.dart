@@ -14,6 +14,7 @@ import 'package:music_keyboard/src/utils/screenshot_saver.dart';
 import 'package:music_keyboard/src/utils/toast_utils.dart';
 import 'package:music_keyboard/src/widgets/main_sheet/title_popup.dart';
 import 'package:music_keyboard/src/widgets/keyboard/tempo_popup.dart';
+import 'package:music_keyboard/src/widgets/keyboard/rehearsal_markings_popup.dart';
 import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
 
@@ -795,6 +796,75 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                             size: 20, color: Colors.black),
                                         SizedBox(width: 8),
                                         Text('Tempo',
+                                            style: TextStyle(fontSize: 14)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                // Divider
+                                Container(
+                                  height: 1,
+                                  color: Colors.grey[300],
+                                ),
+                                // Rehearsal Markings Button
+                                InkWell(
+                                  onTap: () {
+                                    setState(() {
+                                      showToolsMenu = false;
+                                    });
+                                    final selectedNoteProvider = context
+                                        .read<CurrentSelectedNoteProvider>();
+
+                                    // Check if there's a selected note
+                                    if (sheetNoteRows[selectedNoteProvider
+                                                .selectedRow]
+                                            .notes
+                                            .isEmpty ||
+                                        selectedNoteProvider.selectedIndex >=
+                                            sheetNoteRows[selectedNoteProvider
+                                                    .selectedRow]
+                                                .notes
+                                                .length) {
+                                      // Show message if no note is selected
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                              'Please select a note first'),
+                                          duration: Duration(seconds: 2),
+                                        ),
+                                      );
+                                      return;
+                                    }
+
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) =>
+                                          RehearsalMarkingsPopup(
+                                        onSave: (rehearsalMarking) {
+                                          setState(() {
+                                            final selectedNote = sheetNoteRows[
+                                                        selectedNoteProvider
+                                                            .selectedRow]
+                                                    .notes[
+                                                selectedNoteProvider
+                                                    .selectedIndex];
+                                            selectedNote.rehearsalMarking =
+                                                rehearsalMarking;
+                                          });
+                                        },
+                                      ),
+                                    );
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 12, horizontal: 16),
+                                    child: const Row(
+                                      children: [
+                                        Icon(Icons.music_note,
+                                            size: 20, color: Colors.black),
+                                        SizedBox(width: 8),
+                                        Text('Rehearsal',
                                             style: TextStyle(fontSize: 14)),
                                       ],
                                     ),

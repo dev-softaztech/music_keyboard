@@ -21,6 +21,7 @@ class MusicalNote {
   double tempoNumber;
   bool swing;
   String swingText;
+  String rehearsalMarking;
 
   MusicalNote(
       {required this.pitch,
@@ -43,7 +44,8 @@ class MusicalNote {
       this.isTriplet = false,
       this.tempoNumber = 0.0,
       this.swing = false,
-      this.swingText = ""});
+      this.swingText = "",
+      this.rehearsalMarking = ""});
 
   MusicalNote copy() {
     return MusicalNote(
@@ -67,7 +69,8 @@ class MusicalNote {
         isTriplet: isTriplet,
         tempoNumber: tempoNumber,
         swing: swing,
-        swingText: swingText);
+        swingText: swingText,
+        rehearsalMarking: rehearsalMarking);
   }
 }
 
