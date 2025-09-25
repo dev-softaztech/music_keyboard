@@ -26,6 +26,11 @@ class DynamicsKeyboard extends StatelessWidget {
       '\uE53E',
     ];
 
+    final List<String> accentCharacters = [
+      '\uF478',
+      '\uF42B',
+    ];
+
     final List<String> dynamicCharacters = [
       '\uE530',
       '\uE52F',
@@ -84,72 +89,152 @@ class DynamicsKeyboard extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  color: Colors.white,
-                  child: Wrap(
-                    alignment: WrapAlignment.center,
-                    spacing: 8.0,
-                    children: cresendoCharacters.map((character) {
-                      bool isSelected = false;
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      color: Colors.white,
+                      child: Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: 8.0,
+                        children: cresendoCharacters.map((character) {
+                          bool isSelected = false;
 
-                      if (selectedNote != null) {
-                        if (character == '\uE53F') {
-                          isSelected = selectedNote.isDecrescendoStart;
-                        } else if (character == '\uE53E') {
-                          isSelected = selectedNote.isCrescendoStart;
-                        }
-                      }
-
-                      return GestureDetector(
-                        onTap: () {
                           if (selectedNote != null) {
-                            final currentNoteIndex = selectedIndex;
                             if (character == '\uE53F') {
-                              selectedNote.isDecrescendoStart =
-                                  !selectedNote.isDecrescendoStart;
-                              selectedNote.decrescendoEndIndex =
-                                  selectedNote.isDecrescendoStart
-                                      ? currentNoteIndex
-                                      : null;
+                              isSelected = selectedNote.isDecrescendoStart;
                             } else if (character == '\uE53E') {
-                              selectedNote.isCrescendoStart =
-                                  !selectedNote.isCrescendoStart;
-                              selectedNote.crescendoEndIndex =
-                                  selectedNote.isCrescendoStart
-                                      ? currentNoteIndex
-                                      : null;
-                            } else {
-                              selectedNote.dynamicCharacter = character;
+                              isSelected = selectedNote.isCrescendoStart;
                             }
-                            currentSelectedNoteProvider.notifyListeners();
                           }
-                        },
-                        child: Container(
-                          width: 50,
-                          height: 50,
-                          margin: const EdgeInsets.all(4),
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                                color: isSelected ? Colors.red : Colors.black,
-                                width: 1),
-                          ),
-                          child: Center(
-                            child: Transform.translate(
-                                offset: const Offset(0, 5),
-                                child: Text(
-                                  character,
-                                  style: const TextStyle(
-                                    fontFamily: 'Bravura',
-                                    fontSize: 35,
+
+                          return GestureDetector(
+                            onTap: () {
+                              if (selectedNote != null) {
+                                final currentNoteIndex = selectedIndex;
+                                if (character == '\uE53F') {
+                                  selectedNote.isDecrescendoStart =
+                                      !selectedNote.isDecrescendoStart;
+                                  selectedNote.decrescendoEndIndex =
+                                      selectedNote.isDecrescendoStart
+                                          ? currentNoteIndex
+                                          : null;
+                                } else if (character == '\uE53E') {
+                                  selectedNote.isCrescendoStart =
+                                      !selectedNote.isCrescendoStart;
+                                  selectedNote.crescendoEndIndex =
+                                      selectedNote.isCrescendoStart
+                                          ? currentNoteIndex
+                                          : null;
+                                } else {
+                                  selectedNote.dynamicCharacter = character;
+                                }
+                                currentSelectedNoteProvider.notifyListeners();
+                              }
+                            },
+                            child: Container(
+                              width: 50,
+                              height: 50,
+                              margin: const EdgeInsets.all(4),
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                    color:
+                                        isSelected ? Colors.red : Colors.black,
+                                    width: 1),
+                              ),
+                              child: Center(
+                                child: Transform.translate(
+                                    offset: const Offset(0, 5),
+                                    child: Text(
+                                      character,
+                                      style: const TextStyle(
+                                        fontFamily: 'Bravura',
+                                        fontSize: 35,
+                                      ),
+                                    )),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 6,
+                    ),
+                    Container(
+                      color: Colors.white,
+                      child: Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: 8.0,
+                        children: accentCharacters.map((character) {
+                          bool isSelected = false;
+
+                          if (selectedNote != null) {
+                            isSelected =
+                                selectedNote.accentCharacter == character;
+                          }
+
+                          return GestureDetector(
+                            onTap: () {
+                              if (selectedNote != null) {
+                                if (selectedNote.accentCharacter == character) {
+                                  selectedNote.accentCharacter = '';
+                                } else {
+                                  selectedNote.accentCharacter = character;
+                                }
+                                currentSelectedNoteProvider.notifyListeners();
+                              }
+                            },
+                            child: Container(
+                                width: 50,
+                                height: 50,
+                                margin: const EdgeInsets.all(4),
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color:
+                                        isSelected ? Colors.red : Colors.black,
                                   ),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Transform.translate(
+                                      offset: character == '\uF478'
+                                          ? Offset(2, 3)
+                                          : Offset(4, 3),
+                                      child: Text(
+                                        '\ue1d5',
+                                        style: TextStyle(
+                                          color: Colors.black,
+                                          fontSize: 22,
+                                          fontFamily: 'Bravura',
+                                        ),
+                                      ),
+                                    ),
+                                    Transform.translate(
+                                      offset: character == '\uF478'
+                                          ? Offset(-3.5, 10)
+                                          : Offset(-4, 10),
+                                      child: Text(
+                                        character,
+                                        style: TextStyle(
+                                          fontFamily: 'Bravura',
+                                          fontSize:
+                                              character == '\uF478' ? 25 : 20,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 )),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ],
                 ),
                 SizedBox(
                   height: 10,
