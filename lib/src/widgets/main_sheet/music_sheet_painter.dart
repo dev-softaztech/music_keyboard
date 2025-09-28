@@ -253,8 +253,19 @@ class MusicSheetPainter extends CustomPainter {
 
         if (note.type == NoteType.bar) {
           double textY = staffTop - 35;
+          int noteLookupIndex = i;
 
-          for (int x = i + 1; x < i + 3; x++) {
+          if (sheetNoteRows[rowIndex].notes.length - 1 >= i + 1) {
+            noteLookupIndex = i + 1;
+          }
+          if (sheetNoteRows[rowIndex].notes.length - 1 >= i + 2) {
+            noteLookupIndex = i + 2;
+          }
+          if (sheetNoteRows[rowIndex].notes.length - 1 >= i + 3) {
+            noteLookupIndex = i + 3;
+          }
+
+          for (int x = i + 1; x < noteLookupIndex; x++) {
             if (sheetNoteRows[rowIndex].notes[x].noteY - 10 <= textY) {
               textY = sheetNoteRows[rowIndex].notes[x].noteY - 30;
             }
