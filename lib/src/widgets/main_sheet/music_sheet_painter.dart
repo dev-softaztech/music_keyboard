@@ -713,9 +713,7 @@ class MusicSheetPainter extends CustomPainter {
 
     // Start with a moderate base curve height
     double curveHeight = 30;
-    double yDifference = endY - startY;
     int noteSpan = (maxIndex - minIndex).clamp(1, rowNotes.length);
-    double stepY = yDifference / noteSpan;
     double horizontalDistance = (endX - startX).abs();
 
     // Define note head size (approximate)
@@ -738,12 +736,22 @@ class MusicSheetPainter extends CustomPainter {
     bool hasUpsideDownStems = false;
     bool hasDownwardStems = false;
 
-    // First pass: identify all obstacles (note heads and stems)
+    // Find the extreme Y positions of all intermediate notes to ensure proper clearance
+    double highestNoteY = double.infinity;
+    double lowestNoteY = double.negativeInfinity;
+    double highestStemY = double.infinity;
+    double lowestStemY = double.negativeInfinity;
+
+    // First pass: identify all obstacles (note heads and stems) and find extremes
     for (int i = minIndex; i <= maxIndex; i++) {
       final note = rowNotes[i];
 
       // Calculate note X position more accurately
       double noteX = startX + ((i - minIndex) / noteSpan) * horizontalDistance;
+
+      // Track extreme note positions
+      highestNoteY = math.min(highestNoteY, note.noteY);
+      lowestNoteY = math.max(lowestNoteY, note.noteY);
 
       // Add note head as an obstacle (all notes have heads)
       double noteHeadTop = note.noteY - (noteHeadHeight / 2);
@@ -813,13 +821,13 @@ class MusicSheetPainter extends CustomPainter {
 
           // Add buffer for complex connected notes
           if (notesGroupYs.doesGroupContain32ndOr64thNote) {
-            stemHeight += 10.0;
+            stemHeight += 30.0;
           }
         }
       }
 
       // Add a safety buffer to stem height
-      stemHeight += 10.0;
+      stemHeight += 30.0;
 
       // Calculate stem position and dimensions
       double stemX = note.isUpsideDown ? noteX - 5.0 : noteX + 5.0;
@@ -830,10 +838,14 @@ class MusicSheetPainter extends CustomPainter {
         // Stem points up
         stemTop = note.noteY - stemHeight;
         stemBottom = note.noteY;
+        // Track extreme stem positions
+        highestStemY = math.min(highestStemY, stemTop);
       } else {
         // Stem points down
         stemTop = note.noteY;
         stemBottom = note.noteY + stemHeight;
+        // Track extreme stem positions
+        lowestStemY = math.max(lowestStemY, stemBottom);
       }
 
       // Add stem as an obstacle
@@ -849,7 +861,55 @@ class MusicSheetPainter extends CustomPainter {
       ));
     }
 
-    // Find the most problematic obstacle
+    // Calculate minimum curve height to clear ALL intermediate notes and stems
+    double minRequiredCurveHeight = 60.0; // Increased base minimum
+
+    if (isSlurAbove) {
+      // Slur goes above notes - find the highest point (lowest Y value) and add clearance
+      double highestPoint = highestNoteY;
+      if (highestStemY != double.infinity) {
+        highestPoint = math.min(highestPoint, highestStemY);
+      }
+
+      // For slurs above, we need to ensure the control point is well above the highest obstacle
+      // The control point should be at least 40px above the highest point
+      double requiredControlY = highestPoint - 40.0;
+      double slurMidY = (start.dy + end.dy) / 2;
+
+      // Calculate how much curve height we need to reach that control point
+      minRequiredCurveHeight =
+          math.max(minRequiredCurveHeight, slurMidY - requiredControlY);
+
+      // Additional clearance for upward stems
+      if (hasUpsideDownStems) {
+        minRequiredCurveHeight += 20.0;
+      }
+    } else {
+      // Slur goes below notes - find the lowest point (highest Y value) and add clearance
+      double lowestPoint = lowestNoteY;
+      if (lowestStemY != double.negativeInfinity) {
+        lowestPoint = math.max(lowestPoint, lowestStemY);
+      }
+
+      // For slurs below, we need to ensure the control point is well below the lowest obstacle
+      // The control point should be at least 40px below the lowest point
+      double requiredControlY = lowestPoint + 40.0;
+      double slurMidY = (start.dy + end.dy) / 2;
+
+      // Calculate how much curve height we need to reach that control point
+      minRequiredCurveHeight =
+          math.max(minRequiredCurveHeight, requiredControlY - slurMidY);
+
+      // Additional clearance for downward stems
+      if (hasDownwardStems) {
+        minRequiredCurveHeight += 20.0;
+      }
+    }
+
+    // Set curve height to at least the minimum required
+    curveHeight = math.max(curveHeight, minRequiredCurveHeight);
+
+    // Find the most problematic obstacle for control point positioning
     double maxObstacleImpact = 0;
     double obstaclePositionRatio = 0.5; // Default to center
 
@@ -862,7 +922,7 @@ class MusicSheetPainter extends CustomPainter {
       double impact = 0;
 
       if (obstacle.isStem) {
-        // Stems have higher impact
+        // Stems have higher impact when they're in the slur's path
         if (isSlurAbove && obstacle.isUpsideDown) {
           // For upward stems when slur is above
           impact = obstacle.height * 1.5;
@@ -886,15 +946,11 @@ class MusicSheetPainter extends CustomPainter {
       }
     }
 
-    // Calculate the Bezier curve path to check for intersections
-    List<Offset> bezierPoints = [];
-    const int segments = 100;
-
     // Calculate control point for the Bezier curve
     double controlX = startX + (horizontalDistance * obstaclePositionRatio);
     double controlY = (start.dy + end.dy) / 2;
 
-    // Apply initial curve height
+    // Apply curve height with height multiplier for longer distances
     double heightMultiplier = 1.0 + (horizontalDistance / 500);
     heightMultiplier = heightMultiplier.clamp(1.0, 1.5);
 
@@ -902,9 +958,44 @@ class MusicSheetPainter extends CustomPainter {
         ? -curveHeight * heightMultiplier
         : curveHeight * heightMultiplier;
 
+    // For debugging and ensuring proper behavior, let's be very aggressive about clearance
+    if (isSlurAbove) {
+      // Force the slur to be well above ALL obstacles
+      double highestObstacle = highestNoteY;
+      if (highestStemY != double.infinity) {
+        highestObstacle = math.min(highestObstacle, highestStemY);
+      }
+
+      // Force control point to be at least 50px above the highest obstacle
+      double forcedControlY = highestObstacle - 50.0;
+      controlY = math.min(controlY, forcedControlY);
+
+      // Limit maximum height to prevent overlap with other staves
+      double maxHeight = math.min(120, horizontalDistance * 0.5);
+      controlY = math.max(controlY, staffCentre - maxHeight);
+    } else {
+      // Force the slur to be well below ALL obstacles
+      double lowestObstacle = lowestNoteY;
+      if (lowestStemY != double.negativeInfinity) {
+        lowestObstacle = math.max(lowestObstacle, lowestStemY);
+      }
+
+      // Force control point to be at least 50px below the lowest obstacle
+      double forcedControlY = lowestObstacle + 50.0;
+      controlY = math.max(controlY, forcedControlY);
+
+      // Limit maximum height to prevent overlap with other staves
+      double maxHeight = math.min(120, horizontalDistance * 0.5);
+      controlY = math.min(controlY, staffCentre + maxHeight);
+    }
+
     Offset control = Offset(controlX, controlY);
 
-    // Generate points along the curve
+    // Final validation: Generate curve points and verify clearance
+    List<Offset> bezierPoints = [];
+    const int segments = 100;
+
+    // Generate points along the curve for validation
     for (int i = 0; i <= segments; i++) {
       double t = i / segments;
       double x = (1 - t) * (1 - t) * start.dx +
@@ -916,9 +1007,10 @@ class MusicSheetPainter extends CustomPainter {
       bezierPoints.add(Offset(x, y));
     }
 
-    // Check for intersections with obstacles
+    // Final check for intersections and adjust if needed
     bool hasIntersection;
-    int maxIterations = 10;
+    int maxIterations =
+        5; // Reduced iterations since we pre-calculated clearance
     int iteration = 0;
 
     do {
@@ -997,6 +1089,16 @@ class MusicSheetPainter extends CustomPainter {
         controlY += isSlurAbove
             ? -curveHeight * heightMultiplier
             : curveHeight * heightMultiplier;
+
+        // Ensure we don't exceed reasonable bounds while maintaining clearance
+        if (isSlurAbove) {
+          double maxHeight = math.min(120, horizontalDistance * 0.5);
+          controlY = math.max(controlY, staffCentre - maxHeight);
+        } else {
+          double maxHeight = math.min(120, horizontalDistance * 0.5);
+          controlY = math.min(controlY, staffCentre + maxHeight);
+        }
+
         control = Offset(controlX, controlY);
 
         // Regenerate bezier points
@@ -1013,26 +1115,6 @@ class MusicSheetPainter extends CustomPainter {
         }
       }
     } while (hasIntersection && iteration < maxIterations);
-
-    // Add moderate extra height if we have stems in the way
-    if (hasUpsideDownStems && isSlurAbove) {
-      curveHeight += 15;
-    }
-    if (hasDownwardStems && !isSlurAbove) {
-      curveHeight += 10;
-    }
-
-    // Limit maximum curve height to prevent overlapping with other staves
-    // The maximum is now proportional to the horizontal distance
-    double maxHeight = math.min(80, horizontalDistance * 0.3);
-    curveHeight = curveHeight.clamp(30, maxHeight);
-
-    // Final control point calculation
-    controlY = (start.dy + end.dy) / 2;
-    controlY += isSlurAbove
-        ? -curveHeight * heightMultiplier
-        : curveHeight * heightMultiplier;
-    control = Offset(controlX, controlY);
 
     // Draw the slur
     drawVariableThicknessBezier(
