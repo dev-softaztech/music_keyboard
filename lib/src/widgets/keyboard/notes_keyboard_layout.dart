@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/music_note.dart';
+import 'package:music_keyboard/models/note_unicode_characters.dart';
 import 'package:music_keyboard/models/sheet_rows.dart';
 import 'package:music_keyboard/src/providers/current_selected_note_provider.dart';
 import 'package:music_keyboard/src/providers/selected_accidental_provider.dart';
@@ -62,19 +63,6 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
     }
     super.dispose();
   }
-/*
-  @override
-  void didUpdateWidget(NotesKeyboardLayout oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // If the keyType changes (tab switch), remove any active overlay
-    if (oldWidget.keyType != widget.keyType) {
-      if (_overlayEntry != null) {
-        _overlayEntry!.remove();
-        _overlayEntry = null;
-        _activeShiftButton = null;
-      }
-    }
-  }*/
 
   // Show the popup for a specific shift button
   void _showPopup(String buttonType, BuildContext context) {
@@ -505,14 +493,16 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
         ? widget.sheetNoteRows[selectedRow].notes[selectedNoteIndex]
         : null;
 
-    List<String> unicodeCharacters = [
-      '\ue1d2',
-      '\ue1d3',
-      '\ue1d5',
-      '\ue1d7',
-      '\ue1d9',
-      '\ue1db',
-      '\ue1dd',
+    List<NoteUnicodeCharacters> unicodeCharacters = [
+      NoteUnicodeCharacters(normal: '\ue1d2', upsideDown: '\ue1d2'), //whole
+      NoteUnicodeCharacters(normal: '\ue1d3', upsideDown: '\ue1d4'), //half
+      NoteUnicodeCharacters(normal: '\ue1d5', upsideDown: '\ue1d6'), //quarter
+      NoteUnicodeCharacters(normal: '\ue1d7', upsideDown: '\ue1d8'), //eigth
+      NoteUnicodeCharacters(normal: '\ue1d9', upsideDown: '\ue1da'), //sixteenth
+      NoteUnicodeCharacters(
+          normal: '\ue1db', upsideDown: '\ue1dc'), //thirtysecond
+      NoteUnicodeCharacters(
+          normal: '\ue1dd', upsideDown: '\ue1de'), //sixtyfouth
     ];
 
     return Container(
@@ -600,7 +590,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                                 child: Transform.translate(
                                   offset: const Offset(0, 14),
                                   child: Text(
-                                    character,
+                                    character.normal,
                                     style: TextStyle(
                                       fontFamily: 'Bravura',
                                       fontSize: 26,

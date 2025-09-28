@@ -963,7 +963,7 @@ class MusicSheetPainter extends CustomPainter {
     // Configurable parameters for slur appearance
     const double minBufferSpace = 25.0; // Minimum space above/below notes
     const double maxSlurHeight =
-        140.0; // Maximum slur height to prevent overlap with other rows
+        180.0; // Maximum slur height to prevent overlap with other rows
 
     // Force the slur to have proper clearance above or below ALL obstacles
     if (isSlurAbove) {

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:music_keyboard/models/note_unicode_characters.dart';
 
 class SelectedUnicodeProvider extends ChangeNotifier {
-  String _selectedCharacter = '\ue1d2'; // Default Unicode character
+  NoteUnicodeCharacters _selectedCharacter = NoteUnicodeCharacters(
+      normal: '\ue1d2', upsideDown: '\ue1d2'); // Default Unicode character
 
-  String get selectedCharacter => _selectedCharacter;
+  NoteUnicodeCharacters get selectedCharacter => _selectedCharacter;
 
-  void updateSelectedCharacter(String character) {
+  void updateSelectedCharacter(NoteUnicodeCharacters character) {
     _selectedCharacter = character;
     notifyListeners(); // Notify listeners about the change
   }

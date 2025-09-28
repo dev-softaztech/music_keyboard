@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:music_keyboard/models/note_unicode_characters.dart';
 import 'package:music_keyboard/src/utils/keyboard_utils/unicode_mapper.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/note_position_calculator.dart';
 import 'package:provider/provider.dart';
@@ -33,7 +34,7 @@ class _KeyboardBySymbolsState extends State<KeyboardBySymbols> {
     final selectedCharacter =
         context.watch<SelectedUnicodeProvider>().selectedCharacter;
 
-    NoteType noteType = mapUnicodeToNoteType(selectedCharacter);
+    NoteType noteType = mapUnicodeToNoteType(selectedCharacter.normal);
 
     return Center(
       child: Column(
@@ -77,7 +78,7 @@ class _KeyboardBySymbolsState extends State<KeyboardBySymbols> {
   }
 
   Widget _buildKeyboardGrid({
-    required String selectedCharacter,
+    required NoteUnicodeCharacters selectedCharacter,
     required NoteType noteType,
     required bool isConnected,
     required KeyboardRow row,
@@ -97,15 +98,13 @@ class _KeyboardBySymbolsState extends State<KeyboardBySymbols> {
           itemCount: 9,
           itemBuilder: (context, index) {
             return MusicKey(
-              unicodeCharacter: selectedCharacter,
-              pitch: _getPitch(index, row),
-              octave: _getOctave(index, row),
-              type: noteType,
-              isConnected: isConnected,
-              onTap: (note) => widget.onKeyPress(note),
-              index: index,
-              selectedCharacter: selectedCharacter,
-            );
+                unicodeCharacter: selectedCharacter,
+                pitch: _getPitch(index, row),
+                octave: _getOctave(index, row),
+                type: noteType,
+                isConnected: isConnected,
+                onTap: (note) => widget.onKeyPress(note),
+                index: index);
           },
         ),
       ),
@@ -183,14 +182,13 @@ class _KeyboardBySymbolsState extends State<KeyboardBySymbols> {
 }
 
 class MusicKey extends StatefulWidget {
-  final String unicodeCharacter;
+  final NoteUnicodeCharacters unicodeCharacter;
   final String pitch;
   final int octave;
   final NoteType type;
   final bool isConnected;
   final void Function(MusicalNote note) onTap;
   final int index;
-  final String selectedCharacter;
 
   const MusicKey(
       {super.key,
@@ -200,8 +198,7 @@ class MusicKey extends StatefulWidget {
       required this.type,
       required this.isConnected,
       required this.onTap,
-      required this.index,
-      required this.selectedCharacter});
+      required this.index});
 
   @override
   _MusicKeyState createState() => _MusicKeyState();
@@ -230,7 +227,7 @@ class _MusicKeyState extends State<MusicKey> {
         octave: widget.octave,
         type: widget.type,
         isBeamed: widget.isConnected,
-        unicodeCharacter: widget.selectedCharacter));
+        unicodeCharacter: widget.unicodeCharacter.normal));
   }
 
   @override
@@ -250,12 +247,8 @@ class _MusicKeyState extends State<MusicKey> {
         ),
         child: CustomPaint(
           painter: KeyboardSymbolsMusicStaffPainter(
-            unicodeCharacter: widget.type != NoteType.clef &&
-                    widget.type != NoteType.rest &&
-                    widget.type != NoteType.accidental &&
-                    selectedAccidental.isNotEmpty
-                ? selectedAccidental // Use the selected accidental for notes
-                : widget.unicodeCharacter,
+            unicodeCharacter: widget.unicodeCharacter,
+            accidentalCharacter: selectedAccidental,
             musicalNote: MusicalNote(
               pitch: widget.pitch,
               octave: widget.octave,
@@ -272,13 +265,15 @@ class _MusicKeyState extends State<MusicKey> {
 }
 
 class KeyboardSymbolsMusicStaffPainter extends CustomPainter {
-  final String unicodeCharacter; // Unicode character to draw
+  final NoteUnicodeCharacters unicodeCharacter; // Unicode character to draw
+  final String accidentalCharacter;
   final MusicalNote musicalNote; // Vertical position of the character
   final int index;
   final BuildContext? context;
 
   KeyboardSymbolsMusicStaffPainter({
     required this.unicodeCharacter,
+    required this.accidentalCharacter,
     required this.musicalNote,
     required this.index,
     this.context,
@@ -294,8 +289,8 @@ class KeyboardSymbolsMusicStaffPainter extends CustomPainter {
     final lineSpacing = size.height / 15; // Scale based on the smaller height
     final staffTop =
         (size.height - (4 * lineSpacing)) / 2; // Center the staff vertically
+    final staffCenter = staffTop + (2 * lineSpacing);
 
-    // Draw the 5 staff lines
     for (int i = 0; i < 5; i++) {
       final y = staffTop + (i * lineSpacing);
       canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
@@ -313,156 +308,96 @@ class KeyboardSymbolsMusicStaffPainter extends CustomPainter {
     drawLedgerLines(
         canvas, paint, noteY, size.width / 2, noteWidth, lineSpacing, staffTop);
 
-    // For notes with accidentals, we need to draw both the accidental and the note
-    bool isAccidental = unicodeCharacter == '\uF4DE' || // sharp
-        unicodeCharacter == '\uF4DF' || // sharp
-        unicodeCharacter == '\uF4DC' || // flat
-        unicodeCharacter == '\uF4E0' || // flat
-        unicodeCharacter == '\uF4DD' || // natural
-        unicodeCharacter == 'dotted_rest';
+    bool isUpsideDownNote = noteY < staffCenter;
 
-    if (musicalNote.type == NoteType.accidental ||
-        (musicalNote.type != NoteType.clef &&
-            musicalNote.type != NoteType.rest &&
-            isAccidental)) {
-      // Draw the accidental
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: isUpsideDownNote
+            ? unicodeCharacter.upsideDown
+            : unicodeCharacter.normal,
+        style: TextStyle(
+          fontFamily: 'Bravura',
+          fontSize: size.height / 4.4, // Dynamically scale Unicode size
+          color: Colors.black,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+
+    textPainter.layout();
+    final x = (size.width - textPainter.width) / 2; // Center horizontally
+    final y = (calculateNoteYVerticalKeyboard(
+            musicalNote.pitch, musicalNote.octave, lineSpacing, staffTop)) -
+        (textPainter.height / 2) +
+        0.5;
+
+    textPainter.paint(
+        canvas,
+        Offset(
+            isUpsideDownNote || musicalNote.type == NoteType.whole ? x : x + 3,
+            y));
+
+    if (accidentalCharacter != '') {
+      double noteX = 0.0;
       final accidentalPainter = TextPainter(
         text: TextSpan(
-          text: unicodeCharacter,
+          text: accidentalCharacter,
           style: TextStyle(
             fontFamily: 'Bravura',
-            fontSize: size.height / 5.0, // Slightly smaller than the note
+            fontSize: size.height / 5.0,
             color: Colors.black,
           ),
         ),
         textDirection: TextDirection.ltr,
       );
 
-      // Use the selected unicode character for the note symbol
-      String noteSymbol = unicodeCharacter;
-
-      // If it's an accidental, we need to use the note symbol from the selected unicode
-      if (isAccidental) {
-        // These are the note symbols
-        if (musicalNote.type == NoteType.whole) {
-          noteSymbol = '\ue1d2'; // Whole note
-        } else if (musicalNote.type == NoteType.half) {
-          noteSymbol = '\ue1d3'; // Half note
-        } else if (musicalNote.type == NoteType.quarter) {
-          noteSymbol = '\ue1d5'; // Quarter note
-        } else if (musicalNote.type == NoteType.eighth) {
-          noteSymbol = '\ue1d7'; // Eighth note
-        } else if (musicalNote.type == NoteType.sixteenth) {
-          noteSymbol = '\ue1d9'; // Sixteenth note
-        } else if (musicalNote.type == NoteType.thirtySecond) {
-          noteSymbol = '\ue1db'; // Thirty-second note
-        } else if (musicalNote.type == NoteType.sixtyFourth) {
-          noteSymbol = '\ue1dd'; // Sixty-fourth note
-        } else {
-          noteSymbol = '\ue1d5'; // Default to quarter note
-        }
-      } else {
-        // If it's not an accidental, use the selected unicode character
-        noteSymbol = unicodeCharacter;
-      }
-
-      final notePainter = TextPainter(
-        text: TextSpan(
-          text: noteSymbol,
-          style: TextStyle(
-            fontFamily: 'Bravura',
-            fontSize: size.height / 4.4,
-            color: Colors.black,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      );
-
-      notePainter.layout();
-
-      // Calculate positions
-      final noteY = (calculateNoteYVerticalKeyboard(
-              musicalNote.pitch, musicalNote.octave, lineSpacing, staffTop)) -
-          (notePainter.height / 2) +
-          0.5;
-
-      double noteX = 0.0;
-      if (unicodeCharacter != 'dotted_rest') {
+      if (accidentalCharacter != 'dotted_rest') {
         accidentalPainter.layout();
-        final accidentalX = (size.width - notePainter.width) / 2 -
+        final accidentalX = (size.width - textPainter.width) / 2 -
             accidentalPainter.width * 0.8;
-        noteX = (size.width - notePainter.width) / 2 +
+        noteX = (size.width - textPainter.width) / 2 +
             accidentalPainter.width * 0.2;
 
-        accidentalPainter.paint(canvas, Offset(accidentalX, noteY));
+        accidentalPainter.paint(canvas, Offset(accidentalX, y));
       } else {
-        noteX = (size.width - notePainter.width) / 2 * 1.2;
+        noteX = (size.width - textPainter.width) / 2 * 1.2;
 
         final Paint handlePaint = Paint()
           ..color = Colors.black
           ..style = PaintingStyle.fill;
 
-        canvas.drawCircle(Offset(noteX + 12, noteY + 44), 1.5, handlePaint);
+        canvas.drawCircle(Offset(noteX + 12, noteY + 5), 1.5, handlePaint);
       }
-
-      notePainter.paint(canvas, Offset(noteX, noteY));
-    } else {
-      // For other types, just draw the unicode character
-      final textPainter = TextPainter(
-        text: TextSpan(
-          text: unicodeCharacter,
-          style: TextStyle(
-            fontFamily: 'Bravura',
-            fontSize: size.height / 4.4, // Dynamically scale Unicode size
-            color: Colors.black,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      );
-
-      textPainter.layout();
-      final x = (size.width - textPainter.width) / 2; // Center horizontally
-      final y = (calculateNoteYVerticalKeyboard(
-              musicalNote.pitch, musicalNote.octave, lineSpacing, staffTop)) -
-          (textPainter.height / 2) +
-          0.5; // Position vertically
-
-      textPainter.paint(canvas, Offset(x, y));
     }
   }
 
   @override
   bool shouldRepaint(CustomPainter oldDelegate) => true;
+}
 
-  // Draw ledger lines for notes that are above or below the staff
-  void drawLedgerLines(Canvas canvas, Paint paint, double noteY, double noteX,
-      double noteWidth, double lineSpacing, double staffTop) {
-    final double staffBottom =
-        staffTop + (4 * lineSpacing); // Bottom staff line
+void drawLedgerLines(Canvas canvas, Paint paint, double noteY, double noteX,
+    double noteWidth, double lineSpacing, double staffTop) {
+  final double staffBottom = staffTop + (4 * lineSpacing);
 
-    // Determine if the note is above or below the staff
-    if (noteY < staffTop) {
-      // Draw ledger lines above the staff
-      for (double y = staffTop - lineSpacing;
-          y >= noteY - lineSpacing / 2;
-          y -= lineSpacing) {
-        canvas.drawLine(
-          Offset(noteX - (noteWidth / 3) - 7, y),
-          Offset(noteX + (noteWidth / 3) + 7, y),
-          paint..strokeWidth = 1.0,
-        );
-      }
-    } else if (noteY > staffBottom) {
-      // Draw ledger lines below the staff
-      for (double y = staffBottom + lineSpacing;
-          y <= noteY + lineSpacing / 2;
-          y += lineSpacing) {
-        canvas.drawLine(
-          Offset(noteX - (noteWidth / 2) - 7, y),
-          Offset(noteX + (noteWidth / 2) + 7, y),
-          paint..strokeWidth = 1.0,
-        );
-      }
+  if (noteY < staffTop) {
+    for (double y = staffTop - lineSpacing;
+        y >= noteY - lineSpacing / 2;
+        y -= lineSpacing) {
+      canvas.drawLine(
+        Offset(noteX - (noteWidth / 3) - 3, y),
+        Offset(noteX + (noteWidth / 3) + 3, y),
+        paint..strokeWidth = 1.0,
+      );
+    }
+  } else if (noteY > staffBottom) {
+    for (double y = staffBottom + lineSpacing;
+        y <= noteY + lineSpacing / 2;
+        y += lineSpacing) {
+      canvas.drawLine(
+        Offset(noteX - (noteWidth / 2) - 3, y),
+        Offset(noteX + (noteWidth / 2) + 3, y),
+        paint..strokeWidth = 1.0,
+      );
     }
   }
 }

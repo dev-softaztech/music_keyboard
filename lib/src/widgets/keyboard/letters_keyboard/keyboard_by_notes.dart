@@ -30,7 +30,7 @@ class KeyboardByNotes extends StatelessWidget {
     } else if (keyType == "accidentals") {
       noteType = NoteType.accidental;
     } else if (keyType == "notes") {
-      noteType = mapUnicodeToNoteType(selectedCharacter);
+      noteType = mapUnicodeToNoteType(selectedCharacter.normal);
     }
 
     return Column(
@@ -57,7 +57,7 @@ class KeyboardByNotes extends StatelessWidget {
                       octave: selectedNumberProvider.selectedNumber,
                       type: noteType,
                       isBeamed: isConnected,
-                      unicodeCharacter: selectedCharacter);
+                      unicodeCharacter: selectedCharacter.normal);
 
                   onKeyPress(note);
                 },
