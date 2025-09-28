@@ -121,6 +121,13 @@ class MusicSheetPainter extends CustomPainter {
         MusicalNote note = sheetNoteRows[rowIndex].notes[i];
         double currentX = barStartX + ((i - barStartIndex) * currentRowSpacing);
 
+        final double noteY = calculateNoteYMainSheet(
+            note.pitch, note.octave, lineSpacing, staffTop);
+        note.noteY = noteY;
+
+        final double sheetCenter = staffTop + (lineSpacing * 2);
+        note.isUpsideDown = noteY < sheetCenter;
+
         // Check for time signature changes within the row
         if (note.type == NoteType.timeSignature) {
           currentBarTimeSignature = note;
@@ -222,6 +229,11 @@ class MusicSheetPainter extends CustomPainter {
 
         if (note.dynamicCharacter.isNotEmpty) {
           _drawDynamicCharacter(canvas, note, noteColour, x, staffTop,
+              lineSpacing, sheetNoteRows[rowIndex].notes, i);
+        }
+
+        if (note.accentCharacter.isNotEmpty) {
+          _drawAccentCharacter(canvas, note, noteColour, x, staffTop,
               lineSpacing, sheetNoteRows[rowIndex].notes, i);
         }
 
@@ -1217,7 +1229,111 @@ class MusicSheetPainter extends CustomPainter {
 
     double xPos = x - (textPainter.width / 2);
 
-    textPainter.paint(canvas, Offset(xPos, yPos - 57));
+    if (note.accentCharacter != "" && !note.isUpsideDown) {
+      yPos = yPos + 10;
+    }
+
+    textPainter.paint(canvas, Offset(xPos, yPos - 60));
+  }
+
+  void _drawAccentCharacter(
+      Canvas canvas,
+      MusicalNote note,
+      Color noteColour,
+      double x,
+      double staffTop,
+      double lineSpacing,
+      List<MusicalNote> notes,
+      int noteIndex) {
+    final textStyle = TextStyle(
+      color: noteColour,
+      fontSize: 30,
+      fontFamily: 'Bravura',
+    );
+    final textSpan = TextSpan(
+      text: note.accentCharacter,
+      style: textStyle,
+    );
+    final textPainter = TextPainter(
+      text: textSpan,
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+
+    double yPos;
+    double xPos = x - (textPainter.width / 2);
+    bool isUpsideDownNote = note.isUpsideDown;
+
+    // Handle beamed notes special case
+    if (note.isBeamed) {
+      var notesGroup = getConnectedNotesGroup(noteIndex, notes);
+      var connectedNotesGroup = notesGroup.notesGroup;
+
+      if (connectedNotesGroup.isNotEmpty) {
+        isUpsideDownNote = connectedNotesGroup.first.isUpsideDown;
+      }
+
+      double staffBottomLineY = staffTop + (lineSpacing * 4);
+      double distanceFromStaff = isUpsideDownNote
+          ? (staffTop - note.noteY).abs()
+          : (note.noteY - staffBottomLineY).abs();
+
+      if (distanceFromStaff > 30) {
+        // Position accent at ~30 pixels from note, between staff lines
+        if (isUpsideDownNote) {
+          // For upside-down notes, accent goes above
+          yPos = note.noteY - 80;
+          // Adjust to position between staff lines (staff lines are at 0, 10, 20, 30, 40)
+
+          double relativeToStaff = yPos - staffTop;
+          double nearestStaffLine =
+              (relativeToStaff / lineSpacing).round() * lineSpacing;
+          if ((relativeToStaff - nearestStaffLine).abs() < 3) {
+            yPos = staffTop + nearestStaffLine; // Move between lines
+          }
+        } else {
+          // For normal notes, accent goes below
+          yPos = note.noteY - 45;
+          // Adjust to position between staff lines
+
+          double relativeToStaff = yPos - staffTop;
+          double nearestStaffLine =
+              (relativeToStaff / lineSpacing).round() * lineSpacing;
+          if ((relativeToStaff - nearestStaffLine).abs() < 3) {
+            yPos = staffTop + nearestStaffLine; // Move between lines
+          }
+        }
+
+        textPainter.paint(canvas, Offset(xPos, yPos + 0.5));
+        return;
+      }
+    }
+
+    if (isUpsideDownNote) {
+      double maxAccentY = staffTop;
+      double baseYPos = note.noteY - 1;
+
+      if (note.noteY <= staffTop - 10) {
+        baseYPos -= 5;
+      }
+
+      yPos = math.min(baseYPos, maxAccentY);
+
+      yPos = yPos - 75;
+    } else {
+      double staffBottomLineY = staffTop + 40; // 4 lines * 10 spacing
+      double minAccentY = staffBottomLineY;
+      double baseYPos = note.noteY + 1;
+
+      if (note.noteY >= staffBottomLineY + 10) {
+        baseYPos += 5;
+      }
+
+      yPos = math.max(baseYPos, minAccentY);
+      yPos = yPos - 55;
+    }
+
+    textPainter.paint(canvas, Offset(xPos, yPos));
   }
 
   void _drawDynamicMarking(

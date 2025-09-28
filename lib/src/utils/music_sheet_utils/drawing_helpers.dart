@@ -13,9 +13,6 @@ void drawNote(
     int index,
     int noteSpacing,
     Color noteColour) {
-  final double noteY =
-      calculateNoteYMainSheet(note.pitch, note.octave, lineSpacing, staffTop);
-  note.noteY = noteY;
   if (note.type == NoteType.clef || note.type == NoteType.bar) {
     drawClefKey(canvas, paint, note, lineSpacing, staffTop, noteX, notes, index,
         noteColour);
@@ -30,7 +27,7 @@ void drawNote(
     return;
   } else {
     drawNoteKey(canvas, paint, note, lineSpacing, staffTop, noteX, notes, index,
-        noteY, noteSpacing, noteColour);
+        note.noteY, noteSpacing, noteColour);
   }
 }
 
@@ -188,7 +185,6 @@ void drawNoteKey(
   bool isAConnectedNote = false;
   bool doesGroupContain32ndOr64thNote = false;
   final double sheetCenter = staffTop + (lineSpacing * 2);
-  note.isUpsideDown = noteY < sheetCenter;
 
   if (note.type == NoteType.eighth ||
       note.type == NoteType.sixteenth ||
