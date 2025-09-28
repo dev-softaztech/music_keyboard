@@ -309,6 +309,7 @@ class MusicSheetPainter extends CustomPainter {
               startY,
               endX,
               endY,
+              staffTop,
               staffCenter,
               i,
               note.slurEndIndex!,
@@ -678,6 +679,7 @@ class MusicSheetPainter extends CustomPainter {
     double startY,
     double endX,
     double endY,
+    double staffTop,
     double staffCentre,
     int startIndex,
     int endIndex,
@@ -805,8 +807,8 @@ class MusicSheetPainter extends CustomPainter {
         bool firstNoteUpsideDown = false;
 
         if (connectedNotesGroup.isNotEmpty) {
-          var notesGroupYs = getConnectedNotesGroupHighestY(connectedNotesGroup,
-              10.0, staffCentre); // Using lineSpacing = 10.0
+          var notesGroupYs = getConnectedNotesGroupHighestY(
+              connectedNotesGroup, 10.0, staffTop, staffCentre);
 
           double connectedGroupHighestY = notesGroupYs.highestY;
           double connectedGroupLowestY = notesGroupYs.lowestY;

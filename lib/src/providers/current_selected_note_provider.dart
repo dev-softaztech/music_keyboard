@@ -311,6 +311,82 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
 
     notifyListeners();
   }
+
+  /// **Get all notes in the same beamed group as the given note**
+  List<int> getBeamedGroupIndices(int noteIndex, List<MusicalNote> notes) {
+    if (noteIndex < 0 ||
+        noteIndex >= notes.length ||
+        !notes[noteIndex].isBeamed) {
+      return [];
+    }
+
+    List<int> groupIndices = [noteIndex];
+
+    // Traverse backwards to find connected beamed notes
+    for (int i = noteIndex - 1; i >= 0; i--) {
+      if (notes[i].isBeamed &&
+          (notes[i].type == NoteType.eighth ||
+              notes[i].type == NoteType.sixteenth ||
+              notes[i].type == NoteType.thirtySecond ||
+              notes[i].type == NoteType.sixtyFourth)) {
+        groupIndices.insert(0, i);
+      } else {
+        break;
+      }
+    }
+
+    // Traverse forwards to find connected beamed notes
+    for (int i = noteIndex + 1; i < notes.length; i++) {
+      if (notes[i].isBeamed &&
+          (notes[i].type == NoteType.eighth ||
+              notes[i].type == NoteType.sixteenth ||
+              notes[i].type == NoteType.thirtySecond ||
+              notes[i].type == NoteType.sixtyFourth)) {
+        groupIndices.add(i);
+      } else {
+        break;
+      }
+    }
+
+    return groupIndices;
+  }
+
+  /// **Switch beam rotation for the selected beamed group**
+  void switchBeamRotation(List<SheetRows> sheetNoteRows) {
+    //saveState(sheetNoteRows); // Save for undo
+
+    final row = selectedRow;
+    final index = insertionIndex == 0 ? 0 : insertionIndex - 1;
+
+    if (index >= 0 && index < sheetNoteRows[row].notes.length) {
+      final selectedNote = sheetNoteRows[row].notes[index];
+
+      if (selectedNote.isBeamed) {
+        // Get all notes in the beamed group
+        List<int> groupIndices =
+            getBeamedGroupIndices(index, sheetNoteRows[row].notes);
+
+        if (groupIndices.isNotEmpty) {
+          // Get the first note in the group to manage the beam direction
+          final firstNote = sheetNoteRows[row].notes[groupIndices.first];
+
+          // Cycle through beam direction states: null -> true -> false -> null
+          if (firstNote.beamDirectionLocked == null) {
+            // Currently auto, set to force up (true)
+            firstNote.beamDirectionLocked = true;
+          } else if (firstNote.beamDirectionLocked == true) {
+            // Currently force up, set to force down (false)
+            firstNote.beamDirectionLocked = false;
+          } else {
+            // Currently force down, set back to auto (null)
+            firstNote.beamDirectionLocked = null;
+          }
+        }
+      }
+    }
+
+    notifyListeners();
+  }
 /*
   /// **Saves the current state for undo**
   void saveState(List<SheetRows> sheetNoteRows) {

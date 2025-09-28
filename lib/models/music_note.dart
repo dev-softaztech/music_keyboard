@@ -23,6 +23,7 @@ class MusicalNote {
   bool swing;
   String swingText;
   String rehearsalMarking;
+  bool? beamDirectionLocked; // null = auto, true = force up, false = force down
 
   MusicalNote(
       {required this.pitch,
@@ -47,7 +48,8 @@ class MusicalNote {
       this.tempoNumber = 0.0,
       this.swing = false,
       this.swingText = "",
-      this.rehearsalMarking = ""});
+      this.rehearsalMarking = "",
+      this.beamDirectionLocked});
 
   MusicalNote copy() {
     return MusicalNote(
@@ -73,7 +75,8 @@ class MusicalNote {
         tempoNumber: tempoNumber,
         swing: swing,
         swingText: swingText,
-        rehearsalMarking: rehearsalMarking);
+        rehearsalMarking: rehearsalMarking,
+        beamDirectionLocked: beamDirectionLocked);
   }
 }
 

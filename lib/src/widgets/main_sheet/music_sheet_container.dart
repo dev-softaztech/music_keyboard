@@ -55,6 +55,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
   bool _showCrescendoRemoveButton = false;
   bool _showTieRemoveState = false;
   bool _showTempoEditButton = false;
+  bool _showBeamRotationButton = false;
   int? _dragStart;
   int? _dragEnd;
   int? _dragRow;
@@ -130,6 +131,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
       _showCrescendoRemoveButton = false;
       _showTieRemoveState = false;
       _showTempoEditButton = false;
+      _showBeamRotationButton = false;
       _editingDynamicIndex = null;
       _editingDynamicRow = null;
       _isEditingDynamic = false;
@@ -340,6 +342,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     var showCrescendoRemoveButton = _shouldShowCrescendoRemove();
     var showTieRemoveState = _shouldShowTieRemove();
     var showTempoEditButton = _shouldShowTempoEdit();
+    var showBeamRotationButton = _shouldShowBeamRotation();
 
     setState(() {
       _showDynamicRemoveButton = showDynamicRemoveButton;
@@ -350,6 +353,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
       _showCrescendoRemoveButton = showCrescendoRemoveButton;
       _showTieRemoveState = showTieRemoveState;
       _showTempoEditButton = showTempoEditButton;
+      _showBeamRotationButton = showBeamRotationButton;
     });
   }
 
@@ -614,7 +618,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
           var connectedNotesGroup = notesGroup.notesGroup;
           if (connectedNotesGroup.isNotEmpty) {
             var notesGroupYs = getConnectedNotesGroupHighestY(
-                connectedNotesGroup, 10.0, staffCenter);
+                connectedNotesGroup, 10.0, staffTop, staffCenter);
             double connectedGroupHighestY = notesGroupYs.highestY;
             double connectedGroupLowestY = notesGroupYs.lowestY;
             bool firstNoteUpsideDown = notesGroupYs.firstNoteY < staffCenter;
@@ -895,6 +899,22 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
         final dynamicChar =
             widget.sheetNoteRows[row].notes[index].dynamicCharacter;
         return dynamicChar.isNotEmpty;
+      }
+    }
+    return false;
+  }
+
+  bool _shouldShowBeamRotation() {
+    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+
+    // Check if there's no active highlighted notes AND current selected note is beamed
+    if (_dragStart == null && _dragEnd == null) {
+      final row = selectedNoteProvider.selectedRow;
+      final index = selectedNoteProvider.insertionIndex - 1;
+
+      if (index >= 0 && index < widget.sheetNoteRows[row].notes.length) {
+        final selectedNote = widget.sheetNoteRows[row].notes[index];
+        return selectedNote.isBeamed;
       }
     }
     return false;
@@ -1291,6 +1311,33 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                 ),
               )),*/
           Positioned(
+              top: 10,
+              left: 0,
+              right: 0,
+              child:
+                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                if (_showBeamRotationButton) ...[
+                  _buildBeamCycleButton('Beam Rotate', () {
+                    setState(() {
+                      context
+                          .read<CurrentSelectedNoteProvider>()
+                          .switchBeamRotation(widget.sheetNoteRows);
+                    });
+                  },
+                      widget
+                          .sheetNoteRows[selectedNoteProvider.selectedRow]
+                          .notes[selectedNoteProvider
+                              .getBeamedGroupIndices(
+                                  selectedNoteProvider.selectedIndex,
+                                  widget
+                                      .sheetNoteRows[
+                                          selectedNoteProvider.selectedRow]
+                                      .notes)
+                              .first]
+                          .beamDirectionLocked),
+                ],
+              ])),
+          Positioned(
             bottom: 5,
             right: 5,
             child: Column(
@@ -1485,6 +1532,53 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildBeamCycleButton(
+      String label, VoidCallback onPressed, bool? beamCycleLock) {
+    bool lockEnabled = beamCycleLock != null;
+    return Material(
+      color: Colors.transparent,
+      elevation: 5,
+      shadowColor: Colors.black.withOpacity(0.3),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(25),
+      ),
+      child: RawMaterialButton(
+        onPressed: onPressed,
+        fillColor: Colors.white,
+        constraints: const BoxConstraints.tightFor(width: 110, height: 25),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(25),
+          side: BorderSide(
+              color: lockEnabled ? Colors.red : Colors.black, width: 1),
+        ),
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Transform.translate(
+              offset: beamCycleLock == null ? Offset(0, -2) : Offset(0, -5),
+              child: Text(
+                beamCycleLock == null
+                    ? '-'
+                    : beamCycleLock == true
+                        ? '↓'
+                        : '↑',
+                style: TextStyle(
+                  color: lockEnabled ? Colors.red : Colors.black,
+                  fontSize: 21,
+                ),
+              )),
+          SizedBox(
+            width: 3,
+          ),
+          Text(
+            label,
+            style: const TextStyle(
+                fontSize: 12, color: Colors.black, fontWeight: FontWeight.bold),
+          ),
+        ]),
+      ),
     );
   }
 }

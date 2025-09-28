@@ -184,7 +184,7 @@ void drawNoteKey(
   bool isFirstNoteInGroupList = false;
   bool isAConnectedNote = false;
   bool doesGroupContain32ndOr64thNote = false;
-  final double sheetCenter = staffTop + (lineSpacing * 2);
+  final double staffCenter = staffTop + (lineSpacing * 2);
 
   if (note.type == NoteType.eighth ||
       note.type == NoteType.sixteenth ||
@@ -205,11 +205,11 @@ void drawNoteKey(
       double firstNoteY,
       bool doesGroupContain32ndOr64thNote
     }) notesGroupYs = getConnectedNotesGroupHighestY(
-        connectedNotesGroup, lineSpacing, staffTop);
+        connectedNotesGroup, lineSpacing, staffTop, staffCenter);
 
     connectedGroupHighestY = notesGroupYs.highestY;
     connectedGroupLowestY = notesGroupYs.lowestY;
-    firstNoteUpsideDown = notesGroupYs.firstNoteY < sheetCenter;
+    firstNoteUpsideDown = notesGroupYs.firstNoteY < staffCenter;
     doesGroupContain32ndOr64thNote =
         notesGroupYs.doesGroupContain32ndOr64thNote;
   }
@@ -480,15 +480,15 @@ void drawConnectedNotes(Canvas canvas, Paint paint, MusicalNote note,
   double lowestY,
   double firstNoteY,
   bool doesGroupContain32ndOr64thNote
-}) getConnectedNotesGroupHighestY(
-    List<MusicalNote> notes, double lineSpacing, double staffCenter) {
+}) getConnectedNotesGroupHighestY(List<MusicalNote> notes, double lineSpacing,
+    double staffTop, double staffCenter) {
   double highestY = 0;
   double lowestY = 0;
   bool doesGroupContain32ndOr64thNote = false;
 
   for (final note in notes) {
-    final double noteY = calculateNoteYMainSheet(
-        note.pitch, note.octave, lineSpacing, staffCenter);
+    final double noteY =
+        calculateNoteYMainSheet(note.pitch, note.octave, lineSpacing, staffTop);
 
     if (highestY == 0) highestY = noteY;
     if (noteY < highestY) highestY = noteY;
@@ -502,8 +502,21 @@ void drawConnectedNotes(Canvas canvas, Paint paint, MusicalNote note,
     }
   }
 
-  final double firstNoteY = calculateNoteYMainSheet(
-      notes[0].pitch, notes[0].octave, lineSpacing, staffCenter);
+  double firstNoteY = calculateNoteYMainSheet(
+      notes[0].pitch, notes[0].octave, lineSpacing, staffTop);
+
+  // Check if beam direction is locked for the first note
+  if (notes[0].beamDirectionLocked != null) {
+    // If locked, override the firstNoteY to force the desired beam direction
+    // true = force up (stems down), false = force down (stems up)
+    if (notes[0].beamDirectionLocked == true) {
+      // Force beams up (stems down) - make firstNoteY appear above staff center
+      firstNoteY = staffCenter - 1;
+    } else {
+      // Force beams down (stems up) - make firstNoteY appear below staff center
+      firstNoteY = staffCenter + 1;
+    }
+  }
 
   return (
     highestY: highestY,
