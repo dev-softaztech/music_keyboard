@@ -958,7 +958,12 @@ class MusicSheetPainter extends CustomPainter {
         ? -curveHeight * heightMultiplier
         : curveHeight * heightMultiplier;
 
-    // For debugging and ensuring proper behavior, let's be very aggressive about clearance
+    // Configurable parameters for slur appearance
+    const double minBufferSpace = 25.0; // Minimum space above/below notes
+    const double maxSlurHeight =
+        140.0; // Maximum slur height to prevent overlap with other rows
+
+    // Force the slur to have proper clearance above or below ALL obstacles
     if (isSlurAbove) {
       // Force the slur to be well above ALL obstacles
       double highestObstacle = highestNoteY;
@@ -966,13 +971,13 @@ class MusicSheetPainter extends CustomPainter {
         highestObstacle = math.min(highestObstacle, highestStemY);
       }
 
-      // Force control point to be at least 50px above the highest obstacle
-      double forcedControlY = highestObstacle - 50.0;
+      // Force control point to be at least minBufferSpace above the highest obstacle
+      double forcedControlY = highestObstacle - minBufferSpace;
       controlY = math.min(controlY, forcedControlY);
 
-      // Limit maximum height to prevent overlap with other staves
-      double maxHeight = math.min(120, horizontalDistance * 0.5);
-      controlY = math.max(controlY, staffCentre - maxHeight);
+      // Apply maximum height limit to prevent overlap with other rows
+      double maxAllowedY = staffCentre - maxSlurHeight;
+      controlY = math.max(controlY, maxAllowedY);
     } else {
       // Force the slur to be well below ALL obstacles
       double lowestObstacle = lowestNoteY;
@@ -980,13 +985,13 @@ class MusicSheetPainter extends CustomPainter {
         lowestObstacle = math.max(lowestObstacle, lowestStemY);
       }
 
-      // Force control point to be at least 50px below the lowest obstacle
-      double forcedControlY = lowestObstacle + 50.0;
+      // Force control point to be at least minBufferSpace below the lowest obstacle
+      double forcedControlY = lowestObstacle + minBufferSpace;
       controlY = math.max(controlY, forcedControlY);
 
-      // Limit maximum height to prevent overlap with other staves
-      double maxHeight = math.min(120, horizontalDistance * 0.5);
-      controlY = math.min(controlY, staffCentre + maxHeight);
+      // Apply maximum height limit to prevent overlap with other rows
+      double maxAllowedY = staffCentre + maxSlurHeight;
+      controlY = math.min(controlY, maxAllowedY);
     }
 
     Offset control = Offset(controlX, controlY);
@@ -1090,13 +1095,29 @@ class MusicSheetPainter extends CustomPainter {
             ? -curveHeight * heightMultiplier
             : curveHeight * heightMultiplier;
 
-        // Ensure we don't exceed reasonable bounds while maintaining clearance
+        // Re-apply our forced positioning to maintain buffer space
         if (isSlurAbove) {
-          double maxHeight = math.min(120, horizontalDistance * 0.5);
-          controlY = math.max(controlY, staffCentre - maxHeight);
+          double highestObstacle = highestNoteY;
+          if (highestStemY != double.infinity) {
+            highestObstacle = math.min(highestObstacle, highestStemY);
+          }
+          double forcedControlY = highestObstacle - minBufferSpace;
+          controlY = math.min(controlY, forcedControlY);
+
+          // Apply maximum height limit
+          double maxAllowedY = staffCentre - maxSlurHeight;
+          controlY = math.max(controlY, maxAllowedY);
         } else {
-          double maxHeight = math.min(120, horizontalDistance * 0.5);
-          controlY = math.min(controlY, staffCentre + maxHeight);
+          double lowestObstacle = lowestNoteY;
+          if (lowestStemY != double.negativeInfinity) {
+            lowestObstacle = math.max(lowestObstacle, lowestStemY);
+          }
+          double forcedControlY = lowestObstacle + minBufferSpace;
+          controlY = math.max(controlY, forcedControlY);
+
+          // Apply maximum height limit
+          double maxAllowedY = staffCentre + maxSlurHeight;
+          controlY = math.min(controlY, maxAllowedY);
         }
 
         control = Offset(controlX, controlY);
