@@ -305,8 +305,8 @@ class KeyboardSymbolsMusicStaffPainter extends CustomPainter {
     double noteWidth = size.width / 3; // Approximate width of the note
 
     // Draw ledger lines for notes above or below the staff
-    drawLedgerLines(
-        canvas, paint, noteY, size.width / 2, noteWidth, lineSpacing, staffTop);
+    drawLedgerLines(canvas, paint, noteY, size.width / 2, noteWidth,
+        lineSpacing, staffTop, accidentalCharacter != '');
 
     bool isUpsideDownNote = noteY < staffCenter;
 
@@ -325,17 +325,18 @@ class KeyboardSymbolsMusicStaffPainter extends CustomPainter {
     );
 
     textPainter.layout();
-    final x = (size.width - textPainter.width) / 2; // Center horizontally
+    double x = (size.width - textPainter.width) / 2; // Center horizontally
     final y = (calculateNoteYVerticalKeyboard(
             musicalNote.pitch, musicalNote.octave, lineSpacing, staffTop)) -
-        (textPainter.height / 2) +
-        0.5;
+        (textPainter.height / 2);
 
-    textPainter.paint(
-        canvas,
-        Offset(
-            isUpsideDownNote || musicalNote.type == NoteType.whole ? x : x + 3,
-            y));
+    if (accidentalCharacter != '') {
+      x = x + 6;
+    } else if (!isUpsideDownNote && musicalNote.type != NoteType.whole) {
+      x = x + 3;
+    }
+
+    textPainter.paint(canvas, Offset(x, y));
 
     if (accidentalCharacter != '') {
       double noteX = 0.0;
@@ -354,11 +355,10 @@ class KeyboardSymbolsMusicStaffPainter extends CustomPainter {
       if (accidentalCharacter != 'dotted_rest') {
         accidentalPainter.layout();
         final accidentalX = (size.width - textPainter.width) / 2 -
-            accidentalPainter.width * 0.8;
-        noteX = (size.width - textPainter.width) / 2 +
-            accidentalPainter.width * 0.2;
+            accidentalPainter.width * 0.9;
 
-        accidentalPainter.paint(canvas, Offset(accidentalX, y));
+        accidentalPainter.paint(
+            canvas, Offset(accidentalX, isUpsideDownNote ? y + 13 : y + 5));
       } else {
         noteX = (size.width - textPainter.width) / 2 * 1.2;
 
@@ -376,16 +376,19 @@ class KeyboardSymbolsMusicStaffPainter extends CustomPainter {
 }
 
 void drawLedgerLines(Canvas canvas, Paint paint, double noteY, double noteX,
-    double noteWidth, double lineSpacing, double staffTop) {
+    double noteWidth, double lineSpacing, double staffTop, bool hasAccidental) {
   final double staffBottom = staffTop + (4 * lineSpacing);
+
+  double leftX = hasAccidental ? -2 : 2;
+  double rightX = hasAccidental ? 8 : 2;
 
   if (noteY < staffTop) {
     for (double y = staffTop - lineSpacing;
         y >= noteY - lineSpacing / 2;
         y -= lineSpacing) {
       canvas.drawLine(
-        Offset(noteX - (noteWidth / 3) - 3, y),
-        Offset(noteX + (noteWidth / 3) + 3, y),
+        Offset(noteX - (noteWidth / 3) - leftX, y),
+        Offset(noteX + (noteWidth / 3) + rightX, y),
         paint..strokeWidth = 1.0,
       );
     }
@@ -394,8 +397,8 @@ void drawLedgerLines(Canvas canvas, Paint paint, double noteY, double noteX,
         y <= noteY + lineSpacing / 2;
         y += lineSpacing) {
       canvas.drawLine(
-        Offset(noteX - (noteWidth / 2) - 3, y),
-        Offset(noteX + (noteWidth / 2) + 3, y),
+        Offset(noteX - (noteWidth / 2) - leftX, y),
+        Offset(noteX + (noteWidth / 2) + rightX, y),
         paint..strokeWidth = 1.0,
       );
     }
