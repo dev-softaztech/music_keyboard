@@ -16,7 +16,7 @@ class MusicSheetPainter extends CustomPainter {
   final int selectedRow;
   final int selectedIndex;
   final bool showCursor;
-  final List<int> rowSpacingList;
+  final List<double> rowSpacingList;
   final int? selectionStart;
   final int? selectionEnd;
   final int? selectionRow;
@@ -84,7 +84,7 @@ class MusicSheetPainter extends CustomPainter {
       _drawSwing(canvas, rowIndex, staffTop, tempoTextY);
 
       double x = 80.0;
-      int currentRowSpacing = rowSpacingList[rowIndex];
+      double currentRowSpacing = rowSpacingList[rowIndex];
 
       // Set duration values for notes in this row
       BarLineCalculator.setNoteDurations(sheetNoteRows[rowIndex].notes);
@@ -296,9 +296,14 @@ class MusicSheetPainter extends CustomPainter {
               note.pitch, note.octave, lineSpacing, staffTop);
 
           double endX = 80.0 + (note.slurEndIndex! * currentRowSpacing);
+
+          var slurEndIndex =
+              note.slurEndIndex! < sheetNoteRows[rowIndex].notes.length - 1
+                  ? note.slurEndIndex!
+                  : sheetNoteRows[rowIndex].notes.length - 1;
           double endY = calculateNoteYMainSheet(
-              sheetNoteRows[rowIndex].notes[note.slurEndIndex!].pitch,
-              sheetNoteRows[rowIndex].notes[note.slurEndIndex!].octave,
+              sheetNoteRows[rowIndex].notes[slurEndIndex!].pitch,
+              sheetNoteRows[rowIndex].notes[slurEndIndex!].octave,
               lineSpacing,
               staffTop);
 
@@ -312,41 +317,54 @@ class MusicSheetPainter extends CustomPainter {
               staffTop,
               staffCenter,
               i,
-              note.slurEndIndex!,
+              slurEndIndex,
               noteColour,
               sheetNoteRows[rowIndex].notes);
         }
 
         if (note.isCrescendoStart && note.crescendoEndIndex != null) {
+          var crescendoEndIndex =
+              note.crescendoEndIndex! < sheetNoteRows[rowIndex].notes.length - 1
+                  ? note.crescendoEndIndex!
+                  : sheetNoteRows[rowIndex].notes.length - 1;
+
           _drawDynamicMarking(
               canvas,
               paint,
               x,
-              endXForIndex(note.crescendoEndIndex!, currentRowSpacing),
+              endXForIndex(crescendoEndIndex, currentRowSpacing),
               staffTop,
               true,
               i,
-              note.crescendoEndIndex!,
+              crescendoEndIndex,
               sheetNoteRows[rowIndex].notes,
               rowIndex);
         }
 
         if (note.isDecrescendoStart && note.decrescendoEndIndex != null) {
+          var decrescendoEndIndex = note.decrescendoEndIndex! <
+                  sheetNoteRows[rowIndex].notes.length - 1
+              ? note.decrescendoEndIndex!
+              : sheetNoteRows[rowIndex].notes.length - 1;
+
           _drawDynamicMarking(
               canvas,
               paint,
               x,
-              endXForIndex(note.decrescendoEndIndex!, currentRowSpacing),
+              endXForIndex(decrescendoEndIndex, currentRowSpacing),
               staffTop,
               false,
               i,
-              note.decrescendoEndIndex!,
+              decrescendoEndIndex,
               sheetNoteRows[rowIndex].notes,
               rowIndex);
         }
 
-        x +=
-            note.type == NoteType.clef ? getNoteWidth(note) : currentRowSpacing;
+        x += note.type == NoteType.clef
+            ? getNoteWidth(note)
+            : note.type == NoteType.space
+                ? 0
+                : currentRowSpacing;
       }
 
       if (selectionRow == rowIndex &&
@@ -619,7 +637,7 @@ class MusicSheetPainter extends CustomPainter {
       double staffTop,
       int index,
       Size size,
-      int rowSpacing,
+      double rowSpacing,
       int clefCount,
       List<MusicalNote> notes,
       double lineSpacing) {
@@ -1297,7 +1315,7 @@ class MusicSheetPainter extends CustomPainter {
     );
   }
 
-  double endXForIndex(int index, int currentRowSpacing) {
+  double endXForIndex(int index, double currentRowSpacing) {
     return 80.0 + (index * currentRowSpacing);
   }
 
@@ -1564,7 +1582,7 @@ class MusicSheetPainter extends CustomPainter {
       double lineSpacing,
       List<MusicalNote> notes,
       int noteIndex,
-      int currentRowSpacing) {
+      double currentRowSpacing) {
     if (noteIndex + 2 >= notes.length) {
       double y = calculateNoteYMainSheet(notes[noteIndex].pitch,
           notes[noteIndex].octave, lineSpacing, staffTop);

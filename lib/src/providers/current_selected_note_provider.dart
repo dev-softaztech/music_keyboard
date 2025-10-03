@@ -19,7 +19,7 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
   void updateInsertionPoint(int row, int index) {
     selectedRow = row;
     insertionIndex = index;
-    selectedIndex = insertionIndex == 0 ? 0 : insertionIndex - 1;
+    selectedIndex = insertionIndex;
 
     // Set flag to check for bar lines on next note addition
     _checkForBarLines = true;
@@ -29,6 +29,15 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
 
   /// **Add a note to the sheet and handle automatic bar line placement**
   void addNote(MusicalNote note, List<SheetRows> sheetNoteRows) {
+    if (note.type == NoteType.space &&
+        sheetNoteRows[selectedRow].notes.isNotEmpty &&
+        sheetNoteRows[selectedRow]
+                .notes[insertionIndex == 0 ? 0 : insertionIndex - 1]
+                .type ==
+            NoteType.space) {
+      return;
+    }
+
     //saveState(sheetNoteRows);
 
     // Insert the note at the current insertion point
@@ -135,7 +144,7 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
     //saveState(sheetNoteRows); // Save for undo
 
     int startRow = selectedRow;
-    int startIndex = insertionIndex - 1;
+    int startIndex = insertionIndex;
     int endRow = row;
     int endIndex = index;
 
@@ -192,7 +201,7 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
     //saveState(sheetNoteRows);
 
     int startRow = selectedRow;
-    int startIndex = insertionIndex == 0 ? insertionIndex : insertionIndex - 1;
+    int startIndex = insertionIndex;
     int endRow = row;
     int endIndex = index - 1;
 

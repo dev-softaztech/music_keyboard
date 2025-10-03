@@ -34,27 +34,31 @@ double getNoteWidth(MusicalNote note) {
 
 /// Calculate the insertion index based on tap position
 int calculateInsertionIndex(
-    double tapPositionX, List<MusicalNote> notes, int rowSpacing) {
+    double tapPositionX, List<MusicalNote> notes, double rowSpacing) {
   if (notes.isEmpty) {
     return 0;
   }
 
-  double currentX = 25.0; // Starting X position
+  double currentX = 80.0; // Starting X position
 
   for (int i = 0; i < notes.length; i++) {
     final note = notes[i];
-    final noteWidth = getNoteWidth(note);
+    if (note.type != NoteType.space) {
+      final noteWidth = getNoteWidth(note);
 
-    // Calculate the center position of this note
-    double noteCenter = currentX + (noteWidth / 2);
+      // Calculate the center position of this note
+      //double noteCenter = currentX + (noteWidth / 2);
+      double halfRowSpacing = rowSpacing / 2;
 
-    // If tap is before the center of this note, insert before it
-    if (tapPositionX < noteCenter) {
-      return i;
+      // If tap is before the center of this note, insert before it
+      if (tapPositionX > currentX - halfRowSpacing &&
+          tapPositionX < currentX + halfRowSpacing) {
+        return i;
+      }
+
+      // Move to next note position
+      currentX += note.type == NoteType.clef ? noteWidth : rowSpacing;
     }
-
-    // Move to next note position
-    currentX += note.type == NoteType.clef ? noteWidth : rowSpacing;
   }
 
   // If we get here, insert at the end
@@ -63,12 +67,14 @@ int calculateInsertionIndex(
 
 /// Calculate the X position for a given index in the row
 double calculateXPositionForIndex(
-    int index, List<MusicalNote> notes, int rowSpacing) {
+    int index, List<MusicalNote> notes, double rowSpacing) {
   double x = 80.0; // Starting X position
 
   for (int i = 0; i < index && i < notes.length; i++) {
     final note = notes[i];
-    x += note.type == NoteType.clef ? getNoteWidth(note) : rowSpacing;
+    if (note.type != NoteType.space) {
+      x += note.type == NoteType.clef ? getNoteWidth(note) : rowSpacing;
+    }
   }
 
   return x;

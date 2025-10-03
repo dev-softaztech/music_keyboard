@@ -42,7 +42,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     SheetRows(notes: [], rowProperties: RowProperties(tempoNumber: 0))
   ];
   int maxNotesPerRow = 18;
-  int defaultNoteSpacing = 26;
+  double defaultNoteSpacing = 26;
 
   bool showClefs = true;
   bool showBars = false;
@@ -106,7 +106,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   void _handleRowOverflow(
     CurrentSelectedNoteProvider selectedNoteProvider,
     ListOfSpacingForEachRow rowSpacingProvider,
-    List<int> rowSpacingList,
+    List<double> rowSpacingList,
   ) {
     // Check if we need to handle row overflow
     if (sheetNoteRows[selectedNoteProvider.selectedRow].notes.length - 1 >=
@@ -141,7 +141,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   void _handleRowOverflowWithoutBars(
     CurrentSelectedNoteProvider selectedNoteProvider,
     ListOfSpacingForEachRow rowSpacingProvider,
-    List<int> rowSpacingList,
+    List<double> rowSpacingList,
   ) {
     // Create a new row
     sheetNoteRows.insert(selectedNoteProvider.selectedRow + 1,
@@ -162,7 +162,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   void _handleRowOverflowWithBars(
     CurrentSelectedNoteProvider selectedNoteProvider,
     ListOfSpacingForEachRow rowSpacingProvider,
-    List<int> rowSpacingList,
+    List<double> rowSpacingList,
   ) {
     // Find the last bar boundaries in the row
     final barBoundaries =
@@ -216,7 +216,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   void _ensureNextRowExists(
     CurrentSelectedNoteProvider selectedNoteProvider,
     ListOfSpacingForEachRow rowSpacingProvider,
-    List<int> rowSpacingList,
+    List<double> rowSpacingList,
     int notesInCurrentBar,
   ) {
     if (sheetNoteRows.length - 1 <= selectedNoteProvider.selectedRow) {
@@ -284,23 +284,31 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     final rowSpacingProvider = context.read<ListOfSpacingForEachRow>();
     var rowSpacingList = rowSpacingProvider.rowSpacingList;
 
+    int spaceNotes = 0;
+    for (var i in sheetNoteRows[rowIndex].notes) {
+      if (i.type == NoteType.space) spaceNotes = spaceNotes + 1;
+    }
+
+    int notesLength = sheetNoteRows[rowIndex].notes.length;
+    notesLength = notesLength - spaceNotes;
+
     //here work out how many clefs/time signatures and affect the spacing in some way based on this?
 
-    if (sheetNoteRows[rowIndex].notes.length < 12) {
+    if (notesLength < 12) {
       rowSpacingList[rowIndex] = 65;
-    } else if (sheetNoteRows[rowIndex].notes.length < 13) {
+    } else if (notesLength < 13) {
       rowSpacingList[rowIndex] = 59;
-    } else if (sheetNoteRows[rowIndex].notes.length < 14) {
+    } else if (notesLength < 14) {
       rowSpacingList[rowIndex] = 54;
-    } else if (sheetNoteRows[rowIndex].notes.length < 15) {
+    } else if (notesLength < 15) {
       rowSpacingList[rowIndex] = 50;
-    } else if (sheetNoteRows[rowIndex].notes.length < 16) {
+    } else if (notesLength < 16) {
       rowSpacingList[rowIndex] = 42;
-    } else if (sheetNoteRows[rowIndex].notes.length < 17) {
+    } else if (notesLength < 17) {
       rowSpacingList[rowIndex] = 38;
-    } else if (sheetNoteRows[rowIndex].notes.length < 18) {
+    } else if (notesLength < 18) {
       rowSpacingList[rowIndex] = 35;
-    } else if (sheetNoteRows[rowIndex].notes.length < 19) {
+    } else if (notesLength < 19) {
       rowSpacingList[rowIndex] = 33;
     }
 
@@ -1199,7 +1207,8 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                               borderRadius:
                                                   BorderRadius.circular(8),
                                               side: const BorderSide(
-                                                  color: Colors.black,
+                                                  color: Colors
+                                                      .black, //add red border conditional here
                                                   width: 1),
                                             ),
                                             padding: EdgeInsets.zero,

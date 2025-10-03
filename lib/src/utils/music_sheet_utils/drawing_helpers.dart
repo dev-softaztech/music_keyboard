@@ -11,7 +11,7 @@ void drawNote(
     double noteX,
     List<MusicalNote> notes,
     int index,
-    int noteSpacing,
+    double noteSpacing,
     Color noteColour) {
   if (note.type == NoteType.clef || note.type == NoteType.bar) {
     drawClefKey(canvas, paint, note, lineSpacing, staffTop, noteX, notes, index,
@@ -172,7 +172,7 @@ void drawNoteKey(
     List<MusicalNote> notes,
     int index,
     double noteY,
-    int noteSpacing,
+    double noteSpacing,
     Color noteColour) {
   final double noteRadius = 8.0; // Radius of the note head
   double stemHeight = 35.0; // Stem height for all notes
@@ -380,8 +380,14 @@ void drawNoteKey(
       canvas, paint, noteY, noteX, noteWidth, lineSpacing, staffTop);
 }
 
-void drawConnectedNotes(Canvas canvas, Paint paint, MusicalNote note,
-    double stemX, double stemTopY, bool firstNoteUpsideDown, int noteSpacing) {
+void drawConnectedNotes(
+    Canvas canvas,
+    Paint paint,
+    MusicalNote note,
+    double stemX,
+    double stemTopY,
+    bool firstNoteUpsideDown,
+    double noteSpacing) {
   canvas.drawLine(
     Offset(stemX, stemTopY),
     Offset(stemX - noteSpacing, stemTopY),

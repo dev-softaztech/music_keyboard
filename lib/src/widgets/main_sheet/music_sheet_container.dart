@@ -182,6 +182,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     super.dispose();
   }
 
+//next I need to add code for skipping space notes when calculating size of slurs & cresendo
+//also maybe when a note has a space after it then make space button border red
   void _handleTap(TapDownDetails details) {
     if (_dragStart != null && _dragEnd != null && _dragRow != null) {
       final RenderBox renderBox = context.findRenderObject() as RenderBox;
@@ -265,12 +267,17 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
         i++) {
       final note = widget.sheetNoteRows[closestRowIndex].notes[i];
       if (note.isCrescendoStart || note.isDecrescendoStart) {
-        final rect = getDynamicMarkingRect(
-            i,
-            note.isCrescendoStart
+        var endIndex = note.isCrescendoStart
+            ? (note.crescendoEndIndex! <
+                    widget.sheetNoteRows[closestRowIndex].notes.length - 1
                 ? note.crescendoEndIndex!
-                : note.decrescendoEndIndex!,
-            closestRowIndex);
+                : widget.sheetNoteRows[closestRowIndex].notes.length - 1)
+            : note.decrescendoEndIndex! <
+                    widget.sheetNoteRows[closestRowIndex].notes.length - 1
+                ? note.decrescendoEndIndex!
+                : widget.sheetNoteRows[closestRowIndex].notes.length - 1;
+
+        final rect = getDynamicMarkingRect(i, endIndex, closestRowIndex);
         if (rect.contains(Offset(tapX, tapY))) {
           setState(() {
             _editingDynamicIndex = i;
@@ -880,7 +887,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     final row = selectedNoteProvider.selectedRow;
     final index = selectedNoteProvider.insertionIndex - 1;
 
-    if (widget.sheetNoteRows[row].notes[index].type == NoteType.bar) {
+    if (index > 0 &&
+        widget.sheetNoteRows[row].notes[index].type == NoteType.bar) {
       return true;
     }
 
@@ -1316,7 +1324,14 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
               right: 0,
               child:
                   Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                if (_showBeamRotationButton) ...[
+                if (_showBeamRotationButton &&
+                    selectedNoteProvider
+                        .getBeamedGroupIndices(
+                            selectedNoteProvider.selectedIndex,
+                            widget
+                                .sheetNoteRows[selectedNoteProvider.selectedRow]
+                                .notes)
+                        .isNotEmpty) ...[
                   _buildBeamCycleButton('Beam Rotate', () {
                     setState(() {
                       context
