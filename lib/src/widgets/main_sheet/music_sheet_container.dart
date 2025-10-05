@@ -182,8 +182,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     super.dispose();
   }
 
+//continue here
 //next I need to add code for skipping space notes when calculating size of slurs & cresendo
-//also maybe when a note has a space after it then make space button border red
   void _handleTap(TapDownDetails details) {
     if (_dragStart != null && _dragEnd != null && _dragRow != null) {
       final RenderBox renderBox = context.findRenderObject() as RenderBox;

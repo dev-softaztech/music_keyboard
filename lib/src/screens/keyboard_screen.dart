@@ -1188,46 +1188,86 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                         ),
                                       ),
                                       const SizedBox(width: 7),
-                                      SizedBox(
-                                        width: 85,
-                                        height: 30,
-                                        child: ElevatedButton(
-                                          onPressed: () {
-                                            handleKeyPress(MusicalNote(
-                                                pitch: "D",
-                                                octave: 4,
-                                                type: NoteType.space,
-                                                isBeamed: false,
-                                                unicodeCharacter:
-                                                    _selectedBarUnicode));
-                                          },
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.grey[100],
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                              side: const BorderSide(
-                                                  color: Colors
-                                                      .black, //add red border conditional here
-                                                  width: 1),
-                                            ),
-                                            padding: EdgeInsets.zero,
-                                          ),
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              const Text(
-                                                'SPACE',
-                                                style: TextStyle(
-                                                  color: Colors.black,
-                                                  fontSize: 13,
-                                                  fontWeight: FontWeight.bold,
+                                      Consumer<CurrentSelectedNoteProvider>(
+                                        builder:
+                                            (context, selectedNoteProvider, _) {
+                                          // Check if the note before the current selected note has type NoteType.space
+                                          bool shouldShowRedBorder = false;
+
+                                          if (selectedNoteProvider
+                                                      .insertionIndex >
+                                                  0 &&
+                                              sheetNoteRows[selectedNoteProvider
+                                                      .selectedRow]
+                                                  .notes
+                                                  .isNotEmpty) {
+                                            int previousNoteIndex =
+                                                selectedNoteProvider
+                                                        .insertionIndex -
+                                                    1;
+                                            if (previousNoteIndex >= 0 &&
+                                                previousNoteIndex <
+                                                    sheetNoteRows[
+                                                            selectedNoteProvider
+                                                                .selectedRow]
+                                                        .notes
+                                                        .length) {
+                                              MusicalNote previousNote =
+                                                  sheetNoteRows[
+                                                          selectedNoteProvider
+                                                              .selectedRow]
+                                                      .notes[previousNoteIndex];
+                                              shouldShowRedBorder =
+                                                  previousNote.type ==
+                                                      NoteType.space;
+                                            }
+                                          }
+
+                                          return SizedBox(
+                                            width: 85,
+                                            height: 30,
+                                            child: ElevatedButton(
+                                              onPressed: () {
+                                                handleKeyPress(MusicalNote(
+                                                    pitch: "D",
+                                                    octave: 4,
+                                                    type: NoteType.space,
+                                                    isBeamed: false,
+                                                    unicodeCharacter:
+                                                        _selectedBarUnicode));
+                                              },
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor:
+                                                    Colors.grey[100],
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                  side: BorderSide(
+                                                      color: shouldShowRedBorder
+                                                          ? Colors.red
+                                                          : Colors.black,
+                                                      width: 1),
                                                 ),
+                                                padding: EdgeInsets.zero,
                                               ),
-                                            ],
-                                          ),
-                                        ),
+                                              child: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  const Text(
+                                                    'SPACE',
+                                                    style: TextStyle(
+                                                      color: Colors.black,
+                                                      fontSize: 13,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          );
+                                        },
                                       ),
                                       const SizedBox(width: 7),
                                       SizedBox(
