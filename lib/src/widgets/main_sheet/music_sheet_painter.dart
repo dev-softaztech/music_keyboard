@@ -291,22 +291,32 @@ class MusicSheetPainter extends CustomPainter {
         }
 
         if (note.slurEndIndex != null) {
-          double startX = x;
-          double startY = calculateNoteYMainSheet(
-              note.pitch, note.octave, lineSpacing, staffTop);
-
-          double endX = 80.0 + (note.slurEndIndex! * currentRowSpacing);
-
           var slurEndIndex =
               note.slurEndIndex! < sheetNoteRows[rowIndex].notes.length - 1
                   ? note.slurEndIndex!
                   : sheetNoteRows[rowIndex].notes.length - 1;
+
+          double startX = x;
+          double startY = calculateNoteYMainSheet(
+              note.pitch, note.octave, lineSpacing, staffTop);
+
+          var spaceNotesCount = 0;
+          for (int index = i; index <= slurEndIndex; index++) {
+            final note = sheetNoteRows[rowIndex].notes[index];
+            if (note.type == NoteType.space) {
+              spaceNotesCount++;
+            }
+          }
+
+          double endX = 80.0 +
+              ((note.slurEndIndex! - spaceNotesCount) * currentRowSpacing);
+
           double endY = calculateNoteYMainSheet(
-              sheetNoteRows[rowIndex].notes[slurEndIndex!].pitch,
-              sheetNoteRows[rowIndex].notes[slurEndIndex!].octave,
+              sheetNoteRows[rowIndex].notes[slurEndIndex].pitch,
+              sheetNoteRows[rowIndex].notes[slurEndIndex].octave,
               lineSpacing,
               staffTop);
-
+          //NEED TO ADD FUNCTION TO +1 TO END INDEX FOR ANY SLUR OR CRESENDO WHEN SPACE IS ADDED IN THE MIDDLE. AND WHEN ANY SPACE IS REMOVED.
           drawSlurBetweenNotes(
               canvas,
               paint,
@@ -319,7 +329,8 @@ class MusicSheetPainter extends CustomPainter {
               i,
               slurEndIndex,
               noteColour,
-              sheetNoteRows[rowIndex].notes);
+              sheetNoteRows[rowIndex].notes,
+              spaceNotesCount);
         }
 
         if (note.isCrescendoStart && note.crescendoEndIndex != null) {
@@ -328,11 +339,19 @@ class MusicSheetPainter extends CustomPainter {
                   ? note.crescendoEndIndex!
                   : sheetNoteRows[rowIndex].notes.length - 1;
 
+          var spaceCount = 0;
+          for (int index = i; index <= crescendoEndIndex; index++) {
+            final note = sheetNoteRows[rowIndex].notes[index];
+            if (note.type == NoteType.space) {
+              spaceCount++;
+            }
+          }
+
           _drawDynamicMarking(
               canvas,
               paint,
               x,
-              endXForIndex(crescendoEndIndex, currentRowSpacing),
+              endXForIndex(crescendoEndIndex - spaceCount, currentRowSpacing),
               staffTop,
               true,
               i,
@@ -347,11 +366,19 @@ class MusicSheetPainter extends CustomPainter {
               ? note.decrescendoEndIndex!
               : sheetNoteRows[rowIndex].notes.length - 1;
 
+          var spaceCount = 0;
+          for (int index = i; index <= decrescendoEndIndex; index++) {
+            final note = sheetNoteRows[rowIndex].notes[index];
+            if (note.type == NoteType.space) {
+              spaceCount++;
+            }
+          }
+
           _drawDynamicMarking(
               canvas,
               paint,
               x,
-              endXForIndex(decrescendoEndIndex, currentRowSpacing),
+              endXForIndex(decrescendoEndIndex - spaceCount, currentRowSpacing),
               staffTop,
               false,
               i,
@@ -651,8 +678,8 @@ class MusicSheetPainter extends CustomPainter {
     final Paint cursorPaint = Paint()..color = Colors.blue.withOpacity(0.8);
 
     canvas.drawLine(
-      Offset(cursorX, cursorY - 60),
-      Offset(cursorX, cursorY + 60),
+      Offset(cursorX + 20, cursorY - 60),
+      Offset(cursorX + 20, cursorY + 60),
       cursorPaint..strokeWidth = 3.5,
     );
   }
@@ -691,19 +718,19 @@ class MusicSheetPainter extends CustomPainter {
   }
 
   void drawSlurBetweenNotes(
-    Canvas canvas,
-    Paint paint,
-    double startX,
-    double startY,
-    double endX,
-    double endY,
-    double staffTop,
-    double staffCentre,
-    int startIndex,
-    int endIndex,
-    Color color,
-    List<MusicalNote> rowNotes,
-  ) {
+      Canvas canvas,
+      Paint paint,
+      double startX,
+      double startY,
+      double endX,
+      double endY,
+      double staffTop,
+      double staffCentre,
+      int startIndex,
+      int endIndex,
+      Color color,
+      List<MusicalNote> rowNotes,
+      int spaceNotesCount) {
     // Ensure left-to-right direction
     final int minIndex = startIndex < endIndex ? startIndex : endIndex;
     final int maxIndex = startIndex > endIndex ? startIndex : endIndex;
@@ -715,10 +742,12 @@ class MusicSheetPainter extends CustomPainter {
 
     for (int i = minIndex; i <= maxIndex; i++) {
       final note = rowNotes[i];
-      if (note.noteY > staffCentre) {
-        notesAboveCenter++;
-      } else {
-        notesBelowCenter++;
+      if (note.type != NoteType.space) {
+        if (note.noteY > staffCentre) {
+          notesAboveCenter++;
+        } else {
+          notesBelowCenter++;
+        }
       }
     }
 
@@ -733,7 +762,9 @@ class MusicSheetPainter extends CustomPainter {
 
     // Start with a moderate base curve height
     double curveHeight = 30;
-    int noteSpan = (maxIndex - minIndex).clamp(1, rowNotes.length);
+
+    int noteSpan = ((maxIndex - minIndex) - spaceNotesCount)
+        .clamp(1, rowNotes.length - spaceNotesCount);
     double horizontalDistance = (endX - startX).abs();
 
     // Define note head size (approximate)
@@ -765,120 +796,131 @@ class MusicSheetPainter extends CustomPainter {
     // First pass: identify all obstacles (note heads and stems) and find extremes
     for (int i = minIndex; i <= maxIndex; i++) {
       final note = rowNotes[i];
+      if (note.type != NoteType.space) {
+        var spaceCount = 0;
 
-      // Calculate note X position more accurately
-      double noteX = startX + ((i - minIndex) / noteSpan) * horizontalDistance;
-
-      // Track extreme note positions
-      highestNoteY = math.min(highestNoteY, note.noteY);
-      lowestNoteY = math.max(lowestNoteY, note.noteY);
-
-      // Add note head as an obstacle (all notes have heads)
-      double noteHeadTop = note.noteY - (noteHeadHeight / 2);
-      double noteHeadBottom = note.noteY + (noteHeadHeight / 2);
-
-      obstacles.add((
-        x: noteX,
-        y: note.noteY,
-        width: noteHeadWidth,
-        height: noteHeadHeight,
-        isUpsideDown: false,
-        isStem: false,
-        obstacleTop: noteHeadTop,
-        obstacleBottom: noteHeadBottom
-      ));
-
-      // Skip stem calculation for notes that don't have stems
-      if (note.type == NoteType.whole ||
-          note.type == NoteType.rest ||
-          note.type == NoteType.clef ||
-          note.type == NoteType.bar ||
-          note.type == NoteType.accidental) {
-        continue;
-      }
-
-      // Determine if the note's stem is upside down (pointing up)
-      if (note.isUpsideDown) {
-        hasUpsideDownStems = true;
-      } else {
-        hasDownwardStems = true;
-      }
-
-      // Calculate stem height based on note type and connected status
-      double stemHeight = 35.0; // Base stem height
-
-      // Adjust stem height for 32nd or 64th notes
-      if (note.type == NoteType.thirtySecond ||
-          note.type == NoteType.sixtyFourth) {
-        stemHeight += 10.0;
-      }
-
-      // For connected notes, calculate more accurate stem height
-      if ((note.type == NoteType.eighth ||
-              note.type == NoteType.sixteenth ||
-              note.type == NoteType.thirtySecond ||
-              note.type == NoteType.sixtyFourth) &&
-          note.isBeamed) {
-        // Get the connected notes group to determine actual stem height
-        var notesGroup = getConnectedNotesGroup(i, rowNotes);
-        var connectedNotesGroup = notesGroup.notesGroup;
-        bool firstNoteUpsideDown = false;
-
-        if (connectedNotesGroup.isNotEmpty) {
-          var notesGroupYs = getConnectedNotesGroupHighestY(
-              connectedNotesGroup, 10.0, staffTop, staffCentre);
-
-          double connectedGroupHighestY = notesGroupYs.highestY;
-          double connectedGroupLowestY = notesGroupYs.lowestY;
-          firstNoteUpsideDown = notesGroupYs.firstNoteY < staffCentre;
-
-          // Adjust stem height based on the connected group
-          if (!firstNoteUpsideDown) {
-            stemHeight = (note.noteY - connectedGroupHighestY) + stemHeight;
-          } else {
-            stemHeight = (connectedGroupLowestY - note.noteY) + stemHeight;
-          }
-
-          // Add buffer for complex connected notes
-          if (notesGroupYs.doesGroupContain32ndOr64thNote) {
-            stemHeight += 30.0;
+        for (int index = minIndex; index <= i; index++) {
+          final noteCurrent = rowNotes[index];
+          if (noteCurrent.type == NoteType.space) {
+            spaceCount++;
           }
         }
+
+        // Calculate note X position more accurately
+        double noteX = startX +
+            ((i - minIndex - spaceCount) / noteSpan) * horizontalDistance;
+
+        // Track extreme note positions
+        highestNoteY = math.min(highestNoteY, note.noteY);
+        lowestNoteY = math.max(lowestNoteY, note.noteY);
+
+        // Add note head as an obstacle (all notes have heads)
+        double noteHeadTop = note.noteY - (noteHeadHeight / 2);
+        double noteHeadBottom = note.noteY + (noteHeadHeight / 2);
+
+        obstacles.add((
+          x: noteX,
+          y: note.noteY,
+          width: noteHeadWidth,
+          height: noteHeadHeight,
+          isUpsideDown: false,
+          isStem: false,
+          obstacleTop: noteHeadTop,
+          obstacleBottom: noteHeadBottom
+        ));
+
+        // Skip stem calculation for notes that don't have stems
+        if (note.type == NoteType.whole ||
+            note.type == NoteType.rest ||
+            note.type == NoteType.clef ||
+            note.type == NoteType.bar ||
+            note.type == NoteType.accidental) {
+          continue;
+        }
+
+        // Determine if the note's stem is upside down (pointing up)
+        if (note.isUpsideDown) {
+          hasUpsideDownStems = true;
+        } else {
+          hasDownwardStems = true;
+        }
+
+        // Calculate stem height based on note type and connected status
+        double stemHeight = 35.0; // Base stem height
+
+        // Adjust stem height for 32nd or 64th notes
+        if (note.type == NoteType.thirtySecond ||
+            note.type == NoteType.sixtyFourth) {
+          stemHeight += 10.0;
+        }
+
+        // For connected notes, calculate more accurate stem height
+        if ((note.type == NoteType.eighth ||
+                note.type == NoteType.sixteenth ||
+                note.type == NoteType.thirtySecond ||
+                note.type == NoteType.sixtyFourth) &&
+            note.isBeamed) {
+          // Get the connected notes group to determine actual stem height
+          var notesGroup = getConnectedNotesGroup(i, rowNotes);
+          var connectedNotesGroup = notesGroup.notesGroup;
+          bool firstNoteUpsideDown = false;
+
+          if (connectedNotesGroup.isNotEmpty) {
+            var notesGroupYs = getConnectedNotesGroupHighestY(
+                connectedNotesGroup, 10.0, staffTop, staffCentre);
+
+            double connectedGroupHighestY = notesGroupYs.highestY;
+            double connectedGroupLowestY = notesGroupYs.lowestY;
+            firstNoteUpsideDown = notesGroupYs.firstNoteY < staffCentre;
+
+            // Adjust stem height based on the connected group
+            if (!firstNoteUpsideDown) {
+              stemHeight = (note.noteY - connectedGroupHighestY) + stemHeight;
+            } else {
+              stemHeight = (connectedGroupLowestY - note.noteY) + stemHeight;
+            }
+
+            // Add buffer for complex connected notes
+            if (notesGroupYs.doesGroupContain32ndOr64thNote) {
+              stemHeight += 30.0;
+            }
+          }
+        }
+
+        // Add a safety buffer to stem height
+        stemHeight += 30.0;
+
+        // Calculate stem position and dimensions
+        double stemX = note.isUpsideDown ? noteX - 5.0 : noteX + 5.0;
+        double stemWidth = 1.5; // Stem width
+        double stemTop, stemBottom;
+
+        if (note.isUpsideDown) {
+          // Stem points up
+          stemTop = note.noteY - stemHeight;
+          stemBottom = note.noteY;
+          // Track extreme stem positions
+          highestStemY = math.min(highestStemY, stemTop);
+        } else {
+          // Stem points down
+          stemTop = note.noteY;
+          stemBottom = note.noteY + stemHeight;
+          // Track extreme stem positions
+          lowestStemY = math.max(lowestStemY, stemBottom);
+        }
+
+        // Add stem as an obstacle
+        obstacles.add((
+          x: stemX,
+          y: note.noteY,
+          width: stemWidth,
+          height: stemHeight,
+          isUpsideDown: note.isUpsideDown,
+          isStem: true,
+          obstacleTop: stemTop,
+          obstacleBottom: stemBottom
+        ));
       }
-
-      // Add a safety buffer to stem height
-      stemHeight += 30.0;
-
-      // Calculate stem position and dimensions
-      double stemX = note.isUpsideDown ? noteX - 5.0 : noteX + 5.0;
-      double stemWidth = 1.5; // Stem width
-      double stemTop, stemBottom;
-
-      if (note.isUpsideDown) {
-        // Stem points up
-        stemTop = note.noteY - stemHeight;
-        stemBottom = note.noteY;
-        // Track extreme stem positions
-        highestStemY = math.min(highestStemY, stemTop);
-      } else {
-        // Stem points down
-        stemTop = note.noteY;
-        stemBottom = note.noteY + stemHeight;
-        // Track extreme stem positions
-        lowestStemY = math.max(lowestStemY, stemBottom);
-      }
-
-      // Add stem as an obstacle
-      obstacles.add((
-        x: stemX,
-        y: note.noteY,
-        width: stemWidth,
-        height: stemHeight,
-        isUpsideDown: note.isUpsideDown,
-        isStem: true,
-        obstacleTop: stemTop,
-        obstacleBottom: stemBottom
-      ));
     }
 
     // Calculate minimum curve height to clear ALL intermediate notes and stems
@@ -1498,11 +1540,13 @@ class MusicSheetPainter extends CustomPainter {
     double lowestY = double.negativeInfinity;
     bool hasUpsideDownNoteOnStaff = false;
     for (int i = startIndex; i <= endIndex; i++) {
-      if (notes[i].noteY > lowestY) {
-        lowestY = notes[i].noteY;
-      }
-      if (notes[i].isUpsideDown && notes[i].noteY >= staffTop) {
-        hasUpsideDownNoteOnStaff = true;
+      if (notes[i].type != NoteType.space) {
+        if (notes[i].noteY > lowestY) {
+          lowestY = notes[i].noteY;
+        }
+        if (notes[i].isUpsideDown && notes[i].noteY >= staffTop) {
+          hasUpsideDownNoteOnStaff = true;
+        }
       }
     }
 

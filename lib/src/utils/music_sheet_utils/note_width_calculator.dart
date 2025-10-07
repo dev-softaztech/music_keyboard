@@ -32,7 +32,7 @@ double getNoteWidth(MusicalNote note) {
   return noteTypeWidths[note.type] ?? 20.0; // Default to 20.0 if type not found
 }
 
-/// Calculate the insertion index based on tap position
+/// Calculate the selected note based on tap position
 int calculateInsertionIndex(
     double tapPositionX, List<MusicalNote> notes, double rowSpacing) {
   if (notes.isEmpty) {
@@ -62,7 +62,7 @@ int calculateInsertionIndex(
   }
 
   // If we get here, insert at the end
-  return notes.length;
+  return notes.length - 1;
 }
 
 /// Calculate the X position for a given index in the row

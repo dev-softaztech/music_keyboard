@@ -154,7 +154,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     updateRowSpacing(selectedNoteProvider.selectedRow);
 
     // Move the cursor to the beginning of the new row
-    selectedNoteProvider.updateInsertionPoint(
+    selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
         selectedNoteProvider.selectedRow + 1, 0);
   }
 
@@ -275,7 +275,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         selectedNoteProvider.insertionIndex >
             (maxNotesPerRow - notesToMove.length)) {
       // Update the insertion point to the next row
-      selectedNoteProvider.updateInsertionPoint(
+      selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
           selectedNoteProvider.selectedRow + 1, notesToMove.length);
     }
   }
@@ -337,7 +337,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         rowSpacingProvider.updateRowSpacingList(rowSpacingList);
 
         // Move cursor to the new row
-        selectedNoteProvider.updateInsertionPoint(
+        selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
             selectedNoteProvider.selectedRow + 1, 0);
 
         print("Added new row. Total rows: ${sheetNoteRows.length}");
@@ -368,13 +368,14 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         rowSpacingList.remove(rowSpacingList[selectedNoteProvider.selectedRow]);
         rowSpacingProvider.updateRowSpacingList(rowSpacingList);
 
-        selectedNoteProvider.updateInsertionPoint(
+        selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
             selectedNoteProvider.selectedRow - 1,
             sheetNoteRows[selectedNoteProvider.selectedRow - 1].notes.isEmpty
                 ? 0
                 : sheetNoteRows[selectedNoteProvider.selectedRow - 1]
-                    .notes
-                    .length);
+                        .notes
+                        .length -
+                    1);
       } else if (sheetNoteRows[selectedNoteProvider.selectedRow]
               .notes
               .isNotEmpty &&
@@ -382,12 +383,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         // Get the note that will be removed
         MusicalNote noteToRemove =
             sheetNoteRows[selectedNoteProvider.selectedRow]
-                .notes[selectedNoteProvider.insertionIndex - 1];
-
-        // Update cursor position before removing the note
-        selectedNoteProvider.updateInsertionPoint(
-            selectedNoteProvider.selectedRow,
-            selectedNoteProvider.insertionIndex - 1);
+                .notes[selectedNoteProvider.selectedIndex];
 
         // Handle slur indices
         for (var note
@@ -405,6 +401,11 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
             .notes
             .remove(noteToRemove);
 
+        // Update cursor position before removing the note
+        selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
+            selectedNoteProvider.selectedRow,
+            selectedNoteProvider.selectedIndex - 1);
+
         // After removing the note, check and update crescendo/decrescendo end indices
         final int removedNoteIndex = selectedNoteProvider.insertionIndex;
         for (var note
@@ -418,6 +419,12 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
             note.decrescendoEndIndex = note.decrescendoEndIndex! - 1;
           }
         }
+
+        selectedNoteProvider.adjustSlurIndicesForSpaceNote(
+            noteToRemove,
+            sheetNoteRows[selectedNoteProvider.selectedRow].notes,
+            removedNoteIndex,
+            false);
       }
 
       updateRowSpacing(selectedNoteProvider.selectedRow);
@@ -1203,7 +1210,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                                   .isNotEmpty) {
                                             int previousNoteIndex =
                                                 selectedNoteProvider
-                                                        .insertionIndex -
+                                                        .selectedIndex -
                                                     1;
                                             if (previousNoteIndex >= 0 &&
                                                 previousNoteIndex <
@@ -1228,13 +1235,48 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                             height: 30,
                                             child: ElevatedButton(
                                               onPressed: () {
-                                                handleKeyPress(MusicalNote(
-                                                    pitch: "D",
-                                                    octave: 4,
-                                                    type: NoteType.space,
-                                                    isBeamed: false,
-                                                    unicodeCharacter:
-                                                        _selectedBarUnicode));
+                                                if (shouldShowRedBorder) {
+                                                  MusicalNote noteToRemove =
+                                                      sheetNoteRows[
+                                                              selectedNoteProvider
+                                                                  .selectedRow]
+                                                          .notes[selectedNoteProvider
+                                                              .selectedIndex -
+                                                          1];
+                                                  sheetNoteRows[
+                                                          selectedNoteProvider
+                                                              .selectedRow]
+                                                      .notes
+                                                      .remove(noteToRemove);
+
+                                                  selectedNoteProvider
+                                                      .updateSelectedIndexAndInsertionPoint(
+                                                          selectedNoteProvider
+                                                              .selectedRow,
+                                                          selectedNoteProvider
+                                                                  .selectedIndex -
+                                                              1);
+
+                                                  selectedNoteProvider
+                                                      .adjustSlurIndicesForSpaceNote(
+                                                          noteToRemove,
+                                                          sheetNoteRows[
+                                                                  selectedNoteProvider
+                                                                      .selectedRow]
+                                                              .notes,
+                                                          selectedNoteProvider
+                                                                  .selectedIndex -
+                                                              1,
+                                                          false);
+                                                } else {
+                                                  handleKeyPress(MusicalNote(
+                                                      pitch: "D",
+                                                      octave: 4,
+                                                      type: NoteType.space,
+                                                      isBeamed: false,
+                                                      unicodeCharacter:
+                                                          _selectedBarUnicode));
+                                                }
                                               },
                                               style: ElevatedButton.styleFrom(
                                                 backgroundColor:

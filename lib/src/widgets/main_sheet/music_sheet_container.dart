@@ -304,7 +304,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
           closestRowIndex, closestNoteIndex, widget.sheetNoteRows);
     } else {
       // 🔹 Update provider with new insertion point
-      selectedNoteProvider.updateInsertionPoint(
+      selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
           closestRowIndex, closestNoteIndex);
     }
 
@@ -377,7 +377,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     final double tapY = transformedPosition.y;
 
     int closestRowIndex = findClosestRow(widget.sheetNoteRows, tapY);
-    int noteIndex = findNoteIndexAtPosition(
+    int noteIndex = findClosestNoteIndex(
         widget.sheetNoteRows[closestRowIndex].notes, tapX, closestRowIndex);
 
     if (noteIndex != -1) {
@@ -557,12 +557,11 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
 
   int findClosestNoteIndex(
       List<MusicalNote> notes, double tapX, int selectedRow) {
-    if (notes.isEmpty) return 0; // If row is empty, insert at start
+    if (notes.isEmpty) return 0;
 
     var rowSpacingList = context.read<ListOfSpacingForEachRow>().rowSpacingList;
     var currentRowSpacing = rowSpacingList[selectedRow];
 
-    // Use the new calculateInsertionIndex function to determine the insertion point
     return calculateInsertionIndex(tapX, notes, currentRowSpacing);
   }
 
@@ -658,29 +657,6 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     );
   }
 
-  int findNoteIndexAtPosition(
-      List<MusicalNote> notes, double tapX, int selectedRow) {
-    if (notes.isEmpty) return -1;
-
-    var rowSpacingList = context.read<ListOfSpacingForEachRow>().rowSpacingList;
-    var currentRowSpacing = rowSpacingList[selectedRow];
-    double currentX = 80.0;
-
-    for (int i = 0; i < notes.length; i++) {
-      double noteWidth = getNoteWidth(notes[i]);
-      if (notes[i].type != NoteType.clef) {
-        noteWidth = currentRowSpacing.toDouble();
-      }
-
-      if (tapX >= currentX && tapX < currentX + noteWidth) {
-        return i;
-      }
-      currentX += noteWidth;
-    }
-
-    return -1;
-  }
-
   Rect getDynamicMarkingRect(int startIndex, int endIndex, int rowIndex) {
     final rowNotes = widget.sheetNoteRows[rowIndex].notes;
     final rowSpacingList =
@@ -723,7 +699,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     // Check if there's no active highlighted notes AND current selected note has isTiedToNext = true
     if (_dragStart == null && _dragEnd == null) {
       final row = selectedNoteProvider.selectedRow;
-      final index = selectedNoteProvider.insertionIndex - 1;
+      final index = selectedNoteProvider.selectedIndex;
 
       if (index >= 0 && index < widget.sheetNoteRows[row].notes.length) {
         return widget.sheetNoteRows[row].notes[index].isTiedToNext;
@@ -754,7 +730,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     } else {
       // Check if current selected note is in range of existing decrescendo
       final row = selectedNoteProvider.selectedRow;
-      final index = selectedNoteProvider.insertionIndex - 1;
+      final index = selectedNoteProvider.selectedIndex;
 
       if (index >= 0) {
         for (int i = 0; i < widget.sheetNoteRows[row].notes.length; i++) {
@@ -792,7 +768,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     } else {
       // Check if current selected note is in range of existing crescendo
       final row = selectedNoteProvider.selectedRow;
-      final index = selectedNoteProvider.insertionIndex - 1;
+      final index = selectedNoteProvider.selectedIndex;
 
       if (index >= 0) {
         for (int i = 0; i < widget.sheetNoteRows[row].notes.length; i++) {
@@ -829,13 +805,13 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     } else {
       // Check if current selected note is in range of existing slur
       final row = selectedNoteProvider.selectedRow;
-      final index = selectedNoteProvider.insertionIndex - 1;
+      final index = selectedNoteProvider.selectedIndex;
 
       if (index >= 0) {
         for (int i = 0; i < widget.sheetNoteRows[row].notes.length; i++) {
           final note = widget.sheetNoteRows[row].notes[i];
           if (note.slurEndIndex != null) {
-            if (i < index && note.slurEndIndex! >= index) {
+            if (i <= index && note.slurEndIndex! >= index) {
               return true;
             }
           }
@@ -873,7 +849,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     } else {
       final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
       final row = selectedNoteProvider.selectedRow;
-      final index = selectedNoteProvider.insertionIndex - 1;
+      final index = selectedNoteProvider.selectedIndex;
 
       if (index >= 0 && index < widget.sheetNoteRows[row].notes.length) {
         return widget.sheetNoteRows[row].notes[index].isBeamed;
@@ -885,9 +861,10 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
   bool _shouldShowTempoEdit() {
     final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
     final row = selectedNoteProvider.selectedRow;
-    final index = selectedNoteProvider.insertionIndex - 1;
+    final index = selectedNoteProvider.selectedIndex;
 
     if (index > 0 &&
+        index < widget.sheetNoteRows[row].notes.length &&
         widget.sheetNoteRows[row].notes[index].type == NoteType.bar) {
       return true;
     }
@@ -901,7 +878,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     // Check if there's no active highlighted notes AND current selected note has dynamicCharacter
     if (_dragStart == null && _dragEnd == null) {
       final row = selectedNoteProvider.selectedRow;
-      final index = selectedNoteProvider.insertionIndex - 1;
+      final index = selectedNoteProvider.selectedIndex;
 
       if (index >= 0 && index < widget.sheetNoteRows[row].notes.length) {
         final dynamicChar =
@@ -918,7 +895,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     // Check if there's no active highlighted notes AND current selected note is beamed
     if (_dragStart == null && _dragEnd == null) {
       final row = selectedNoteProvider.selectedRow;
-      final index = selectedNoteProvider.insertionIndex - 1;
+      final index = selectedNoteProvider.selectedIndex;
 
       if (index >= 0 && index < widget.sheetNoteRows[row].notes.length) {
         final selectedNote = widget.sheetNoteRows[row].notes[index];
@@ -931,7 +908,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
   String _getDynamicCharacter() {
     final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
     final row = selectedNoteProvider.selectedRow;
-    final index = selectedNoteProvider.insertionIndex - 1;
+    final index = selectedNoteProvider.selectedIndex;
 
     if (index >= 0 && index < widget.sheetNoteRows[row].notes.length) {
       return widget.sheetNoteRows[row].notes[index].dynamicCharacter;
@@ -945,7 +922,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     //selectedNoteProvider.saveState(widget.sheetNoteRows);
 
     final row = selectedNoteProvider.selectedRow;
-    final index = selectedNoteProvider.insertionIndex - 1;
+    final index = selectedNoteProvider.selectedIndex;
 
     if (index >= 0 && index < widget.sheetNoteRows[row].notes.length) {
       setState(() {
@@ -978,7 +955,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     } else {
       // Remove decrescendo affecting current selected note
       final row = selectedNoteProvider.selectedRow;
-      final index = selectedNoteProvider.insertionIndex - 1;
+      final index = selectedNoteProvider.selectedIndex;
 
       if (index >= 0) {
         for (int i = 0; i < widget.sheetNoteRows[row].notes.length; i++) {
@@ -1019,7 +996,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     } else {
       // Remove crescendo affecting current selected note
       final row = selectedNoteProvider.selectedRow;
-      final index = selectedNoteProvider.insertionIndex - 1;
+      final index = selectedNoteProvider.selectedIndex;
 
       if (index >= 0) {
         for (int i = 0; i < widget.sheetNoteRows[row].notes.length; i++) {
@@ -1058,7 +1035,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     } else {
       // Remove slur affecting current selected note
       final row = selectedNoteProvider.selectedRow;
-      final index = selectedNoteProvider.insertionIndex - 1;
+      final index = selectedNoteProvider.selectedIndex;
 
       if (index >= 0) {
         for (int i = 0; i < widget.sheetNoteRows[row].notes.length; i++) {
@@ -1076,9 +1053,6 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
   }
 
   void _removeBeam() {
-    //final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
-    //selectedNoteProvider.saveState(widget.sheetNoteRows);
-
     if (_dragStart != null && _dragEnd != null && _dragRow != null) {
       // Set all notes in highlight range to isConnected = false
       final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
@@ -1090,7 +1064,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     } else {
       final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
       final row = selectedNoteProvider.selectedRow;
-      final index = selectedNoteProvider.insertionIndex - 1;
+      final index = selectedNoteProvider.selectedIndex;
 
       if (index >= 0 && index < widget.sheetNoteRows[row].notes.length) {
         widget.sheetNoteRows[row].notes[index].isBeamed = false;
@@ -1106,7 +1080,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     //selectedNoteProvider.saveState(widget.sheetNoteRows);
 
     final row = selectedNoteProvider.selectedRow;
-    final index = selectedNoteProvider.insertionIndex - 1;
+    final index = selectedNoteProvider.selectedIndex;
 
     if (index >= 0 && index < widget.sheetNoteRows[row].notes.length) {
       setState(() {
@@ -1120,7 +1094,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
   void _showTempoPopup() {
     final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
     final row = selectedNoteProvider.selectedRow;
-    final index = selectedNoteProvider.insertionIndex - 1;
+    final index = selectedNoteProvider.selectedIndex;
 
     if (index >= 0 && index < widget.sheetNoteRows[row].notes.length) {
       final barNote = widget.sheetNoteRows[row].notes[index];
@@ -1453,7 +1427,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                       final selectedNoteProvider =
                           context.read<CurrentSelectedNoteProvider>();
                       final row = selectedNoteProvider.selectedRow;
-                      final index = selectedNoteProvider.insertionIndex - 1;
+                      final index = selectedNoteProvider.selectedIndex;
 
                       if (index >= 0 &&
                           index + 1 < widget.sheetNoteRows[row].notes.length) {
