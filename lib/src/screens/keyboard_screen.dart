@@ -21,18 +21,25 @@ import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
 
 class KeyboardScreen extends StatelessWidget {
-  const KeyboardScreen({super.key});
+  const KeyboardScreen({super.key, this.initialSheetRows});
 
-  static const routeName = '/';
+  final List<SheetRows>? initialSheetRows;
+  static const routeName = '/keyboard';
 
   @override
   Widget build(BuildContext context) {
-    return const NoteInputScreen();
+    // Get the arguments passed from navigation if initialSheetRows is null
+    final List<SheetRows>? routeArgs = initialSheetRows ??
+        ModalRoute.of(context)?.settings.arguments as List<SheetRows>?;
+
+    return NoteInputScreen(initialSheetRows: routeArgs);
   }
 }
 
 class NoteInputScreen extends StatefulWidget {
-  const NoteInputScreen({super.key});
+  const NoteInputScreen({super.key, this.initialSheetRows});
+
+  final List<SheetRows>? initialSheetRows;
 
   @override
   _NoteInputScreenState createState() => _NoteInputScreenState();
@@ -40,9 +47,7 @@ class NoteInputScreen extends StatefulWidget {
 
 class _NoteInputScreenState extends State<NoteInputScreen> {
   final ScreenshotController screenshotController = ScreenshotController();
-  List<SheetRows> sheetNoteRows = [
-    SheetRows(notes: [], rowProperties: RowProperties(tempoNumber: 0))
-  ];
+  late List<SheetRows> sheetNoteRows;
   int maxNotesPerRow = 18;
   double defaultNoteSpacing = 26;
 
@@ -68,6 +73,14 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
   // Callback function to clear highlighting
   VoidCallback? _clearHighlightingCallback;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize sheetNoteRows with passed data or default
+    sheetNoteRows = widget.initialSheetRows ??
+        [SheetRows(notes: [], rowProperties: RowProperties(tempoNumber: 0))];
+  }
 
   void handleKeyPress(MusicalNote note) {
     try {
@@ -1006,6 +1019,41 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
+                                // Home Button
+                                InkWell(
+                                  onTap: () {
+                                    setState(() {
+                                      showMenu = false;
+                                    });
+                                    Navigator.pushNamedAndRemoveUntil(
+                                      context,
+                                      '/',
+                                      (route) => false,
+                                    );
+                                  },
+                                  borderRadius: const BorderRadius.only(
+                                    topLeft: Radius.circular(8),
+                                    topRight: Radius.circular(8),
+                                  ),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 12, horizontal: 16),
+                                    child: const Row(
+                                      children: [
+                                        Icon(Icons.home,
+                                            size: 20, color: Colors.black),
+                                        SizedBox(width: 8),
+                                        Text('Home',
+                                            style: TextStyle(fontSize: 14)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                // Divider
+                                Container(
+                                  height: 1,
+                                  color: Colors.grey[300],
+                                ),
                                 // Save Button
                                 InkWell(
                                   onTap: () {
@@ -1014,10 +1062,6 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                     });
                                     handleSavePress();
                                   },
-                                  borderRadius: const BorderRadius.only(
-                                    topLeft: Radius.circular(8),
-                                    topRight: Radius.circular(8),
-                                  ),
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(
                                         vertical: 12, horizontal: 16),

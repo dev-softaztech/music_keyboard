@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+import 'screens/home_screen.dart';
 import 'screens/keyboard_screen.dart';
 import 'screens/settings/settings_controller.dart';
 import 'screens/settings/settings_view.dart';
@@ -85,8 +86,10 @@ class MyApp extends StatelessWidget {
                   case SettingsView.routeName:
                     return SettingsView(controller: settingsController);
                   case KeyboardScreen.routeName:
-                  default:
                     return const KeyboardScreen();
+                  case HomeScreen.routeName:
+                  default:
+                    return const HomeScreen();
                 }
               },
             );
