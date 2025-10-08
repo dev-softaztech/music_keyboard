@@ -19,7 +19,7 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
   void updateSelectedIndexAndInsertionPoint(int newRow, int newSelectedIndex) {
     selectedRow = newRow;
     selectedIndex = newSelectedIndex;
-    insertionIndex = newSelectedIndex + 1;
+    insertionIndex = newSelectedIndex == 0 ? 0 : newSelectedIndex + 1;
 
     // Set flag to check for bar lines on next note addition
     _checkForBarLines = true;
@@ -39,45 +39,44 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
     //saveState(sheetNoteRows);
 
     // Insert the note at the current insertion point
-    if (insertionIndex <= sheetNoteRows[selectedRow].notes.length) {
-      sheetNoteRows[selectedRow].notes.insert(insertionIndex, note);
+    //if (insertionIndex <= sheetNoteRows[selectedRow].notes.length) {
+    sheetNoteRows[selectedRow].notes.insert(insertionIndex, note);
 
-      // Adjust indices for dynamics
-      for (var n in sheetNoteRows[selectedRow].notes) {
-        if (n.crescendoEndIndex != null &&
-            n.crescendoEndIndex! >= selectedIndex) {
-          n.crescendoEndIndex = n.crescendoEndIndex! + 1;
-        }
-        if (n.decrescendoEndIndex != null &&
-            n.decrescendoEndIndex! >= selectedIndex) {
-          n.decrescendoEndIndex = n.decrescendoEndIndex! + 1;
-        }
+    // Adjust indices for dynamics
+    for (var n in sheetNoteRows[selectedRow].notes) {
+      if (n.crescendoEndIndex != null &&
+          n.crescendoEndIndex! >= selectedIndex) {
+        n.crescendoEndIndex = n.crescendoEndIndex! + 1;
       }
-
-      adjustSlurIndicesForSpaceNote(
-          note, sheetNoteRows[selectedRow].notes, insertionIndex, true);
-
-      // Set duration for the new note
-      note.duration = BarLineCalculator.noteDurations[note.type] ?? 0.0;
-
-      if (sheetNoteRows[selectedRow].notes[insertionIndex].type ==
-              NoteType.space &&
-          sheetNoteRows[selectedRow].notes.length > insertionIndex) {
-        selectedIndex = selectedIndex + 2;
-        insertionIndex = insertionIndex + 2;
-      } else {
-        selectedIndex++;
-        insertionIndex++;
+      if (n.decrescendoEndIndex != null &&
+          n.decrescendoEndIndex! >= selectedIndex) {
+        n.decrescendoEndIndex = n.decrescendoEndIndex! + 1;
       }
-
-      // Check if we need to add automatic bar lines
-      if (_checkForBarLines && note.type != NoteType.bar) {
-        _handleAutomaticBarLines(
-            sheetNoteRows[selectedRow].notes, sheetNoteRows);
-      }
-
-      notifyListeners();
     }
+
+    adjustSlurIndicesForSpaceNote(
+        note, sheetNoteRows[selectedRow].notes, insertionIndex, true);
+
+    // Set duration for the new note
+    note.duration = BarLineCalculator.noteDurations[note.type] ?? 0.0;
+
+    if (sheetNoteRows[selectedRow].notes[insertionIndex].type ==
+            NoteType.space &&
+        sheetNoteRows[selectedRow].notes.length > insertionIndex) {
+      selectedIndex = selectedIndex + 2;
+      insertionIndex = insertionIndex + 2;
+    } else {
+      selectedIndex++;
+      insertionIndex++;
+    }
+
+    // Check if we need to add automatic bar lines
+    if (_checkForBarLines && note.type != NoteType.bar) {
+      _handleAutomaticBarLines(sheetNoteRows[selectedRow].notes, sheetNoteRows);
+    }
+
+    notifyListeners();
+    //}
   }
 
   void adjustSlurIndicesForSpaceNote(MusicalNote spaceNote,

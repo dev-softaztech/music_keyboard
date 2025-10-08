@@ -3,6 +3,7 @@ import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/models/sheet_rows.dart';
 import 'package:music_keyboard/src/providers/current_selected_note_provider.dart';
 import 'package:music_keyboard/src/providers/list_of_spacing_for_each_row.dart';
+import 'package:music_keyboard/src/providers/row_spacing_provider.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/drawing_helpers.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/note_width_calculator.dart';
 import 'package:music_keyboard/src/widgets/main_sheet/music_sheet_painter.dart';
@@ -543,11 +544,13 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
 
   /// **Find the closest row based on the Y position**
   int findClosestRow(List<SheetRows> rows, double tapY) {
-    const double rowSpacing = 160.0;
-    const double sheetHeight = 40.0;
-    const double rowTotalHeight = rowSpacing + sheetHeight;
+    final globalRowSpacingProvider =
+        Provider.of<RowSpacingProvider>(context, listen: false);
+    double rowSpacing = globalRowSpacingProvider.rowSpacing;
+    double sheetHeight = 40.0;
+    double rowTotalHeight = rowSpacing + sheetHeight;
     const double verticalOffset = 250.0;
-    const double startY = verticalOffset - (rowSpacing / 2);
+    double startY = verticalOffset - (rowSpacing / 2);
 
     int rowIndex = ((tapY - startY) / rowTotalHeight).floor();
 
@@ -566,7 +569,9 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
   }
 
   double _getStaffTop(int rowIndex) {
-    const double rowSpacing = 160.0;
+    final globalRowSpacingProvider =
+        Provider.of<RowSpacingProvider>(context, listen: false);
+    double rowSpacing = globalRowSpacingProvider.rowSpacing;
     const double sheetHeight = 40.0;
     const double verticalOffset = 150.0;
     return verticalOffset + (rowIndex * (rowSpacing + sheetHeight));
@@ -1124,6 +1129,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     final selectedNoteProvider =
         Provider.of<CurrentSelectedNoteProvider>(context);
     final rowSpacingProvider = Provider.of<ListOfSpacingForEachRow>(context);
+    final globalRowSpacingProvider = Provider.of<RowSpacingProvider>(context);
 
     var keyboardHeight = 333;
     var canvasHeight = widget.screenSize.height -
@@ -1162,9 +1168,9 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                         builder: (context) {
                           // Calculate dynamic height based on number of rows
                           const double sheetHeight = 40.0;
-                          const double rowSpacing = 160.0;
-                          const double rowTotalHeight =
-                              rowSpacing + sheetHeight;
+                          double rowSpacing =
+                              globalRowSpacingProvider.rowSpacing;
+                          double rowTotalHeight = rowSpacing + sheetHeight;
                           const double verticalOffset = 150.0;
 
                           // Calculate total height based on number of rows
@@ -1195,6 +1201,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                                           false, // Never show cursor in screenshot
                                       rowSpacingList:
                                           rowSpacingProvider.rowSpacingList,
+                                      rowSpacing:
+                                          globalRowSpacingProvider.rowSpacing,
                                       editingDynamicIndex: _editingDynamicIndex,
                                       editingDynamicRow: _editingDynamicRow,
                                     ),
@@ -1214,6 +1222,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                                   showCursor: _showCursor,
                                   rowSpacingList:
                                       rowSpacingProvider.rowSpacingList,
+                                  rowSpacing:
+                                      globalRowSpacingProvider.rowSpacing,
                                   selectionStart: _dragStart,
                                   selectionEnd: _dragEnd,
                                   selectionRow: _dragRow,

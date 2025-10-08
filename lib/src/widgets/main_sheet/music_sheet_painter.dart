@@ -22,6 +22,7 @@ class MusicSheetPainter extends CustomPainter {
   final int? selectionRow;
   final int? editingDynamicIndex;
   final int? editingDynamicRow;
+  final double rowSpacing;
   double verticalOffset;
 
   MusicSheetPainter({
@@ -32,6 +33,7 @@ class MusicSheetPainter extends CustomPainter {
     required this.selectedIndex,
     required this.showCursor,
     required this.rowSpacingList,
+    required this.rowSpacing,
     this.selectionStart,
     this.selectionEnd,
     this.selectionRow,
@@ -50,7 +52,6 @@ class MusicSheetPainter extends CustomPainter {
     Color noteColour = Colors.black;
     const double lineSpacing = 10;
     const double sheetHeight = lineSpacing * 4;
-    const double rowSpacing = 160.0;
 
     // Draw title and composer
     _drawTitleAndComposer(canvas, size);
