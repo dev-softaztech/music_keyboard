@@ -736,7 +736,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
         for (int i = 0; i < widget.sheetNoteRows[row].notes.length; i++) {
           final note = widget.sheetNoteRows[row].notes[i];
           if (note.isDecrescendoStart && note.decrescendoEndIndex != null) {
-            if (i < index && note.decrescendoEndIndex! >= index) {
+            if (i <= index && note.decrescendoEndIndex! >= index) {
               return true;
             }
           }
@@ -774,7 +774,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
         for (int i = 0; i < widget.sheetNoteRows[row].notes.length; i++) {
           final note = widget.sheetNoteRows[row].notes[i];
           if (note.isCrescendoStart && note.crescendoEndIndex != null) {
-            if (i < index && note.crescendoEndIndex! >= index) {
+            if (i <= index && note.crescendoEndIndex! >= index) {
               return true;
             }
           }
@@ -961,7 +961,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
         for (int i = 0; i < widget.sheetNoteRows[row].notes.length; i++) {
           final note = widget.sheetNoteRows[row].notes[i];
           if (note.isDecrescendoStart && note.decrescendoEndIndex != null) {
-            if (i < index && note.decrescendoEndIndex! >= index) {
+            if (i <= index && note.decrescendoEndIndex! >= index) {
               note.isDecrescendoStart = false;
               note.decrescendoEndIndex = null;
             }
@@ -1002,7 +1002,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
         for (int i = 0; i < widget.sheetNoteRows[row].notes.length; i++) {
           final note = widget.sheetNoteRows[row].notes[i];
           if (note.isCrescendoStart && note.crescendoEndIndex != null) {
-            if (i < index && note.crescendoEndIndex! >= index) {
+            if (i <= index && note.crescendoEndIndex! >= index) {
               note.isCrescendoStart = false;
               note.crescendoEndIndex = null;
             }
@@ -1041,7 +1041,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
         for (int i = 0; i < widget.sheetNoteRows[row].notes.length; i++) {
           final note = widget.sheetNoteRows[row].notes[i];
           if (note.slurEndIndex != null) {
-            if (i < index && note.slurEndIndex! >= index) {
+            if (i <= index && note.slurEndIndex! >= index) {
               note.slurEndIndex = null;
             }
           }
@@ -1353,6 +1353,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                                 widget.sheetNoteRows);
 
                         _showDecrescendoRemoveButton = true;
+                        _showCrescendoRemoveButton = false;
                       }
                     }
                   }, true, !_showDecrescendoRemoveButton)
@@ -1372,6 +1373,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                                 widget.sheetNoteRows);
 
                         _showCrescendoRemoveButton = true;
+                        _showDecrescendoRemoveButton = false;
                       }
                     }
                   }, true, !_showCrescendoRemoveButton)
