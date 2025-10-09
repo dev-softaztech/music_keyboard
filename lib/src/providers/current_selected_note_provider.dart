@@ -66,7 +66,7 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
       selectedIndex = selectedIndex + 2;
       insertionIndex = insertionIndex + 2;
     } else {
-      selectedIndex++;
+      sheetNoteRows[selectedRow].notes.length == 1 ? 0 : selectedIndex++;
       insertionIndex++;
     }
 

@@ -34,7 +34,7 @@ class KeyboardScreen extends StatelessWidget {
 
     return NoteInputScreen(initialSheetRows: routeArgs);
   }
-}
+} //need to resolve errors when adding first notes to new lines
 
 class NoteInputScreen extends StatefulWidget {
   const NoteInputScreen({super.key, this.initialSheetRows});
