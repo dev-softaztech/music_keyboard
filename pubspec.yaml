@@ -1,4 +1,4 @@
-name: notation
+name: music_keyboard
 description: "Music notation keyboard."
 
 # Prevent accidental publishing to pub.dev.
