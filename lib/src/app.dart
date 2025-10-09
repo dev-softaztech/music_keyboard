@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
@@ -59,19 +60,29 @@ class MyApp extends StatelessWidget {
           // SettingsController to display the correct theme.
           theme: ThemeData(
             // Customize AppBar color
-            appBarTheme: AppBarTheme(
-              backgroundColor: const Color.fromARGB(
-                  255, 255, 253, 253), // AppBar background color
+            appBarTheme: const AppBarTheme(
+              backgroundColor:
+                  Color.fromARGB(255, 255, 255, 255), // AppBar background color
               foregroundColor: Colors.black, // AppBar text/icon color
+              systemOverlayStyle: SystemUiOverlayStyle(
+                statusBarColor: Colors.white,
+                statusBarIconBrightness: Brightness.dark,
+                statusBarBrightness: Brightness.light,
+              ),
             ),
           ),
           darkTheme: //ThemeData.dark(),
               ThemeData(
             // Customize AppBar color
-            appBarTheme: AppBarTheme(
-              backgroundColor: const Color.fromARGB(
-                  255, 255, 253, 253), // AppBar background color
+            appBarTheme: const AppBarTheme(
+              backgroundColor:
+                  Color.fromARGB(255, 255, 255, 255), // AppBar background color
               foregroundColor: Colors.black, // AppBar text/icon color
+              systemOverlayStyle: SystemUiOverlayStyle(
+                statusBarColor: Colors.white,
+                statusBarIconBrightness: Brightness.dark,
+                statusBarBrightness: Brightness.light,
+              ),
             ),
           ),
           themeMode: settingsController.themeMode,

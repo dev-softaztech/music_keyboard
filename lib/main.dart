@@ -23,6 +23,13 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
+  // Set system UI overlay style for status bar
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.white, // Status bar background color
+    statusBarIconBrightness: Brightness.dark, // Dark icons for light background
+    statusBarBrightness: Brightness.light, // For iOS
+  ));
+
   // Set up the SettingsController, which will glue user settings to multiple
   // Flutter Widgets.
   final settingsController = SettingsController(SettingsService());
