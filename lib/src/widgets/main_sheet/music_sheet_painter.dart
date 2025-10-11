@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/sheet_rows.dart';
+import 'package:music_keyboard/src/utils/music_sheet_utils/key_signature_position_calculator.dart';
 import 'package:vector_math/vector_math.dart' as vec;
 import 'dart:math' as math;
 import 'package:music_keyboard/models/music_note.dart';
@@ -220,8 +221,13 @@ class MusicSheetPainter extends CustomPainter {
           noteColour = Colors.black;
         }
 
-        drawNote(canvas, paint, note, lineSpacing, staffTop, x,
-            sheetNoteRows[rowIndex].notes, i, currentRowSpacing, noteColour);
+        if (note.type == NoteType.keySignature) {
+          _drawKeySignature(
+              canvas, paint, note, lineSpacing, staffTop, x, noteColour);
+        } else {
+          drawNote(canvas, paint, note, lineSpacing, staffTop, x,
+              sheetNoteRows[rowIndex].notes, i, currentRowSpacing, noteColour);
+        }
 
         if (note.isTriplet) {
           _drawTriplet(canvas, paint, x, staffTop, lineSpacing,
@@ -317,7 +323,7 @@ class MusicSheetPainter extends CustomPainter {
               sheetNoteRows[rowIndex].notes[slurEndIndex].octave,
               lineSpacing,
               staffTop);
-          //NEED TO ADD FUNCTION TO +1 TO END INDEX FOR ANY SLUR OR CRESENDO WHEN SPACE IS ADDED IN THE MIDDLE. AND WHEN ANY SPACE IS REMOVED.
+
           drawSlurBetweenNotes(
               canvas,
               paint,
@@ -388,7 +394,7 @@ class MusicSheetPainter extends CustomPainter {
               rowIndex);
         }
 
-        x += note.type == NoteType.clef
+        x += note.type == NoteType.clef || note.type == NoteType.keySignature
             ? getNoteWidth(note)
             : note.type == NoteType.space
                 ? 0
@@ -1617,6 +1623,66 @@ class MusicSheetPainter extends CustomPainter {
     if (isUnicode) yPos = yPos - 40;
 
     textPainter.paint(canvas, Offset(xPos, yPos));
+  }
+
+  /// Draw key signature on the staff
+  void _drawKeySignature(Canvas canvas, Paint paint, MusicalNote note,
+      double lineSpacing, double staffTop, double x, Color noteColour) {
+    // Parse the key signature name to determine symbol count and type
+    final keySignatureName = note.keySignatureName;
+    if (keySignatureName.isEmpty) return;
+
+    // Map key signature names to their properties
+    final Map<String, Map<String, dynamic>> keySignatureMap = {
+      'G/Em': {'count': 1, 'isSharp': true},
+      'D/Bm': {'count': 2, 'isSharp': true},
+      'A/F#m': {'count': 3, 'isSharp': true},
+      'E/C#m': {'count': 4, 'isSharp': true},
+      'B/G#m': {'count': 5, 'isSharp': true},
+      'F#/D#m': {'count': 6, 'isSharp': true},
+      'C#/A#m': {'count': 7, 'isSharp': true},
+      'F/Dm': {'count': 1, 'isSharp': false},
+      'Bb/Gm': {'count': 2, 'isSharp': false},
+      'Eb/Cm': {'count': 3, 'isSharp': false},
+      'Ab/Fm': {'count': 4, 'isSharp': false},
+      'Db/Bbm': {'count': 5, 'isSharp': false},
+      'Gb/Ebm': {'count': 6, 'isSharp': false},
+      'Cb/Abm': {'count': 7, 'isSharp': false},
+    };
+
+    final keyData = keySignatureMap[keySignatureName];
+    if (keyData == null) return;
+
+    final int symbolCount = keyData['count'];
+    final bool isSharp = keyData['isSharp'];
+    final String symbol = isSharp ? '\u266F' : '\u266D';
+
+    final (sharpPositions, flatPositions) = getPositionsForClefType(
+        note.keySignatureClefType, staffTop, lineSpacing);
+
+    final positions = isSharp ? sharpPositions : flatPositions;
+    final double symbolSpacing = 12.0; // Horizontal spacing between symbols
+
+    // Draw the symbols
+    for (int i = 0; i < symbolCount && i < positions.length; i++) {
+      final symbolPainter = TextPainter(
+        text: TextSpan(
+          text: symbol,
+          style: TextStyle(
+            fontFamily: 'Bravura',
+            fontSize: 40,
+            color: noteColour,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      symbolPainter.layout();
+
+      final double symbolX = x + (i * symbolSpacing);
+      final double symbolY = positions[i] - (symbolPainter.height / 2);
+
+      symbolPainter.paint(canvas, Offset(symbolX, symbolY));
+    }
   }
 
   void _drawTriplet(

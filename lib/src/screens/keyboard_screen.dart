@@ -102,7 +102,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
           accidentalCharacter: selectedAccidental,
           noteY: note.noteY,
           topTimeSignatureCharacter: note.topTimeSignatureCharacter,
-          bottomTimeSignatureCharacter: note.bottomTimeSignatureCharacter);
+          bottomTimeSignatureCharacter: note.bottomTimeSignatureCharacter,
+          keySignatureName: note.keySignatureName,
+          keySignatureClefType: note.keySignatureClefType);
 
       setState(() {
         // Add the note first

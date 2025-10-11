@@ -11,7 +11,7 @@ final Map<NoteType, double> noteTypeWidths = {
   NoteType.thirtySecond: 20.0,
   NoteType.sixtyFourth: 20.0,
   NoteType.rest: 20.0,
-  NoteType.accidental: 20.0,
+  NoteType.accidental: 20.0
 };
 
 /// Map of specific unicode characters to their widths (for special cases)
@@ -26,6 +26,10 @@ double getNoteWidth(MusicalNote note) {
   // Check if there's a specific width for this unicode character
   if (unicodeCharacterWidths.containsKey(note.unicodeCharacter)) {
     return unicodeCharacterWidths[note.unicodeCharacter]!;
+  }
+
+  if (note.type == NoteType.keySignature) {
+    return getKeySignatureWidth(note);
   }
 
   // Otherwise use the width based on note type
@@ -46,22 +50,26 @@ int calculateInsertionIndex(
     if (note.type != NoteType.space) {
       final noteWidth = getNoteWidth(note);
 
-      // Calculate the center position of this note
-      //double noteCenter = currentX + (noteWidth / 2);
-      double halfRowSpacing = rowSpacing / 2;
+      if (note.type == NoteType.keySignature) {
+        if (tapPositionX > currentX && tapPositionX < currentX + noteWidth) {
+          return i;
+        }
+      } else {
+        double halfRowSpacing = rowSpacing / 2;
 
-      // If tap is before the center of this note, insert before it
-      if (tapPositionX > currentX - halfRowSpacing &&
-          tapPositionX < currentX + halfRowSpacing) {
-        return i;
+        if (tapPositionX > currentX - halfRowSpacing &&
+            tapPositionX < currentX + halfRowSpacing) {
+          return i;
+        }
       }
 
-      // Move to next note position
-      currentX += note.type == NoteType.clef ? noteWidth : rowSpacing;
+      currentX +=
+          note.type == NoteType.clef || note.type == NoteType.keySignature
+              ? noteWidth
+              : rowSpacing;
     }
   }
 
-  // If we get here, insert at the end
   return notes.length - 1;
 }
 
@@ -73,9 +81,42 @@ double calculateXPositionForIndex(
   for (int i = 0; i < index && i < notes.length; i++) {
     final note = notes[i];
     if (note.type != NoteType.space) {
-      x += note.type == NoteType.clef ? getNoteWidth(note) : rowSpacing;
+      x += note.type == NoteType.clef || note.type == NoteType.keySignature
+          ? getNoteWidth(note)
+          : rowSpacing;
     }
   }
 
   return x;
 }
+
+/// Calculate the width needed for a key signature
+double getKeySignatureWidth(MusicalNote note) {
+  final keySignatureName = note.keySignatureName;
+  if (keySignatureName.isEmpty) return 20.0;
+
+  // Map key signature names to their symbol counts
+  final Map<String, int> symbolCounts = {
+    'G/Em': 1,
+    'D/Bm': 2,
+    'A/F#m': 3,
+    'E/C#m': 4,
+    'B/G#m': 5,
+    'F#/D#m': 6,
+    'C#/A#m': 7,
+    'F/Dm': 1,
+    'Bb/Gm': 2,
+    'Eb/Cm': 3,
+    'Ab/Fm': 4,
+    'Db/Bbm': 5,
+    'Gb/Ebm': 6,
+    'Cb/Abm': 7,
+  };
+
+  final int symbolCount = symbolCounts[keySignatureName] ?? 1;
+  const double symbolSpacing = 12.0;
+  const double baseWidth = 10.0;
+
+  return baseWidth + (symbolCount * symbolSpacing);
+}
+//next sort out cursor and row length

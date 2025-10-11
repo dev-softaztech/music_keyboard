@@ -481,10 +481,6 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
           final double currentX = transformedPosition.x;
 
           final Rect highlightRect = _calculateHighlightRect();
-          final Offset leftHandle =
-              Offset(highlightRect.left, highlightRect.center.dy);
-          final Offset rightHandle =
-              Offset(highlightRect.right, highlightRect.center.dy);
 
           // Determine which handle to drag based on which half of the highlight area the user clicked
           double highlightCenter =

@@ -23,6 +23,8 @@ class MusicalNote {
   bool swing;
   String swingText;
   String rehearsalMarking;
+  String keySignatureName;
+  String keySignatureClefType;
   bool? beamDirectionLocked; // null = auto, true = force up, false = force down
 
   MusicalNote(
@@ -49,6 +51,8 @@ class MusicalNote {
       this.swing = false,
       this.swingText = "",
       this.rehearsalMarking = "",
+      this.keySignatureName = "",
+      this.keySignatureClefType = "",
       this.beamDirectionLocked});
 
   MusicalNote copy() {
@@ -76,6 +80,7 @@ class MusicalNote {
         swing: swing,
         swingText: swingText,
         rehearsalMarking: rehearsalMarking,
+        keySignatureName: keySignatureName,
         beamDirectionLocked: beamDirectionLocked);
   }
 }
@@ -93,5 +98,6 @@ enum NoteType {
   accidental,
   bar,
   timeSignature,
-  space
+  space,
+  keySignature
 }

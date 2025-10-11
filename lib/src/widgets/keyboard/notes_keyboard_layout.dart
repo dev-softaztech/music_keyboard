@@ -7,6 +7,7 @@ import 'package:music_keyboard/src/providers/selected_accidental_provider.dart';
 import 'package:music_keyboard/src/widgets/keyboard/note_head_keyboard/keyboard_by_symbols.dart';
 import 'package:music_keyboard/src/providers/selected_unicode_provider.dart';
 import 'package:music_keyboard/src/widgets/keyboard/time_signature_popup.dart';
+import 'package:music_keyboard/src/widgets/keyboard/key_signature_popup.dart';
 import 'package:provider/provider.dart';
 
 class NotesKeyboardLayout extends StatefulWidget {
@@ -698,12 +699,16 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                       height: 40,
                       child: ElevatedButton(
                         onPressed: () {
-                          widget.onKeyPress(MusicalNote(
-                              pitch: "D",
-                              octave: 5,
-                              type: NoteType.clef,
-                              isBeamed: false,
-                              unicodeCharacter: "\uf472"));
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return KeySignaturePopup(
+                                onKeySignatureSelected: (note) {
+                                  widget.onKeyPress(note);
+                                },
+                              );
+                            },
+                          );
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.grey[100],
