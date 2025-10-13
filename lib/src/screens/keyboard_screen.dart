@@ -442,7 +442,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
       } else if (sheetNoteRows[selectedNoteProvider.selectedRow]
               .notes
               .isNotEmpty &&
-          selectedNoteProvider.insertionIndex > 0) {
+          selectedNoteProvider.insertionIndex >= 0) {
         // Get the note that will be removed
         MusicalNote noteToRemove =
             sheetNoteRows[selectedNoteProvider.selectedRow]
