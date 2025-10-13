@@ -69,6 +69,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
   int? _editingDynamicRow;
   bool _isEditingDynamic = false;
   Offset _totalDragDelta = Offset.zero;
+  double lineSpacing = 10;
 
   @override
   void initState() {
@@ -583,9 +584,9 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
 
     final double startX =
-        calculateXPositionForIndex(start, rowNotes, currentRowSpacing);
+        calculateXPositionForIndex(start, rowNotes, currentRowSpacing, true);
     final double endX =
-        calculateXPositionForIndex(end, rowNotes, currentRowSpacing);
+        calculateXPositionForIndex(end, rowNotes, currentRowSpacing, false);
 
     double staffTop = _getStaffTop(_dragRow!);
     double staffCenter = staffTop + 20;
@@ -599,9 +600,16 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
       min_y = math.min(min_y, y - 15);
       max_y = math.max(max_y, y + 15);
 
-      if (note.type == NoteType.clef) {
-        min_y = min_y + 100;
-        max_y = max_y + 125;
+      if (note.type == NoteType.rest ||
+          note.type == NoteType.clef ||
+          note.type == NoteType.bar ||
+          note.type == NoteType.accidental ||
+          note.type == NoteType.timeSignature ||
+          note.type == NoteType.keySignature ||
+          note.type == NoteType.accidental ||
+          note.type == NoteType.space) {
+        min_y = staffTop - 25;
+        max_y = staffTop + (lineSpacing * 4) + 25;
       }
 
       if (note.type != NoteType.whole &&
@@ -664,10 +672,10 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
         context.read<ListOfSpacingForEachRow>().rowSpacingList;
     final currentRowSpacing = rowSpacingList[rowIndex];
 
-    final double startX =
-        calculateXPositionForIndex(startIndex, rowNotes, currentRowSpacing);
-    final double endX =
-        calculateXPositionForIndex(endIndex, rowNotes, currentRowSpacing);
+    final double startX = calculateXPositionForIndex(
+        startIndex, rowNotes, currentRowSpacing, true);
+    final double endX = calculateXPositionForIndex(
+        endIndex, rowNotes, currentRowSpacing, false);
 
     double lowestY = double.negativeInfinity;
     bool hasUpsideDownNoteOnStaff = false;

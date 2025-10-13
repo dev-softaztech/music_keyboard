@@ -5,7 +5,7 @@ class RowSpacingProvider extends ChangeNotifier {
 
   double get rowSpacing => _rowSpacing;
 
-  void updateRowSpacing(double spacing) {
+  void updateBetweenRowSpacing(double spacing) {
     _rowSpacing = spacing;
     notifyListeners(); // Notify listeners about the change
   }

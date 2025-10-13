@@ -6,6 +6,7 @@ import 'package:music_keyboard/src/providers/current_selected_note_provider.dart
 import 'package:music_keyboard/src/providers/is_connected_provider.dart';
 import 'package:music_keyboard/src/providers/list_of_spacing_for_each_row.dart';
 import 'package:music_keyboard/src/providers/selected_accidental_provider.dart';
+import 'package:music_keyboard/src/utils/music_sheet_utils/note_width_calculator.dart';
 import 'package:music_keyboard/src/widgets/keyboard/dynamics_keyboard.dart';
 import 'package:music_keyboard/src/widgets/keyboard/notes_keyboard_layout.dart';
 import 'package:music_keyboard/src/widgets/main_sheet/music_sheet_container.dart';
@@ -85,9 +86,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   void handleKeyPress(MusicalNote note) {
     try {
       final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
-      final rowSpacingProvider = context.read<ListOfSpacingForEachRow>();
       final accidentalProvider = context.read<SelectedAccidentalProvider>();
-      var rowSpacingList = rowSpacingProvider.rowSpacingList;
 
       // Get the selected accidental
       final selectedAccidental = accidentalProvider.selectedAccidental;
@@ -110,37 +109,29 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         // Add the note first
         selectedNoteProvider.addNote(noteWithAccidental, sheetNoteRows);
 
-        // Handle row overflow if necessary
-        _handleRowOverflow(
-            selectedNoteProvider, rowSpacingProvider, rowSpacingList);
+        updateRowSpacing(selectedNoteProvider.selectedRow, selectedNoteProvider,
+            sheetNoteRows[selectedNoteProvider.selectedRow].notes);
       });
     } catch (e) {
       print("Error adding note: $e");
     }
   }
 
-  /// Handles row overflow when the current row exceeds maxNotesPerRow
-  void _handleRowOverflow(
-    CurrentSelectedNoteProvider selectedNoteProvider,
-    ListOfSpacingForEachRow rowSpacingProvider,
-    List<double> rowSpacingList,
-  ) {
-    // Check if we need to handle row overflow
-    if (sheetNoteRows[selectedNoteProvider.selectedRow].notes.length - 1 >=
-        maxNotesPerRow) {
-      // Check if there are any bar notes in the current row
-      bool hasBarNotes = _hasBarNotesInRow(selectedNoteProvider.selectedRow);
+  void handleRowOverflow(
+      CurrentSelectedNoteProvider selectedNoteProvider,
+      ListOfSpacingForEachRow rowSpacingProvider,
+      List<double> rowSpacingList,
+      double smallestSpacingSize,
+      List<MusicalNote> notes,
+      double maxRowSize) {
+    bool hasBarNotes = _hasBarNotesInRow(selectedNoteProvider.selectedRow);
 
-      if (!hasBarNotes) {
-        _handleRowOverflowWithoutBars(
-            selectedNoteProvider, rowSpacingProvider, rowSpacingList);
-      } else {
-        _handleRowOverflowWithBars(
-            selectedNoteProvider, rowSpacingProvider, rowSpacingList);
-      }
+    if (!hasBarNotes) {
+      _handleRowOverflowWithoutBars(selectedNoteProvider, rowSpacingProvider,
+          rowSpacingList, smallestSpacingSize, notes, maxRowSize);
     } else {
-      // If no row overflow, just update the current row spacing
-      updateRowSpacing(selectedNoteProvider.selectedRow);
+      _handleRowOverflowWithBars(
+          selectedNoteProvider, rowSpacingProvider, rowSpacingList);
     }
   }
 
@@ -156,19 +147,44 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
   /// Handles row overflow when there are no bar notes in the current row
   void _handleRowOverflowWithoutBars(
-    CurrentSelectedNoteProvider selectedNoteProvider,
-    ListOfSpacingForEachRow rowSpacingProvider,
-    List<double> rowSpacingList,
-  ) {
+      CurrentSelectedNoteProvider selectedNoteProvider,
+      ListOfSpacingForEachRow rowSpacingProvider,
+      List<double> rowSpacingList,
+      double smallestSpacingSize,
+      List<MusicalNote> notes,
+      double maxRowSize) {
     // Create a new row
     sheetNoteRows.insert(selectedNoteProvider.selectedRow + 1,
         SheetRows(notes: [], rowProperties: RowProperties(tempoNumber: 0)));
     rowSpacingList.insert(
         selectedNoteProvider.selectedRow + 1, defaultNoteSpacing);
-    rowSpacingProvider.updateRowSpacingList(rowSpacingList);
 
-    // Update spacing for the current row
-    updateRowSpacing(selectedNoteProvider.selectedRow);
+    var notes = sheetNoteRows[selectedNoteProvider.selectedRow].notes;
+    var endIndex = notes.length - 1;
+    var startIndex = 0;
+    var notesWidth = 0.0;
+
+    for (int i = 0; i < notes.length; i++) {
+      final note = notes[i];
+      if (note.type != NoteType.space) {
+        if (note.type == NoteType.clef || note.type == NoteType.timeSignature) {
+          notesWidth += getNoteWidth(note);
+        } else if (note.type == NoteType.keySignature) {
+          notesWidth += getNoteWidth(note) + 10;
+        } else {
+          notesWidth += smallestSpacingSize;
+        }
+      }
+      if (notesWidth > maxRowSize) {
+        startIndex = i;
+        break;
+      }
+    }
+    _moveMultipleOverflowingNotes(selectedNoteProvider, startIndex, endIndex);
+
+    updateRowSpacing(selectedNoteProvider.selectedRow, selectedNoteProvider,
+        sheetNoteRows[selectedNoteProvider.selectedRow].notes);
+    rowSpacingProvider.updateRowSpacingList(rowSpacingList);
 
     // Move the cursor to the beginning of the new row
     selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
@@ -195,7 +211,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         rowSpacingList, notesInLastBar);
 
     // Move the entire last bar to the next row
-    _moveLastBarToNextRow(
+    _moveMultipleOverflowingNotes(
         selectedNoteProvider, lastBarStartIndex, lastBarEndIndex);
   }
 
@@ -256,7 +272,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   }
 
   /// Moves the last bar from the current row to the next row
-  void _moveLastBarToNextRow(
+  void _moveMultipleOverflowingNotes(
     CurrentSelectedNoteProvider selectedNoteProvider,
     int lastBarStartIndex,
     int lastBarEndIndex,
@@ -285,8 +301,10 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     }
 
     // Update spacing for both the current row and the next row
-    updateRowSpacing(selectedNoteProvider.selectedRow);
-    updateRowSpacing(selectedNoteProvider.selectedRow + 1);
+    updateRowSpacing(selectedNoteProvider.selectedRow, selectedNoteProvider,
+        sheetNoteRows[selectedNoteProvider.selectedRow].notes);
+    updateRowSpacing(selectedNoteProvider.selectedRow + 1, selectedNoteProvider,
+        sheetNoteRows[selectedNoteProvider.selectedRow].notes);
 
     if (selectedNoteProvider.insertionIndex >= maxNotesPerRow ||
         selectedNoteProvider.insertionIndex >
@@ -297,36 +315,64 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     }
   }
 
-  void updateRowSpacing(int rowIndex) {
+  void updateRowSpacing(
+      int rowIndex,
+      CurrentSelectedNoteProvider selectedNoteProvider,
+      List<MusicalNote> notes) {
     final rowSpacingProvider = context.read<ListOfSpacingForEachRow>();
     var rowSpacingList = rowSpacingProvider.rowSpacingList;
 
-    int spaceNotes = 0;
-    for (var i in sheetNoteRows[rowIndex].notes) {
-      if (i.type == NoteType.space) spaceNotes = spaceNotes + 1;
+    List<double> listOfSpacingSizes = [
+      65,
+      63,
+      61,
+      59,
+      57,
+      55,
+      53,
+      51,
+      49,
+      47,
+      45,
+      43,
+      41,
+      39,
+      37,
+      35,
+      33
+    ];
+
+    var clefAndKeySigLength = 0.0;
+    var countOfNormalNotes = 0.0;
+
+    for (int i = 0; i < notes.length; i++) {
+      final note = notes[i];
+      if (note.type != NoteType.space) {
+        if (note.type == NoteType.clef || note.type == NoteType.timeSignature) {
+          clefAndKeySigLength += getNoteWidth(note);
+        } else if (note.type == NoteType.keySignature) {
+          clefAndKeySigLength += getNoteWidth(note) + 10;
+        } else {
+          countOfNormalNotes++;
+        }
+      }
     }
 
-    int notesLength = sheetNoteRows[rowIndex].notes.length;
-    notesLength = notesLength - spaceNotes;
+    double maxRowSize = 680;
+    var adjustedSpacingFitsAllNotesOnSingleLine = false;
 
-    //here work out how many clefs/time signatures and affect the spacing in some way based on this?
+    for (int i = 0; i < listOfSpacingSizes.length; i++) {
+      if (clefAndKeySigLength + (countOfNormalNotes * listOfSpacingSizes[i]) <
+          maxRowSize) {
+        rowSpacingList[rowIndex] = listOfSpacingSizes[i];
+        adjustedSpacingFitsAllNotesOnSingleLine = true;
+        break;
+      }
+    }
 
-    if (notesLength < 12) {
-      rowSpacingList[rowIndex] = 65;
-    } else if (notesLength < 13) {
-      rowSpacingList[rowIndex] = 59;
-    } else if (notesLength < 14) {
-      rowSpacingList[rowIndex] = 54;
-    } else if (notesLength < 15) {
-      rowSpacingList[rowIndex] = 50;
-    } else if (notesLength < 16) {
-      rowSpacingList[rowIndex] = 42;
-    } else if (notesLength < 17) {
-      rowSpacingList[rowIndex] = 38;
-    } else if (notesLength < 18) {
-      rowSpacingList[rowIndex] = 35;
-    } else if (notesLength < 19) {
-      rowSpacingList[rowIndex] = 33;
+    if (!adjustedSpacingFitsAllNotesOnSingleLine) {
+      handleRowOverflow(selectedNoteProvider, rowSpacingProvider,
+          rowSpacingList, listOfSpacingSizes.last, notes, maxRowSize);
     }
 
     rowSpacingProvider.updateRowSpacingList(rowSpacingList);
@@ -444,7 +490,8 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
             false);
       }
 
-      updateRowSpacing(selectedNoteProvider.selectedRow);
+      updateRowSpacing(selectedNoteProvider.selectedRow, selectedNoteProvider,
+          sheetNoteRows[selectedNoteProvider.selectedRow].notes);
     });
   }
 
@@ -795,7 +842,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                             rowSpacingProvider.rowSpacing,
                                         onSave: (spacing) {
                                           rowSpacingProvider
-                                              .updateRowSpacing(spacing);
+                                              .updateBetweenRowSpacing(spacing);
                                         },
                                       ),
                                     );

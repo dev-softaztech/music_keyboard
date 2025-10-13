@@ -1,39 +1,17 @@
 import 'package:music_keyboard/models/music_note.dart';
 
-/// Map of note types to their widths in pixels
-final Map<NoteType, double> noteTypeWidths = {
-  NoteType.clef: 26.0,
-  NoteType.whole: 20.0,
-  NoteType.half: 20.0,
-  NoteType.quarter: 20.0,
-  NoteType.eighth: 20.0,
-  NoteType.sixteenth: 20.0,
-  NoteType.thirtySecond: 20.0,
-  NoteType.sixtyFourth: 20.0,
-  NoteType.rest: 20.0,
-  NoteType.accidental: 20.0
-};
-
-/// Map of specific unicode characters to their widths (for special cases)
-final Map<String, double> unicodeCharacterWidths = {
-  // Add specific character widths if needed
-  '\uf472': 30.0, // Example: if a specific clef is wider
-  '\uf474': 30.0, // Example: if a specific clef is wider
-};
-
 /// Get the width of a note based on its type and unicode character
 double getNoteWidth(MusicalNote note) {
   // Check if there's a specific width for this unicode character
-  if (unicodeCharacterWidths.containsKey(note.unicodeCharacter)) {
-    return unicodeCharacterWidths[note.unicodeCharacter]!;
+  if (note.type == NoteType.clef || note.type == NoteType.timeSignature) {
+    return 30.0;
   }
 
   if (note.type == NoteType.keySignature) {
     return getKeySignatureWidth(note);
   }
 
-  // Otherwise use the width based on note type
-  return noteTypeWidths[note.type] ?? 20.0; // Default to 20.0 if type not found
+  return 20.0;
 }
 
 /// Calculate the selected note based on tap position
@@ -50,13 +28,14 @@ int calculateInsertionIndex(
     if (note.type != NoteType.space) {
       final noteWidth = getNoteWidth(note);
 
+      double halfRowSpacing = rowSpacing / 2;
+
       if (note.type == NoteType.keySignature) {
-        if (tapPositionX > currentX && tapPositionX < currentX + noteWidth) {
+        if (tapPositionX > currentX - halfRowSpacing &&
+            tapPositionX < currentX + noteWidth) {
           return i;
         }
       } else {
-        double halfRowSpacing = rowSpacing / 2;
-
         if (tapPositionX > currentX - halfRowSpacing &&
             tapPositionX < currentX + halfRowSpacing) {
           return i;
@@ -64,9 +43,11 @@ int calculateInsertionIndex(
       }
 
       currentX +=
-          note.type == NoteType.clef || note.type == NoteType.keySignature
+          note.type == NoteType.clef || note.type == NoteType.timeSignature
               ? noteWidth
-              : rowSpacing;
+              : note.type == NoteType.keySignature
+                  ? noteWidth + 10
+                  : rowSpacing;
     }
   }
 
@@ -74,17 +55,23 @@ int calculateInsertionIndex(
 }
 
 /// Calculate the X position for a given index in the row
-double calculateXPositionForIndex(
-    int index, List<MusicalNote> notes, double rowSpacing) {
+double calculateXPositionForIndex(int index, List<MusicalNote> notes,
+    double rowSpacing, bool isNoteStartXForHighlight) {
   double x = 80.0; // Starting X position
 
   for (int i = 0; i < index && i < notes.length; i++) {
     final note = notes[i];
     if (note.type != NoteType.space) {
-      x += note.type == NoteType.clef || note.type == NoteType.keySignature
+      x += note.type == NoteType.clef || note.type == NoteType.timeSignature
           ? getNoteWidth(note)
-          : rowSpacing;
+          : note.type == NoteType.keySignature
+              ? getNoteWidth(note) + 10
+              : rowSpacing;
     }
+  }
+
+  if (!isNoteStartXForHighlight && notes[index].type == NoteType.keySignature) {
+    x += getNoteWidth(notes[index]);
   }
 
   return x;
@@ -115,8 +102,6 @@ double getKeySignatureWidth(MusicalNote note) {
 
   final int symbolCount = symbolCounts[keySignatureName] ?? 1;
   const double symbolSpacing = 12.0;
-  const double baseWidth = 10.0;
 
-  return baseWidth + (symbolCount * symbolSpacing);
+  return (symbolCount * symbolSpacing) + 10;
 }
-//next sort out cursor and row length

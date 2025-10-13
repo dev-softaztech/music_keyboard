@@ -394,39 +394,28 @@ class MusicSheetPainter extends CustomPainter {
               rowIndex);
         }
 
-        x += note.type == NoteType.clef || note.type == NoteType.keySignature
+        x += note.type == NoteType.clef || note.type == NoteType.timeSignature
             ? getNoteWidth(note)
-            : note.type == NoteType.space
-                ? 0
-                : currentRowSpacing;
+            : note.type == NoteType.keySignature
+                ? getNoteWidth(note) + 10
+                : note.type == NoteType.space
+                    ? 0
+                    : currentRowSpacing;
       }
 
       if (selectionRow == rowIndex &&
           selectionStart != null &&
           selectionEnd != null) {
-        drawHighlight(canvas, size, rowIndex, staffTop);
+        drawHighlight(canvas, size, rowIndex, staffTop, lineSpacing);
       }
 
       // We no longer add automatic bar lines here as it's now handled in CurrentSelectedNoteProvider
 
       if (rowIndex == selectedRow) {
-        int clefCount = sheetNoteRows[rowIndex]
-            .notes
-            .where((x) => x.type == NoteType.clef)
-            .length;
-
         // Draw the cursor if showCursor is true
         if (showCursor) {
-          drawInsertionCursor(
-              canvas,
-              paint,
-              staffTop,
-              selectedIndex,
-              size,
-              currentRowSpacing,
-              clefCount,
-              sheetNoteRows[rowIndex].notes,
-              lineSpacing);
+          drawInsertionCursor(canvas, paint, staffTop, selectedIndex, size,
+              currentRowSpacing, sheetNoteRows[rowIndex].notes, lineSpacing);
         }
 
         // Find which bar contains the selected note and check if it's overfilled
@@ -672,21 +661,23 @@ class MusicSheetPainter extends CustomPainter {
       int index,
       Size size,
       double rowSpacing,
-      int clefCount,
       List<MusicalNote> notes,
       double lineSpacing) {
     // Calculate cursor X position using the new note width calculator
     double cursorX = notes.isEmpty
         ? 80.0
-        : calculateXPositionForIndex(index, notes, rowSpacing);
+        : calculateXPositionForIndex(index, notes, rowSpacing, false);
 
     double cursorY = staffTop + (lineSpacing * 2);
 
     final Paint cursorPaint = Paint()..color = Colors.blue.withOpacity(0.8);
 
+    cursorX +=
+        notes.isNotEmpty && notes[index].type == NoteType.keySignature ? 0 : 20;
+
     canvas.drawLine(
-      Offset(cursorX + 20, cursorY - 60),
-      Offset(cursorX + 20, cursorY + 60),
+      Offset(cursorX, cursorY - 60),
+      Offset(cursorX, cursorY + 60),
       cursorPaint..strokeWidth = 3.5,
     );
   }
@@ -841,7 +832,11 @@ class MusicSheetPainter extends CustomPainter {
             note.type == NoteType.rest ||
             note.type == NoteType.clef ||
             note.type == NoteType.bar ||
-            note.type == NoteType.accidental) {
+            note.type == NoteType.accidental ||
+            note.type == NoteType.timeSignature ||
+            note.type == NoteType.keySignature ||
+            note.type == NoteType.accidental ||
+            note.type == NoteType.space) {
           continue;
         }
 
@@ -1217,7 +1212,8 @@ class MusicSheetPainter extends CustomPainter {
     );
   }
 
-  void drawHighlight(Canvas canvas, Size size, int rowIndex, double staffTop) {
+  void drawHighlight(Canvas canvas, Size size, int rowIndex, double staffTop,
+      double lineSpacing) {
     if (selectionStart == null ||
         selectionEnd == null ||
         selectionRow == null) {
@@ -1234,10 +1230,10 @@ class MusicSheetPainter extends CustomPainter {
     final int end =
         selectionStart! > selectionEnd! ? selectionStart! : selectionEnd!;
 
-    final double startX =
-        calculateXPositionForIndex(start, rowNotes, rowSpacingList[rowIndex]);
-    final double endX =
-        calculateXPositionForIndex(end, rowNotes, rowSpacingList[rowIndex]);
+    final double startX = calculateXPositionForIndex(
+        start, rowNotes, rowSpacingList[rowIndex], true);
+    final double endX = calculateXPositionForIndex(
+        end, rowNotes, rowSpacingList[rowIndex], false);
 
     double min_y = double.infinity;
     double max_y = double.negativeInfinity;
@@ -1248,16 +1244,26 @@ class MusicSheetPainter extends CustomPainter {
       min_y = math.min(min_y, y - 15);
       max_y = math.max(max_y, y + 15);
 
-      if (note.type == NoteType.clef) {
-        min_y = min_y + 100;
-        max_y = max_y + 125;
+      if (note.type == NoteType.rest ||
+          note.type == NoteType.clef ||
+          note.type == NoteType.bar ||
+          note.type == NoteType.accidental ||
+          note.type == NoteType.timeSignature ||
+          note.type == NoteType.keySignature ||
+          note.type == NoteType.accidental ||
+          note.type == NoteType.space) {
+        min_y = staffTop - 25;
+        max_y = staffTop + (lineSpacing * 4) + 25;
       }
 
       if (note.type != NoteType.whole &&
           note.type != NoteType.rest &&
           note.type != NoteType.clef &&
           note.type != NoteType.bar &&
-          note.type != NoteType.accidental) {
+          note.type != NoteType.accidental &&
+          note.type != NoteType.timeSignature &&
+          note.type != NoteType.keySignature &&
+          note.type != NoteType.space) {
         final bool isUpsideDownNote = y < staffTop + 20;
         double stemHeight = 35.0;
         if (note.type == NoteType.thirtySecond ||
