@@ -85,6 +85,13 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         Sheet(sheetRows: [
           SheetRows(notes: [], rowProperties: RowProperties(tempoNumber: 0))
         ], sheetProperties: SheetProperties());
+
+    // Set the rowSpacing value from SheetProperties to RowSpacingProvider after the first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final rowSpacingProvider = context.read<RowSpacingProvider>();
+      rowSpacingProvider
+          .updateBetweenRowSpacing(sheet.sheetProperties.rowSpacing);
+    });
   }
 
   void handleKeyPress(MusicalNote note) {
@@ -842,8 +849,14 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                         initialSpacing:
                                             rowSpacingProvider.rowSpacing,
                                         onSave: (spacing) {
-                                          rowSpacingProvider
-                                              .updateBetweenRowSpacing(spacing);
+                                          setState(() {
+                                            // Update both the provider and the sheet properties
+                                            rowSpacingProvider
+                                                .updateBetweenRowSpacing(
+                                                    spacing);
+                                            sheet.sheetProperties.rowSpacing =
+                                                spacing;
+                                          });
                                         },
                                       ),
                                     );
