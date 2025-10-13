@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/row_properties.dart';
+import 'package:music_keyboard/models/sheet.dart';
+import 'package:music_keyboard/models/sheet_properties.dart';
 import 'package:music_keyboard/models/sheet_rows.dart';
 import 'keyboard_screen.dart';
 
@@ -131,9 +133,9 @@ class HomeScreen extends StatelessWidget {
 
   void _navigateToKeyboard(BuildContext context) {
     // Initialize a new SheetRows object
-    final initialSheetRows = [
+    final initialSheetRows = Sheet(sheetRows: [
       SheetRows(notes: [], rowProperties: RowProperties(tempoNumber: 0))
-    ];
+    ], sheetProperties: SheetProperties());
 
     // Navigate to keyboard screen with the initialized SheetRows
     Navigator.pushNamed(
