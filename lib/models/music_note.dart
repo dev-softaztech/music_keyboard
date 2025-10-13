@@ -25,6 +25,7 @@ class MusicalNote {
   String rehearsalMarking;
   String keySignatureName;
   String keySignatureClefType;
+  String clefType; // 'Treble', 'Bass', 'Alto', 'Tenor'
   bool? beamDirectionLocked; // null = auto, true = force up, false = force down
 
   MusicalNote(
@@ -53,6 +54,7 @@ class MusicalNote {
       this.rehearsalMarking = "",
       this.keySignatureName = "",
       this.keySignatureClefType = "",
+      this.clefType = "",
       this.beamDirectionLocked});
 
   MusicalNote copy() {
@@ -81,6 +83,8 @@ class MusicalNote {
         swingText: swingText,
         rehearsalMarking: rehearsalMarking,
         keySignatureName: keySignatureName,
+        keySignatureClefType: keySignatureClefType,
+        clefType: clefType,
         beamDirectionLocked: beamDirectionLocked);
   }
 }

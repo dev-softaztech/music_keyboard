@@ -60,7 +60,14 @@ void drawClefKey(
   // Adjust Y position for clefs
   if (note.unicodeCharacter == "\uf472") offsetY = offsetY - 10;
   if (note.unicodeCharacter == "\uf474") offsetY = offsetY - 30;
-  if (note.unicodeCharacter == "\uf473") offsetY = offsetY - 20;
+  if (note.unicodeCharacter == "\uf473") {
+    // Handle Alto vs Tenor clef - both use same unicode but different positioning
+    if (note.clefType == "Tenor") {
+      offsetY = offsetY - 30; // Tenor clef: -10 pixels compared to other notes
+    } else {
+      offsetY = offsetY - 20; // Alto clef (default)
+    }
+  }
   if (note.unicodeCharacter == "\ue08a" || note.unicodeCharacter == "\ue08b") {
     offsetY = offsetY - 20;
   }

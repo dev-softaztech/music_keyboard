@@ -30,6 +30,8 @@ class NotesKeyboardLayout extends StatefulWidget {
 
 class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
   String _selectedRestUnicode = '\ue4e5'; // Default rest unicode, whole note
+  String _selectedClefUnicode = '\uf472'; // Default clef unicode, treble clef
+  String _selectedClefType = 'Treble'; // Default clef type
   // Track which shift button is currently showing its popup
   String? _activeShiftButton;
   // Overlay entry for the popup
@@ -39,6 +41,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
     'sharp': GlobalKey(),
     'flat': GlobalKey(),
     'natural': GlobalKey(),
+    'clef': GlobalKey(),
   };
 
   int _sharpState = 0; // 0: off, 1: sharp, 2: double sharp
@@ -153,66 +156,148 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
         '\ue4e9', // 32nd rest
         '\ue1b3', // 64th rest
       ]; // Rest variants
+    } else if (buttonType == 'clef') {
+      return [
+        '\uf472', // Treble clef
+        '\uf474', // Bass clef
+        '\uf473', // Alto clef
+        '\uf473', // Tenor clef (same unicode as Alto)
+      ];
     }
     return [];
   }
 
+  // Get clef data with names
+  List<Map<String, String>> _getClefOptions() {
+    return [
+      {'unicode': '\uf472', 'name': 'Treble'},
+      {'unicode': '\uf474', 'name': 'Bass'},
+      {'unicode': '\uf473', 'name': 'Alto'},
+      {'unicode': '\uf473', 'name': 'Tenor'},
+    ];
+  }
+
   // Build the content of the popup based on the button type
   Widget _buildPopupContent(String buttonType, BuildContext context) {
-    List<String> unicodeOptions = _getUnicodeOptions(buttonType);
+    if (buttonType == 'clef') {
+      List<Map<String, String>> clefOptions = _getClefOptions();
 
-    return GridView.builder(
-      physics: const NeverScrollableScrollPhysics(), // Disable scrolling
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
-        childAspectRatio: 0.9, // Slightly wider than tall
-      ),
-      itemCount: unicodeOptions.length,
-      itemBuilder: (context, index) {
-        final unicode = unicodeOptions[index];
-        return InkWell(
-          onTap: () {
-            if (buttonType == 'rest') {
+      return GridView.builder(
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2, // 2x2 grid for 4 clefs
+          crossAxisSpacing: 8,
+          mainAxisSpacing: 8,
+          childAspectRatio: 1.3,
+        ),
+        itemCount: clefOptions.length,
+        itemBuilder: (context, index) {
+          final clef = clefOptions[index];
+          final unicode = clef['unicode']!;
+          final name = clef['name']!;
+
+          return InkWell(
+            onTap: () {
               setState(() {
-                _selectedRestUnicode = unicode;
+                _selectedClefUnicode = unicode;
+                _selectedClefType = name;
               });
               widget.onKeyPress(MusicalNote(
                 pitch: "D",
                 octave: 5,
-                type: NoteType.rest,
+                type: NoteType.clef,
                 isBeamed: false,
                 unicodeCharacter: unicode,
+                clefType: name,
               ));
-            } else {
-              // Update the selected accidental in the provider
-              context
-                  .read<SelectedAccidentalProvider>()
-                  .updateSelectedAccidental(unicode);
-            }
-            // Remove the overlay
-            _removeOverlay();
-          },
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(8),
+              _removeOverlay();
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    unicode,
+                    style: const TextStyle(
+                      fontFamily: 'Bravura',
+                      fontSize: 22,
+                      color: Color(0xFF242038),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF242038),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            child: Center(
-              child: Text(
-                unicode,
-                style: const TextStyle(
-                  fontFamily: 'Bravura',
-                  fontSize: 40, // Even smaller
-                  color: Color(0xFF242038),
+          );
+        },
+      );
+    } else {
+      // Rest popup (existing functionality)
+      List<String> unicodeOptions = _getUnicodeOptions(buttonType);
+
+      return GridView.builder(
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          crossAxisSpacing: 8,
+          mainAxisSpacing: 8,
+          childAspectRatio: 0.9,
+        ),
+        itemCount: unicodeOptions.length,
+        itemBuilder: (context, index) {
+          final unicode = unicodeOptions[index];
+          return InkWell(
+            onTap: () {
+              if (buttonType == 'rest') {
+                setState(() {
+                  _selectedRestUnicode = unicode;
+                });
+                widget.onKeyPress(MusicalNote(
+                  pitch: "D",
+                  octave: 5,
+                  type: NoteType.rest,
+                  isBeamed: false,
+                  unicodeCharacter: unicode,
+                ));
+              } else {
+                context
+                    .read<SelectedAccidentalProvider>()
+                    .updateSelectedAccidental(unicode);
+              }
+              _removeOverlay();
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Center(
+                child: Text(
+                  unicode,
+                  style: const TextStyle(
+                    fontFamily: 'Bravura',
+                    fontSize: 40,
+                    color: Color(0xFF242038),
+                  ),
                 ),
               ),
             ),
-          ),
-        );
-      },
-    );
+          );
+        },
+      );
+    }
   }
 
   Widget _buildShiftButton(
@@ -239,6 +324,15 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                 isBeamed: false,
                 unicodeCharacter: _selectedRestUnicode,
               ));
+            } else if (buttonType == 'clef') {
+              widget.onKeyPress(MusicalNote(
+                pitch: "D",
+                octave: 5,
+                type: NoteType.clef,
+                isBeamed: false,
+                unicodeCharacter: _selectedClefUnicode,
+                clefType: _selectedClefType,
+              ));
             }
           },
           style: ElevatedButton.styleFrom(
@@ -249,12 +343,19 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
             ),
             padding: EdgeInsets.zero,
           ),
-          child: Text(
-            _selectedRestUnicode,
-            style: const TextStyle(
-              fontFamily: 'Bravura',
-              fontSize: 30,
-              color: Color(0xFF242038),
+          child: Transform.translate(
+            offset: buttonType == 'clef' && _selectedClefUnicode == '\uf472'
+                ? const Offset(0, 4)
+                : const Offset(0, 0),
+            child: Text(
+              buttonType == 'rest'
+                  ? _selectedRestUnicode
+                  : _selectedClefUnicode,
+              style: TextStyle(
+                fontFamily: 'Bravura',
+                fontSize: buttonType == 'clef' ? 20 : 30,
+                color: const Color(0xFF242038),
+              ),
             ),
           ),
         ),
@@ -516,6 +617,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
           if (unicodeCharacters.isNotEmpty)
             Row(
               children: [
+                /*
                 Container(
                   margin: EdgeInsets.fromLTRB(7, 0, 0, 0),
                   padding: EdgeInsets.fromLTRB(7, 0, 0, 0),
@@ -557,8 +659,8 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(width: 5),
+                ),*/
+                const SizedBox(width: 8),
                 Expanded(
                   child: Consumer<SelectedUnicodeProvider>(
                     builder: (context, provider, _) => Container(
@@ -621,38 +723,8 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                 padding: EdgeInsets.fromLTRB(0, 2, 5, 5),
                 child: Column(
                   children: [
-                    //Bass clef
-                    SizedBox(
-                      width: 30,
-                      height: 40,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          widget.onKeyPress(MusicalNote(
-                              pitch: "D",
-                              octave: 5,
-                              type: NoteType.clef,
-                              isBeamed: false,
-                              unicodeCharacter: "\uf474"));
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey[100],
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            side: BorderSide(color: Colors.black, width: 1),
-                          ),
-                          padding: EdgeInsets.zero,
-                        ),
-                        child: Text(
-                          '\uf474',
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontSize: 20,
-                            //fontWeight: FontWeight.bold,
-                            fontFamily: 'Bravura',
-                          ),
-                        ),
-                      ),
-                    ),
+                    //Clefs
+                    _buildShiftButton('clef', 'Clef', context),
                     const SizedBox(height: 5),
                     // Time signature button
                     SizedBox(
