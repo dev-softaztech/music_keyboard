@@ -20,6 +20,7 @@ import 'package:music_keyboard/src/widgets/main_sheet/row_spacing_popup.dart';
 import 'package:music_keyboard/src/widgets/keyboard/tempo_popup.dart';
 import 'package:music_keyboard/src/widgets/keyboard/rehearsal_markings_popup.dart';
 import 'package:music_keyboard/src/providers/row_spacing_provider.dart';
+import 'package:music_keyboard/src/providers/undo_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
 
@@ -118,7 +119,8 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
       setState(() {
         // Add the note first
-        selectedNoteProvider.addNote(noteWithAccidental, sheet.sheetRows);
+        selectedNoteProvider.addNote(
+            noteWithAccidental, sheet.sheetRows, context);
 
         updateRowSpacing(selectedNoteProvider.selectedRow, selectedNoteProvider,
             sheet.sheetRows[selectedNoteProvider.selectedRow].notes);
@@ -198,8 +200,8 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     rowSpacingProvider.updateRowSpacingList(rowSpacingList);
 
     // Move the cursor to the beginning of the new row
-    selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
-        selectedNoteProvider.selectedRow + 1, 0);
+    //selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
+    //    selectedNoteProvider.selectedRow + 1, 0);
   }
 
   /// Handles row overflow when there are bar notes in the current row
@@ -321,7 +323,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
             (maxNotesPerRow - notesToMove.length)) {
       // Update the insertion point to the next row
       selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
-          selectedNoteProvider.selectedRow + 1, notesToMove.length);
+          selectedNoteProvider.selectedRow + 1, notesToMove.length - 1);
     }
   }
 
@@ -466,7 +468,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         }
 
         // Save state for undo before removing the note
-        //selectedNoteProvider.saveState(sheetNoteRows);
+        context.read<SheetUndoManager>().saveState(sheet.sheetRows);
 
         // Remove the note
         sheet.sheetRows[selectedNoteProvider.selectedRow].notes
@@ -1312,6 +1314,14 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                                                       .selectedRow]
                                                               .notes
                                                               .isNotEmpty &&
+                                                          sheet
+                                                                  .sheetRows[
+                                                                      selectedNoteProvider
+                                                                          .selectedRow]
+                                                                  .notes
+                                                                  .length >
+                                                              selectedNoteProvider
+                                                                  .selectedIndex &&
                                                           sheet
                                                               .sheetRows[
                                                                   selectedNoteProvider

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/models/sheet_rows.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/bar_line_calculator.dart';
+import 'package:music_keyboard/src/providers/undo_manager.dart';
+import 'package:provider/provider.dart';
 
 class CurrentSelectedNoteProvider extends ChangeNotifier {
   int selectedRow = 0;
@@ -28,7 +30,8 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
   }
 
   /// **Add a note to the sheet and handle automatic bar line placement**
-  void addNote(MusicalNote note, List<SheetRows> sheetNoteRows) {
+  void addNote(
+      MusicalNote note, List<SheetRows> sheetNoteRows, BuildContext context) {
     if (note.type == NoteType.space &&
         sheetNoteRows[selectedRow].notes.isNotEmpty &&
         sheetNoteRows[selectedRow].notes[selectedIndex].type ==
@@ -36,7 +39,7 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
       return;
     }
 
-    //saveState(sheetNoteRows);
+    context.read<SheetUndoManager>().saveState(sheetNoteRows);
 
     // Insert the note at the current insertion point
     //if (insertionIndex <= sheetNoteRows[selectedRow].notes.length) {

@@ -4,6 +4,7 @@ import 'package:music_keyboard/models/sheet_rows.dart';
 import 'package:music_keyboard/src/providers/current_selected_note_provider.dart';
 import 'package:music_keyboard/src/providers/list_of_spacing_for_each_row.dart';
 import 'package:music_keyboard/src/providers/row_spacing_provider.dart';
+import 'package:music_keyboard/src/providers/undo_manager.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/drawing_helpers.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/note_width_calculator.dart';
 import 'package:music_keyboard/src/widgets/main_sheet/music_sheet_painter.dart';
@@ -926,7 +927,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
   // Remove action methods
   void _removeTie() {
     final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
-    //selectedNoteProvider.saveState(widget.sheetNoteRows);
+    context.read<SheetUndoManager>().saveState(widget.sheetNoteRows);
 
     final row = selectedNoteProvider.selectedRow;
     final index = selectedNoteProvider.selectedIndex;
@@ -941,7 +942,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
 
   void _removeDecrescendo() {
     final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
-    //selectedNoteProvider.saveState(widget.sheetNoteRows);
+    context.read<SheetUndoManager>().saveState(widget.sheetNoteRows);
 
     if (_dragStart != null && _dragEnd != null && _dragRow != null) {
       // Remove decrescendos in highlighted range
@@ -982,7 +983,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
 
   void _removeCrescendo() {
     final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
-    //selectedNoteProvider.saveState(widget.sheetNoteRows);
+    context.read<SheetUndoManager>().saveState(widget.sheetNoteRows);
 
     if (_dragStart != null && _dragEnd != null && _dragRow != null) {
       // Remove crescendos in highlighted range
@@ -1023,7 +1024,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
 
   void _removeSlur() {
     final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
-    //selectedNoteProvider.saveState(widget.sheetNoteRows);
+    context.read<SheetUndoManager>().saveState(widget.sheetNoteRows);
 
     if (_dragStart != null && _dragEnd != null && _dragRow != null) {
       // Remove slurs in highlighted range
@@ -1084,7 +1085,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
 
   void _removeDynamicCharacter() {
     final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
-    //selectedNoteProvider.saveState(widget.sheetNoteRows);
+    context.read<SheetUndoManager>().saveState(widget.sheetNoteRows);
 
     final row = selectedNoteProvider.selectedRow;
     final index = selectedNoteProvider.selectedIndex;
@@ -1243,11 +1244,96 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                 ),
               )),
 
+          //Undo
+          Positioned(
+              top: 55,
+              right: 5,
+              child: Material(
+                color: Colors.transparent,
+                elevation: 5,
+                shadowColor: Colors.black.withOpacity(0.3),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                child: Consumer<SheetUndoManager>(
+                  builder: (context, undoManager, child) => RawMaterialButton(
+                    onPressed: undoManager.canUndo
+                        ? () {
+                            final previousState = undoManager.undo();
+                            if (previousState != null) {
+                              final selectedNoteProvider =
+                                  context.read<CurrentSelectedNoteProvider>();
+                              final currentRow =
+                                  selectedNoteProvider.selectedRow;
+                              final currentIndex =
+                                  selectedNoteProvider.selectedIndex;
+
+                              // Replace the current sheet rows with the previous state
+                              widget.sheetNoteRows.clear();
+                              widget.sheetNoteRows.addAll(previousState);
+
+                              // Update cursor position based on what still exists
+                              int newRow = currentRow;
+                              int newIndex = currentIndex;
+
+                              // Check if the current row still exists
+                              if (newRow >= widget.sheetNoteRows.length) {
+                                // Row doesn't exist, move to end of previous row
+                                newRow = widget.sheetNoteRows.length - 1;
+                                newIndex =
+                                    widget.sheetNoteRows[newRow].notes.isEmpty
+                                        ? 0
+                                        : widget.sheetNoteRows[newRow].notes
+                                                .length -
+                                            1;
+                              } else {
+                                // Row exists, check if the index still exists
+                                if (newIndex >=
+                                    widget.sheetNoteRows[newRow].notes.length) {
+                                  // Index doesn't exist, move to last note in the row
+                                  newIndex =
+                                      widget.sheetNoteRows[newRow].notes.isEmpty
+                                          ? 0
+                                          : widget.sheetNoteRows[newRow].notes
+                                                  .length -
+                                              1;
+                                }
+                              }
+
+                              // Update the cursor position
+                              selectedNoteProvider
+                                  .updateSelectedIndexAndInsertionPoint(
+                                      newRow, newIndex);
+
+                              // Clear any active highlighting
+                              clearHighlighting();
+
+                              // Trigger a rebuild
+                              setState(() {});
+                            }
+                          }
+                        : null,
+                    fillColor: Colors.white,
+                    constraints:
+                        const BoxConstraints.tightFor(width: 35, height: 35),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25),
+                      side: const BorderSide(color: Colors.black, width: 1),
+                    ),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    child: const Icon(
+                      Icons.undo,
+                      color: Colors.black,
+                      size: 24,
+                    ),
+                  ),
+                ),
+              )),
+
           // Floating Reset Button (Only Shows When Zoomed)
           if (isZoomed)
-            //Reset zoom
             Positioned(
-                top: 55,
+                top: 100,
                 right: 5,
                 child: Material(
                   color: Colors.transparent,
@@ -1273,37 +1359,6 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                     ),
                   ),
                 )),
-          /*//Undo
-          Positioned(
-              top: 90,
-              right: 0,
-              child: Material(
-                color: Colors.transparent,
-                elevation: 5,
-                shadowColor: Colors.black.withOpacity(0.3),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25),
-                ),
-                child: RawMaterialButton(
-                  onPressed: () {
-                    context
-                        .read<CurrentSelectedNoteProvider>()
-                        .undo(widget.sheetNoteRows);
-                  },
-                  fillColor: Colors.white,
-                  constraints:
-                      const BoxConstraints.tightFor(width: 35, height: 35),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25),
-                    side: const BorderSide(color: Colors.black, width: 1),
-                  ),
-                  child: const Icon(
-                    Icons.undo,
-                    color: Colors.black,
-                    size: 24,
-                  ),
-                ),
-              )),*/
           Positioned(
               top: 10,
               left: 0,

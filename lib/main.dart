@@ -7,6 +7,7 @@ import 'package:music_keyboard/src/providers/row_spacing_provider.dart';
 import 'package:music_keyboard/src/providers/selected_accidental_provider.dart';
 import 'package:music_keyboard/src/providers/selected_number_provider.dart';
 import 'package:music_keyboard/src/providers/selected_unicode_provider.dart';
+import 'package:music_keyboard/src/providers/undo_manager.dart';
 import 'package:provider/provider.dart';
 
 import 'src/app.dart';
@@ -41,7 +42,6 @@ void main() async {
   // Run the app and pass in the SettingsController. The app listens to the
   // SettingsController for changes, then passes it further down to the
   // SettingsView.
-  runApp(MyApp(settingsController: settingsController));
   runApp(
     MultiProvider(providers: [
       ChangeNotifierProvider(create: (_) => SelectedNumberProvider()),
@@ -51,6 +51,7 @@ void main() async {
       ChangeNotifierProvider(create: (_) => CurrentSelectedNoteProvider()),
       ChangeNotifierProvider(create: (_) => ListOfSpacingForEachRow()),
       ChangeNotifierProvider(create: (_) => RowSpacingProvider()),
+      ChangeNotifierProvider(create: (_) => SheetUndoManager()),
     ], child: MyApp(settingsController: settingsController)),
   );
 }
