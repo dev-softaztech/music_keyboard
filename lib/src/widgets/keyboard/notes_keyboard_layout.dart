@@ -68,30 +68,27 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
     super.dispose();
   }
 
-  // Show the popup for a specific shift button
   void _showPopup(String buttonType, BuildContext context) {
-    // Remove any existing overlay first
     _removeOverlay();
 
-    // Set the active shift button
     setState(() {
       _activeShiftButton = buttonType;
     });
 
-    // Get the screen size
-    final Size screenSize = MediaQuery.of(context).size;
-
-    // Calculate the number of items to determine the popup height
     List<String> unicodeOptions = _getUnicodeOptions(buttonType);
     int itemCount = unicodeOptions.length;
 
-    // Calculate the popup size based on content
-    // Fixed width for consistency, but height depends on number of items
     double popupWidth = 200.0;
-    double buttonSize = 80.0; // Fixed size for each button
-    int crossAxisCount = 3; // Always 2 columns
+    double buttonSize = 80.0;
+    int crossAxisCount = 3;
     int rowCount = (itemCount / crossAxisCount).ceil();
-    double popupHeight = (buttonSize * rowCount) + 32.0; // Add padding
+    double popupHeight = (buttonSize * rowCount) + 32.0;
+
+    double? bottom = 85;
+
+    if (buttonType == 'clef') {
+      bottom = 130;
+    }
 
     // Create the overlay entry
     _overlayEntry = OverlayEntry(
@@ -110,7 +107,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
           // The actual popup - centered on screen
           Positioned(
             left: 50,
-            bottom: 85,
+            bottom: bottom,
             child: Material(
               elevation: 8,
               borderRadius: BorderRadius.circular(12),
