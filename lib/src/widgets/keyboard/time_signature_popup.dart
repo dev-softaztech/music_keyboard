@@ -309,7 +309,7 @@ class _TimeSignaturePopupState extends State<TimeSignaturePopup> {
               child: IgnorePointer(
                 ignoring: true,
                 child: Container(
-                  width: 95,
+                  width: 80,
                   height: 70, // only cover top half of 60
                   decoration: BoxDecoration(
                     color: const Color.fromARGB(112, 200, 200, 200),
@@ -327,7 +327,7 @@ class _TimeSignaturePopupState extends State<TimeSignaturePopup> {
             child: IgnorePointer(
               ignoring: true,
               child: Container(
-                width: 95,
+                width: 80,
                 height: 70, // only cover top half of 60
                 decoration: BoxDecoration(
                   color: const Color.fromARGB(112, 200, 200, 200),
