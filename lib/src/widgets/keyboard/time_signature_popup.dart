@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/music_note.dart';
+import 'package:music_keyboard/src/widgets/shared/popup_theme.dart';
 
 class TimeSignaturePopup extends StatefulWidget {
   final void Function(MusicalNote) onTimeSignatureSelected;
@@ -109,14 +110,23 @@ class _TimeSignaturePopupState extends State<TimeSignaturePopup> {
       width: 80,
       height: 70,
       child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: PopupTheme.primaryBackground,
+            foregroundColor: PopupTheme.textPrimary,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+              side: const BorderSide(color: PopupTheme.borderColor),
+            ),
+            padding: EdgeInsets.zero,
+          ),
           onPressed: () => _selectTimeSignature(top, bottom),
           child: top == '\uE08A'
               ? Transform.translate(
                   offset: const Offset(0, 0),
                   child: Text(
                     top,
-                    style: TextStyle(
-                      color: Colors.black,
+                    style: const TextStyle(
+                      color: PopupTheme.textPrimary,
                       fontSize: 50,
                       fontFamily: 'Bravura',
                     ),
@@ -128,8 +138,8 @@ class _TimeSignaturePopupState extends State<TimeSignaturePopup> {
                       offset: const Offset(0, 25),
                       child: Text(
                         top,
-                        style: TextStyle(
-                          color: Colors.black,
+                        style: const TextStyle(
+                          color: PopupTheme.textPrimary,
                           fontSize: 40,
                           fontFamily: 'Bravura',
                         ),
@@ -139,8 +149,8 @@ class _TimeSignaturePopupState extends State<TimeSignaturePopup> {
                       offset: const Offset(0, -32),
                       child: Text(
                         bottom,
-                        style: TextStyle(
-                          color: Colors.black,
+                        style: const TextStyle(
+                          color: PopupTheme.textPrimary,
                           fontSize: 40,
                           fontFamily: 'Bravura',
                         ),
@@ -153,10 +163,29 @@ class _TimeSignaturePopupState extends State<TimeSignaturePopup> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      //title: const Text('Select Time Signature'),
-      content:
-          _showCustomSelector ? _buildCustomSelector() : _buildCommonSelector(),
+    return Dialog(
+      insetPadding: const EdgeInsets.all(PopupTheme.dialogMargin),
+      child: Container(
+        decoration: PopupTheme.dialogDecoration,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header
+            PopupTheme.buildHeader(
+              title: 'Select Time Signature',
+              onClose: () => Navigator.of(context).pop(),
+            ),
+
+            // Content
+            Padding(
+              padding: const EdgeInsets.all(PopupTheme.contentPadding),
+              child: _showCustomSelector
+                  ? _buildCustomSelector()
+                  : _buildCommonSelector(),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -189,19 +218,13 @@ class _TimeSignaturePopupState extends State<TimeSignaturePopup> {
           ),
           const SizedBox(height: 15),
           ElevatedButton(
+              style: PopupTheme.primaryButtonStyle,
               onPressed: () {
                 setState(() {
                   _showCustomSelector = true;
                 });
               },
-              child: const Text(
-                'CUSTOM',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              )),
+              child: const Text('CUSTOM')),
         ],
       ),
     );
@@ -240,10 +263,12 @@ class _TimeSignaturePopupState extends State<TimeSignaturePopup> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   TextButton(
+                    style: PopupTheme.secondaryButtonStyle,
                     onPressed: () => Navigator.of(context).pop(),
                     child: const Text('Cancel'),
                   ),
                   ElevatedButton(
+                    style: PopupTheme.primaryButtonStyle,
                     onPressed: () {
                       final top = _topUnicodes[_selectedTopIndex];
                       final bottom = _bottomUnicodes[_selectedBottomIndex];

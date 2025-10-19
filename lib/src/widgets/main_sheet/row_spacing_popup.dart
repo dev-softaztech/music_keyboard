@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:music_keyboard/src/widgets/shared/popup_theme.dart';
 
 class RowSpacingPopup extends StatefulWidget {
   final Function(double) onSave;
@@ -25,49 +26,65 @@ class _RowSpacingPopupState extends State<RowSpacingPopup> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Set Row Spacing'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            '${_currentSpacing.round() - 100}',
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
+    return Dialog(
+      insetPadding: const EdgeInsets.all(PopupTheme.dialogMargin),
+      child: Container(
+        width: 350,
+        decoration: PopupTheme.dialogDecoration,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header
+            PopupTheme.buildHeader(
+              title: 'Set Row Spacing',
+              onClose: () => Navigator.of(context).pop(),
             ),
-          ),
-          const SizedBox(height: 5),
-          Slider(
-            value: _currentSpacing,
-            min: 100.0,
-            max: 300.0,
-            divisions: 40, // 5px increments
-            onChanged: (value) {
-              setState(() {
-                _currentSpacing = value;
-              });
-            },
-            activeColor: Colors.black,
-            inactiveColor: Colors.grey[300],
-          ),
-        ],
+
+            // Content
+            Padding(
+              padding: const EdgeInsets.all(PopupTheme.contentPadding),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${_currentSpacing.round() - 100}',
+                    style: PopupTheme.bodyStyle.copyWith(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Theme(
+                    data: Theme.of(context).copyWith(
+                      sliderTheme: PopupTheme.sliderTheme,
+                    ),
+                    child: Slider(
+                      value: _currentSpacing,
+                      min: 100.0,
+                      max: 300.0,
+                      divisions: 40, // 5px increments
+                      onChanged: (value) {
+                        setState(() {
+                          _currentSpacing = value;
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Actions
+            PopupTheme.buildActions(
+              onCancel: () => Navigator.of(context).pop(),
+              onConfirm: () {
+                widget.onSave(_currentSpacing);
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            widget.onSave(_currentSpacing);
-            Navigator.of(context).pop();
-          },
-          child: const Text('Save'),
-        ),
-      ],
     );
   }
 }

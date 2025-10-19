@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:music_keyboard/src/widgets/shared/popup_theme.dart';
 
 class RehearsalMarkingsPopup extends StatelessWidget {
   final void Function(String) onSave;
@@ -23,68 +24,97 @@ class RehearsalMarkingsPopup extends StatelessWidget {
       'To Coda',
     ];
 
-    return AlertDialog(
-      title: const Text('Rehearsal Markings'),
-      content: SizedBox(
-        width: 400,
-        height: 260,
-        child: GridView.builder(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 8,
-            childAspectRatio: 3,
-          ),
-          itemCount: rehearsalOptions.length,
-          itemBuilder: (context, index) {
-            final option = rehearsalOptions[index];
-            final isUnicode = index <= 1; // first two options are unicode
+    return Dialog(
+      insetPadding: const EdgeInsets.all(PopupTheme.dialogMargin),
+      child: Container(
+        width: 450,
+        decoration: PopupTheme.dialogDecoration,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header
+            PopupTheme.buildHeader(
+              title: 'Rehearsal Markings',
+              onClose: () => Navigator.of(context).pop(),
+            ),
 
-            return InkWell(
-              onTap: () {
-                onSave(option);
-                Navigator.of(context).pop();
-              },
-              child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade300),
+            // Content
+            Padding(
+              padding: const EdgeInsets.all(PopupTheme.contentPadding),
+              child: SizedBox(
+                height: 260,
+                child: GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 3,
                   ),
-                  child: Center(
-                    child: Transform.translate(
-                      offset: isUnicode ? Offset(0, 10) : Offset(0, 0),
-                      child: Text(
-                        option,
-                        style: TextStyle(
-                          fontSize: isUnicode ? 24 : 16,
-                          fontFamily: isUnicode ? 'Bravura' : null,
-                          fontStyle:
-                              isUnicode ? FontStyle.normal : FontStyle.italic,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  )),
-            );
-          },
+                  itemCount: rehearsalOptions.length,
+                  itemBuilder: (context, index) {
+                    final option = rehearsalOptions[index];
+                    final isUnicode =
+                        index <= 1; // first two options are unicode
+
+                    return InkWell(
+                      onTap: () {
+                        onSave(option);
+                        Navigator.of(context).pop();
+                      },
+                      child: Container(
+                          decoration: PopupTheme.gridItemDecoration,
+                          child: Center(
+                            child: Transform.translate(
+                              offset: isUnicode
+                                  ? const Offset(0, 10)
+                                  : const Offset(0, 0),
+                              child: Text(
+                                option,
+                                style: TextStyle(
+                                  fontSize: isUnicode ? 24 : 16,
+                                  fontFamily: isUnicode ? 'Bravura' : null,
+                                  fontStyle: isUnicode
+                                      ? FontStyle.normal
+                                      : FontStyle.italic,
+                                  fontWeight: FontWeight.w500,
+                                  color: PopupTheme.textPrimary,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          )),
+                    );
+                  },
+                ),
+              ),
+            ),
+
+            // Actions
+            Padding(
+              padding: const EdgeInsets.all(PopupTheme.actionsPadding),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    style: PopupTheme.secondaryButtonStyle,
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Cancel'),
+                  ),
+                  const SizedBox(width: 12),
+                  TextButton(
+                    style: PopupTheme.secondaryButtonStyle,
+                    onPressed: () {
+                      onSave(''); // Clear rehearsal marking
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('Clear'),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        TextButton(
-          onPressed: () {
-            onSave(''); // Clear rehearsal marking
-            Navigator.of(context).pop();
-          },
-          child: const Text('Clear'),
-        ),
-      ],
     );
   }
 }
