@@ -533,7 +533,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
             _naturalState = 0;
             _sharpState = 0;
             _flatState = 0;
-            _dottedRestState = (_naturalState + 1) % 2;
+            _dottedRestState = (_dottedRestState + 1) % 2;
             String accidental = '';
             if (_dottedRestState == 1) {
               accidental = 'dotted_rest';
