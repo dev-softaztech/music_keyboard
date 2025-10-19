@@ -184,11 +184,75 @@ class _KeySignaturePopupState extends State<KeySignaturePopup>
               labelColor: Colors.black,
               unselectedLabelColor: Colors.grey,
               indicatorColor: Colors.blue,
-              tabs: const [
-                Tab(text: 'Treble'),
-                Tab(text: 'Bass'),
-                Tab(text: 'Alto'),
-                Tab(text: 'Tenor'),
+              tabs: [
+                Tab(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('Treble'),
+                      const SizedBox(width: 8),
+                      Text(
+                        '\uf472',
+                        style: const TextStyle(
+                          fontFamily: 'Bravura',
+                          fontSize: 18,
+                          color: Color(0xFF242038),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Tab(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('Bass'),
+                      const SizedBox(width: 8),
+                      Text(
+                        '\uf474',
+                        style: const TextStyle(
+                          fontFamily: 'Bravura',
+                          fontSize: 18,
+                          color: Color(0xFF242038),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Tab(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('Alto'),
+                      const SizedBox(width: 8),
+                      Text(
+                        '\uf473',
+                        style: const TextStyle(
+                          fontFamily: 'Bravura',
+                          fontSize: 18,
+                          color: Color(0xFF242038),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Tab(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('Tenor'),
+                      const SizedBox(width: 8),
+                      Text(
+                        '\uf473',
+                        style: const TextStyle(
+                          fontFamily: 'Bravura',
+                          fontSize: 18,
+                          color: Color(0xFF242038),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
 
