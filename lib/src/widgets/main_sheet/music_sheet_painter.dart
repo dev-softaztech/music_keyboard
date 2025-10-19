@@ -85,7 +85,7 @@ class MusicSheetPainter extends CustomPainter {
       // Draw swing below the tempo if set
       _drawSwing(canvas, rowIndex, staffTop, tempoTextY);
 
-      double x = 80.0;
+      double x = 85.0;
       double currentRowSpacing = rowSpacingList[rowIndex];
 
       // Set duration values for notes in this row
@@ -114,7 +114,7 @@ class MusicSheetPainter extends CustomPainter {
             bool isOverfilled
           })> bars = [];
       int barStartIndex = 0;
-      double barStartX = 80.0;
+      double barStartX = 85.0;
       double currentBarDuration = 0.0;
       MusicalNote? currentBarTimeSignature = timeSignature;
 
@@ -181,7 +181,7 @@ class MusicSheetPainter extends CustomPainter {
       // Add the final bar if there are notes after the last bar line
       if (barStartIndex < sheetNoteRows[rowIndex].notes.length) {
         double endX =
-            80.0 + (sheetNoteRows[rowIndex].notes.length * currentRowSpacing);
+            85.0 + (sheetNoteRows[rowIndex].notes.length * currentRowSpacing);
         bool isOverfilled = currentBarTimeSignature != null &&
             BarLineCalculator.hasBarTooManyNotes(
                 currentBarDuration, currentBarTimeSignature);
@@ -196,7 +196,7 @@ class MusicSheetPainter extends CustomPainter {
       }
 
       // Second pass: draw all notes
-      x = 80.0; // Reset x position for drawing
+      x = 85.0; // Reset x position for drawing
       for (int i = 0; i < sheetNoteRows[rowIndex].notes.length; i++) {
         MusicalNote note = sheetNoteRows[rowIndex].notes[i];
 
@@ -315,7 +315,7 @@ class MusicSheetPainter extends CustomPainter {
             }
           }
 
-          double endX = 80.0 +
+          double endX = 85.0 +
               ((note.slurEndIndex! - spaceNotesCount) * currentRowSpacing);
 
           double endY = calculateNoteYMainSheet(
@@ -414,7 +414,7 @@ class MusicSheetPainter extends CustomPainter {
       if (rowIndex == selectedRow) {
         // Draw the cursor if showCursor is true
         if (showCursor) {
-          drawInsertionCursor(canvas, paint, staffTop, selectedIndex, size,
+          drawInsertionCursor(canvas, paint, staffTop, selectedIndex + 1, size,
               currentRowSpacing, sheetNoteRows[rowIndex].notes, lineSpacing);
         }
 
@@ -455,7 +455,7 @@ class MusicSheetPainter extends CustomPainter {
     // Position the warning above the specific bar
     final double barWidth = barEndX - barStartX;
     final double x = barStartX + (barWidth - textPainter.width) / 2;
-    final double y = staffTop - 30;
+    final double y = staffTop - 40;
 
     // Draw a semi-transparent background for better readability
     final Rect backgroundRect = Rect.fromLTWH(
@@ -522,7 +522,7 @@ class MusicSheetPainter extends CustomPainter {
 
     textPainter.layout();
 
-    final double x = 80;
+    final double x = 85;
 
     textPainter.paint(canvas, Offset(x, tempoTextY));
   }
@@ -550,7 +550,7 @@ class MusicSheetPainter extends CustomPainter {
 
     textPainter.layout();
 
-    final double x = 80;
+    final double x = 85;
 
     textPainter.paint(canvas, Offset(x, tempoTextY + 15));
   }
@@ -612,7 +612,7 @@ class MusicSheetPainter extends CustomPainter {
       );
       titlePainter.layout(minWidth: 0, maxWidth: size.width);
       final titleX = (size.width - titlePainter.width) / 2;
-      titlePainter.paint(canvas, Offset(titleX, 80));
+      titlePainter.paint(canvas, Offset(titleX, 85));
     }
 
     if (composer.isNotEmpty) {
@@ -658,22 +658,27 @@ class MusicSheetPainter extends CustomPainter {
       Canvas canvas,
       Paint paint,
       double staffTop,
-      int index,
+      int insertionIndex,
       Size size,
       double rowSpacing,
       List<MusicalNote> notes,
       double lineSpacing) {
     // Calculate cursor X position using the new note width calculator
     double cursorX = notes.isEmpty
-        ? 80.0
-        : calculateXPositionForIndex(index, notes, rowSpacing, false);
+        ? 85.0
+        : calculateXPositionForIndex(
+            insertionIndex - 1, notes, rowSpacing, false);
 
     double cursorY = staffTop + (lineSpacing * 2);
 
     final Paint cursorPaint = Paint()..color = Colors.blue.withOpacity(0.8);
 
-    cursorX +=
-        notes.isNotEmpty && notes[index].type == NoteType.keySignature ? 0 : 20;
+    if (insertionIndex > 0) {
+      cursorX += notes.isNotEmpty &&
+              notes[insertionIndex - 1].type == NoteType.keySignature
+          ? 0
+          : 20;
+    }
 
     canvas.drawLine(
       Offset(cursorX, cursorY - 60),
@@ -1371,7 +1376,7 @@ class MusicSheetPainter extends CustomPainter {
   }
 
   double endXForIndex(int index, double currentRowSpacing) {
-    return 80.0 + (index * currentRowSpacing);
+    return 85.0 + (index * currentRowSpacing);
   }
 
   void _drawDynamicCharacter(
@@ -1471,7 +1476,7 @@ class MusicSheetPainter extends CustomPainter {
         // Position accent at ~30 pixels from note, between staff lines
         if (isUpsideDownNote) {
           // For upside-down notes, accent goes above
-          yPos = note.noteY - 80;
+          yPos = note.noteY - 85;
           // Adjust to position between staff lines (staff lines are at 0, 10, 20, 30, 40)
 
           double relativeToStaff = yPos - staffTop;

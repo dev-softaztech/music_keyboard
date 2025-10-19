@@ -592,7 +592,9 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
     final selectedRow = currentSelectedNoteProvider.selectedRow;
     final selectedNote = (widget.sheetNoteRows.isNotEmpty &&
             widget.sheetNoteRows[selectedRow].notes.isNotEmpty &&
-            widget.sheetNoteRows[selectedRow].notes.length > selectedNoteIndex)
+            widget.sheetNoteRows[selectedRow].notes.length >
+                selectedNoteIndex &&
+            selectedNoteIndex != -1)
         ? widget.sheetNoteRows[selectedRow].notes[selectedNoteIndex]
         : null;
 

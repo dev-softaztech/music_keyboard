@@ -556,7 +556,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
 
   int findClosestNoteIndex(
       List<MusicalNote> notes, double tapX, int selectedRow) {
-    if (notes.isEmpty) return 0;
+    if (notes.isEmpty) return -1;
 
     var rowSpacingList = context.read<ListOfSpacingForEachRow>().rowSpacingList;
     var currentRowSpacing = rowSpacingList[selectedRow];

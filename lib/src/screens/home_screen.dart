@@ -70,7 +70,7 @@ class HomeScreen extends StatelessWidget {
 
                   // Subtitle
                   const Text(
-                    'Create beautiful music compositions',
+                    'Draft home page',
                     style: TextStyle(
                       fontSize: 18,
                       color: Colors.grey,
@@ -97,8 +97,6 @@ class HomeScreen extends StatelessWidget {
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.piano, size: 24),
-                          SizedBox(width: 12),
                           Text(
                             'Start Composing',
                             style: TextStyle(

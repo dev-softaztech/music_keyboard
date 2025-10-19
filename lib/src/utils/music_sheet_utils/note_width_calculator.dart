@@ -21,14 +21,18 @@ int calculateInsertionIndex(
     return 0;
   }
 
-  double currentX = 80.0; // Starting X position
+  double currentX = 85.0; // Starting X position
+  double halfRowSpacing = rowSpacing / 2;
 
   for (int i = 0; i < notes.length; i++) {
     final note = notes[i];
+
+    if (i == 0 && tapPositionX < (currentX - halfRowSpacing)) {
+      return -1;
+    }
+
     if (note.type != NoteType.space) {
       final noteWidth = getNoteWidth(note);
-
-      double halfRowSpacing = rowSpacing / 2;
 
       if (note.type == NoteType.keySignature) {
         if (tapPositionX > currentX - halfRowSpacing &&
@@ -57,7 +61,11 @@ int calculateInsertionIndex(
 /// Calculate the X position for a given index in the row
 double calculateXPositionForIndex(int index, List<MusicalNote> notes,
     double rowSpacing, bool isNoteStartXForHighlight) {
-  double x = 80.0; // Starting X position
+  double x = 85.0;
+
+  if (index == -1) {
+    return 70;
+  }
 
   for (int i = 0; i < index && i < notes.length; i++) {
     final note = notes[i];
@@ -70,7 +78,9 @@ double calculateXPositionForIndex(int index, List<MusicalNote> notes,
     }
   }
 
-  if (!isNoteStartXForHighlight && notes[index].type == NoteType.keySignature) {
+  if (index != -1 &&
+      !isNoteStartXForHighlight &&
+      notes[index].type == NoteType.keySignature) {
     x += getNoteWidth(notes[index]);
   }
 

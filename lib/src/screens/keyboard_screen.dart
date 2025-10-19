@@ -199,10 +199,6 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     updateRowSpacing(selectedNoteProvider.selectedRow, selectedNoteProvider,
         sheet.sheetRows[selectedNoteProvider.selectedRow].notes);
     rowSpacingProvider.updateRowSpacingList(rowSpacingList);
-
-    // Move the cursor to the beginning of the new row
-    //selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
-    //    selectedNoteProvider.selectedRow + 1, 0);
   }
 
   /// Handles row overflow when there are bar notes in the current row
@@ -414,7 +410,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
         // Move cursor to the new row
         selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
-            selectedNoteProvider.selectedRow + 1, 0);
+            selectedNoteProvider.selectedRow + 1, -1);
 
         print("Added new row. Total rows: ${sheet.sheetRows.length}");
       }
@@ -1309,7 +1305,10 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                             decoration: BoxDecoration(
                                               color: isBeamLockActive
                                                   ? Colors.black
-                                                  : (sheet
+                                                  : (selectedNoteProvider
+                                                                  .selectedIndex !=
+                                                              -1 &&
+                                                          sheet
                                                               .sheetRows[
                                                                   selectedNoteProvider
                                                                       .selectedRow]

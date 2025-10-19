@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 class CurrentSelectedNoteProvider extends ChangeNotifier {
   int selectedRow = 0;
   int insertionIndex = 0;
-  int selectedIndex = 0;
+  int selectedIndex = -1;
   bool isBeaming = false;
   bool isSlurring = false;
 
@@ -21,7 +21,7 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
   void updateSelectedIndexAndInsertionPoint(int newRow, int newSelectedIndex) {
     selectedRow = newRow;
     selectedIndex = newSelectedIndex;
-    insertionIndex = newSelectedIndex == 0 ? 0 : newSelectedIndex + 1;
+    insertionIndex = newSelectedIndex + 1;
 
     // Set flag to check for bar lines on next note addition
     _checkForBarLines = true;
@@ -69,8 +69,7 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
       selectedIndex = selectedIndex + 2;
       insertionIndex = insertionIndex + 2;
     } else {
-      sheetNoteRows[selectedRow].notes.length == 1 ? 0 : selectedIndex++;
-      insertionIndex++;
+      updateSelectedIndexAndInsertionPoint(selectedRow, selectedIndex + 1);
     }
 
     // Check if we need to add automatic bar lines
