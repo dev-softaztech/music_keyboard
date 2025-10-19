@@ -382,9 +382,9 @@ void drawLedgerLines(Canvas canvas, Paint paint, double noteY, double noteX,
   double leftX = hasAccidental ? -2 : 2;
   double rightX = hasAccidental ? 8 : 2;
 
-  if (noteY < staffTop) {
+  if (noteY <= staffTop - lineSpacing) {
     for (double y = staffTop - lineSpacing;
-        y >= noteY - lineSpacing / 2;
+        y >= noteY - lineSpacing / 3;
         y -= lineSpacing) {
       canvas.drawLine(
         Offset(noteX - (noteWidth / 3) - leftX, y),
@@ -392,9 +392,9 @@ void drawLedgerLines(Canvas canvas, Paint paint, double noteY, double noteX,
         paint..strokeWidth = 1.0,
       );
     }
-  } else if (noteY > staffBottom) {
+  } else if (noteY >= staffBottom + lineSpacing) {
     for (double y = staffBottom + lineSpacing;
-        y <= noteY + lineSpacing / 2;
+        y <= noteY + lineSpacing / 3;
         y += lineSpacing) {
       canvas.drawLine(
         Offset(noteX - (noteWidth / 2) - leftX, y),
