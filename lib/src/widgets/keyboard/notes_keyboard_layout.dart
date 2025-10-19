@@ -8,6 +8,7 @@ import 'package:music_keyboard/src/widgets/keyboard/note_head_keyboard/keyboard_
 import 'package:music_keyboard/src/providers/selected_unicode_provider.dart';
 import 'package:music_keyboard/src/widgets/keyboard/time_signature_popup.dart';
 import 'package:music_keyboard/src/widgets/keyboard/key_signature_popup.dart';
+import 'package:music_keyboard/src/widgets/shared/popup_theme.dart';
 import 'package:provider/provider.dart';
 
 class NotesKeyboardLayout extends StatefulWidget {
@@ -109,15 +110,11 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
             left: 50,
             bottom: bottom,
             child: Material(
-              elevation: 8,
-              borderRadius: BorderRadius.circular(12),
+              elevation: 0,
+              borderRadius: BorderRadius.circular(PopupTheme.borderRadius),
               child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white),
-                ),
+                padding: const EdgeInsets.all(PopupTheme.standardPadding),
+                decoration: PopupTheme.dialogDecoration,
                 width: popupWidth,
                 height: popupHeight,
                 child: _buildPopupContent(buttonType, context),
@@ -210,10 +207,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
               _removeOverlay();
             },
             child: Container(
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(8),
-              ),
+              decoration: PopupTheme.gridItemDecoration,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -222,7 +216,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                     style: const TextStyle(
                       fontFamily: 'Bravura',
                       fontSize: 22,
-                      color: Color(0xFF242038),
+                      color: PopupTheme.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -231,7 +225,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                     style: const TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF242038),
+                      color: PopupTheme.textPrimary,
                     ),
                   ),
                 ],
@@ -276,17 +270,14 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
               _removeOverlay();
             },
             child: Container(
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(8),
-              ),
+              decoration: PopupTheme.gridItemDecoration,
               child: Center(
                 child: Text(
                   unicode,
                   style: const TextStyle(
                     fontFamily: 'Bravura',
                     fontSize: 40,
-                    color: Color(0xFF242038),
+                    color: PopupTheme.textPrimary,
                   ),
                 ),
               ),
