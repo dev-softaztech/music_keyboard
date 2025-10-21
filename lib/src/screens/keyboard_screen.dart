@@ -21,6 +21,7 @@ import 'package:music_keyboard/src/widgets/keyboard/tempo_popup.dart';
 import 'package:music_keyboard/src/widgets/keyboard/rehearsal_markings_popup.dart';
 import 'package:music_keyboard/src/providers/row_spacing_provider.dart';
 import 'package:music_keyboard/src/providers/undo_manager.dart';
+import 'package:music_keyboard/src/widgets/shared/popup_theme.dart';
 import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
 
@@ -574,15 +575,11 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
             left: (screenSize.width - popupWidth) / 2,
             bottom: 85,
             child: Material(
-              elevation: 8,
-              borderRadius: BorderRadius.circular(12),
+              elevation: 0,
+              borderRadius: BorderRadius.circular(PopupTheme.borderRadius),
               child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white),
-                ),
+                padding: const EdgeInsets.all(PopupTheme.standardPadding),
+                decoration: PopupTheme.dialogDecoration,
                 width: popupWidth,
                 height: popupHeight,
                 child: _buildBarPopupContent(unicodeOptions),
@@ -628,10 +625,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
             _removeBarOverlay();
           },
           child: Container(
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(8),
-            ),
+            decoration: PopupTheme.gridItemDecoration,
             child: Center(
                 child: Transform.translate(
               offset: const Offset(0, 20),
@@ -640,7 +634,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                 style: const TextStyle(
                   fontFamily: 'Bravura',
                   fontSize: 40,
-                  color: Color(0xFF242038),
+                  color: PopupTheme.textPrimary,
                 ),
               ),
             )),

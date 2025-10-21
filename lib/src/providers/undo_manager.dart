@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/sheet_rows.dart';
-import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/models/row_properties.dart';
 
 class SheetUndoManager extends ChangeNotifier {

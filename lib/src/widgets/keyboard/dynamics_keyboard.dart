@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/models/sheet_rows.dart';
 import 'package:music_keyboard/src/providers/current_selected_note_provider.dart';
 import 'package:provider/provider.dart';
