@@ -324,30 +324,13 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
       _editingDynamicRow = null;
     });
 
-    // Check for TIE condition
-    if (closestNoteIndex > 0 &&
-        closestNoteIndex <=
-            widget.sheetNoteRows[closestRowIndex].notes.length) {
-      MusicalNote currentNote =
-          widget.sheetNoteRows[closestRowIndex].notes[closestNoteIndex - 1];
-      if (closestNoteIndex <
-          widget.sheetNoteRows[closestRowIndex].notes.length) {
-        MusicalNote nextNote =
-            widget.sheetNoteRows[closestRowIndex].notes[closestNoteIndex];
-        if (currentNote.pitch == nextNote.pitch) {
-          setState(() {
-            _showTieButton = true;
-          });
-        }
-      }
-    }
-
     var showDynamicRemoveButton = _shouldShowDynamicRemove();
     var showBeamRemoveButton = _shouldShowBeamRemove();
     var showBeamAddButton = _shouldShowBeamAdd();
     var showSlurRemoveButton = _shouldShowSlurRemove();
     var showDecrescendoRemoveButton = _shouldShowDecrescendoRemove();
     var showCrescendoRemoveButton = _shouldShowCrescendoRemove();
+    var showTieButton = _shouldShowTieButton();
     var showTieRemoveState = _shouldShowTieRemove();
     var showTempoEditButton = _shouldShowTempoEdit();
     var showFlipNoteButton = _shouldShowFlipNote();
@@ -359,6 +342,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
       _showSlurRemoveButton = showSlurRemoveButton;
       _showDecrescendoRemoveButton = showDecrescendoRemoveButton;
       _showCrescendoRemoveButton = showCrescendoRemoveButton;
+      _showTieButton = showTieButton;
       _showTieRemoveState = showTieRemoveState;
       _showTempoEditButton = showTempoEditButton;
       _showFlipNoteButton = showFlipNoteButton;
@@ -698,6 +682,31 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     }
 
     return Rect.fromLTRB(startX, y - 7.5, endX + 70, y + 40);
+  }
+
+  bool _shouldShowTieButton() {
+    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+
+    // Check if there's no active highlighted notes AND current selected note is beamed
+    if (_dragStart == null && _dragEnd == null) {
+      final closestRowIndex = selectedNoteProvider.selectedRow;
+      final closestNoteIndex = selectedNoteProvider.selectedIndex;
+      if (closestNoteIndex > 0 &&
+          closestNoteIndex <=
+              widget.sheetNoteRows[closestRowIndex].notes.length) {
+        MusicalNote currentNote =
+            widget.sheetNoteRows[closestRowIndex].notes[closestNoteIndex - 1];
+        if (closestNoteIndex <
+            widget.sheetNoteRows[closestRowIndex].notes.length) {
+          MusicalNote nextNote =
+              widget.sheetNoteRows[closestRowIndex].notes[closestNoteIndex];
+          if (currentNote.pitch == nextNote.pitch) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
   }
 
   // Helper methods for remove condition detection
