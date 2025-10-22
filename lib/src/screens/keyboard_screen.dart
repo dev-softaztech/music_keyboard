@@ -79,6 +79,10 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   // Callback function to clear highlighting
   VoidCallback? _clearHighlightingCallback;
 
+  // Callback functions for button state checks
+  Function()? _shouldShowTieButtonCallback;
+  Function()? _shouldShowFlipNoteCallback;
+
   @override
   void initState() {
     super.initState();
@@ -126,6 +130,14 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
         updateRowSpacing(selectedNoteProvider.selectedRow, selectedNoteProvider,
             sheet.sheetRows[selectedNoteProvider.selectedRow].notes);
+
+        // Call the button state callback functions from MusicSheetContainer
+        if (_shouldShowTieButtonCallback != null) {
+          _shouldShowTieButtonCallback!();
+        }
+        if (_shouldShowFlipNoteCallback != null) {
+          _shouldShowFlipNoteCallback!();
+        }
       });
     } catch (e) {
       print("Error adding note: $e");
@@ -680,6 +692,12 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                 (clearHighlightingCallback) {
                               _clearHighlightingCallback =
                                   clearHighlightingCallback;
+                            },
+                            onButtonStateCallbacks:
+                                (shouldShowTieButton, shouldShowFlipNote) {
+                              _shouldShowTieButtonCallback =
+                                  shouldShowTieButton;
+                              _shouldShowFlipNoteCallback = shouldShowFlipNote;
                             },
                           ),
                           const Spacer(), // Pushes the keyboard container to the bottom

@@ -24,6 +24,8 @@ class MusicSheetContainer extends StatefulWidget {
   final String title;
   final String composer;
   final Function(VoidCallback)? onClearHighlightingCallback;
+  final Function(Function() shouldShowTieButton, Function() shouldShowFlipNote)?
+      onButtonStateCallbacks;
 
   const MusicSheetContainer({
     super.key,
@@ -35,6 +37,7 @@ class MusicSheetContainer extends StatefulWidget {
     required this.title,
     required this.composer,
     this.onClearHighlightingCallback,
+    this.onButtonStateCallbacks,
   });
 
   @override
@@ -113,6 +116,25 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     if (widget.onClearHighlightingCallback != null) {
       widget.onClearHighlightingCallback!(clearHighlighting);
     }
+
+    // Set up the callbacks for button state functions
+    if (widget.onButtonStateCallbacks != null) {
+      widget.onButtonStateCallbacks!(
+          _updateTieButtonState, _updateFlipNoteButtonState);
+    }
+  }
+
+  /// Wrapper functions to update button states
+  void _updateTieButtonState() {
+    setState(() {
+      _showTieButton = _shouldShowTieButton();
+    });
+  }
+
+  void _updateFlipNoteButtonState() {
+    setState(() {
+      _showFlipNoteButton = _shouldShowFlipNote();
+    });
   }
 
   /// Method to clear any active highlighting
@@ -686,20 +708,19 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
 
   bool _shouldShowTieButton() {
     final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+    final closestRowIndex = selectedNoteProvider.selectedRow;
+    final closestNoteIndex = selectedNoteProvider.selectedIndex;
 
-    // Check if there's no active highlighted notes AND current selected note is beamed
     if (_dragStart == null && _dragEnd == null) {
-      final closestRowIndex = selectedNoteProvider.selectedRow;
-      final closestNoteIndex = selectedNoteProvider.selectedIndex;
       if (closestNoteIndex > 0 &&
           closestNoteIndex <=
               widget.sheetNoteRows[closestRowIndex].notes.length) {
         MusicalNote currentNote =
-            widget.sheetNoteRows[closestRowIndex].notes[closestNoteIndex - 1];
+            widget.sheetNoteRows[closestRowIndex].notes[closestNoteIndex];
         if (closestNoteIndex <
-            widget.sheetNoteRows[closestRowIndex].notes.length) {
+            widget.sheetNoteRows[closestRowIndex].notes.length - 1) {
           MusicalNote nextNote =
-              widget.sheetNoteRows[closestRowIndex].notes[closestNoteIndex];
+              widget.sheetNoteRows[closestRowIndex].notes[closestNoteIndex + 1];
           if (currentNote.pitch == nextNote.pitch) {
             return true;
           }
