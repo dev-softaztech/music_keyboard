@@ -57,7 +57,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
   bool _showCrescendoRemoveButton = false;
   bool _showTieRemoveState = false;
   bool _showTempoEditButton = false;
-  bool _showBeamRotationButton = false;
+  bool _showFlipNoteButton = false;
   int? _dragStart;
   int? _dragEnd;
   int? _dragRow;
@@ -134,7 +134,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
       _showCrescendoRemoveButton = false;
       _showTieRemoveState = false;
       _showTempoEditButton = false;
-      _showBeamRotationButton = false;
+      _showFlipNoteButton = false;
       _editingDynamicIndex = null;
       _editingDynamicRow = null;
       _isEditingDynamic = false;
@@ -350,7 +350,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     var showCrescendoRemoveButton = _shouldShowCrescendoRemove();
     var showTieRemoveState = _shouldShowTieRemove();
     var showTempoEditButton = _shouldShowTempoEdit();
-    var showBeamRotationButton = _shouldShowBeamRotation();
+    var showFlipNoteButton = _shouldShowFlipNote();
 
     setState(() {
       _showDynamicRemoveButton = showDynamicRemoveButton;
@@ -361,7 +361,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
       _showCrescendoRemoveButton = showCrescendoRemoveButton;
       _showTieRemoveState = showTieRemoveState;
       _showTempoEditButton = showTempoEditButton;
-      _showBeamRotationButton = showBeamRotationButton;
+      _showFlipNoteButton = showFlipNoteButton;
     });
   }
 
@@ -684,7 +684,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
       if (rowNotes[i].noteY > lowestY) {
         lowestY = rowNotes[i].noteY;
       }
-      if (rowNotes[i].isUpsideDown && rowNotes[i].noteY >= staffTop) {
+      if (rowNotes[i].isUpsideDown == true && rowNotes[i].noteY >= staffTop) {
         hasUpsideDownNoteOnStaff = true;
       }
     }
@@ -897,7 +897,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     return false;
   }
 
-  bool _shouldShowBeamRotation() {
+  bool _shouldShowFlipNote() {
     final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
 
     // Check if there's no active highlighted notes AND current selected note is beamed
@@ -907,7 +907,14 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
 
       if (index >= 0 && index < widget.sheetNoteRows[row].notes.length) {
         final selectedNote = widget.sheetNoteRows[row].notes[index];
-        return selectedNote.isBeamed;
+        return selectedNote.type != NoteType.accidental &&
+            selectedNote.type != NoteType.bar &&
+            selectedNote.type != NoteType.clef &&
+            selectedNote.type != NoteType.keySignature &&
+            selectedNote.type != NoteType.rest &&
+            selectedNote.type != NoteType.space &&
+            selectedNote.type != NoteType.timeSignature &&
+            selectedNote.type != NoteType.whole;
       }
     }
     return false;
@@ -1365,32 +1372,48 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
               right: 0,
               child:
                   Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                if (_showBeamRotationButton &&
-                    selectedNoteProvider
-                        .getBeamedGroupIndices(
-                            selectedNoteProvider.selectedIndex,
-                            widget
-                                .sheetNoteRows[selectedNoteProvider.selectedRow]
-                                .notes)
-                        .isNotEmpty) ...[
-                  _buildBeamCycleButton('Beam Rotate', () {
+                if (_showFlipNoteButton) ...[
+                  _buildBeamCycleButton('Flip Note', () {
                     setState(() {
-                      context
-                          .read<CurrentSelectedNoteProvider>()
-                          .switchBeamRotation(widget.sheetNoteRows);
+                      if (selectedNoteProvider
+                          .getBeamedGroupIndices(
+                              selectedNoteProvider.selectedIndex,
+                              widget
+                                  .sheetNoteRows[
+                                      selectedNoteProvider.selectedRow]
+                                  .notes)
+                          .isNotEmpty) {
+                        context
+                            .read<CurrentSelectedNoteProvider>()
+                            .switchBeamRotation(widget.sheetNoteRows);
+                      } else {
+                        var note = widget
+                            .sheetNoteRows[selectedNoteProvider.selectedRow]
+                            .notes[selectedNoteProvider.selectedIndex];
+
+                        note.isUpsideDown = note.isUpsideDown == false;
+                      }
                     });
                   },
                       widget
-                          .sheetNoteRows[selectedNoteProvider.selectedRow]
-                          .notes[selectedNoteProvider
-                              .getBeamedGroupIndices(
-                                  selectedNoteProvider.selectedIndex,
-                                  widget
-                                      .sheetNoteRows[
-                                          selectedNoteProvider.selectedRow]
-                                      .notes)
-                              .first]
-                          .beamDirectionLocked),
+                              .sheetNoteRows[selectedNoteProvider.selectedRow]
+                              .notes[selectedNoteProvider.selectedIndex]
+                              .isBeamed
+                          ? widget
+                              .sheetNoteRows[selectedNoteProvider.selectedRow]
+                              .notes[selectedNoteProvider
+                                  .getBeamedGroupIndices(
+                                      selectedNoteProvider.selectedIndex,
+                                      widget
+                                          .sheetNoteRows[
+                                              selectedNoteProvider.selectedRow]
+                                          .notes)
+                                  .first]
+                              .isUpsideDown
+                          : widget
+                              .sheetNoteRows[selectedNoteProvider.selectedRow]
+                              .notes[selectedNoteProvider.selectedIndex]
+                              .isUpsideDown),
                 ],
               ])),
           Positioned(
@@ -1594,8 +1617,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
   }
 
   Widget _buildBeamCycleButton(
-      String label, VoidCallback onPressed, bool? beamCycleLock) {
-    bool lockEnabled = beamCycleLock != null;
+      String label, VoidCallback onPressed, bool? isUpsideDown) {
     return Material(
       color: Colors.transparent,
       elevation: 5,
@@ -1609,21 +1631,16 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
         constraints: const BoxConstraints.tightFor(width: 110, height: 25),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(25),
-          side: BorderSide(
-              color: lockEnabled ? Colors.red : Colors.black, width: 1),
+          side: BorderSide(color: Colors.black, width: 1),
         ),
         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
         child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
           Transform.translate(
-              offset: beamCycleLock == null ? Offset(0, -2) : Offset(0, -5),
+              offset: Offset(0, -5),
               child: Text(
-                beamCycleLock == null
-                    ? '-'
-                    : beamCycleLock == true
-                        ? '↓'
-                        : '↑',
+                isUpsideDown == true ? '↓' : '↑',
                 style: TextStyle(
-                  color: lockEnabled ? Colors.red : Colors.black,
+                  color: Colors.black,
                   fontSize: 21,
                 ),
               )),

@@ -309,7 +309,8 @@ void drawNoteKey(
     double stemX = 0.0;
 
     if ((note.isBeamed && !firstNoteUpsideDown) ||
-        (!note.isUpsideDown && !(note.isBeamed && firstNoteUpsideDown))) {
+        (note.isUpsideDown == false &&
+            !(note.isBeamed && firstNoteUpsideDown))) {
       stemX = noteX + 5.0;
       canvas.drawLine(
         Offset(stemX, noteY - 1),
@@ -341,25 +342,25 @@ void drawNoteKey(
           note.type == NoteType.sixtyFourth) &&
       connectedNotesGroup.length <= 1) {
     String flagCharacter = "";
-    double flagY = !note.isUpsideDown
+    double flagY = note.isUpsideDown == false
         ? (noteY - stemHeight - 64)
         : (noteY + stemHeight - 68);
 
     switch (note.type) {
       case NoteType.eighth:
-        flagCharacter = !note.isUpsideDown ? '\uE240' : '\uE241';
+        flagCharacter = note.isUpsideDown == false ? '\uE240' : '\uE241';
         break;
       case NoteType.sixteenth:
-        flagCharacter = !note.isUpsideDown ? '\uE242' : '\uE243';
+        flagCharacter = note.isUpsideDown == false ? '\uE242' : '\uE243';
         break;
       case NoteType.thirtySecond:
-        flagCharacter = !note.isUpsideDown ? '\ue244' : '\uE245';
+        flagCharacter = note.isUpsideDown == false ? '\ue244' : '\uE245';
         break;
       case NoteType.sixtyFourth:
-        flagCharacter = !note.isUpsideDown ? '\ue246' : '\uE247';
+        flagCharacter = note.isUpsideDown == false ? '\ue246' : '\uE247';
         break;
       default:
-        flagCharacter = !note.isUpsideDown ? '\uE240' : '\uE241';
+        flagCharacter = note.isUpsideDown == false ? '\uE240' : '\uE241';
     }
 
     final textPainter = TextPainter(
@@ -376,9 +377,9 @@ void drawNoteKey(
 
     textPainter.layout();
 
-    double flagX = !note.isUpsideDown
-        ? (noteX + noteRadius - 4)
-        : (noteX - noteRadius + 2);
+    double flagX = note.isUpsideDown == false
+        ? (noteX + noteRadius - 3.8)
+        : (noteX - noteRadius + 2.2);
 
     textPainter.paint(canvas, Offset(flagX, flagY));
   }
@@ -461,27 +462,11 @@ void drawConnectedNotes(
             notes[i].type == NoteType.thirtySecond ||
             notes[i].type == NoteType.sixtyFourth) &&
         notes[i].type != NoteType.space) {
-      // && notes[i].type == firstNote.type) {
-      connectedNotesGroup.add(notes[i]); // Append normally
+      connectedNotesGroup.add(notes[i]);
     } else {
       break;
     }
   }
-/*
-  // **New logic to split into groups of 4**
-  int totalNotes = connectedNotesGroup.length;
-  int groupIndex =
-      connectedNotesGroup.indexOf(firstNote) ~/ 4; // Get group index
-  int startIndex = groupIndex * 4; // Start of this sub-group
-  int endIndex = startIndex + 4; // End of this sub-group
-
-  if (endIndex > totalNotes) endIndex = totalNotes; // Avoid overflow
-
-  // Extract only the sub-group of 4
-  List<MusicalNote> subGroup =
-      connectedNotesGroup.sublist(startIndex, endIndex);
-*/
-  // Check if this note is the last in the **sub-group**
 
   bool isFirst = connectedNotesGroup.first == firstNote;
 
@@ -518,17 +503,10 @@ void drawConnectedNotes(
   double firstNoteY = calculateNoteYMainSheet(
       notes[0].pitch, notes[0].octave, lineSpacing, staffTop);
 
-  // Check if beam direction is locked for the first note
-  if (notes[0].beamDirectionLocked != null) {
-    // If locked, override the firstNoteY to force the desired beam direction
-    // true = force up (stems down), false = force down (stems up)
-    if (notes[0].beamDirectionLocked == true) {
-      // Force beams up (stems down) - make firstNoteY appear above staff center
-      firstNoteY = staffCenter - 1;
-    } else {
-      // Force beams down (stems up) - make firstNoteY appear below staff center
-      firstNoteY = staffCenter + 1;
-    }
+  if (notes[0].isUpsideDown == true) {
+    firstNoteY = staffCenter - 1;
+  } else {
+    firstNoteY = staffCenter + 1;
   }
 
   return (

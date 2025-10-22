@@ -12,7 +12,7 @@ class MusicalNote {
   final String accidentalCharacter; // Unicode character for the accidental
   int? slurEndIndex;
   double noteY;
-  bool isUpsideDown;
+  bool? isUpsideDown;
   double duration; // Duration value for bar line calculation
   String topTimeSignatureCharacter;
   String bottomTimeSignatureCharacter;
@@ -26,7 +26,6 @@ class MusicalNote {
   String keySignatureName;
   String keySignatureClefType;
   String clefType; // 'Treble', 'Bass', 'Alto', 'Tenor'
-  bool? beamDirectionLocked; // null = auto, true = force up, false = force down
 
   MusicalNote(
       {required this.pitch,
@@ -41,7 +40,7 @@ class MusicalNote {
       this.unicodeCharacter = "",
       this.accidentalCharacter = "",
       this.noteY = 0.0,
-      this.isUpsideDown = false,
+      this.isUpsideDown = null,
       this.duration = 0.0,
       this.topTimeSignatureCharacter = "",
       this.bottomTimeSignatureCharacter = "",
@@ -54,8 +53,7 @@ class MusicalNote {
       this.rehearsalMarking = "",
       this.keySignatureName = "",
       this.keySignatureClefType = "",
-      this.clefType = "",
-      this.beamDirectionLocked});
+      this.clefType = ""});
 
   MusicalNote copy() {
     return MusicalNote(
@@ -84,8 +82,7 @@ class MusicalNote {
         rehearsalMarking: rehearsalMarking,
         keySignatureName: keySignatureName,
         keySignatureClefType: keySignatureClefType,
-        clefType: clefType,
-        beamDirectionLocked: beamDirectionLocked);
+        clefType: clefType);
   }
 }
 

@@ -308,7 +308,7 @@ class KeyboardSymbolsMusicStaffPainter extends CustomPainter {
     drawLedgerLines(canvas, paint, noteY, size.width / 2, noteWidth,
         lineSpacing, staffTop, accidentalCharacter != '');
 
-    bool isUpsideDownNote = noteY < staffCenter;
+    bool isUpsideDownNote = noteY <= staffCenter;
 
     final textPainter = TextPainter(
       text: TextSpan(

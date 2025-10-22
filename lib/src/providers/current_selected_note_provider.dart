@@ -395,7 +395,6 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
     return groupIndices;
   }
 
-  /// **Switch beam rotation for the selected beamed group**
   void switchBeamRotation(List<SheetRows> sheetNoteRows) {
     //saveState(sheetNoteRows); // Save for undo
 
@@ -406,24 +405,16 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
       final selectedNote = sheetNoteRows[row].notes[index];
 
       if (selectedNote.isBeamed) {
-        // Get all notes in the beamed group
         List<int> groupIndices =
             getBeamedGroupIndices(index, sheetNoteRows[row].notes);
 
         if (groupIndices.isNotEmpty) {
-          // Get the first note in the group to manage the beam direction
           final firstNote = sheetNoteRows[row].notes[groupIndices.first];
 
-          // Cycle through beam direction states: null -> true -> false -> null
-          if (firstNote.beamDirectionLocked == null) {
-            // Currently auto, set to force up (true)
-            firstNote.beamDirectionLocked = true;
-          } else if (firstNote.beamDirectionLocked == true) {
-            // Currently force up, set to force down (false)
-            firstNote.beamDirectionLocked = false;
+          if (firstNote.isUpsideDown == true) {
+            firstNote.isUpsideDown = false;
           } else {
-            // Currently force down, set back to auto (null)
-            firstNote.beamDirectionLocked = null;
+            firstNote.isUpsideDown = true;
           }
         }
       }
@@ -431,25 +422,5 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
 
     notifyListeners();
   }
-/*
-  /// **Saves the current state for undo**
-  void saveState(List<SheetRows> sheetNoteRows) {
-    List<SheetRows> deepCopy = sheetNoteRows
-        .map((row) => row.map((note) => note.copy()).toList())
-        .toList();
-    _history.add(deepCopy);
-  }
-
-  /// **Undo the last change**
-  void undo(List<SheetRows> sheetNoteRows) {
-    if (_history.isNotEmpty) {
-      List<SheetRows> lastState = _history.removeLast();
-      for (int i = 0; i < sheetNoteRows.length; i++) {
-        for (int j = 0; j < sheetNoteRows[i].length - 1; j++) {
-          sheetNoteRows[i][j] = lastState[i][j]; // Restore previous state
-        }
-      }
-      notifyListeners();
-    }
   }*/
 }

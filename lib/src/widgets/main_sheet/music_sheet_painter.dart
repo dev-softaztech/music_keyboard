@@ -127,8 +127,10 @@ class MusicSheetPainter extends CustomPainter {
             note.pitch, note.octave, lineSpacing, staffTop);
         note.noteY = noteY;
 
-        final double sheetCenter = staffTop + (lineSpacing * 2);
-        note.isUpsideDown = noteY < sheetCenter;
+        if (note.isUpsideDown == null) {
+          final double sheetCenter = staffTop + (lineSpacing * 2);
+          note.isUpsideDown = noteY <= sheetCenter;
+        }
 
         // Check for time signature changes within the row
         if (note.type == NoteType.timeSignature) {
@@ -781,7 +783,7 @@ class MusicSheetPainter extends CustomPainter {
           double y,
           double width,
           double height,
-          bool isUpsideDown,
+          bool? isUpsideDown,
           bool isStem,
           double obstacleTop,
           double obstacleBottom
@@ -846,7 +848,7 @@ class MusicSheetPainter extends CustomPainter {
         }
 
         // Determine if the note's stem is upside down (pointing up)
-        if (note.isUpsideDown) {
+        if (note.isUpsideDown == true) {
           hasUpsideDownStems = true;
         } else {
           hasDownwardStems = true;
@@ -898,11 +900,11 @@ class MusicSheetPainter extends CustomPainter {
         stemHeight += 30.0;
 
         // Calculate stem position and dimensions
-        double stemX = note.isUpsideDown ? noteX - 5.0 : noteX + 5.0;
+        double stemX = note.isUpsideDown == true ? noteX - 5.0 : noteX + 5.0;
         double stemWidth = 1.5; // Stem width
         double stemTop, stemBottom;
 
-        if (note.isUpsideDown) {
+        if (note.isUpsideDown == true) {
           // Stem points up
           stemTop = note.noteY - stemHeight;
           stemBottom = note.noteY;
@@ -992,10 +994,10 @@ class MusicSheetPainter extends CustomPainter {
 
       if (obstacle.isStem) {
         // Stems have higher impact when they're in the slur's path
-        if (isSlurAbove && obstacle.isUpsideDown) {
+        if (isSlurAbove && obstacle.isUpsideDown == true) {
           // For upward stems when slur is above
           impact = obstacle.height * 1.5;
-        } else if (!isSlurAbove && !obstacle.isUpsideDown) {
+        } else if (!isSlurAbove && obstacle.isUpsideDown == false) {
           // For downward stems when slur is below
           impact = obstacle.height * 1.5;
         }
@@ -1115,11 +1117,11 @@ class MusicSheetPainter extends CustomPainter {
             // Check if this point intersects with the stem
             bool intersects = false;
 
-            if (isSlurAbove && obstacle.isUpsideDown) {
+            if (isSlurAbove && obstacle.isUpsideDown == true) {
               // For upward stems when slur is above
               intersects =
                   closestPoint.dy > stemTop && closestPoint.dy < stemBottom;
-            } else if (!isSlurAbove && !obstacle.isUpsideDown) {
+            } else if (!isSlurAbove && obstacle.isUpsideDown == false) {
               // For downward stems when slur is below
               intersects =
                   closestPoint.dy > stemTop && closestPoint.dy < stemBottom;
@@ -1409,7 +1411,7 @@ class MusicSheetPainter extends CustomPainter {
     if (note.noteY > lowestY) {
       lowestY = note.noteY;
     }
-    if (note.isUpsideDown && note.noteY >= staffTop) {
+    if (note.isUpsideDown == true && note.noteY >= staffTop) {
       hasUpsideDownNoteOnStaff = true;
     }
 
@@ -1423,7 +1425,7 @@ class MusicSheetPainter extends CustomPainter {
 
     double xPos = x - (textPainter.width / 2);
 
-    if (note.accentCharacter != "" && !note.isUpsideDown) {
+    if (note.accentCharacter != "" && note.isUpsideDown == false) {
       yPos = yPos + 10;
     }
 
@@ -1456,7 +1458,7 @@ class MusicSheetPainter extends CustomPainter {
 
     double yPos;
     double xPos = x - (textPainter.width / 2);
-    bool isUpsideDownNote = note.isUpsideDown;
+    bool isUpsideDownNote = note.isUpsideDown == true;
 
     // Handle beamed notes special case
     if (note.isBeamed) {
@@ -1464,7 +1466,7 @@ class MusicSheetPainter extends CustomPainter {
       var connectedNotesGroup = notesGroup.notesGroup;
 
       if (connectedNotesGroup.isNotEmpty) {
-        isUpsideDownNote = connectedNotesGroup.first.isUpsideDown;
+        isUpsideDownNote = connectedNotesGroup.first.isUpsideDown == true;
       }
 
       double staffBottomLineY = staffTop + (lineSpacing * 4);
@@ -1562,7 +1564,7 @@ class MusicSheetPainter extends CustomPainter {
         if (notes[i].noteY > lowestY) {
           lowestY = notes[i].noteY;
         }
-        if (notes[i].isUpsideDown && notes[i].noteY >= staffTop) {
+        if (notes[i].isUpsideDown == true && notes[i].noteY >= staffTop) {
           hasUpsideDownNoteOnStaff = true;
         }
       }
@@ -1800,7 +1802,7 @@ class MusicSheetPainter extends CustomPainter {
       MusicalNote firstNoteOfBeam = notes[beamStartIndex];
 
       // Apply the condition using the first note of the entire beamed group
-      if (!firstNoteOfBeam.isUpsideDown && y1 < staffTop - 20) {
+      if (firstNoteOfBeam.isUpsideDown == true && y1 < staffTop - 20) {
         tripletY = tripletY - 40;
       }
     }
