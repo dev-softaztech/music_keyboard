@@ -422,5 +422,4 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
 
     notifyListeners();
   }
-  }*/
 }
