@@ -317,19 +317,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
 
     final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
 
-    if (selectedNoteProvider.isBeaming) {
-      //  Handle beaming mode
-      selectedNoteProvider.handleBeamSelection(
-          closestRowIndex, closestNoteIndex, widget.sheetNoteRows);
-    } else if (selectedNoteProvider.isSlurring) {
-      //  Handle beaming mode
-      selectedNoteProvider.handleSlurSelection(
-          closestRowIndex, closestNoteIndex, widget.sheetNoteRows);
-    } else {
-      // 🔹 Update provider with new insertion point
-      selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
-          closestRowIndex, closestNoteIndex);
-    }
+    selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
+        closestRowIndex, closestNoteIndex);
 
     // Reset buttons
     setState(() {
@@ -1420,7 +1409,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                             .isNotEmpty) {
                           context
                               .read<CurrentSelectedNoteProvider>()
-                              .switchBeamRotation(widget.sheetNoteRows);
+                              .switchBeamRotation(
+                                  widget.sheetNoteRows, context);
                         } else {
                           var note = widget
                               .sheetNoteRows[selectedNoteProvider.selectedRow]
@@ -1476,7 +1466,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                         context
                             .read<CurrentSelectedNoteProvider>()
                             .decrescendoNotes(_dragRow!, _dragStart!, _dragEnd!,
-                                widget.sheetNoteRows);
+                                widget.sheetNoteRows, context);
 
                         _showDecrescendoRemoveButton = true;
                         _showCrescendoRemoveButton = false;
@@ -1496,7 +1486,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                         context
                             .read<CurrentSelectedNoteProvider>()
                             .crescendoNotes(_dragRow!, _dragStart!, _dragEnd!,
-                                widget.sheetNoteRows);
+                                widget.sheetNoteRows, context);
 
                         _showCrescendoRemoveButton = true;
                         _showDecrescendoRemoveButton = false;
@@ -1517,7 +1507,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                             _dragRow!,
                             _dragStart!,
                             _dragEnd!,
-                            widget.sheetNoteRows);
+                            widget.sheetNoteRows,
+                            context);
                         _showSlurRemoveButton = true;
                       }
                     }
@@ -1533,7 +1524,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                           _dragRow!,
                           _dragStart!,
                           _dragEnd!,
-                          widget.sheetNoteRows);
+                          widget.sheetNoteRows,
+                          context);
 
                       _showBeamRemoveButton = true;
                       _showBeamAddButton = false;

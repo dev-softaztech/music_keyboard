@@ -9,8 +9,6 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
   int selectedRow = 0;
   int insertionIndex = 0;
   int selectedIndex = -1;
-  bool isBeaming = false;
-  bool isSlurring = false;
 
   //final List<List<SheetRows>> _history = [];
 
@@ -168,48 +166,9 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
     }
   }
 
-  /// **Starts "Beam Notes" mode (first note is the selected note)**
-  void enableBeaming() {
-    isBeaming = true;
-    notifyListeners();
-  }
-
-  /// **Handles "Beam Notes" when second note is tapped**
-  void handleBeamSelection(int row, int index, List<SheetRows> sheetNoteRows) {
-    //saveState(sheetNoteRows); // Save for undo
-
-    int startRow = selectedRow;
-    int startIndex = insertionIndex;
-    int endRow = row;
-    int endIndex = index;
-
-    // Ensure selection is left-to-right
-    if (startRow > endRow || (startRow == endRow && startIndex > endIndex)) {
-      int tempRow = startRow;
-      int tempIndex = startIndex;
-      startRow = endRow;
-      startIndex = endIndex;
-      endRow = tempRow;
-      endIndex = tempIndex;
-    }
-
-    // Apply beaming to all notes in the range
-    for (int r = startRow; r <= endRow; r++) {
-      for (int i = (r == startRow ? startIndex : 0);
-          i < (r == endRow ? endIndex : sheetNoteRows[r].notes.length - 1);
-          i++) {
-        sheetNoteRows[r].notes[i].isBeamed = true;
-      }
-    }
-
-    // Exit beaming mode
-    isBeaming = false;
-    notifyListeners();
-  }
-
-  void beamNotes(
-      int row, int startIndex, int endIndex, List<SheetRows> sheetNoteRows) {
-    //saveState(sheetNoteRows); // Save for undo
+  void beamNotes(int row, int startIndex, int endIndex,
+      List<SheetRows> sheetNoteRows, BuildContext context) {
+    context.read<SheetUndoManager>().saveState(sheetNoteRows);
 
     // Ensure selection is left-to-right
     if (startIndex > endIndex) {
@@ -226,45 +185,8 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// **Starts "Tie Notes" mode (first note is the selected note)**
-  void enableSlurring() {
-    isSlurring = true;
-    notifyListeners();
-  }
-
-  void handleSlurSelection(int row, int index, List<SheetRows> sheetNoteRows) {
-    //saveState(sheetNoteRows);
-
-    int startRow = selectedRow;
-    int startIndex = insertionIndex;
-    int endRow = row;
-    int endIndex = index - 1;
-
-    if (startRow != endRow) {
-      isSlurring = false;
-      return;
-    }
-
-    if (startIndex > endIndex) {
-      int tempIndex = startIndex;
-      startIndex = endIndex;
-      endIndex = tempIndex;
-    }
-
-    MusicalNote firstNote = sheetNoteRows[startRow].notes[startIndex];
-
-    if (sheetNoteRows[startRow].notes.length < endIndex) {
-      endIndex = sheetNoteRows[startRow].notes.length - 1;
-    }
-
-    firstNote.slurEndIndex = endIndex;
-
-    isSlurring = false;
-    notifyListeners();
-  }
-
-  void slurNotes(
-      int row, int startIndex, int endIndex, List<SheetRows> sheetNoteRows) {
+  void slurNotes(int row, int startIndex, int endIndex,
+      List<SheetRows> sheetNoteRows, BuildContext context) {
     //saveState(sheetNoteRows); // Save for undo
 
     // Ensure selection is left-to-right
@@ -280,9 +202,9 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void crescendoNotes(
-      int row, int startIndex, int endIndex, List<SheetRows> sheetNoteRows) {
-    //saveState(sheetNoteRows); // Save for undo
+  void crescendoNotes(int row, int startIndex, int endIndex,
+      List<SheetRows> sheetNoteRows, BuildContext context) {
+    context.read<SheetUndoManager>().saveState(sheetNoteRows);
 
     if (startIndex > endIndex) {
       int temp = startIndex;
@@ -318,9 +240,9 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void decrescendoNotes(
-      int row, int startIndex, int endIndex, List<SheetRows> sheetNoteRows) {
-    //saveState(sheetNoteRows); // Save for undo
+  void decrescendoNotes(int row, int startIndex, int endIndex,
+      List<SheetRows> sheetNoteRows, BuildContext context) {
+    context.read<SheetUndoManager>().saveState(sheetNoteRows);
 
     if (startIndex > endIndex) {
       int temp = startIndex;
@@ -395,8 +317,8 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
     return groupIndices;
   }
 
-  void switchBeamRotation(List<SheetRows> sheetNoteRows) {
-    //saveState(sheetNoteRows); // Save for undo
+  void switchBeamRotation(List<SheetRows> sheetNoteRows, BuildContext context) {
+    context.read<SheetUndoManager>().saveState(sheetNoteRows);
 
     final row = selectedRow;
     final index = selectedIndex;
