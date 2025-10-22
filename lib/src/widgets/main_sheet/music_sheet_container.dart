@@ -390,10 +390,10 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
         _isDraggingRightHandle = false;
         _fixedBoundary = null;
         _showHighlightButtons = true;
-        //_showBeamAddButton = true;
         _showTieButton = false;
         _showDynamicRemoveButton = false;
         _totalDragDelta = Offset.zero;
+        _showFlipNoteButton = false;
       });
     }
   }
@@ -1373,25 +1373,31 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
               child:
                   Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                 if (_showFlipNoteButton) ...[
-                  _buildBeamCycleButton('Flip Note', () {
+                  _buildNoteFlipButton('Flip Note', () {
                     setState(() {
-                      if (selectedNoteProvider
-                          .getBeamedGroupIndices(
-                              selectedNoteProvider.selectedIndex,
-                              widget
-                                  .sheetNoteRows[
-                                      selectedNoteProvider.selectedRow]
-                                  .notes)
-                          .isNotEmpty) {
-                        context
-                            .read<CurrentSelectedNoteProvider>()
-                            .switchBeamRotation(widget.sheetNoteRows);
+                      if (_dragStart != null &&
+                          _dragEnd != null &&
+                          _dragRow != null) {
+                        return;
                       } else {
-                        var note = widget
-                            .sheetNoteRows[selectedNoteProvider.selectedRow]
-                            .notes[selectedNoteProvider.selectedIndex];
+                        if (selectedNoteProvider
+                            .getBeamedGroupIndices(
+                                selectedNoteProvider.selectedIndex,
+                                widget
+                                    .sheetNoteRows[
+                                        selectedNoteProvider.selectedRow]
+                                    .notes)
+                            .isNotEmpty) {
+                          context
+                              .read<CurrentSelectedNoteProvider>()
+                              .switchBeamRotation(widget.sheetNoteRows);
+                        } else {
+                          var note = widget
+                              .sheetNoteRows[selectedNoteProvider.selectedRow]
+                              .notes[selectedNoteProvider.selectedIndex];
 
-                        note.isUpsideDown = note.isUpsideDown == false;
+                          note.isUpsideDown = note.isUpsideDown == false;
+                        }
                       }
                     });
                   },
@@ -1616,7 +1622,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     );
   }
 
-  Widget _buildBeamCycleButton(
+  Widget _buildNoteFlipButton(
       String label, VoidCallback onPressed, bool? isUpsideDown) {
     return Material(
       color: Colors.transparent,

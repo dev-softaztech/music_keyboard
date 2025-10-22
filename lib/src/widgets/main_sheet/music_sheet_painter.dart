@@ -665,6 +665,11 @@ class MusicSheetPainter extends CustomPainter {
       double rowSpacing,
       List<MusicalNote> notes,
       double lineSpacing) {
+    if (selectionStart != null &&
+        selectionEnd != null &&
+        selectionRow != null) {
+      return;
+    }
     // Calculate cursor X position using the new note width calculator
     double cursorX = notes.isEmpty
         ? 85.0
