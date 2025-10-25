@@ -22,6 +22,7 @@ import 'package:music_keyboard/src/widgets/keyboard/rehearsal_markings_popup.dar
 import 'package:music_keyboard/src/providers/row_spacing_provider.dart';
 import 'package:music_keyboard/src/providers/undo_manager.dart';
 import 'package:music_keyboard/src/widgets/shared/popup_theme.dart';
+import 'package:music_keyboard/src/utils/haptic_feedback_utils.dart';
 import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
 
@@ -557,6 +558,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
   void _showBarPopup(BuildContext context) {
     _removeBarOverlay(); // Remove any existing overlay first
+
+    // Trigger haptic feedback when bars popup appears
+    HapticFeedbackUtils.lightVibration();
 
     final screenSize = MediaQuery.of(context).size;
     final List<String> unicodeOptions = [

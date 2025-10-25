@@ -9,6 +9,7 @@ import 'package:music_keyboard/src/providers/selected_unicode_provider.dart';
 import 'package:music_keyboard/src/widgets/keyboard/time_signature_popup.dart';
 import 'package:music_keyboard/src/widgets/keyboard/key_signature_popup.dart';
 import 'package:music_keyboard/src/widgets/shared/popup_theme.dart';
+import 'package:music_keyboard/src/utils/haptic_feedback_utils.dart';
 import 'package:provider/provider.dart';
 
 class NotesKeyboardLayout extends StatefulWidget {
@@ -71,6 +72,11 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
 
   void _showPopup(String buttonType, BuildContext context) {
     _removeOverlay();
+
+    // Trigger haptic feedback for clef and rest buttons
+    if (buttonType == 'clef' || buttonType == 'rest') {
+      HapticFeedbackUtils.lightVibration();
+    }
 
     setState(() {
       _activeShiftButton = buttonType;
