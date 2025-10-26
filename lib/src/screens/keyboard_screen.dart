@@ -84,6 +84,11 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   Function()? _shouldShowTieButtonCallback;
   Function()? _shouldShowFlipNoteCallback;
 
+  // PDF export state variables
+  int? _pdfRenderStartRow;
+  int? _pdfRenderEndRow;
+  bool _pdfShowTitleAndComposer = true;
+
   @override
   void initState() {
     super.initState();
@@ -540,17 +545,66 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     }
   }
 
-  // Export the current screenshot to a PDF
   Future<void> handleExportPress() async {
     try {
-      final image = await screenshotController.capture();
-      if (image != null) {
-        await PdfExporter.exportToPdf(image);
-      } else {
-        ToastUtils.showToast("Export failed: could not capture image.",
-            isError: true);
-      }
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const AlertDialog(
+            content: Row(
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(width: 20),
+                Text('Generating PDF...'),
+              ],
+            ),
+          );
+        },
+      );
+
+      final rowSpacingProvider = context.read<RowSpacingProvider>();
+
+      // Use the new multi-page export functionality
+      await PdfExporter.exportMultiPageToPdf(
+        sheetRows: sheet.sheetRows,
+        rowSpacing: rowSpacingProvider.rowSpacing,
+        title: _title,
+        composer: _composer,
+        screenshotController: screenshotController,
+        updateSheetForCapture: (int startRow, int endRow, bool showTitle) {
+          // Update the MusicSheetContainer to show only specific rows
+          setState(() {
+            _pdfRenderStartRow = startRow;
+            _pdfRenderEndRow = endRow;
+            _pdfShowTitleAndComposer = showTitle;
+          });
+        },
+        captureScreenshot: () async {
+          final image = await screenshotController.capture();
+          if (image == null) {
+            throw Exception('Failed to capture screenshot');
+          }
+          return image;
+        },
+      );
+
+      // Close loading dialog
+      Navigator.of(context).pop();
+
+      // Reset PDF rendering state to show all rows normally
+      setState(() {
+        _pdfRenderStartRow = null;
+        _pdfRenderEndRow = null;
+        _pdfShowTitleAndComposer = true;
+      });
+
+      ToastUtils.showToast("Multi-page PDF exported successfully!");
     } catch (e) {
+      // Close loading dialog if still open
+      Navigator.of(context, rootNavigator: true).pop();
+
       print("Export error: $e");
       ToastUtils.showToast("Export failed: ${e.toString()}", isError: true);
     }
@@ -692,6 +746,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                             statusBarHeight: statusBarHeight,
                             title: _title,
                             composer: _composer,
+                            renderStartRow: _pdfRenderStartRow,
+                            renderEndRow: _pdfRenderEndRow,
+                            showTitleAndComposer: _pdfShowTitleAndComposer,
                             onClearHighlightingCallback:
                                 (clearHighlightingCallback) {
                               _clearHighlightingCallback =

@@ -27,6 +27,11 @@ class MusicSheetContainer extends StatefulWidget {
   final Function(Function() shouldShowTieButton, Function() shouldShowFlipNote)?
       onButtonStateCallbacks;
 
+  // New parameters for partial rendering
+  final int? renderStartRow;
+  final int? renderEndRow;
+  final bool showTitleAndComposer;
+
   const MusicSheetContainer({
     super.key,
     required this.screenSize,
@@ -38,6 +43,9 @@ class MusicSheetContainer extends StatefulWidget {
     required this.composer,
     this.onClearHighlightingCallback,
     this.onButtonStateCallbacks,
+    this.renderStartRow,
+    this.renderEndRow,
+    this.showTitleAndComposer = true,
   });
 
   @override
@@ -1202,13 +1210,27 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                           double rowTotalHeight = rowSpacing + sheetHeight;
                           const double verticalOffset = 150.0;
 
-                          // Calculate total height based on number of rows
-                          final double totalHeight = math.max(
-                              verticalOffset +
-                                  (rowTotalHeight *
-                                      widget.sheetNoteRows.length),
-                              1000.0 // Minimum height of 300px
-                              );
+                          // Calculate total height based on rendered rows
+                          final int startRow = widget.renderStartRow ?? 0;
+                          final int endRow = widget.renderEndRow ??
+                              (widget.sheetNoteRows.length - 1);
+                          final int renderedRowCount = (endRow - startRow + 1)
+                              .clamp(1, widget.sheetNoteRows.length);
+
+                          // Adjust vertical offset for partial rendering
+                          final double adjustedVerticalOffset =
+                              widget.showTitleAndComposer ? 250.0 : 50.0;
+
+                          // Calculate A4-proportional height (A4 aspect ratio: 841.89 / 595.28 ≈ 1.414)
+                          final double a4ProportionalHeight =
+                              widget.musicSheetWidth * 1.414;
+
+                          final double contentHeight = adjustedVerticalOffset +
+                              (rowTotalHeight * renderedRowCount);
+
+                          // Always use A4 proportional height, even for minimal content
+                          final double totalHeight =
+                              math.max(contentHeight, a4ProportionalHeight);
 
                           return SizedBox(
                             width: widget.musicSheetWidth, // Force width
@@ -1234,6 +1256,10 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                                           globalRowSpacingProvider.rowSpacing,
                                       editingDynamicIndex: _editingDynamicIndex,
                                       editingDynamicRow: _editingDynamicRow,
+                                      renderStartRow: widget.renderStartRow,
+                                      renderEndRow: widget.renderEndRow,
+                                      showTitleAndComposer:
+                                          widget.showTitleAndComposer,
                                     ),
                                     size: Size(widget.musicSheetWidth,
                                         totalHeight), // Dynamic height

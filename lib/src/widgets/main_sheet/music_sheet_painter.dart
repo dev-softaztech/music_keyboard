@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/sheet_rows.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/key_signature_position_calculator.dart';
+import 'package:music_keyboard/src/utils/pdf_exporter.dart';
 import 'package:vector_math/vector_math.dart' as vec;
 import 'dart:math' as math;
 import 'package:music_keyboard/models/music_note.dart';
@@ -26,6 +27,11 @@ class MusicSheetPainter extends CustomPainter {
   final double rowSpacing;
   double verticalOffset;
 
+  // parameters for partial export rendering
+  final int? renderStartRow;
+  final int? renderEndRow;
+  final bool showTitleAndComposer;
+
   MusicSheetPainter({
     required this.title,
     required this.composer,
@@ -41,6 +47,9 @@ class MusicSheetPainter extends CustomPainter {
     this.editingDynamicIndex,
     this.editingDynamicRow,
     this.verticalOffset = 250.0,
+    this.renderStartRow,
+    this.renderEndRow,
+    this.showTitleAndComposer = true,
   });
 
   @override
@@ -54,11 +63,33 @@ class MusicSheetPainter extends CustomPainter {
     const double lineSpacing = 10;
     const double sheetHeight = lineSpacing * 4;
 
-    // Draw title and composer
-    _drawTitleAndComposer(canvas, size);
+    // Draw title and composer only if showTitleAndComposer is true
+    if (showTitleAndComposer) {
+      _drawTitleAndComposer(canvas, size);
+    }
 
-    for (int rowIndex = 0; rowIndex < sheetNoteRows.length; rowIndex++) {
-      final staffTop = verticalOffset + (rowIndex * (rowSpacing + sheetHeight));
+    // Draw visual page breaks if content spans multiple pages
+    _drawPageBreaks(canvas, size);
+
+    // Determine which rows to render
+    final int startRow = renderStartRow ?? 0;
+    final int endRow = renderEndRow ?? (sheetNoteRows.length - 1);
+
+    // Adjust vertical offset for partial rendering
+    double adjustedVerticalOffset = verticalOffset;
+    if (renderStartRow != null && renderStartRow! > 0) {
+      // When rendering partial rows, adjust the vertical offset to start from the top
+      // but account for the rows we're skipping
+      adjustedVerticalOffset = showTitleAndComposer ? 250.0 : 50.0;
+    }
+
+    for (int rowIndex = startRow;
+        rowIndex <= endRow && rowIndex < sheetNoteRows.length;
+        rowIndex++) {
+      // Calculate staff position - for partial rendering, we need to adjust the row positioning
+      final int adjustedRowIndex = rowIndex - startRow;
+      final staffTop = adjustedVerticalOffset +
+          (adjustedRowIndex * (rowSpacing + sheetHeight));
       drawStaffLines(canvas, paint, staffTop, lineSpacing, sheetHeight, size);
 
       // Draw bar number above the start of this row
@@ -597,6 +628,48 @@ class MusicSheetPainter extends CustomPainter {
     textPainter.layout();
 
     textPainter.paint(canvas, Offset(x, textY));
+  }
+
+  /// Draw visual page breaks between A4-sized pages
+  void _drawPageBreaks(Canvas canvas, Size size) {
+    // Only draw page breaks if we're not in partial rendering mode
+    if (renderStartRow != null || renderEndRow != null) {
+      return;
+    }
+
+    // Calculate page breaks using the same logic as PDF export
+    final pageBreaks =
+        PdfExporter.calculatePageBreaks(sheetNoteRows, rowSpacing);
+
+    // Only draw dividers if there are multiple pages
+    if (pageBreaks.length <= 1) {
+      return;
+    }
+
+    const double lineSpacing = 10;
+    const double sheetHeight = lineSpacing * 4;
+
+    // Draw grey dividers between pages
+    final Paint dividerPaint = Paint()
+      ..color = const Color.fromARGB(255, 199, 199, 199) // Same as background
+      ..strokeWidth = 3.0;
+
+    for (int i = 1; i < pageBreaks.length; i++) {
+      final pageInfo = pageBreaks[i];
+
+      // Calculate the Y position where this page starts
+      // This should be at the top of the first row of the new page
+      final double pageStartY = verticalOffset +
+          (pageInfo.startRow * (rowSpacing + sheetHeight)) -
+          (rowSpacing / 2);
+
+      // Draw a horizontal line across the width of the sheet
+      canvas.drawLine(
+        Offset(0, pageStartY),
+        Offset(size.width, pageStartY),
+        dividerPaint,
+      );
+    }
   }
 
   void _drawTitleAndComposer(Canvas canvas, Size size) {
