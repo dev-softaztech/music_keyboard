@@ -22,6 +22,7 @@ import 'package:music_keyboard/src/widgets/keyboard/rehearsal_markings_popup.dar
 import 'package:music_keyboard/src/providers/row_spacing_provider.dart';
 import 'package:music_keyboard/src/providers/undo_manager.dart';
 import 'package:music_keyboard/src/widgets/shared/popup_theme.dart';
+import 'package:music_keyboard/src/widgets/shared/pdf_export_loading_overlay.dart';
 import 'package:music_keyboard/src/utils/haptic_feedback_utils.dart';
 import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
@@ -76,6 +77,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   //String keyType = "clefs";
   String _selectedBarUnicode = '\ue030';
   OverlayEntry? _barOverlayEntry;
+  OverlayEntry? _loadingOverlayEntry;
 
   // Callback function to clear highlighting
   VoidCallback? _clearHighlightingCallback;
@@ -104,6 +106,14 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
       rowSpacingProvider
           .updateBetweenRowSpacing(sheet.sheetProperties.rowSpacing);
     });
+  }
+
+  @override
+  void dispose() {
+    // Clean up any active overlays
+    _removeBarOverlay();
+    _removeLoadingOverlay();
+    super.dispose();
   }
 
   void handleKeyPress(MusicalNote note) {
@@ -547,22 +557,8 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
   Future<void> handleExportPress() async {
     try {
-      // Show loading dialog
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return const AlertDialog(
-            content: Row(
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(width: 20),
-                Text('Generating PDF...'),
-              ],
-            ),
-          );
-        },
-      );
+      // Show loading overlay with music animation
+      _showLoadingOverlay();
 
       final rowSpacingProvider = context.read<RowSpacingProvider>();
 
@@ -590,8 +586,8 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         },
       );
 
-      // Close loading dialog
-      Navigator.of(context).pop();
+      // Remove loading overlay
+      _removeLoadingOverlay();
 
       // Reset PDF rendering state to show all rows normally
       setState(() {
@@ -602,8 +598,8 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
       ToastUtils.showToast("Multi-page PDF exported successfully!");
     } catch (e) {
-      // Close loading dialog if still open
-      Navigator.of(context, rootNavigator: true).pop();
+      // Remove loading overlay if still showing
+      _removeLoadingOverlay();
 
       print("Export error: $e");
       ToastUtils.showToast("Export failed: ${e.toString()}", isError: true);
@@ -666,6 +662,21 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   void _removeBarOverlay() {
     _barOverlayEntry?.remove();
     _barOverlayEntry = null;
+  }
+
+  void _showLoadingOverlay() {
+    _removeLoadingOverlay(); // Remove any existing overlay first
+
+    _loadingOverlayEntry = OverlayEntry(
+      builder: (context) => const PdfExportLoadingOverlay(),
+    );
+
+    Overlay.of(context).insert(_loadingOverlayEntry!);
+  }
+
+  void _removeLoadingOverlay() {
+    _loadingOverlayEntry?.remove();
+    _loadingOverlayEntry = null;
   }
 
   Widget _buildBarPopupContent(List<String> unicodeOptions) {
