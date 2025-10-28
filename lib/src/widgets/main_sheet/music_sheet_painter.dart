@@ -75,12 +75,67 @@ class MusicSheetPainter extends CustomPainter {
     final int startRow = renderStartRow ?? 0;
     final int endRow = renderEndRow ?? (sheetNoteRows.length - 1);
 
-    // Adjust vertical offset for partial rendering
+    // Calculate page margins - 50px header/footer for non-first pages
+    const double pageHeaderMargin = 50.0;
+    const double pageFooterMargin = 50.0;
+
+    // Calculate which page we're on for margin adjustments
+    final pageBreaks =
+        PdfExporter.calculatePageBreaks(sheetNoteRows, rowSpacing);
+    int currentPageIndex = 0;
+    for (int i = 0; i < pageBreaks.length; i++) {
+      if (startRow >= pageBreaks[i].startRow &&
+          startRow <= pageBreaks[i].endRow) {
+        currentPageIndex = i;
+        break;
+      }
+    }
+
+    // Adjust vertical offset for partial rendering and page margins
     double adjustedVerticalOffset = verticalOffset;
-    if (renderStartRow != null && renderStartRow! > 0) {
-      // When rendering partial rows, adjust the vertical offset to start from the top
-      // but account for the rows we're skipping
-      adjustedVerticalOffset = showTitleAndComposer ? 250.0 : 50.0;
+    if (renderStartRow != null && renderEndRow != null) {
+      // During PDF export partial rendering, start from the very top to avoid cutoff
+      if (showTitleAndComposer) {
+        // First page with title - start from top to capture title at Y=85
+        adjustedVerticalOffset = pageHeaderMargin + 200;
+      } else {
+        // Non-first page - start from top to capture first row with header margin
+        adjustedVerticalOffset = pageHeaderMargin + 50;
+      }
+    } else if (currentPageIndex > 0) {
+      // Not in partial rendering mode but we're on a non-first page
+      adjustedVerticalOffset = verticalOffset + pageHeaderMargin;
+    }
+
+    // Calculate cumulative margin offsets for all rows
+    Map<int, double> cumulativeMarginOffsets = {};
+    if (renderStartRow == null || renderEndRow == null) {
+      // Only calculate margins during normal rendering (not partial rendering for PDF export)
+      final pageBreaks =
+          PdfExporter.calculatePageBreaks(sheetNoteRows, rowSpacing);
+
+      double cumulativeOffset = 0.0;
+      for (int rowIndex = 0; rowIndex < sheetNoteRows.length; rowIndex++) {
+        cumulativeMarginOffsets[rowIndex] = cumulativeOffset;
+
+        // Check if this row is at the start of a non-first page (add header margin)
+        for (int i = 1; i < pageBreaks.length; i++) {
+          final pageInfo = pageBreaks[i];
+          if (rowIndex == pageInfo.startRow - 1) {
+            cumulativeOffset += pageHeaderMargin;
+            break;
+          }
+        }
+
+        // Check if this row is at the end of any page (add footer margin after it)
+        for (int i = 0; i < pageBreaks.length - 1; i++) {
+          final pageInfo = pageBreaks[i];
+          if (rowIndex == pageInfo.endRow) {
+            cumulativeOffset += pageFooterMargin;
+            break;
+          }
+        }
+      }
     }
 
     for (int rowIndex = startRow;
@@ -88,8 +143,14 @@ class MusicSheetPainter extends CustomPainter {
         rowIndex++) {
       // Calculate staff position - for partial rendering, we need to adjust the row positioning
       final int adjustedRowIndex = rowIndex - startRow;
+
+      // Get the cumulative margin offset for this row
+      final double additionalMarginOffset =
+          cumulativeMarginOffsets[rowIndex] ?? 0.0;
+
       final staffTop = adjustedVerticalOffset +
-          (adjustedRowIndex * (rowSpacing + sheetHeight));
+          (adjustedRowIndex * (rowSpacing + sheetHeight)) +
+          additionalMarginOffset;
       drawStaffLines(canvas, paint, staffTop, lineSpacing, sheetHeight, size);
 
       // Draw bar number above the start of this row
@@ -648,6 +709,34 @@ class MusicSheetPainter extends CustomPainter {
 
     const double lineSpacing = 10;
     const double sheetHeight = lineSpacing * 4;
+    const double pageHeaderMargin = 50.0;
+    const double pageFooterMargin = 50.0;
+
+    // Calculate cumulative margin offsets (same logic as main rendering)
+    Map<int, double> cumulativeMarginOffsets = {};
+    double cumulativeOffset = 0.0;
+
+    for (int rowIndex = 0; rowIndex < sheetNoteRows.length; rowIndex++) {
+      cumulativeMarginOffsets[rowIndex] = cumulativeOffset;
+
+      // Check if this row is at the start of a non-first page (add header margin)
+      for (int i = 1; i < pageBreaks.length; i++) {
+        final pageInfo = pageBreaks[i];
+        if (rowIndex == pageInfo.startRow) {
+          cumulativeOffset += pageHeaderMargin;
+          break;
+        }
+      }
+
+      // Check if this row is at the end of any page (add footer margin after it)
+      for (int i = 0; i < pageBreaks.length - 1; i++) {
+        final pageInfo = pageBreaks[i];
+        if (rowIndex == pageInfo.endRow) {
+          cumulativeOffset += pageFooterMargin;
+          break;
+        }
+      }
+    }
 
     // Draw grey dividers between pages
     final Paint dividerPaint = Paint()
@@ -657,10 +746,12 @@ class MusicSheetPainter extends CustomPainter {
     for (int i = 1; i < pageBreaks.length; i++) {
       final pageInfo = pageBreaks[i];
 
-      // Calculate the Y position where this page starts
-      // This should be at the top of the first row of the new page
+      // Calculate the Y position where this page starts including margins
+      final double marginOffset =
+          cumulativeMarginOffsets[pageInfo.startRow] ?? 0.0;
       final double pageStartY = verticalOffset +
-          (pageInfo.startRow * (rowSpacing + sheetHeight)) -
+          (pageInfo.startRow * (rowSpacing + sheetHeight)) +
+          marginOffset -
           (rowSpacing / 2);
 
       // Draw a horizontal line across the width of the sheet
@@ -673,6 +764,20 @@ class MusicSheetPainter extends CustomPainter {
   }
 
   void _drawTitleAndComposer(Canvas canvas, Size size) {
+    // Calculate title and composer Y positions based on whether we're in PDF export mode
+    double titleY = 85;
+    double composerY = 120;
+
+    // During PDF export with partial rendering, coordinate title position with staff content
+    if (renderStartRow != null &&
+        renderEndRow != null &&
+        showTitleAndComposer) {
+      // Position title and composer relative to where the staff content will start
+      // Leave space at the top, then title, then composer, then space before first staff
+      titleY = 50; // Start closer to top during PDF export
+      composerY = 85; // Composer follows title
+    }
+
     if (title.isNotEmpty) {
       final titlePainter = TextPainter(
         text: TextSpan(
@@ -687,7 +792,7 @@ class MusicSheetPainter extends CustomPainter {
       );
       titlePainter.layout(minWidth: 0, maxWidth: size.width);
       final titleX = (size.width - titlePainter.width) / 2;
-      titlePainter.paint(canvas, Offset(titleX, 85));
+      titlePainter.paint(canvas, Offset(titleX, titleY));
     }
 
     if (composer.isNotEmpty) {
@@ -703,7 +808,7 @@ class MusicSheetPainter extends CustomPainter {
       );
       composerPainter.layout(minWidth: 0, maxWidth: size.width);
       final composerX = (size.width - composerPainter.width) / 2;
-      composerPainter.paint(canvas, Offset(composerX, 120));
+      composerPainter.paint(canvas, Offset(composerX, composerY));
     }
   }
 

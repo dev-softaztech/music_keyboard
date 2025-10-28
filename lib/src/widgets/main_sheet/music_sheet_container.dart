@@ -7,6 +7,7 @@ import 'package:music_keyboard/src/providers/row_spacing_provider.dart';
 import 'package:music_keyboard/src/providers/undo_manager.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/drawing_helpers.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/note_width_calculator.dart';
+import 'package:music_keyboard/src/utils/pdf_exporter.dart';
 import 'package:music_keyboard/src/widgets/main_sheet/music_sheet_painter.dart';
 import 'package:music_keyboard/src/widgets/keyboard/tempo_popup.dart';
 import 'package:provider/provider.dart';
@@ -549,12 +550,55 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     double sheetHeight = 40.0;
     double rowTotalHeight = rowSpacing + sheetHeight;
     const double verticalOffset = 250.0;
-    double startY = verticalOffset - (rowSpacing / 2);
 
-    int rowIndex = ((tapY - startY) / rowTotalHeight).floor();
+    // Calculate cumulative margin offsets for all rows (same logic as MusicSheetPainter)
+    Map<int, double> cumulativeMarginOffsets = {};
+    const double pageHeaderMargin = 50.0;
+    const double pageFooterMargin = 50.0;
+
+    final pageBreaks = PdfExporter.calculatePageBreaks(rows, rowSpacing);
+    double cumulativeOffset = 0.0;
+
+    for (int rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+      cumulativeMarginOffsets[rowIndex] = cumulativeOffset;
+
+      // Check if this row is at the start of a non-first page (add header margin)
+      for (int i = 1; i < pageBreaks.length; i++) {
+        final pageInfo = pageBreaks[i];
+        if (rowIndex == pageInfo.startRow) {
+          cumulativeOffset += pageHeaderMargin;
+          break;
+        }
+      }
+
+      // Check if this row is at the end of any page (add footer margin after it)
+      for (int i = 0; i < pageBreaks.length - 1; i++) {
+        final pageInfo = pageBreaks[i];
+        if (rowIndex == pageInfo.endRow) {
+          cumulativeOffset += pageFooterMargin;
+          break;
+        }
+      }
+    }
+
+    // Find the closest row by checking each row's position including margins
+    double closestDistance = double.infinity;
+    int closestRowIndex = 0;
+
+    for (int rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+      final double marginOffset = cumulativeMarginOffsets[rowIndex] ?? 0.0;
+      final double rowY =
+          verticalOffset + (rowIndex * rowTotalHeight) + marginOffset;
+      final double distance = (tapY - rowY).abs();
+
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestRowIndex = rowIndex;
+      }
+    }
 
     // Ensure the row index is within valid bounds
-    return rowIndex.clamp(0, rows.length - 1);
+    return closestRowIndex.clamp(0, rows.length - 1);
   }
 
   int findClosestNoteIndex(
@@ -1218,15 +1262,37 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                               .clamp(1, widget.sheetNoteRows.length);
 
                           // Adjust vertical offset for partial rendering
-                          final double adjustedVerticalOffset =
-                              widget.showTitleAndComposer ? 250.0 : 50.0;
+                          // For PDF export, we need to ensure the screenshot area includes the title/composer
+                          //final double adjustedVerticalOffset = widget.showTitleAndComposer ? 400.0 : 50.0;
+                          final double adjustedVerticalOffset = 50.0;
 
                           // Calculate A4-proportional height (A4 aspect ratio: 841.89 / 595.28 ≈ 1.414)
                           final double a4ProportionalHeight =
                               widget.musicSheetWidth * 1.414;
 
+                          // Calculate page margins - 50px header/footer for non-first pages
+                          const double pageHeaderMargin = 50.0;
+                          const double pageFooterMargin = 50.0;
+
+                          // Calculate how many pages we need and add margins accordingly
+                          final pageBreaks = PdfExporter.calculatePageBreaks(
+                              widget.sheetNoteRows,
+                              globalRowSpacingProvider.rowSpacing);
+                          double totalMarginsHeight = 0.0;
+
+                          // Add footer margin for each page and header margin for non-first pages
+                          for (int i = 0; i < pageBreaks.length; i++) {
+                            totalMarginsHeight +=
+                                pageFooterMargin; // Each page has footer margin
+                            if (i > 0) {
+                              totalMarginsHeight +=
+                                  pageHeaderMargin; // Non-first pages have header margin
+                            }
+                          }
+
                           final double contentHeight = adjustedVerticalOffset +
-                              (rowTotalHeight * renderedRowCount);
+                              (rowTotalHeight *
+                                  renderedRowCount); // +totalMarginsHeight;
 
                           // Always use A4 proportional height, even for minimal content
                           final double totalHeight =
