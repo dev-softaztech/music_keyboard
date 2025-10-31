@@ -54,9 +54,12 @@ class MusicSheetPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    // Calculate the proper background height based on page breaks
+    double backgroundHeight = _calculateRequiredBackgroundHeight(size);
+
     final backgroundPaint = Paint()..color = Colors.white;
     canvas.drawRect(
-        Rect.fromLTWH(0, 0, size.width, size.height), backgroundPaint);
+        Rect.fromLTWH(0, 0, size.width, backgroundHeight), backgroundPaint);
 
     Paint paint = Paint()..color = Colors.black;
     Color noteColour = Colors.black;
@@ -810,6 +813,30 @@ class MusicSheetPainter extends CustomPainter {
       final composerX = (size.width - composerPainter.width) / 2;
       composerPainter.paint(canvas, Offset(composerX, composerY));
     }
+  }
+
+  /// Calculate the required background height based on page breaks
+  double _calculateRequiredBackgroundHeight(Size size) {
+    // Only apply this logic when not in partial rendering mode (i.e., normal display mode)
+    if (renderStartRow != null || renderEndRow != null) {
+      return size.height; // Use original size during PDF export
+    }
+
+    // Calculate page breaks using the same logic as PDF export
+    final pageBreaks =
+        PdfExporter.calculatePageBreaks(sheetNoteRows, rowSpacing);
+
+    // If only one page, use the original size
+    if (pageBreaks.length <= 1) {
+      return size.height;
+    }
+
+    // Calculate total height needed for all pages
+    const double a4Height = 1300; // Same as PDF exporter constant
+    double totalHeight = pageBreaks.length * a4Height;
+
+    // Use the larger of the calculated height or original size
+    return totalHeight > size.height ? totalHeight : size.height;
   }
 
   @override
