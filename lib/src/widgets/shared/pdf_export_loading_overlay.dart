@@ -104,52 +104,11 @@ class _PdfExportLoadingOverlayState extends State<PdfExportLoadingOverlay>
         height: screenSize.height,
         child: Stack(
           children: [
-            // Animated floating notes
-            ..._floatingNotes.map((note) {
-              final animationIndex = note.animationIndex;
-              if (animationIndex >= _animations.length)
-                return const SizedBox.shrink();
-
-              return AnimatedBuilder(
-                animation: _controllers[animationIndex],
-                builder: (context, child) {
-                  final progress = _animations[animationIndex].value;
-                  final fade = _fadeAnimations[animationIndex].value;
-
-                  return Positioned(
-                    left: note.startX * screenSize.width,
-                    bottom: screenSize.height * progress,
-                    child: Opacity(
-                      opacity: fade,
-                      child: Transform.rotate(
-                        angle: progress *
-                            math.pi *
-                            0.5, // Slight rotation as it floats
-                        child: Text(
-                          note.symbol,
-                          style: TextStyle(
-                            fontFamily: 'Bravura',
-                            fontSize: note.size,
-                            color: Colors.white,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black.withOpacity(0.5),
-                                offset: const Offset(1, 1),
-                                blurRadius: 2,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              );
-            }).toList(),
-
             // Central content area
             Center(
               child: Container(
+                height: screenSize.height * 0.9,
+                width: screenSize.width * 0.9,
                 padding: const EdgeInsets.all(40),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.95),
@@ -165,6 +124,7 @@ class _PdfExportLoadingOverlayState extends State<PdfExportLoadingOverlay>
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     // Pulsing treble clef
                     TweenAnimationBuilder<double>(
@@ -228,6 +188,49 @@ class _PdfExportLoadingOverlayState extends State<PdfExportLoadingOverlay>
                 ),
               ),
             ),
+
+            // Animated floating notes
+            ..._floatingNotes.map((note) {
+              final animationIndex = note.animationIndex;
+              if (animationIndex >= _animations.length)
+                return const SizedBox.shrink();
+
+              return AnimatedBuilder(
+                animation: _controllers[animationIndex],
+                builder: (context, child) {
+                  final progress = _animations[animationIndex].value;
+                  final fade = _fadeAnimations[animationIndex].value;
+
+                  return Positioned(
+                    left: note.startX * screenSize.width,
+                    bottom: screenSize.height * progress,
+                    child: Opacity(
+                      opacity: fade,
+                      child: Transform.rotate(
+                        angle: progress *
+                            math.pi *
+                            0.5, // Slight rotation as it floats
+                        child: Text(
+                          note.symbol,
+                          style: TextStyle(
+                            fontFamily: 'Bravura',
+                            fontSize: note.size,
+                            color: Colors.black,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black.withOpacity(0.5),
+                                offset: const Offset(1, 1),
+                                blurRadius: 2,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              );
+            }).toList(),
           ],
         ),
       ),
