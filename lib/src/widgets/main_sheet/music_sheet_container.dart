@@ -1212,7 +1212,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     final rowSpacingProvider = Provider.of<ListOfSpacingForEachRow>(context);
     final globalRowSpacingProvider = Provider.of<RowSpacingProvider>(context);
 
-    var keyboardHeight = 333;
+    var keyboardHeight = 312;
     var canvasHeight = widget.screenSize.height -
         AppBar().preferredSize.height -
         keyboardHeight -

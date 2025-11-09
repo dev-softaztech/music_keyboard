@@ -605,7 +605,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
     ];
 
     return Container(
-      height: 294, // Increased height to accommodate the arrows
+      height: 270, // Increased height to accommodate the arrows
       padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
       child: Column(
         children: [
@@ -613,110 +613,83 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
           if (unicodeCharacters.isNotEmpty)
             Row(
               children: [
-                /*
-                Container(
-                  margin: EdgeInsets.fromLTRB(7, 0, 0, 0),
-                  padding: EdgeInsets.fromLTRB(7, 0, 0, 0),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 30,
-                        height: 40,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            widget.onKeyPress(MusicalNote(
-                                pitch: "D",
-                                octave: 5,
-                                type: NoteType.clef,
-                                isBeamed: false,
-                                unicodeCharacter: "\uf472"));
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.grey[100],
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              side: BorderSide(color: Colors.black, width: 1),
-                            ),
-                            padding: EdgeInsets.zero,
-                          ),
-                          child: Transform.translate(
-                            offset: const Offset(0, 4),
-                            child: Text(
-                              '\uf472',
-                              style: const TextStyle(
-                                color: Colors.black,
-                                fontSize: 20,
-                                //fontWeight: FontWeight.bold,
-                                fontFamily: 'Bravura',
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),*/
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Consumer<SelectedUnicodeProvider>(
-                    builder: (context, provider, _) => Container(
-                      height: 42,
-                      margin: const EdgeInsets.symmetric(vertical: 8),
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: unicodeCharacters.length,
-                        itemBuilder: (context, index) {
-                          final character = unicodeCharacters[index];
-                          final isSelected =
-                              provider.selectedCharacter == character;
-                          return Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 5.0),
-                            child: SizedBox(
-                              width: 35,
-                              height: 30,
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  provider.updateSelectedCharacter(character);
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor:
-                                      isSelected ? Colors.black : Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  padding: EdgeInsets.zero,
-                                ),
-                                child: Transform.translate(
-                                  offset: const Offset(0, 14),
-                                  child: Text(
-                                    character.normal,
-                                    style: TextStyle(
-                                      fontFamily: 'Bravura',
-                                      fontSize: 26,
-                                      color: isSelected
-                                          ? Colors.white
-                                          : Colors.black,
-                                      height: 1.0,
+                    builder: (context, provider, _) => LayoutBuilder(
+                      builder: (context, constraints) {
+                        final itemCount = unicodeCharacters.length;
+                        final itemWidth = constraints.maxWidth /
+                            itemCount; // full width split evenly
+
+                        return SizedBox(
+                          height: 34,
+                          //margin: const EdgeInsets.fromLTRB(0, 0, 0, 6),
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: itemCount,
+                            physics:
+                                const NeverScrollableScrollPhysics(), // disable scroll
+                            itemBuilder: (context, index) {
+                              final character = unicodeCharacters[index];
+                              final isSelected =
+                                  provider.selectedCharacter == character;
+
+                              return SizedBox(
+                                width: itemWidth,
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(5, 1, 5, 1),
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      provider
+                                          .updateSelectedCharacter(character);
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: isSelected
+                                          ? Colors.black
+                                          : Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      padding: EdgeInsets.zero,
+                                    ),
+                                    child: Transform.translate(
+                                      offset: character.normal == "\ue1d2"
+                                          ? Offset(0, 2)
+                                          : Offset(0, 10),
+                                      child: Text(
+                                        character.normal,
+                                        style: TextStyle(
+                                          fontFamily: 'Bravura',
+                                          fontSize: 20,
+                                          color: isSelected
+                                              ? Colors.white
+                                              : Colors.black,
+                                          height: 1.0,
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+                              );
+                            },
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),
+                const SizedBox(width: 10),
               ],
             ),
+          SizedBox(height: 4),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                margin: EdgeInsets.fromLTRB(0, 2, 5, 5),
-                padding: EdgeInsets.fromLTRB(0, 2, 5, 5),
+                margin: EdgeInsets.fromLTRB(0, 0, 5, 0),
+                padding: EdgeInsets.fromLTRB(0, 0, 5, 0),
                 child: Column(
                   children: [
                     //Clefs
@@ -818,6 +791,64 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                     const SizedBox(height: 5),
                     _buildShiftButton('rest', 'Rest', context),
                     const SizedBox(height: 5),
+                    //Triplets button
+                    SizedBox(
+                      width: 30,
+                      height: 40,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          if (selectedNote != null) {
+                            setState(() {
+                              selectedNote.isTriplet = !selectedNote.isTriplet;
+                            });
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey[100],
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            side: BorderSide(
+                                color: selectedNote?.isTriplet == true
+                                    ? Colors.red
+                                    : Colors.black,
+                                width: 1),
+                          ),
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: Transform.translate(
+                          offset: const Offset(0, 22),
+                          child: Text(
+                            '\uE201 \uE202 \uE203',
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontSize: 22,
+                              //fontWeight: FontWeight.bold,
+                              fontFamily: 'Bravura',
+                            ),
+                          ),
+                        ),
+                      ),
+                    )
+                  ],
+                ),
+              ),
+              KeyboardBySymbols(
+                  onKeyPress: widget.onKeyPress, showLowerPair: showLowerPair),
+              Container(
+                margin: EdgeInsets.fromLTRB(5, 0, 0, 0),
+                padding: EdgeInsets.fromLTRB(5, 0, 0, 0),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 5),
+                    // Shift buttons
+                    _buildSharpButton(context),
+                    const SizedBox(height: 5),
+                    _buildNaturalButton(context),
+                    const SizedBox(height: 5),
+                    _buildFlatButton(context),
+                    const SizedBox(height: 5),
+                    _buildDottedRestButton(context),
+                    const SizedBox(height: 5),
                     // Octave cycle button
                     Transform.translate(
                       offset: const Offset(0, 0), //4
@@ -848,69 +879,6 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              KeyboardBySymbols(
-                  onKeyPress: widget.onKeyPress, showLowerPair: showLowerPair),
-              Container(
-                margin: EdgeInsets.fromLTRB(5, 0, 0, 0),
-                padding: EdgeInsets.fromLTRB(5, 0, 0, 0),
-                child: Column(
-                  children: [
-                    //Triplets button
-                    SizedBox(
-                      width: 30,
-                      height: 40,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          if (selectedNote != null) {
-                            //if (selectedNoteIndex <
-                            //    widget.sheetNoteRows[selectedRow].length - 2) {
-                            setState(() {
-                              selectedNote.isTriplet = !selectedNote.isTriplet;
-                            });
-                            //}
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey[100],
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            side: BorderSide(
-                                color: selectedNote?.isTriplet == true
-                                    ? Colors.red
-                                    : Colors.black,
-                                width: 1),
-                          ),
-                          padding: EdgeInsets.zero,
-                        ),
-                        child: Transform.translate(
-                          offset: const Offset(0, 22),
-                          child: Text(
-                            '\uE201 \uE202 \uE203',
-                            style: const TextStyle(
-                              color: Colors.black,
-                              fontSize: 22,
-                              //fontWeight: FontWeight.bold,
-                              fontFamily: 'Bravura',
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    _buildDottedRestButton(context),
-                    const SizedBox(height: 5),
-                    // Shift buttons
-                    _buildSharpButton(context),
-                    const SizedBox(height: 5),
-                    _buildNaturalButton(context),
-                    const SizedBox(height: 5),
-                    Transform.translate(
-                      offset: const Offset(-4, 0),
-                      child: _buildFlatButton(context),
                     ),
                   ],
                 ),

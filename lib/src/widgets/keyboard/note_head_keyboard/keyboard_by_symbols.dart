@@ -42,7 +42,7 @@ class _KeyboardBySymbolsState extends State<KeyboardBySymbols> {
         children: [
           // Two keyboard rows - always visible
           SizedBox(
-            height: 210, // Double the height for two rows
+            height: 220, // Double the height for two rows
             width: screenWidth - 105,
             child: Column(
               children: [
@@ -94,7 +94,7 @@ class _KeyboardBySymbolsState extends State<KeyboardBySymbols> {
               crossAxisCount: 9,
               crossAxisSpacing: 2, // Space between columns
               mainAxisSpacing: 0, // Space between rows
-              childAspectRatio: 0.32),
+              childAspectRatio: 0.30),
           itemCount: 9,
           itemBuilder: (context, index) {
             return MusicKey(
