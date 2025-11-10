@@ -43,15 +43,15 @@ extension SheetFormatExtension on SheetFormat {
   List<String> get defaultClefs {
     switch (this) {
       case SheetFormat.single:
-        return ['\uE050']; // Treble clef
+        return ['\uf472']; // Treble clef
       case SheetFormat.piano:
-        return ['\uE050', '\uE062']; // Treble, Bass
+        return ['\uf472', '\uf474']; // Treble, Bass
       case SheetFormat.grand:
         return [
-          '\uE050',
-          '\uE062',
-          '\uE050',
-          '\uE062'
+          '\uf472',
+          '\uf474',
+          '\uf472',
+          '\uf474'
         ]; // Treble, Bass, Treble, Bass
     }
   }

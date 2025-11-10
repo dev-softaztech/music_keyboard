@@ -594,10 +594,6 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         }
       }
 
-      // Temporarily update selectedNoteProvider to point to the row with most notes
-      final originalRow = selectedNoteProvider.selectedRow;
-      final originalIndex = selectedNoteProvider.selectedIndex;
-
       selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
           mostNotesRowIndex,
           sheet.sheetRows[mostNotesRowIndex].notes.length - 1);
