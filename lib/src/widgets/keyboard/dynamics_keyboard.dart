@@ -43,13 +43,13 @@ class DynamicsKeyboard extends StatelessWidget {
     ];
 
     return SizedBox(
-      height: 330,
+      height: 305,
       child: Row(
         children: [
           Column(
             children: [
               const SizedBox(
-                height: 293,
+                height: 270,
                 //width: 40,
               ),
               Container(

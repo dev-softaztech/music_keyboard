@@ -7,13 +7,22 @@ import 'package:music_keyboard/src/providers/selected_accidental_provider.dart';
 import 'package:music_keyboard/src/providers/selected_unicode_provider.dart';
 import 'package:music_keyboard/src/providers/is_connected_provider.dart';
 import 'package:music_keyboard/models/music_note.dart';
+import 'package:music_keyboard/models/sheet_rows.dart';
+import 'package:music_keyboard/models/sheet_format.dart';
+import 'package:music_keyboard/src/providers/current_selected_note_provider.dart';
 
 class KeyboardBySymbols extends StatefulWidget {
   final void Function(MusicalNote note) onKeyPress;
   final bool showLowerPair;
+  final List<SheetRows> sheetNoteRows;
+  final SheetFormat sheetFormat;
 
   const KeyboardBySymbols(
-      {super.key, required this.onKeyPress, required this.showLowerPair});
+      {super.key,
+      required this.onKeyPress,
+      required this.showLowerPair,
+      required this.sheetNoteRows,
+      required this.sheetFormat});
 
   @override
   State<KeyboardBySymbols> createState() => _KeyboardBySymbolsState();
@@ -97,14 +106,19 @@ class _KeyboardBySymbolsState extends State<KeyboardBySymbols> {
               childAspectRatio: 0.30),
           itemCount: 9,
           itemBuilder: (context, index) {
+            final pitch = _getPitch(index, row);
+            final octave = _getOctave(index, row);
+            final isKeyDisabled = _isKeyDisabled(pitch, octave, row);
+
             return MusicKey(
                 unicodeCharacter: selectedCharacter,
-                pitch: _getPitch(index, row),
-                octave: _getOctave(index, row),
+                pitch: pitch,
+                octave: octave,
                 type: noteType,
                 isConnected: isConnected,
-                onTap: (note) => widget.onKeyPress(note),
-                index: index);
+                onTap: isKeyDisabled ? null : (note) => widget.onKeyPress(note),
+                index: index,
+                isDisabled: isKeyDisabled);
           },
         ),
       ),
@@ -179,6 +193,50 @@ class _KeyboardBySymbolsState extends State<KeyboardBySymbols> {
 
     return baseOctave;
   }
+
+  // Determine if a key should be disabled in Piano mode
+  bool _isKeyDisabled(String pitch, int octave, KeyboardRow row) {
+    // Only apply disabling logic when sheet format is Piano
+    if (widget.sheetFormat != SheetFormat.piano) {
+      return false;
+    }
+
+    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+    if (widget.sheetNoteRows.isEmpty) {
+      return false;
+    }
+
+    final selectedRow = selectedNoteProvider.selectedRow;
+    final rowsPerGroup = widget.sheetFormat.rowsPerGroup;
+    final groupStartRow = (selectedRow ~/ rowsPerGroup) * rowsPerGroup;
+
+    // Determine if the cursor is currently on a treble or bass row within the connected group
+    final isCursorOnTrebleRow = (selectedRow - groupStartRow) == 0;
+
+    // Calculate the note's Y position relative to the staff to determine if it needs ledger lines
+    const double lineSpacing = 10.0; // Approximate line spacing
+    const double staffTop = 20.0; // Approximate staff top
+    const double staffBottom = staffTop + (4 * lineSpacing);
+
+    final double noteY =
+        calculateNoteYVerticalKeyboard(pitch, octave, lineSpacing, staffTop);
+
+    // When cursor is on treble row (first row): disable keys below the first ledger line below the staff
+    if (isCursorOnTrebleRow) {
+      // First ledger line below staff is at staffBottom + lineSpacing
+      final double firstLedgerLineBelowStaff = staffBottom + lineSpacing;
+      return noteY > firstLedgerLineBelowStaff;
+    }
+
+    // When cursor is on bass row (second row): disable keys above the first ledger line above the staff
+    if (!isCursorOnTrebleRow) {
+      // First ledger line above staff is at staffTop - lineSpacing
+      final double firstLedgerLineAboveStaff = staffTop - lineSpacing;
+      return noteY < firstLedgerLineAboveStaff;
+    }
+
+    return false;
+  }
 }
 
 class MusicKey extends StatefulWidget {
@@ -187,8 +245,9 @@ class MusicKey extends StatefulWidget {
   final int octave;
   final NoteType type;
   final bool isConnected;
-  final void Function(MusicalNote note) onTap;
+  final void Function(MusicalNote note)? onTap;
   final int index;
+  final bool isDisabled;
 
   const MusicKey(
       {super.key,
@@ -198,7 +257,8 @@ class MusicKey extends StatefulWidget {
       required this.type,
       required this.isConnected,
       required this.onTap,
-      required this.index});
+      required this.index,
+      this.isDisabled = false});
 
   @override
   _MusicKeyState createState() => _MusicKeyState();
@@ -208,6 +268,8 @@ class _MusicKeyState extends State<MusicKey> {
   bool isPressed = false;
 
   void _handleTap() {
+    if (widget.isDisabled || widget.onTap == null) return;
+
     setState(() {
       isPressed = true;
     });
@@ -222,7 +284,7 @@ class _MusicKeyState extends State<MusicKey> {
     });
 
     // Trigger the actual note event
-    widget.onTap(MusicalNote(
+    widget.onTap!(MusicalNote(
         pitch: widget.pitch,
         octave: widget.octave,
         type: widget.type,
@@ -237,13 +299,20 @@ class _MusicKeyState extends State<MusicKey> {
         context.watch<SelectedAccidentalProvider>().selectedAccidental;
 
     return GestureDetector(
-      onTap: _handleTap,
+      onTap: widget.isDisabled ? null : _handleTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 100),
         decoration: BoxDecoration(
-          color: isPressed ? Colors.grey[400] : Colors.white, // Darken on press
+          color: widget.isDisabled
+              ? Colors.grey[300] // Grey out disabled keys
+              : isPressed
+                  ? Colors.grey[400]
+                  : Colors.white,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color.fromARGB(255, 130, 130, 130)),
+          border: Border.all(
+              color: widget.isDisabled
+                  ? Colors.grey[400]!
+                  : const Color.fromARGB(255, 130, 130, 130)),
         ),
         child: CustomPaint(
           painter: KeyboardSymbolsMusicStaffPainter(
@@ -257,6 +326,7 @@ class _MusicKeyState extends State<MusicKey> {
             ),
             index: widget.index,
             context: context,
+            isDisabled: widget.isDisabled,
           ),
         ),
       ),
@@ -270,6 +340,7 @@ class KeyboardSymbolsMusicStaffPainter extends CustomPainter {
   final MusicalNote musicalNote; // Vertical position of the character
   final int index;
   final BuildContext? context;
+  final bool isDisabled;
 
   KeyboardSymbolsMusicStaffPainter({
     required this.unicodeCharacter,
@@ -277,6 +348,7 @@ class KeyboardSymbolsMusicStaffPainter extends CustomPainter {
     required this.musicalNote,
     required this.index,
     this.context,
+    this.isDisabled = false,
   });
 
   @override

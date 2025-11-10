@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/models/sheet_rows.dart';
+import 'package:music_keyboard/models/sheet_format.dart';
 import 'package:music_keyboard/src/providers/current_selected_note_provider.dart';
 import 'package:music_keyboard/src/providers/list_of_spacing_for_each_row.dart';
 import 'package:music_keyboard/src/providers/row_spacing_provider.dart';
@@ -20,6 +21,7 @@ class MusicSheetContainer extends StatefulWidget {
   final Size screenSize;
   final ScreenshotController screenshotController;
   final List<SheetRows> sheetNoteRows;
+  final SheetFormat sheetFormat;
   final double musicSheetWidth;
   final double statusBarHeight;
   final String title;
@@ -38,6 +40,7 @@ class MusicSheetContainer extends StatefulWidget {
     required this.screenSize,
     required this.screenshotController,
     required this.sheetNoteRows,
+    required this.sheetFormat,
     required this.musicSheetWidth,
     required this.statusBarHeight,
     required this.title,
@@ -1310,6 +1313,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                                       title: widget.title,
                                       composer: widget.composer,
                                       sheetNoteRows: widget.sheetNoteRows,
+                                      sheetFormat: widget.sheetFormat,
                                       selectedRow:
                                           -1, // No selected row in screenshot
                                       selectedIndex:
@@ -1337,6 +1341,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                                   title: widget.title,
                                   composer: widget.composer,
                                   sheetNoteRows: widget.sheetNoteRows,
+                                  sheetFormat: widget.sheetFormat,
                                   selectedRow: selectedNoteProvider.selectedRow,
                                   selectedIndex:
                                       selectedNoteProvider.selectedIndex,

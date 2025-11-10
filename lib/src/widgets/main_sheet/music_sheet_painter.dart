@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/sheet_rows.dart';
+import 'package:music_keyboard/models/sheet_format.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/key_signature_position_calculator.dart';
 import 'package:music_keyboard/src/utils/pdf_exporter.dart';
 import 'package:vector_math/vector_math.dart' as vec;
@@ -15,6 +16,7 @@ class MusicSheetPainter extends CustomPainter {
   final String title;
   final String composer;
   final List<SheetRows> sheetNoteRows;
+  final SheetFormat sheetFormat;
   final int selectedRow;
   final int selectedIndex;
   final bool showCursor;
@@ -36,6 +38,7 @@ class MusicSheetPainter extends CustomPainter {
     required this.title,
     required this.composer,
     required this.sheetNoteRows,
+    required this.sheetFormat,
     required this.selectedRow,
     required this.selectedIndex,
     required this.showCursor,
@@ -529,6 +532,204 @@ class MusicSheetPainter extends CustomPainter {
 
       paint = Paint()..color = Colors.black;
       noteColour = Colors.black;
+    }
+
+    // Draw connecting elements for connected row formats (piano, grand, etc.)
+    _drawConnectedRowElements(canvas, size);
+  }
+
+  /// Draw connecting lines and shared bar lines for connected row formats
+  void _drawConnectedRowElements(Canvas canvas, Size size) {
+    if (sheetFormat == SheetFormat.single) {
+      return; // No connecting elements needed for single format
+    }
+
+    const double lineSpacing = 10;
+    const double sheetHeight = lineSpacing * 4;
+
+    // Determine which rows to render
+    final int startRow = renderStartRow ?? 0;
+    final int endRow = renderEndRow ?? (sheetNoteRows.length - 1);
+
+    // Calculate page margins - 50px header/footer for non-first pages
+    const double pageHeaderMargin = 50.0;
+    const double pageFooterMargin = 50.0;
+
+    // Calculate which page we're on for margin adjustments
+    final pageBreaks =
+        PdfExporter.calculatePageBreaks(sheetNoteRows, rowSpacing);
+    int currentPageIndex = 0;
+    for (int i = 0; i < pageBreaks.length; i++) {
+      if (startRow >= pageBreaks[i].startRow &&
+          startRow <= pageBreaks[i].endRow) {
+        currentPageIndex = i;
+        break;
+      }
+    }
+
+    // Adjust vertical offset for partial rendering and page margins
+    double adjustedVerticalOffset = verticalOffset;
+    if (renderStartRow != null && renderEndRow != null) {
+      if (showTitleAndComposer) {
+        adjustedVerticalOffset = pageHeaderMargin + 200;
+      } else {
+        adjustedVerticalOffset = pageHeaderMargin + 50;
+      }
+    } else if (currentPageIndex > 0) {
+      adjustedVerticalOffset = verticalOffset + pageHeaderMargin;
+    }
+
+    // Calculate cumulative margin offsets for all rows
+    Map<int, double> cumulativeMarginOffsets = {};
+    if (renderStartRow == null || renderEndRow == null) {
+      final pageBreaks =
+          PdfExporter.calculatePageBreaks(sheetNoteRows, rowSpacing);
+      double cumulativeOffset = 0.0;
+      for (int rowIndex = 0; rowIndex < sheetNoteRows.length; rowIndex++) {
+        cumulativeMarginOffsets[rowIndex] = cumulativeOffset;
+        for (int i = 1; i < pageBreaks.length; i++) {
+          final pageInfo = pageBreaks[i];
+          if (rowIndex == pageInfo.startRow - 1) {
+            cumulativeOffset += pageHeaderMargin;
+            break;
+          }
+        }
+        for (int i = 0; i < pageBreaks.length - 1; i++) {
+          final pageInfo = pageBreaks[i];
+          if (rowIndex == pageInfo.endRow) {
+            cumulativeOffset += pageFooterMargin;
+            break;
+          }
+        }
+      }
+    }
+
+    // Group rows into connected groups based on format
+    final int rowsPerGroup = sheetFormat.rowsPerGroup;
+
+    // Draw connecting elements for each group
+    for (int groupStartRow = startRow;
+        groupStartRow <= endRow;
+        groupStartRow += rowsPerGroup) {
+      final int groupEndRow =
+          math.min(groupStartRow + rowsPerGroup - 1, endRow);
+
+      // Only draw connecting elements if we have a complete group
+      if (groupEndRow - groupStartRow + 1 == rowsPerGroup && rowsPerGroup > 1) {
+        _drawConnectedGroup(canvas, size, groupStartRow, groupEndRow,
+            adjustedVerticalOffset, cumulativeMarginOffsets, sheetHeight);
+      }
+    }
+  }
+
+  /// Draw connecting elements for a specific group of connected rows
+  void _drawConnectedGroup(
+      Canvas canvas,
+      Size size,
+      int groupStartRow,
+      int groupEndRow,
+      double adjustedVerticalOffset,
+      Map<int, double> cumulativeMarginOffsets,
+      double sheetHeight) {
+    Paint paint = Paint()
+      ..color = Colors.black
+      ..strokeWidth = 1.0;
+
+    // Calculate positions for the first and last rows in the group
+    final int adjustedStartRow = groupStartRow - (renderStartRow ?? 0);
+    final int adjustedEndRow = groupEndRow - (renderStartRow ?? 0);
+
+    final double startMarginOffset =
+        cumulativeMarginOffsets[groupStartRow] ?? 0.0;
+    final double endMarginOffset = cumulativeMarginOffsets[groupEndRow] ?? 0.0;
+
+    final double topStaffTop = adjustedVerticalOffset +
+        (adjustedStartRow * (rowSpacing + sheetHeight)) +
+        startMarginOffset;
+    final double bottomStaffTop = adjustedVerticalOffset +
+        (adjustedEndRow * (rowSpacing + sheetHeight)) +
+        endMarginOffset;
+    final double bottomStaffBottom = bottomStaffTop + sheetHeight;
+
+    // Draw left connecting line (brace/bracket)
+    const double leftX = 60;
+    canvas.drawLine(
+      Offset(leftX, topStaffTop),
+      Offset(leftX, bottomStaffBottom),
+      paint..strokeWidth = 2.0,
+    );
+
+    // Draw right connecting line
+    final double rightX = size.width - 60;
+    canvas.drawLine(
+      Offset(rightX, topStaffTop),
+      Offset(rightX, bottomStaffBottom),
+      paint..strokeWidth = 2.0,
+    );
+
+    // Draw shared bar lines that connect the rows
+    _drawSharedBarLines(
+        canvas, groupStartRow, groupEndRow, topStaffTop, bottomStaffBottom);
+
+    paint..strokeWidth = 1.0; // Reset stroke width
+  }
+
+  /// Draw shared bar lines that connect rows only when bars exist at same index
+  void _drawSharedBarLines(Canvas canvas, int groupStartRow, int groupEndRow,
+      double topStaffTop, double bottomStaffBottom) {
+    Paint paint = Paint()
+      ..color = Colors.black
+      ..strokeWidth = 2.0;
+
+    double currentRowSpacing = rowSpacingList[groupStartRow];
+
+    // Find the maximum number of notes across all rows in the group
+    int maxNotes = 0;
+    for (int rowIndex = groupStartRow; rowIndex <= groupEndRow; rowIndex++) {
+      maxNotes = math.max(maxNotes, sheetNoteRows[rowIndex].notes.length);
+    }
+
+    // Check each note index position across all rows
+    for (int noteIndex = 0; noteIndex < maxNotes; noteIndex++) {
+      // Track which rows have a bar at this index and their X positions
+      Map<int, double> rowsWithBarsAtIndex = {};
+
+      for (int rowIndex = groupStartRow; rowIndex <= groupEndRow; rowIndex++) {
+        if (noteIndex < sheetNoteRows[rowIndex].notes.length) {
+          MusicalNote note = sheetNoteRows[rowIndex].notes[noteIndex];
+
+          if (note.type == NoteType.bar) {
+            // Calculate X position for this bar
+            double x = 85.0;
+            for (int i = 0; i < noteIndex; i++) {
+              if (i < sheetNoteRows[rowIndex].notes.length) {
+                MusicalNote prevNote = sheetNoteRows[rowIndex].notes[i];
+                x += prevNote.type == NoteType.clef ||
+                        prevNote.type == NoteType.timeSignature
+                    ? getNoteWidth(prevNote)
+                    : prevNote.type == NoteType.keySignature
+                        ? getNoteWidth(prevNote) + 10
+                        : prevNote.type == NoteType.space
+                            ? 0
+                            : currentRowSpacing;
+              }
+            }
+            rowsWithBarsAtIndex[rowIndex] = x;
+          }
+        }
+      }
+
+      // Only draw connecting line if ALL rows in the group have a bar at this index
+      if (rowsWithBarsAtIndex.length == (groupEndRow - groupStartRow + 1)) {
+        // All rows have a bar at this index, use the X position from the first row
+        double barX = rowsWithBarsAtIndex[groupStartRow] ?? 85.0;
+
+        canvas.drawLine(
+          Offset(barX, topStaffTop),
+          Offset(barX, bottomStaffBottom),
+          paint,
+        );
+      }
     }
   }
 

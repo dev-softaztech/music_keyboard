@@ -1,9 +1,11 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/models/row_properties.dart';
 import 'package:music_keyboard/models/sheet.dart';
 import 'package:music_keyboard/models/sheet_properties.dart';
 import 'package:music_keyboard/models/sheet_rows.dart';
+import 'package:music_keyboard/models/sheet_format.dart';
 import 'package:music_keyboard/src/providers/current_selected_note_provider.dart';
 import 'package:music_keyboard/src/providers/is_connected_provider.dart';
 import 'package:music_keyboard/src/providers/list_of_spacing_for_each_row.dart';
@@ -102,6 +104,13 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
     // Set the rowSpacing value from SheetProperties to RowSpacingProvider after the first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final rowSpacingListProvider = context.read<ListOfSpacingForEachRow>();
+      if (sheet.format == SheetFormat.piano) {
+        rowSpacingListProvider.updateRowSpacingList([26, 26]);
+      } else if (sheet.format == SheetFormat.grand) {
+        rowSpacingListProvider.updateRowSpacingList([26, 26, 26, 26]);
+      }
+
       final rowSpacingProvider = context.read<RowSpacingProvider>();
       rowSpacingProvider
           .updateBetweenRowSpacing(sheet.sheetProperties.rowSpacing);
@@ -196,19 +205,39 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
       double smallestSpacingSize,
       List<MusicalNote> notes,
       double maxRowSize) {
-    // Create a new row
-    sheet.sheetRows.insert(selectedNoteProvider.selectedRow + 1,
-        SheetRows(notes: [], rowProperties: RowProperties(tempoNumber: 0)));
-    rowSpacingList.insert(
-        selectedNoteProvider.selectedRow + 1, defaultNoteSpacing);
+    // Create new rows based on sheet format
+    final int rowsToAdd = sheet.format.rowsPerGroup;
+    final List<String> clefs = sheet.format.defaultClefs;
 
-    var notes = sheet.sheetRows[selectedNoteProvider.selectedRow].notes;
-    var endIndex = notes.length - 1;
+    // Insert new connected rows after current row
+    for (int i = 0; i < rowsToAdd; i++) {
+      final newRow =
+          SheetRows(notes: [], rowProperties: RowProperties(tempoNumber: 0));
+
+      // Add appropriate clef for each row
+      if (i < clefs.length) {
+        newRow.notes.add(MusicalNote(
+          pitch: "G",
+          octave: 4,
+          type: NoteType.clef,
+          isBeamed: false,
+          unicodeCharacter: clefs[i],
+          clefType: clefs[i],
+        ));
+      }
+
+      sheet.sheetRows.insert(selectedNoteProvider.selectedRow + 1 + i, newRow);
+      rowSpacingList.insert(
+          selectedNoteProvider.selectedRow + 1 + i, defaultNoteSpacing);
+    }
+
+    var overflowNotes = sheet.sheetRows[selectedNoteProvider.selectedRow].notes;
+    var endIndex = overflowNotes.length - 1;
     var startIndex = 0;
     var notesWidth = 0.0;
 
-    for (int i = 0; i < notes.length; i++) {
-      final note = notes[i];
+    for (int i = 0; i < overflowNotes.length; i++) {
+      final note = overflowNotes[i];
       if (note.type != NoteType.space) {
         if (note.type == NoteType.clef || note.type == NoteType.timeSignature) {
           notesWidth += getNoteWidth(note);
@@ -223,11 +252,37 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         break;
       }
     }
-    _moveMultipleOverflowingNotes(selectedNoteProvider, startIndex, endIndex);
+
+    // Determine which row in the new group to move to
+    // For piano mode: move to the same type of row (treble to treble, bass to bass)
+    int targetRowIndex =
+        selectedNoteProvider.selectedRow + 1; // Default to first new row
+
+    if (sheet.format == SheetFormat.piano && rowsToAdd == 2) {
+      // In piano mode, determine if current row is treble or bass
+      final currentRowIndex = selectedNoteProvider.selectedRow;
+      final isCurrentRowTreble = _isRowInTreblePosition(currentRowIndex);
+
+      // Move to the corresponding row type in the new group
+      targetRowIndex = isCurrentRowTreble
+          ? selectedNoteProvider.selectedRow + 1 // Treble row (first in group)
+          : selectedNoteProvider.selectedRow + 2; // Bass row (second in group)
+    }
+
+    _moveMultipleOverflowingNotesToRow(
+        selectedNoteProvider, startIndex, endIndex, targetRowIndex);
 
     updateRowSpacing(selectedNoteProvider.selectedRow, selectedNoteProvider,
         sheet.sheetRows[selectedNoteProvider.selectedRow].notes);
     rowSpacingProvider.updateRowSpacingList(rowSpacingList);
+  }
+
+  /// Determines if a row is in a treble position (first row of a connected group)
+  bool _isRowInTreblePosition(int rowIndex) {
+    if (sheet.format == SheetFormat.single) return true;
+
+    final rowsPerGroup = sheet.format.rowsPerGroup;
+    return (rowIndex % rowsPerGroup) == 0;
   }
 
   /// Handles row overflow when there are bar notes in the current row
@@ -315,41 +370,52 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     int lastBarStartIndex,
     int lastBarEndIndex,
   ) {
-    // Collect all notes in the current bar
+    _moveMultipleOverflowingNotesToRow(selectedNoteProvider, lastBarStartIndex,
+        lastBarEndIndex, selectedNoteProvider.selectedRow + 1);
+  }
+
+  /// Moves multiple notes from the current row to a specific target row
+  void _moveMultipleOverflowingNotesToRow(
+    CurrentSelectedNoteProvider selectedNoteProvider,
+    int startIndex,
+    int endIndex,
+    int targetRowIndex,
+  ) {
+    // Collect all notes to move
     List<MusicalNote> notesToMove = [];
-    for (int i = lastBarStartIndex; i <= lastBarEndIndex; i++) {
+    for (int i = startIndex; i <= endIndex; i++) {
       notesToMove
           .add(sheet.sheetRows[selectedNoteProvider.selectedRow].notes[i]);
     }
 
     // Remove the notes from the current row (in reverse order to maintain indices)
-    for (int i = lastBarEndIndex; i >= lastBarStartIndex; i--) {
+    for (int i = endIndex; i >= startIndex; i--) {
       sheet.sheetRows[selectedNoteProvider.selectedRow].notes.removeAt(i);
     }
 
-    // Insert the notes at the beginning of the next row
+    // Insert the notes at the beginning of the target row
     for (int i = 0; i < notesToMove.length; i++) {
-      sheet.sheetRows[selectedNoteProvider.selectedRow + 1].notes
-          .insert(i, notesToMove[i]);
+      sheet.sheetRows[targetRowIndex].notes.insert(i, notesToMove[i]);
     }
 
-    if (sheet.sheetRows[selectedNoteProvider.selectedRow].notes.last.type ==
-        NoteType.bar) {
+    if (sheet.sheetRows[selectedNoteProvider.selectedRow].notes.isNotEmpty &&
+        sheet.sheetRows[selectedNoteProvider.selectedRow].notes.last.type ==
+            NoteType.bar) {
       sheet.sheetRows[selectedNoteProvider.selectedRow].notes.removeLast();
     }
 
-    // Update spacing for both the current row and the next row
+    // Update spacing for both the current row and the target row
     updateRowSpacing(selectedNoteProvider.selectedRow, selectedNoteProvider,
         sheet.sheetRows[selectedNoteProvider.selectedRow].notes);
-    updateRowSpacing(selectedNoteProvider.selectedRow + 1, selectedNoteProvider,
-        sheet.sheetRows[selectedNoteProvider.selectedRow].notes);
+    updateRowSpacing(targetRowIndex, selectedNoteProvider,
+        sheet.sheetRows[targetRowIndex].notes);
 
+    // Update the cursor position to the target row
     if (selectedNoteProvider.insertionIndex >= maxNotesPerRow ||
         selectedNoteProvider.insertionIndex >
             (maxNotesPerRow - notesToMove.length)) {
-      // Update the insertion point to the next row
       selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
-          selectedNoteProvider.selectedRow + 1, notesToMove.length - 1);
+          targetRowIndex, notesToMove.length - 1);
     }
   }
 
@@ -380,6 +446,25 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
       33
     ];
 
+    // For Piano format, update spacing for entire connected group
+    if (sheet.format == SheetFormat.piano) {
+      _updateConnectedRowGroupSpacing(rowIndex, selectedNoteProvider,
+          rowSpacingProvider, rowSpacingList, listOfSpacingSizes);
+    } else {
+      // Single format - original behavior
+      _updateSingleRowSpacing(rowIndex, selectedNoteProvider, notes,
+          rowSpacingProvider, rowSpacingList, listOfSpacingSizes);
+    }
+  }
+
+  /// Updates spacing for a single row (original behavior)
+  void _updateSingleRowSpacing(
+      int rowIndex,
+      CurrentSelectedNoteProvider selectedNoteProvider,
+      List<MusicalNote> notes,
+      ListOfSpacingForEachRow rowSpacingProvider,
+      List<double> rowSpacingList,
+      List<double> listOfSpacingSizes) {
     var clefAndKeySigLength = 0.0;
     var countOfNormalNotes = 0.0;
 
@@ -416,6 +501,112 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     rowSpacingProvider.updateRowSpacingList(rowSpacingList);
   }
 
+  /// Updates spacing for connected row groups (Piano format)
+  void _updateConnectedRowGroupSpacing(
+      int rowIndex,
+      CurrentSelectedNoteProvider selectedNoteProvider,
+      ListOfSpacingForEachRow rowSpacingProvider,
+      List<double> rowSpacingList,
+      List<double> listOfSpacingSizes) {
+    final int rowsPerGroup = sheet.format.rowsPerGroup;
+
+    // Find the connected group that contains this row
+    final int groupStartRow = (rowIndex ~/ rowsPerGroup) * rowsPerGroup;
+    final int groupEndRow =
+        math.min(groupStartRow + rowsPerGroup - 1, sheet.sheetRows.length - 1);
+
+    // Calculate spacing requirements for each row in the group
+    double maxClefAndKeySigLength = 0.0;
+    double maxCountOfNormalNotes = 0.0;
+
+    for (int i = groupStartRow; i <= groupEndRow; i++) {
+      if (i < sheet.sheetRows.length) {
+        var clefAndKeySigLength = 0.0;
+        var countOfNormalNotes = 0.0;
+
+        for (int j = 0; j < sheet.sheetRows[i].notes.length; j++) {
+          final note = sheet.sheetRows[i].notes[j];
+          if (note.type != NoteType.space) {
+            if (note.type == NoteType.clef ||
+                note.type == NoteType.timeSignature) {
+              clefAndKeySigLength += getNoteWidth(note);
+            } else if (note.type == NoteType.keySignature) {
+              clefAndKeySigLength += getNoteWidth(note) + 10;
+            } else {
+              countOfNormalNotes++;
+            }
+          }
+        }
+
+        // Use the row with the most space requirements to determine spacing
+        maxClefAndKeySigLength =
+            math.max(maxClefAndKeySigLength, clefAndKeySigLength);
+        maxCountOfNormalNotes =
+            math.max(maxCountOfNormalNotes, countOfNormalNotes);
+      }
+    }
+
+    double maxRowSize = 680;
+    var adjustedSpacingFitsAllNotesOnSingleLine = false;
+    double selectedSpacing = listOfSpacingSizes.last;
+
+    // Find the appropriate spacing for the most demanding row
+    for (int i = 0; i < listOfSpacingSizes.length; i++) {
+      if (maxClefAndKeySigLength +
+              (maxCountOfNormalNotes * listOfSpacingSizes[i]) <
+          maxRowSize) {
+        selectedSpacing = listOfSpacingSizes[i];
+        adjustedSpacingFitsAllNotesOnSingleLine = true;
+        break;
+      }
+    }
+
+    // Apply the same spacing to all rows in the connected group
+    for (int i = groupStartRow; i <= groupEndRow; i++) {
+      if (i < sheet.sheetRows.length) {
+        rowSpacingList[i] = selectedSpacing;
+      }
+    }
+
+    if (!adjustedSpacingFitsAllNotesOnSingleLine) {
+      // Find the row with the most notes to determine which one should overflow
+      int mostNotesRowIndex = groupStartRow;
+      int maxNotes = sheet.sheetRows[groupStartRow].notes.length;
+
+      for (int i = groupStartRow + 1; i <= groupEndRow; i++) {
+        if (i < sheet.sheetRows.length &&
+            sheet.sheetRows[i].notes.length > maxNotes) {
+          maxNotes = sheet.sheetRows[i].notes.length;
+          mostNotesRowIndex = i;
+        }
+      }
+
+      // Temporarily update selectedNoteProvider to point to the row with most notes
+      final originalRow = selectedNoteProvider.selectedRow;
+      final originalIndex = selectedNoteProvider.selectedIndex;
+
+      selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
+          mostNotesRowIndex,
+          sheet.sheetRows[mostNotesRowIndex].notes.length - 1);
+
+      handleRowOverflow(
+          selectedNoteProvider,
+          rowSpacingProvider,
+          rowSpacingList,
+          listOfSpacingSizes.last,
+          sheet.sheetRows[mostNotesRowIndex].notes,
+          maxRowSize);
+
+      // Restore original selection if it's still valid
+      if (originalRow < sheet.sheetRows.length) {
+        selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
+            originalRow, originalIndex);
+      }
+    } else {
+      rowSpacingProvider.updateRowSpacingList(rowSpacingList);
+    }
+  }
+
   void _toggleDynamicsKeyboard() {
     setState(() {
       _showDynamicsKeyboard = !_showDynamicsKeyboard;
@@ -430,18 +621,40 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         final rowSpacingProvider = context.read<ListOfSpacingForEachRow>();
         var rowSpacingList = rowSpacingProvider.rowSpacingList;
 
-        // Insert new row after current row
-        sheet.sheetRows.insert(selectedNoteProvider.selectedRow + 1,
-            SheetRows(notes: [], rowProperties: RowProperties(tempoNumber: 0)));
-        rowSpacingList.insert(
-            selectedNoteProvider.selectedRow + 1, defaultNoteSpacing);
+        final int rowsToAdd = sheet.format.rowsPerGroup;
+        final List<String> clefs = sheet.format.defaultClefs;
+
+        // Insert new connected rows after current row
+        for (int i = 0; i < rowsToAdd; i++) {
+          final newRow = SheetRows(
+              notes: [], rowProperties: RowProperties(tempoNumber: 0));
+
+          // Add appropriate clef for each row
+          if (i < clefs.length) {
+            newRow.notes.add(MusicalNote(
+              pitch: "G",
+              octave: 4,
+              type: NoteType.clef,
+              isBeamed: false,
+              unicodeCharacter: clefs[i],
+              clefType: clefs[i],
+            ));
+          }
+
+          sheet.sheetRows
+              .insert(selectedNoteProvider.selectedRow + 1 + i, newRow);
+          rowSpacingList.insert(
+              selectedNoteProvider.selectedRow + 1 + i, defaultNoteSpacing);
+        }
+
         rowSpacingProvider.updateRowSpacingList(rowSpacingList);
 
-        // Move cursor to the new row
+        // Move cursor to the first new row
         selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
-            selectedNoteProvider.selectedRow + 1, -1);
+            selectedNoteProvider.selectedRow + 1, clefs.isNotEmpty ? 0 : -1);
 
-        print("Added new row. Total rows: ${sheet.sheetRows.length}");
+        print(
+            "Added $rowsToAdd new row(s). Total rows: ${sheet.sheetRows.length}");
       }
     });
   }
@@ -753,6 +966,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                             screenSize: screenSize,
                             screenshotController: screenshotController,
                             sheetNoteRows: sheet.sheetRows,
+                            sheetFormat: sheet.format,
                             musicSheetWidth: musicSheetWidth,
                             statusBarHeight: statusBarHeight,
                             title: _title,
@@ -1285,6 +1499,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                     NotesKeyboardLayout(
                                       sheetNoteRows: sheet.sheetRows,
                                       showNotesKeyboard: showNotesKeyboard,
+                                      sheetFormat: sheet.format,
                                       onToggleKeyboard: (isNotes) {
                                         setState(() {
                                           showNotesKeyboard = isNotes;

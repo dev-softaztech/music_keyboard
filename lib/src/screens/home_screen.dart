@@ -3,12 +3,21 @@ import 'package:music_keyboard/models/row_properties.dart';
 import 'package:music_keyboard/models/sheet.dart';
 import 'package:music_keyboard/models/sheet_properties.dart';
 import 'package:music_keyboard/models/sheet_rows.dart';
+import 'package:music_keyboard/models/sheet_format.dart';
+import 'package:music_keyboard/models/music_note.dart';
 import 'keyboard_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   static const routeName = '/';
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  SheetFormat _selectedFormat = SheetFormat.single;
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +87,40 @@ class HomeScreen extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
 
-                  const SizedBox(height: 64),
+                  const SizedBox(height: 48),
+
+                  // Format Selection Section
+                  const Text(
+                    'Choose Format',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF242038),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Format Selection Cards
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildFormatCard(
+                          SheetFormat.single,
+                          Icons.queue_music,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildFormatCard(
+                          SheetFormat.piano,
+                          Icons.piano,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 32),
 
                   // Start Composing Button
                   SizedBox(
@@ -129,17 +171,105 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  void _navigateToKeyboard(BuildContext context) {
-    // Initialize a new SheetRows object
-    final initialSheetRows = Sheet(sheetRows: [
-      SheetRows(notes: [], rowProperties: RowProperties(tempoNumber: 0))
-    ], sheetProperties: SheetProperties());
+  Widget _buildFormatCard(SheetFormat format, IconData icon) {
+    final bool isSelected = _selectedFormat == format;
 
-    // Navigate to keyboard screen with the initialized SheetRows
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedFormat = format;
+        });
+      },
+      child: Container(
+        height: 100,
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF242038) : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF242038) : Colors.grey[300]!,
+            width: 2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 32,
+              color: isSelected ? Colors.white : const Color(0xFF242038),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              format.displayName,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: isSelected ? Colors.white : const Color(0xFF242038),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              format.description,
+              style: TextStyle(
+                fontSize: 11,
+                color: isSelected
+                    ? Colors.white.withOpacity(0.8)
+                    : Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _navigateToKeyboard(BuildContext context) {
+    // Create initial rows based on selected format
+    List<SheetRows> initialRows = [];
+
+    for (int i = 0; i < _selectedFormat.rowsPerGroup; i++) {
+      final row = SheetRows(
+        notes: [],
+        rowProperties: RowProperties(tempoNumber: 0),
+      );
+
+      // Add appropriate clef for each row
+      if (i < _selectedFormat.defaultClefs.length) {
+        row.notes.add(MusicalNote(
+          pitch: "G",
+          octave: 4,
+          type: NoteType.clef,
+          isBeamed: false,
+          unicodeCharacter: _selectedFormat.defaultClefs[i],
+          clefType: _selectedFormat.defaultClefs[i],
+        ));
+      }
+
+      initialRows.add(row);
+    }
+
+    // Initialize a new Sheet object with the selected format
+    final initialSheet = Sheet(
+      sheetRows: initialRows,
+      sheetProperties: SheetProperties(),
+      format: _selectedFormat,
+    );
+
+    // Navigate to keyboard screen with the initialized Sheet
     Navigator.pushNamed(
       context,
       KeyboardScreen.routeName,
-      arguments: initialSheetRows,
+      arguments: initialSheet,
     );
   }
 }

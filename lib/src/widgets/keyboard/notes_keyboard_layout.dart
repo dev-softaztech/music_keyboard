@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/models/note_unicode_characters.dart';
 import 'package:music_keyboard/models/sheet_rows.dart';
+import 'package:music_keyboard/models/sheet_format.dart';
 import 'package:music_keyboard/src/providers/current_selected_note_provider.dart';
 import 'package:music_keyboard/src/providers/selected_accidental_provider.dart';
 import 'package:music_keyboard/src/widgets/keyboard/note_head_keyboard/keyboard_by_symbols.dart';
@@ -17,6 +18,7 @@ class NotesKeyboardLayout extends StatefulWidget {
   final void Function(bool) onToggleKeyboard;
   final void Function(MusicalNote) onKeyPress;
   final List<SheetRows> sheetNoteRows;
+  final SheetFormat sheetFormat;
 
   const NotesKeyboardLayout({
     super.key,
@@ -24,6 +26,7 @@ class NotesKeyboardLayout extends StatefulWidget {
     required this.onToggleKeyboard,
     required this.onKeyPress,
     required this.sheetNoteRows,
+    required this.sheetFormat,
   });
 
   @override
@@ -833,7 +836,10 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                 ),
               ),
               KeyboardBySymbols(
-                  onKeyPress: widget.onKeyPress, showLowerPair: showLowerPair),
+                  onKeyPress: widget.onKeyPress,
+                  showLowerPair: showLowerPair,
+                  sheetNoteRows: widget.sheetNoteRows,
+                  sheetFormat: widget.sheetFormat),
               Container(
                 margin: EdgeInsets.fromLTRB(5, 0, 0, 0),
                 padding: EdgeInsets.fromLTRB(5, 0, 0, 0),
