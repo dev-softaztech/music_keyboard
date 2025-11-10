@@ -79,6 +79,7 @@ double calculateXPositionForIndex(int index, List<MusicalNote> notes,
   }
 
   if (index != -1 &&
+      index < notes.length &&
       !isNoteStartXForHighlight &&
       notes[index].type == NoteType.keySignature) {
     x += getNoteWidth(notes[index]);
