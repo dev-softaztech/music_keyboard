@@ -30,21 +30,20 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
   /// **Add a note to the sheet and handle automatic bar line placement**
   void addNote(
       MusicalNote note, List<SheetRows> sheetNoteRows, BuildContext context) {
+    final notes = sheetNoteRows[selectedRow].notes;
+
     if (note.type == NoteType.space &&
-        sheetNoteRows[selectedRow].notes.isNotEmpty &&
-        sheetNoteRows[selectedRow].notes[selectedIndex].type ==
-            NoteType.space) {
+        notes.isNotEmpty &&
+        notes[selectedIndex].type == NoteType.space) {
       return;
     }
 
     context.read<SheetUndoManager>().saveState(sheetNoteRows);
 
-    // Insert the note at the current insertion point
-    //if (insertionIndex <= sheetNoteRows[selectedRow].notes.length) {
-    sheetNoteRows[selectedRow].notes.insert(insertionIndex, note);
+    notes.insert(insertionIndex, note);
 
     // Adjust indices for dynamics
-    for (var n in sheetNoteRows[selectedRow].notes) {
+    for (var n in notes) {
       if (n.crescendoEndIndex != null &&
           n.crescendoEndIndex! >= selectedIndex) {
         n.crescendoEndIndex = n.crescendoEndIndex! + 1;
@@ -55,28 +54,17 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
       }
     }
 
-    adjustSlurIndicesForSpaceNote(
-        note, sheetNoteRows[selectedRow].notes, insertionIndex, true);
+    adjustSlurIndicesForSpaceNote(note, notes, insertionIndex, true);
 
-    // Set duration for the new note
     note.duration = BarLineCalculator.noteDurations[note.type] ?? 0.0;
 
-    if (sheetNoteRows[selectedRow].notes[insertionIndex].type ==
-            NoteType.space &&
-        sheetNoteRows[selectedRow].notes.length > insertionIndex) {
-      selectedIndex = selectedIndex + 2;
-      insertionIndex = insertionIndex + 2;
-    } else {
-      updateSelectedIndexAndInsertionPoint(selectedRow, selectedIndex + 1);
-    }
+    updateSelectedIndexAndInsertionPoint(selectedRow, selectedIndex + 1);
 
-    // Check if we need to add automatic bar lines
     if (_checkForBarLines && note.type != NoteType.bar) {
-      _handleAutomaticBarLines(sheetNoteRows[selectedRow].notes, sheetNoteRows);
+      _handleAutomaticBarLines(notes, sheetNoteRows);
     }
 
     notifyListeners();
-    //}
   }
 
   void adjustSlurIndicesForSpaceNote(MusicalNote spaceNote,

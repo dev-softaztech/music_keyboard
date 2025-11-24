@@ -753,18 +753,20 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
   bool _shouldShowTieButton() {
     final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
     final closestRowIndex = selectedNoteProvider.selectedRow;
-    final closestNoteIndex = selectedNoteProvider.selectedIndex;
+    int closestNoteIndex = selectedNoteProvider.selectedIndex;
+    final notes = widget.sheetNoteRows[closestRowIndex].notes;
 
     if (_dragStart == null && _dragEnd == null) {
       if (closestNoteIndex > 0 &&
           closestNoteIndex <=
               widget.sheetNoteRows[closestRowIndex].notes.length) {
-        MusicalNote currentNote =
-            widget.sheetNoteRows[closestRowIndex].notes[closestNoteIndex];
-        if (closestNoteIndex <
-            widget.sheetNoteRows[closestRowIndex].notes.length - 1) {
-          MusicalNote nextNote =
-              widget.sheetNoteRows[closestRowIndex].notes[closestNoteIndex + 1];
+        if (closestNoteIndex >= notes.length) {
+          closestNoteIndex = notes.length - 1;
+        }
+
+        MusicalNote currentNote = notes[closestNoteIndex];
+        if (closestNoteIndex < notes.length - 1) {
+          MusicalNote nextNote = notes[closestNoteIndex + 1];
           if (currentNote.pitch == nextNote.pitch) {
             return true;
           }

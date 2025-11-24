@@ -1087,8 +1087,14 @@ class MusicSheetPainter extends CustomPainter {
     final Paint cursorPaint = Paint()..color = Colors.blue.withOpacity(0.8);
 
     if (insertionIndex > 0) {
+      if (insertionIndex >= notes.length) {
+        insertionIndex = notes.length - 1;
+      } else {
+        insertionIndex = insertionIndex - 1;
+      }
+
       cursorX += notes.isNotEmpty &&
-              notes[insertionIndex - 1].type == NoteType.keySignature
+              notes[insertionIndex].type == NoteType.keySignature
           ? 0
           : 20;
     }

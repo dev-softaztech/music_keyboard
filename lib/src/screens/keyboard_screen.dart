@@ -678,32 +678,30 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
       final rowSpacingProvider = context.read<ListOfSpacingForEachRow>();
       var rowSpacingList = rowSpacingProvider.rowSpacingList;
+      final selectedRow = selectedNoteProvider.selectedRow;
+      int selectedIndex = selectedNoteProvider.selectedIndex;
+      final notes = sheet.sheetRows[selectedRow].notes;
 
-      if (sheet.sheetRows[selectedNoteProvider.selectedRow].notes.isEmpty) {
-        sheet.sheetRows
-            .remove(sheet.sheetRows[selectedNoteProvider.selectedRow]);
+      if (notes.isEmpty) {
+        sheet.sheetRows.remove(sheet.sheetRows[selectedRow]);
 
-        rowSpacingList.remove(rowSpacingList[selectedNoteProvider.selectedRow]);
+        rowSpacingList.remove(rowSpacingList[selectedRow]);
         rowSpacingProvider.updateRowSpacingList(rowSpacingList);
 
         selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
-            selectedNoteProvider.selectedRow - 1,
-            sheet.sheetRows[selectedNoteProvider.selectedRow - 1].notes.isEmpty
+            selectedRow - 1,
+            sheet.sheetRows[selectedRow - 1].notes.isEmpty
                 ? 0
-                : sheet.sheetRows[selectedNoteProvider.selectedRow - 1].notes
-                        .length -
-                    1);
-      } else if (sheet
-              .sheetRows[selectedNoteProvider.selectedRow].notes.isNotEmpty &&
-          selectedNoteProvider.insertionIndex >= 0) {
-        // Get the note that will be removed
-        MusicalNote noteToRemove = sheet
-            .sheetRows[selectedNoteProvider.selectedRow]
-            .notes[selectedNoteProvider.selectedIndex];
+                : sheet.sheetRows[selectedRow - 1].notes.length - 1);
+      } else if (notes.isNotEmpty && selectedNoteProvider.insertionIndex >= 0) {
+        if (selectedIndex >= notes.length) {
+          selectedIndex = notes.length - 1;
+        }
+
+        MusicalNote noteToRemove = notes[selectedIndex];
 
         // Handle slur indices
-        for (var note
-            in sheet.sheetRows[selectedNoteProvider.selectedRow].notes) {
+        for (var note in notes) {
           if (note.slurEndIndex == selectedNoteProvider.insertionIndex) {
             note.slurEndIndex = null;
           }
@@ -713,18 +711,15 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         context.read<SheetUndoManager>().saveState(sheet.sheetRows);
 
         // Remove the note
-        sheet.sheetRows[selectedNoteProvider.selectedRow].notes
-            .remove(noteToRemove);
+        notes.remove(noteToRemove);
 
         // Update cursor position before removing the note
         selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
-            selectedNoteProvider.selectedRow,
-            selectedNoteProvider.selectedIndex - 1);
+            selectedRow, selectedIndex - 1);
 
         // After removing the note, check and update crescendo/decrescendo end indices
         final int removedNoteIndex = selectedNoteProvider.insertionIndex;
-        for (var note
-            in sheet.sheetRows[selectedNoteProvider.selectedRow].notes) {
+        for (var note in notes) {
           if (note.crescendoEndIndex != null &&
               note.crescendoEndIndex == removedNoteIndex) {
             note.crescendoEndIndex = note.crescendoEndIndex! - 1;
@@ -736,14 +731,10 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         }
 
         selectedNoteProvider.adjustSlurIndicesForSpaceNote(
-            noteToRemove,
-            sheet.sheetRows[selectedNoteProvider.selectedRow].notes,
-            removedNoteIndex,
-            false);
+            noteToRemove, notes, removedNoteIndex, false);
       }
 
-      updateRowSpacing(selectedNoteProvider.selectedRow, selectedNoteProvider,
-          sheet.sheetRows[selectedNoteProvider.selectedRow].notes);
+      updateRowSpacing(selectedRow, selectedNoteProvider, notes);
     });
   }
 
@@ -1691,44 +1682,41 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                                           .selectedRow]
                                                   .notes
                                                   .isNotEmpty) {
-                                            int previousNoteIndex =
-                                                selectedNoteProvider
-                                                        .selectedIndex -
-                                                    1;
-                                            if (previousNoteIndex >= 0 &&
-                                                previousNoteIndex <
-                                                    sheet
-                                                        .sheetRows[
-                                                            selectedNoteProvider
-                                                                .selectedRow]
-                                                        .notes
-                                                        .length) {
-                                              MusicalNote previousNote = sheet
-                                                  .sheetRows[
-                                                      selectedNoteProvider
-                                                          .selectedRow]
-                                                  .notes[previousNoteIndex];
+                                            if (selectedNoteProvider
+                                                    .selectedIndex <
+                                                sheet
+                                                    .sheetRows[
+                                                        selectedNoteProvider
+                                                            .selectedRow]
+                                                    .notes
+                                                    .length) {
+                                              MusicalNote currentNote = sheet
+                                                      .sheetRows[
+                                                          selectedNoteProvider
+                                                              .selectedRow]
+                                                      .notes[
+                                                  selectedNoteProvider
+                                                      .selectedIndex];
                                               shouldShowRedBorder =
-                                                  previousNote.type ==
+                                                  currentNote.type ==
                                                       NoteType.space;
                                             }
                                           }
 
                                           return Flexible(
-                                              flex: 2, // 20%
+                                              flex: 2,
                                               child: SizedBox(
-                                                //width: 85,
                                                 height: 30,
                                                 child: ElevatedButton(
                                                   onPressed: () {
                                                     if (shouldShowRedBorder) {
                                                       MusicalNote noteToRemove = sheet
-                                                          .sheetRows[
-                                                              selectedNoteProvider
-                                                                  .selectedRow]
-                                                          .notes[selectedNoteProvider
-                                                              .selectedIndex -
-                                                          1];
+                                                              .sheetRows[
+                                                                  selectedNoteProvider
+                                                                      .selectedRow]
+                                                              .notes[
+                                                          selectedNoteProvider
+                                                              .selectedIndex];
                                                       sheet
                                                           .sheetRows[
                                                               selectedNoteProvider
