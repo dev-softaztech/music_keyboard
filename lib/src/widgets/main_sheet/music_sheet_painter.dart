@@ -978,8 +978,8 @@ class MusicSheetPainter extends CustomPainter {
         showTitleAndComposer) {
       // Position title and composer relative to where the staff content will start
       // Leave space at the top, then title, then composer, then space before first staff
-      titleY = 50; // Start closer to top during PDF export
-      composerY = 85; // Composer follows title
+      titleY = 85; // Position same as normal rendering
+      composerY = 120; // Position same as normal rendering
     }
 
     if (title.isNotEmpty) {

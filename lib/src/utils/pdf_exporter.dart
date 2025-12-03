@@ -10,7 +10,7 @@ class PdfExporter {
   static const double pageMargin = 50.0;
   static const double availableHeight = a4Height - (2 * pageMargin);
 
-  static const double titleComposerSpace = 50.0;
+  static const double titleComposerSpace = 120.0;
   static const double lineSpacing = 10.0;
   static const double rowHeight = lineSpacing * 4;
 

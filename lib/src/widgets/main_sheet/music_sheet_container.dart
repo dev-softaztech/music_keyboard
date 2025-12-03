@@ -1268,8 +1268,12 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
 
                           // Adjust vertical offset for partial rendering
                           // For PDF export, we need to ensure the screenshot area includes the title/composer
-                          //final double adjustedVerticalOffset = widget.showTitleAndComposer ? 400.0 : 50.0;
-                          final double adjustedVerticalOffset = 50.0;
+                          final double adjustedVerticalOffset =
+                              (widget.renderStartRow != null &&
+                                      widget.renderEndRow != null &&
+                                      widget.showTitleAndComposer)
+                                  ? 200.0
+                                  : 50.0;
 
                           // Calculate A4-proportional height (A4 aspect ratio: 841.89 / 595.28 ≈ 1.414)
                           final double a4ProportionalHeight =
