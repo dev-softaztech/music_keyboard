@@ -559,7 +559,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     const double pageHeaderMargin = 50.0;
     const double pageFooterMargin = 50.0;
 
-    final pageBreaks = PdfExporter.calculatePageBreaks(rows, rowSpacing);
+    final pageBreaks =
+        PdfExporter.calculatePageBreaks(rows, rowSpacing, widget.sheetFormat);
     double cumulativeOffset = 0.0;
 
     for (int rowIndex = 0; rowIndex < rows.length; rowIndex++) {
@@ -1275,9 +1276,9 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                                   ? 200.0
                                   : 50.0;
 
-                          // Calculate A4-proportional height (A4 aspect ratio: 841.89 / 595.28 ≈ 1.414)
+                          // Calculate A4-proportional height based on format configuration
                           final double a4ProportionalHeight =
-                              widget.musicSheetWidth * 1.7;
+                              widget.sheetFormat.config.a4ProportionalHeight;
 
                           // Calculate page margins - 50px header/footer for non-first pages
                           const double pageHeaderMargin = 50.0;
@@ -1286,7 +1287,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                           // Calculate how many pages we need and add margins accordingly
                           final pageBreaks = PdfExporter.calculatePageBreaks(
                               widget.sheetNoteRows,
-                              globalRowSpacingProvider.rowSpacing);
+                              globalRowSpacingProvider.rowSpacing,
+                              widget.sheetFormat);
                           double totalMarginsHeight = 0.0;
 
                           // Add footer margin for each page and header margin for non-first pages

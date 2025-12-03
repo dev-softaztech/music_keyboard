@@ -2,13 +2,12 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:music_keyboard/models/sheet_rows.dart';
+import 'package:music_keyboard/models/sheet_format.dart';
 import 'package:screenshot/screenshot.dart';
 
 class PdfExporter {
-  static const double a4Width = 595.28; //595.28
-  static const double a4Height = 1700; //841.89
+  static const double a4Width = 595.28;
   static const double pageMargin = 50.0;
-  static const double availableHeight = a4Height - (2 * pageMargin);
 
   static const double titleComposerSpace = 120.0;
   static const double lineSpacing = 10.0;
@@ -20,11 +19,12 @@ class PdfExporter {
     required String title,
     required String composer,
     required ScreenshotController screenshotController,
+    required SheetFormat sheetFormat,
     required Function(int startRow, int endRow, bool showTitle)
         updateSheetForCapture,
     required Function() captureScreenshot,
   }) async {
-    final pageBreaks = calculatePageBreaks(sheetRows, rowSpacing);
+    final pageBreaks = calculatePageBreaks(sheetRows, rowSpacing, sheetFormat);
 
     final pdf = pw.Document();
 
@@ -69,28 +69,19 @@ class PdfExporter {
         bytes: await pdf.save(), filename: 'music_sheet_multipage.pdf');
   }
 
-  /// Calculate how many rows can fit on a page
-  static int calculateRowsPerPage(double rowSpacing, bool isFirstPage) {
-    double usableHeight = availableHeight;
-    if (isFirstPage) {
-      usableHeight -= titleComposerSpace;
-    }
-
-    double rowTotalHeight = rowSpacing + rowHeight;
-    return (usableHeight / rowTotalHeight)
-        .floor()
-        .clamp(1, 999); // At least 1 row per page
-  }
-
-  /// Calculate page breaks for the sheet
+  /// Calculate page breaks for the sheet using format configuration
   static List<PageInfo> calculatePageBreaks(
-      List<SheetRows> sheetRows, double rowSpacing) {
+      List<SheetRows> sheetRows, double rowSpacing, SheetFormat sheetFormat) {
     final List<PageInfo> pageBreaks = [];
     int currentRow = 0;
 
     while (currentRow < sheetRows.length) {
       final bool isFirstPage = pageBreaks.isEmpty;
-      final int rowsPerPage = calculateRowsPerPage(rowSpacing, isFirstPage);
+      // Use format-specific rows per page configuration
+      final int rowsPerPage = isFirstPage
+          ? sheetFormat.config.rowsOnFirstPage
+          : sheetFormat.config.rowsOnFollowingPages;
+
       final int endRow =
           (currentRow + rowsPerPage - 1).clamp(0, sheetRows.length - 1);
 

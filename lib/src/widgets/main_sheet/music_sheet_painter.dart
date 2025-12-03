@@ -87,7 +87,7 @@ class MusicSheetPainter extends CustomPainter {
 
     // Calculate which page we're on for margin adjustments
     final pageBreaks =
-        PdfExporter.calculatePageBreaks(sheetNoteRows, rowSpacing);
+        PdfExporter.calculatePageBreaks(sheetNoteRows, rowSpacing, sheetFormat);
     int currentPageIndex = 0;
     for (int i = 0; i < pageBreaks.length; i++) {
       if (startRow >= pageBreaks[i].startRow &&
@@ -117,8 +117,8 @@ class MusicSheetPainter extends CustomPainter {
     Map<int, double> cumulativeMarginOffsets = {};
     if (renderStartRow == null || renderEndRow == null) {
       // Only calculate margins during normal rendering (not partial rendering for PDF export)
-      final pageBreaks =
-          PdfExporter.calculatePageBreaks(sheetNoteRows, rowSpacing);
+      final pageBreaks = PdfExporter.calculatePageBreaks(
+          sheetNoteRows, rowSpacing, sheetFormat);
 
       double cumulativeOffset = 0.0;
       for (int rowIndex = 0; rowIndex < sheetNoteRows.length; rowIndex++) {
@@ -557,7 +557,7 @@ class MusicSheetPainter extends CustomPainter {
 
     // Calculate which page we're on for margin adjustments
     final pageBreaks =
-        PdfExporter.calculatePageBreaks(sheetNoteRows, rowSpacing);
+        PdfExporter.calculatePageBreaks(sheetNoteRows, rowSpacing, sheetFormat);
     int currentPageIndex = 0;
     for (int i = 0; i < pageBreaks.length; i++) {
       if (startRow >= pageBreaks[i].startRow &&
@@ -582,8 +582,8 @@ class MusicSheetPainter extends CustomPainter {
     // Calculate cumulative margin offsets for all rows
     Map<int, double> cumulativeMarginOffsets = {};
     if (renderStartRow == null || renderEndRow == null) {
-      final pageBreaks =
-          PdfExporter.calculatePageBreaks(sheetNoteRows, rowSpacing);
+      final pageBreaks = PdfExporter.calculatePageBreaks(
+          sheetNoteRows, rowSpacing, sheetFormat);
       double cumulativeOffset = 0.0;
       for (int rowIndex = 0; rowIndex < sheetNoteRows.length; rowIndex++) {
         cumulativeMarginOffsets[rowIndex] = cumulativeOffset;
@@ -904,7 +904,7 @@ class MusicSheetPainter extends CustomPainter {
 
     // Calculate page breaks using the same logic as PDF export
     final pageBreaks =
-        PdfExporter.calculatePageBreaks(sheetNoteRows, rowSpacing);
+        PdfExporter.calculatePageBreaks(sheetNoteRows, rowSpacing, sheetFormat);
 
     // Only draw dividers if there are multiple pages
     if (pageBreaks.length <= 1) {
@@ -1025,7 +1025,7 @@ class MusicSheetPainter extends CustomPainter {
 
     // Calculate page breaks using the same logic as PDF export
     final pageBreaks =
-        PdfExporter.calculatePageBreaks(sheetNoteRows, rowSpacing);
+        PdfExporter.calculatePageBreaks(sheetNoteRows, rowSpacing, sheetFormat);
 
     // If only one page, use the original size
     if (pageBreaks.length <= 1) {

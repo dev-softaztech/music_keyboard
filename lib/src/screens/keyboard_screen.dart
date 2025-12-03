@@ -775,6 +775,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         title: _title,
         composer: _composer,
         screenshotController: screenshotController,
+        sheetFormat: sheet.format,
         updateSheetForCapture: (int startRow, int endRow, bool showTitle) {
           // Update the MusicSheetContainer to show only specific rows
           setState(() {
@@ -936,7 +937,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     final mediaQuery = MediaQuery.of(context);
     final screenSize = MediaQuery.of(context).size;
     final statusBarHeight = mediaQuery.padding.top;
-    const double musicSheetWidth = 1000;
+    final double musicSheetWidth = sheet.format.config.musicSheetWidth;
 
     return Scaffold(
         body: SafeArea(
