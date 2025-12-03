@@ -937,9 +937,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     final mediaQuery = MediaQuery.of(context);
     final screenSize = MediaQuery.of(context).size;
     final statusBarHeight = mediaQuery.padding.top;
-    const double noteWidth = 27.0;
-    const int maxNotes = 30;
-    const double musicSheetWidth = noteWidth * maxNotes;
+    const double musicSheetWidth = 1000;
 
     return Scaffold(
         body: SafeArea(

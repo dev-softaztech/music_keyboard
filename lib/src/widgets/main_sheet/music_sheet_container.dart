@@ -1273,7 +1273,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
 
                           // Calculate A4-proportional height (A4 aspect ratio: 841.89 / 595.28 ≈ 1.414)
                           final double a4ProportionalHeight =
-                              widget.musicSheetWidth * 1.414;
+                              widget.musicSheetWidth * 1.7;
 
                           // Calculate page margins - 50px header/footer for non-first pages
                           const double pageHeaderMargin = 50.0;

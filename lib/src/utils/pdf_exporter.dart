@@ -6,7 +6,7 @@ import 'package:screenshot/screenshot.dart';
 
 class PdfExporter {
   static const double a4Width = 595.28; //595.28
-  static const double a4Height = 1300; //841.89
+  static const double a4Height = 1700; //841.89
   static const double pageMargin = 50.0;
   static const double availableHeight = a4Height - (2 * pageMargin);
 

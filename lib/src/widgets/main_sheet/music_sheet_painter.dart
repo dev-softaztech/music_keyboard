@@ -1033,7 +1033,7 @@ class MusicSheetPainter extends CustomPainter {
     }
 
     // Calculate total height needed for all pages
-    const double a4Height = 1300; // Same as PDF exporter constant
+    const double a4Height = 1700; // Same as PDF exporter constant
     double totalHeight = pageBreaks.length * a4Height;
 
     // Use the larger of the calculated height or original size
