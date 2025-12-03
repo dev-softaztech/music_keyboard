@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class RowSpacingProvider extends ChangeNotifier {
-  double _rowSpacing = 160.0; // Default spacing
+  double _rowSpacing = 140.0; // Default spacing
 
   double get rowSpacing => _rowSpacing;
 

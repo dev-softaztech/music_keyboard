@@ -1,5 +1,5 @@
 class SheetProperties {
   double rowSpacing;
 
-  SheetProperties({this.rowSpacing = 160.0});
+  SheetProperties({this.rowSpacing = 140.0});
 }

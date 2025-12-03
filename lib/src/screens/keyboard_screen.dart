@@ -18,7 +18,6 @@ import 'package:music_keyboard/src/utils/pdf_exporter.dart';
 import 'package:music_keyboard/src/utils/screenshot_saver.dart';
 import 'package:music_keyboard/src/utils/toast_utils.dart';
 import 'package:music_keyboard/src/widgets/main_sheet/title_popup.dart';
-import 'package:music_keyboard/src/widgets/main_sheet/row_spacing_popup.dart';
 import 'package:music_keyboard/src/widgets/keyboard/tempo_popup.dart';
 import 'package:music_keyboard/src/widgets/keyboard/rehearsal_markings_popup.dart';
 import 'package:music_keyboard/src/providers/row_spacing_provider.dart';
@@ -1114,51 +1113,6 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                             size: 20, color: Colors.black),
                                         SizedBox(width: 8),
                                         Text('Add New Line',
-                                            style: TextStyle(fontSize: 14)),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                // Divider
-                                Container(
-                                  height: 1,
-                                  color: Colors.grey[300],
-                                ),
-                                // Row Spacing Button
-                                InkWell(
-                                  onTap: () {
-                                    setState(() {
-                                      showToolsMenu = false;
-                                    });
-                                    final rowSpacingProvider =
-                                        context.read<RowSpacingProvider>();
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) => RowSpacingPopup(
-                                        initialSpacing:
-                                            rowSpacingProvider.rowSpacing,
-                                        onSave: (spacing) {
-                                          setState(() {
-                                            // Update both the provider and the sheet properties
-                                            rowSpacingProvider
-                                                .updateBetweenRowSpacing(
-                                                    spacing);
-                                            sheet.sheetProperties.rowSpacing =
-                                                spacing;
-                                          });
-                                        },
-                                      ),
-                                    );
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 12, horizontal: 16),
-                                    child: const Row(
-                                      children: [
-                                        Icon(Icons.height,
-                                            size: 20, color: Colors.black),
-                                        SizedBox(width: 8),
-                                        Text('Row Spacing',
                                             style: TextStyle(fontSize: 14)),
                                       ],
                                     ),
