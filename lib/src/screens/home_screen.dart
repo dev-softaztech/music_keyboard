@@ -113,7 +113,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(width: 16),
                       Expanded(
                         child: _buildFormatCard(
-                          SheetFormat.piano,
+                          SheetFormat.twoRows,
                           Icons.piano,
                         ),
                       ),

@@ -197,7 +197,7 @@ class _KeyboardBySymbolsState extends State<KeyboardBySymbols> {
   // Determine if a key should be disabled in Piano mode
   bool _isKeyDisabled(String pitch, int octave, KeyboardRow row) {
     // Only apply disabling logic when sheet format is Piano
-    if (widget.sheetFormat != SheetFormat.piano) {
+    if (widget.sheetFormat != SheetFormat.twoRows) {
       return false;
     }
 

@@ -2,19 +2,25 @@ import 'package:music_keyboard/models/sheet_format_config.dart';
 
 enum SheetFormat {
   single, // Current default behavior - independent rows
-  piano, // 2 connected rows (treble + bass)
-  grand, // Future: 4 connected rows
+  twoRows, // 2 connected rows (treble + bass)
+  threeRows,
+  fourRows,
+  fiveRows
 }
 
 extension SheetFormatExtension on SheetFormat {
   String get displayName {
     switch (this) {
       case SheetFormat.single:
-        return 'Single Staff';
-      case SheetFormat.piano:
-        return 'Piano Music';
-      case SheetFormat.grand:
-        return 'Grand Staff';
+        return 'Single Stave';
+      case SheetFormat.twoRows:
+        return 'Two Staves';
+      case SheetFormat.threeRows:
+        return 'Three Staves';
+      case SheetFormat.fourRows:
+        return 'Four Staves';
+      case SheetFormat.fiveRows:
+        return 'Five Staves';
     }
   }
 
@@ -22,10 +28,14 @@ extension SheetFormatExtension on SheetFormat {
     switch (this) {
       case SheetFormat.single:
         return 'Independent single rows';
-      case SheetFormat.piano:
-        return 'Connected treble and bass rows';
-      case SheetFormat.grand:
-        return 'Four connected rows';
+      case SheetFormat.twoRows:
+        return 'Two connected treble and bass rows e.g. Piano';
+      case SheetFormat.threeRows:
+        return 'Three connected treble and bass rows e.g. Organ';
+      case SheetFormat.fourRows:
+        return 'Four connected rows for multiple instruments';
+      case SheetFormat.fiveRows:
+        return 'Five connected rows for multiple instruments';
     }
   }
 
@@ -34,10 +44,14 @@ extension SheetFormatExtension on SheetFormat {
     switch (this) {
       case SheetFormat.single:
         return 1;
-      case SheetFormat.piano:
+      case SheetFormat.twoRows:
         return 2;
-      case SheetFormat.grand:
+      case SheetFormat.threeRows:
+        return 3;
+      case SheetFormat.fourRows:
         return 4;
+      case SheetFormat.fiveRows:
+        return 5;
     }
   }
 
@@ -46,32 +60,31 @@ extension SheetFormatExtension on SheetFormat {
     switch (this) {
       case SheetFormat.single:
         return ['\uf472']; // Treble clef
-      case SheetFormat.piano:
+      case SheetFormat.twoRows:
         return ['\uf472', '\uf474']; // Treble, Bass
-      case SheetFormat.grand:
+      case SheetFormat.threeRows:
+        return ['\uf472', '\uf472', '\uf474']; // Treble, Treble, Bass
+      case SheetFormat.fourRows:
         return [
           '\uf472',
-          '\uf474',
+          '\uf472',
           '\uf472',
           '\uf474'
-        ]; // Treble, Bass, Treble, Bass
+        ]; // Treble, Treble, Treble, Bass
+      case SheetFormat.fiveRows:
+        return [
+          '\uf472',
+          '\uf472',
+          '\uf472',
+          '\uf472',
+          '\uf474'
+        ]; // Treble, Treble, Treble, Treble, Bass
     }
   }
 
-  /// Configuration for layout and PDF export settings
   SheetFormatConfig get config {
     switch (this) {
       case SheetFormat.single:
-        // Single staff - can fit more rows per page
-        return const SheetFormatConfig(
-          musicSheetWidth: 1320,
-          a4Height: 1700,
-          a4ProportionalRatio: 1.7,
-          rowsOnFirstPage: 8, // More rows for single staff
-          rowsOnFollowingPages: 10,
-        );
-      case SheetFormat.piano:
-        // Piano format (2 connected rows) - current working configuration
         return const SheetFormatConfig(
           musicSheetWidth: 1320,
           a4Height: 1700,
@@ -79,10 +92,33 @@ extension SheetFormatExtension on SheetFormat {
           rowsOnFirstPage: 8,
           rowsOnFollowingPages: 10,
         );
-      case SheetFormat.grand:
-        // Grand staff (4 connected rows) - fewer rows per page
+      case SheetFormat.twoRows:
         return const SheetFormatConfig(
-          musicSheetWidth: 1000,
+          musicSheetWidth: 1320,
+          a4Height: 1700,
+          a4ProportionalRatio: 1.7,
+          rowsOnFirstPage: 8,
+          rowsOnFollowingPages: 10,
+        );
+      case SheetFormat.threeRows:
+        return const SheetFormatConfig(
+          musicSheetWidth: 1320,
+          a4Height: 1700,
+          a4ProportionalRatio: 1.7,
+          rowsOnFirstPage: 9,
+          rowsOnFollowingPages: 9,
+        );
+      case SheetFormat.fourRows:
+        return const SheetFormatConfig(
+          musicSheetWidth: 1320,
+          a4Height: 1700,
+          a4ProportionalRatio: 1.7,
+          rowsOnFirstPage: 8,
+          rowsOnFollowingPages: 8,
+        );
+      case SheetFormat.fiveRows:
+        return const SheetFormatConfig(
+          musicSheetWidth: 1320,
           a4Height: 1700,
           a4ProportionalRatio: 1.7,
           rowsOnFirstPage: 5,

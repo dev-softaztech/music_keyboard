@@ -104,9 +104,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     // Set the rowSpacing value from SheetProperties to RowSpacingProvider after the first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final rowSpacingListProvider = context.read<ListOfSpacingForEachRow>();
-      if (sheet.format == SheetFormat.piano) {
+      if (sheet.format == SheetFormat.twoRows) {
         rowSpacingListProvider.updateRowSpacingList([26, 26]);
-      } else if (sheet.format == SheetFormat.grand) {
+      } else if (sheet.format == SheetFormat.fourRows) {
         rowSpacingListProvider.updateRowSpacingList([26, 26, 26, 26]);
       }
 
@@ -263,7 +263,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     // For piano mode: move to the same type of row (treble to treble, bass to bass)
     int targetRowIndex = insertionPoint; // Default to first new row
 
-    if (sheet.format == SheetFormat.piano && rowsToAdd == 2) {
+    if (sheet.format == SheetFormat.twoRows && rowsToAdd == 2) {
       // In piano mode, determine if current row is treble or bass
       final currentRowIndex = selectedNoteProvider.selectedRow;
       final isCurrentRowTreble = _isRowInTreblePosition(currentRowIndex);
@@ -459,7 +459,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     ];
 
     // For Piano format, update spacing for entire connected group
-    if (sheet.format == SheetFormat.piano) {
+    if (sheet.format == SheetFormat.twoRows) {
       _updateConnectedRowGroupSpacing(rowIndex, selectedNoteProvider,
           rowSpacingProvider, rowSpacingList, listOfSpacingSizes);
     } else {
