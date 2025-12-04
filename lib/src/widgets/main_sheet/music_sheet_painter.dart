@@ -100,13 +100,15 @@ class MusicSheetPainter extends CustomPainter {
     // Adjust vertical offset for partial rendering and page margins
     double adjustedVerticalOffset = verticalOffset;
     if (renderStartRow != null && renderEndRow != null) {
-      // During PDF export partial rendering, start from the very top to avoid cutoff
+      // During PDF export partial rendering, provide enough top padding to avoid cutoff
       if (showTitleAndComposer) {
-        // First page with title - start from top to capture title at Y=85
-        adjustedVerticalOffset = pageHeaderMargin + 200;
+        // First page with title - provide extra padding above title (title is at Y=85)
+        // Increased from 200 to 250 to ensure title top is fully captured
+        adjustedVerticalOffset = pageHeaderMargin + 350;
       } else {
-        // Non-first page - start from top to capture first row with header margin
-        adjustedVerticalOffset = pageHeaderMargin + 50;
+        // Non-first page - provide extra padding above first row
+        // Increased from 50 to 150 to ensure first row top is fully captured
+        adjustedVerticalOffset = pageHeaderMargin + 300;
       }
     } else if (currentPageIndex > 0) {
       // Not in partial rendering mode but we're on a non-first page
@@ -571,9 +573,11 @@ class MusicSheetPainter extends CustomPainter {
     double adjustedVerticalOffset = verticalOffset;
     if (renderStartRow != null && renderEndRow != null) {
       if (showTitleAndComposer) {
-        adjustedVerticalOffset = pageHeaderMargin + 200;
+        // Increased from 200 to 250 to match painter adjustment
+        adjustedVerticalOffset = pageHeaderMargin + 350;
       } else {
-        adjustedVerticalOffset = pageHeaderMargin + 50;
+        // Increased from 50 to 150 to match painter adjustment
+        adjustedVerticalOffset = pageHeaderMargin + 300;
       }
     } else if (currentPageIndex > 0) {
       adjustedVerticalOffset = verticalOffset + pageHeaderMargin;
@@ -969,8 +973,8 @@ class MusicSheetPainter extends CustomPainter {
 
   void _drawTitleAndComposer(Canvas canvas, Size size) {
     // Calculate title and composer Y positions based on whether we're in PDF export mode
-    double titleY = 85;
-    double composerY = 120;
+    double titleY = 50;
+    double composerY = 90;
 
     // During PDF export with partial rendering, coordinate title position with staff content
     if (renderStartRow != null &&
@@ -978,8 +982,8 @@ class MusicSheetPainter extends CustomPainter {
         showTitleAndComposer) {
       // Position title and composer relative to where the staff content will start
       // Leave space at the top, then title, then composer, then space before first staff
-      titleY = 85; // Position same as normal rendering
-      composerY = 120; // Position same as normal rendering
+      titleY = 140; // Position same as normal rendering
+      composerY = 175; // Position same as normal rendering
     }
 
     if (title.isNotEmpty) {

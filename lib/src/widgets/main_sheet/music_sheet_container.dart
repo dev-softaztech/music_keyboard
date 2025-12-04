@@ -1258,7 +1258,6 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                           double rowSpacing =
                               globalRowSpacingProvider.rowSpacing;
                           double rowTotalHeight = rowSpacing + sheetHeight;
-                          const double verticalOffset = 150.0;
 
                           // Calculate total height based on rendered rows
                           final int startRow = widget.renderStartRow ?? 0;
@@ -1269,12 +1268,14 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
 
                           // Adjust vertical offset for partial rendering
                           // For PDF export, we need to ensure the screenshot area includes the title/composer
-                          final double adjustedVerticalOffset =
-                              (widget.renderStartRow != null &&
-                                      widget.renderEndRow != null &&
-                                      widget.showTitleAndComposer)
-                                  ? 200.0
-                                  : 50.0;
+                          // Increased padding to prevent cutoff at the top
+                          final double adjustedVerticalOffset = (widget
+                                          .renderStartRow !=
+                                      null &&
+                                  widget.renderEndRow != null &&
+                                  widget.showTitleAndComposer)
+                              ? 250.0 // Increased from 200 to match painter adjustment
+                              : 150.0; // Increased from 50 to match painter adjustment
 
                           // Calculate A4-proportional height based on format configuration
                           final double a4ProportionalHeight =
@@ -1301,9 +1302,21 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
                             }
                           }
 
+                          // Buffer space for capturing extended notation (slurs, high/low notes, dynamics)
+                          // Only needed above first row and below last row during PDF export
+                          const double rowVerticalBuffer = 120.0;
+                          double additionalBufferHeight = 0.0;
+
+                          if (widget.renderStartRow != null &&
+                              widget.renderEndRow != null) {
+                            // Add buffer above first row and below last row for PDF export
+                            additionalBufferHeight =
+                                rowVerticalBuffer * 2; // Top and bottom buffer
+                          }
+
                           final double contentHeight = adjustedVerticalOffset +
-                              (rowTotalHeight *
-                                  renderedRowCount); // +totalMarginsHeight;
+                              (rowTotalHeight * renderedRowCount) +
+                              additionalBufferHeight; // +totalMarginsHeight;
 
                           // Always use A4 proportional height, even for minimal content
                           final double totalHeight =

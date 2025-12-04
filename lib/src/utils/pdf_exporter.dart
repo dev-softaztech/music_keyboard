@@ -7,9 +7,7 @@ import 'package:screenshot/screenshot.dart';
 
 class PdfExporter {
   static const double a4Width = 595.28;
-  static const double pageMargin = 50.0;
-
-  static const double titleComposerSpace = 120.0;
+  static const double pageMargin = 100.0;
   static const double lineSpacing = 10.0;
   static const double rowHeight = lineSpacing * 4;
 

@@ -64,20 +64,20 @@ extension SheetFormatExtension on SheetFormat {
       case SheetFormat.single:
         // Single staff - can fit more rows per page
         return const SheetFormatConfig(
-          musicSheetWidth: 1000,
+          musicSheetWidth: 1320,
           a4Height: 1700,
           a4ProportionalRatio: 1.7,
-          rowsOnFirstPage: 16, // More rows for single staff
-          rowsOnFollowingPages: 18,
+          rowsOnFirstPage: 8, // More rows for single staff
+          rowsOnFollowingPages: 10,
         );
       case SheetFormat.piano:
         // Piano format (2 connected rows) - current working configuration
         return const SheetFormatConfig(
-          musicSheetWidth: 1000,
+          musicSheetWidth: 1320,
           a4Height: 1700,
           a4ProportionalRatio: 1.7,
           rowsOnFirstPage: 8,
-          rowsOnFollowingPages: 8,
+          rowsOnFollowingPages: 10,
         );
       case SheetFormat.grand:
         // Grand staff (4 connected rows) - fewer rows per page
@@ -86,7 +86,7 @@ extension SheetFormatExtension on SheetFormat {
           a4Height: 1700,
           a4ProportionalRatio: 1.7,
           rowsOnFirstPage: 5,
-          rowsOnFollowingPages: 6,
+          rowsOnFollowingPages: 10,
         );
     }
   }
