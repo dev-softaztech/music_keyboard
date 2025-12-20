@@ -635,7 +635,15 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         final int rowsToAdd = sheet.format.rowsPerGroup;
         final List<String> clefs = sheet.format.defaultClefs;
 
-        // Insert new connected rows after current row
+        // Calculate where the current connected group ends
+        final int rowsPerGroup = sheet.format.rowsPerGroup;
+        final int groupStartRow =
+            (selectedNoteProvider.selectedRow ~/ rowsPerGroup) * rowsPerGroup;
+        final int groupEndRow = math.min(
+            groupStartRow + rowsPerGroup - 1, sheet.sheetRows.length - 1);
+        final int insertionPoint = groupEndRow + 1;
+
+        // Insert new connected rows after the entire current connected group
         for (int i = 0; i < rowsToAdd; i++) {
           final newRow = SheetRows(
               notes: [], rowProperties: RowProperties(tempoNumber: 0));
@@ -652,17 +660,30 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
             ));
           }
 
-          sheet.sheetRows
-              .insert(selectedNoteProvider.selectedRow + 1 + i, newRow);
-          rowSpacingList.insert(
-              selectedNoteProvider.selectedRow + 1 + i, defaultNoteSpacing);
+          sheet.sheetRows.insert(insertionPoint + i, newRow);
+          rowSpacingList.insert(insertionPoint + i, defaultNoteSpacing);
         }
 
         rowSpacingProvider.updateRowSpacingList(rowSpacingList);
 
-        // Move cursor to the first new row
+        // Determine which row in the new group to move to
+        // For piano mode: move to the same type of row (treble to treble, bass to bass)
+        int targetRowIndex = insertionPoint; // Default to first new row
+
+        if (sheet.format == SheetFormat.twoRows && rowsToAdd == 2) {
+          // In piano mode, determine if current row is treble or bass
+          final currentRowIndex = selectedNoteProvider.selectedRow;
+          final isCurrentRowTreble = _isRowInTreblePosition(currentRowIndex);
+
+          // Move to the corresponding row type in the new group
+          targetRowIndex = isCurrentRowTreble
+              ? insertionPoint // Treble row (first in new group)
+              : insertionPoint + 1; // Bass row (second in new group)
+        }
+
+        // Move cursor to the appropriate row in the new group
         selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
-            selectedNoteProvider.selectedRow + 1, clefs.isNotEmpty ? 0 : -1);
+            targetRowIndex, clefs.isNotEmpty ? 0 : -1);
 
         print(
             "Added $rowsToAdd new row(s). Total rows: ${sheet.sheetRows.length}");
