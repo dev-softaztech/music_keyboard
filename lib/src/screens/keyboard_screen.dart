@@ -457,11 +457,6 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
       47,
       45,
       43,
-      41,
-      39,
-      37,
-      35,
-      33
     ];
 
     // For Piano format, update spacing for entire connected group
@@ -499,7 +494,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
       }
     }
 
-    double maxRowSize = 680;
+    double maxRowSize = 1200;
     var adjustedSpacingFitsAllNotesOnSingleLine = false;
 
     for (int i = 0; i < listOfSpacingSizes.length; i++) {
@@ -564,7 +559,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
       }
     }
 
-    double maxRowSize = 680;
+    double maxRowSize = 1200;
     var adjustedSpacingFitsAllNotesOnSingleLine = false;
     double selectedSpacing = listOfSpacingSizes.last;
 
