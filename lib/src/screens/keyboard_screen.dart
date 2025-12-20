@@ -113,6 +113,12 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
       final rowSpacingProvider = context.read<RowSpacingProvider>();
       rowSpacingProvider
           .updateBetweenRowSpacing(sheet.sheetProperties.rowSpacing);
+
+      // Set the selected index to the first clef note
+      final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+      if (sheet.sheetRows.isNotEmpty && sheet.sheetRows[0].notes.isNotEmpty) {
+        selectedNoteProvider.updateSelectedIndexAndInsertionPoint(0, 0);
+      }
     });
   }
 
@@ -1339,6 +1345,12 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                     setState(() {
                                       showMenu = false;
                                     });
+                                    // Reset insertion and selected note index to default
+                                    final selectedNoteProvider = context
+                                        .read<CurrentSelectedNoteProvider>();
+                                    selectedNoteProvider
+                                        .updateSelectedIndexAndInsertionPoint(
+                                            0, -1);
                                     Navigator.pushNamedAndRemoveUntil(
                                       context,
                                       '/',
