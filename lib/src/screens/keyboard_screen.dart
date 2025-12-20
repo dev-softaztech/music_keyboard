@@ -411,9 +411,17 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
       sheet.sheetRows[selectedNoteProvider.selectedRow].notes.removeAt(i);
     }
 
-    // Insert the notes at the beginning of the target row
+    // Determine insertion index: after clef if present, otherwise at beginning
+    int insertIndex = 0;
+    if (sheet.sheetRows[targetRowIndex].notes.isNotEmpty &&
+        sheet.sheetRows[targetRowIndex].notes[0].type == NoteType.clef) {
+      insertIndex = 1;
+    }
+
+    // Insert the notes at the calculated position
     for (int i = 0; i < notesToMove.length; i++) {
-      sheet.sheetRows[targetRowIndex].notes.insert(i, notesToMove[i]);
+      sheet.sheetRows[targetRowIndex].notes
+          .insert(insertIndex + i, notesToMove[i]);
     }
 
     if (sheet.sheetRows[selectedNoteProvider.selectedRow].notes.isNotEmpty &&
