@@ -1143,10 +1143,29 @@ class MusicSheetPainter extends CustomPainter {
         insertionIndex = insertionIndex - 1;
       }
 
-      cursorX += notes.isNotEmpty &&
-              notes[insertionIndex].type == NoteType.keySignature
-          ? 0
-          : 20;
+      // Check if the selected note is a space note
+      bool isSpaceNote =
+          notes.isNotEmpty && notes[insertionIndex].type == NoteType.space;
+      bool isFirstSpaceInSequence = false;
+
+      if (isSpaceNote && insertionIndex > 0) {
+        // Check if previous note is also a space note
+        isFirstSpaceInSequence =
+            notes[insertionIndex - 1].type != NoteType.space;
+      } else if (isSpaceNote && insertionIndex == 0) {
+        // Space note at index 0 is always first in sequence
+        isFirstSpaceInSequence = true;
+      }
+
+      // Don't add offset for key signatures or first-in-sequence space notes (which have 0 width)
+      if (notes.isNotEmpty &&
+          notes[insertionIndex].type == NoteType.keySignature) {
+        cursorX += 0;
+      } else if (isFirstSpaceInSequence) {
+        cursorX += 0; // First space note has no width, so no offset
+      } else {
+        cursorX += 20; // Standard offset for other notes
+      }
     }
 
     canvas.drawLine(
