@@ -29,6 +29,7 @@ class MusicSheetContainer extends StatefulWidget {
   final Function(VoidCallback)? onClearHighlightingCallback;
   final Function(Function() shouldShowTieButton, Function() shouldShowFlipNote)?
       onButtonStateCallbacks;
+  final Function(Function(int row, int index))? onZoomToNoteCallback;
 
   // New parameters for partial rendering
   final int? renderStartRow;
@@ -47,6 +48,7 @@ class MusicSheetContainer extends StatefulWidget {
     required this.composer,
     this.onClearHighlightingCallback,
     this.onButtonStateCallbacks,
+    this.onZoomToNoteCallback,
     this.renderStartRow,
     this.renderEndRow,
     this.showTitleAndComposer = true,
@@ -56,7 +58,8 @@ class MusicSheetContainer extends StatefulWidget {
   _MusicSheetContainerState createState() => _MusicSheetContainerState();
 }
 
-class _MusicSheetContainerState extends State<MusicSheetContainer> {
+class _MusicSheetContainerState extends State<MusicSheetContainer>
+    with SingleTickerProviderStateMixin {
   late TransformationController _transformationController;
   late double initialScale;
   bool isZoomed = false;
@@ -86,6 +89,10 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
   bool _isEditingDynamic = false;
   Offset _totalDragDelta = Offset.zero;
   double lineSpacing = 10;
+
+  // Animation controller for smooth zoom transitions
+  late AnimationController _zoomAnimationController;
+  Animation<Matrix4>? _zoomAnimation;
 
   @override
   void initState() {
@@ -117,6 +124,12 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
     // Listen for zoom changes
     _transformationController.addListener(_onZoomChanged);
 
+    // Initialize animation controller for smooth zoom
+    _zoomAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+
     // Ensure cursor blinks every 500ms without full app rebuild
     _cursorTimer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
       setState(() {
@@ -134,6 +147,109 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
       widget.onButtonStateCallbacks!(
           _updateTieButtonState, _updateFlipNoteButtonState);
     }
+
+    // Set up the callback for zooming to a note
+    if (widget.onZoomToNoteCallback != null) {
+      widget.onZoomToNoteCallback!(_zoomToNote);
+    }
+  }
+
+  /// Zoom and scroll to focus on a specific note with smooth animation
+  void _zoomToNote(int rowIndex, int noteIndex) {
+    final rowSpacingList =
+        context.read<ListOfSpacingForEachRow>().rowSpacingList;
+    final globalRowSpacingProvider = context.read<RowSpacingProvider>();
+
+    if (rowIndex >= widget.sheetNoteRows.length || noteIndex < 0) return;
+
+    final notes = widget.sheetNoteRows[rowIndex].notes;
+    if (noteIndex >= notes.length) return;
+
+    final currentRowSpacing = rowSpacingList[rowIndex];
+
+    // Calculate note X position
+    final noteX =
+        calculateXPositionForIndex(noteIndex, notes, currentRowSpacing, false);
+
+    // Calculate note Y position
+    double rowSpacing = globalRowSpacingProvider.rowSpacing;
+    const double rowHeight = 40.0;
+    const double verticalOffset = 150.0;
+    final double noteY =
+        verticalOffset + (rowIndex * (rowSpacing + rowHeight)) + 50;
+
+    // Target scale (zoom level)
+    const double targetScale = 1.0;
+
+    // Calculate the center of the VISIBLE canvas area (excluding keyboard and status bar)
+    const double keyboardHeight = 312.0;
+    final double appBarHeight = AppBar().preferredSize.height;
+    final double visibleCanvasHeight = widget.screenSize.height -
+        appBarHeight -
+        keyboardHeight -
+        widget.statusBarHeight;
+
+    final double centerX = widget.screenSize.width / 2;
+    final double centerY = visibleCanvasHeight / 2;
+
+    // Account for the scale when calculating translation
+    double translationX = centerX - (noteX * targetScale);
+    double translationY = centerY - (noteY * targetScale);
+
+    // Clamp translation to keep within canvas bounds
+    final double canvasWidth = widget.musicSheetWidth;
+    final double scaledCanvasWidth = canvasWidth * targetScale;
+    final double scaledCanvasHeight =
+        5000 * targetScale; // Approximate max height
+
+    // Clamp X: ensure canvas doesn't scroll too far left or right
+    // Only clamp if canvas is wider than screen
+    if (scaledCanvasWidth > widget.screenSize.width) {
+      final double minTranslationX =
+          widget.screenSize.width - scaledCanvasWidth;
+      final double maxTranslationX = 0;
+      translationX = translationX.clamp(minTranslationX, maxTranslationX);
+    }
+
+    // Clamp Y: ensure canvas doesn't scroll too far up or down
+    // Only clamp if canvas is taller than screen
+    if (scaledCanvasHeight > visibleCanvasHeight) {
+      final double minTranslationY = visibleCanvasHeight - scaledCanvasHeight;
+      final double maxTranslationY = 0;
+      translationY = translationY.clamp(minTranslationY, maxTranslationY);
+    }
+
+    // Create transformation matrix
+    final Matrix4 targetMatrix = Matrix4.identity()
+      ..translate(translationX, translationY)
+      ..scale(targetScale);
+
+    // Get current matrix
+    final Matrix4 currentMatrix = _transformationController.value;
+
+    // Create animation from current to target matrix
+    _zoomAnimation = Matrix4Tween(
+      begin: currentMatrix,
+      end: targetMatrix,
+    ).animate(CurvedAnimation(
+      parent: _zoomAnimationController,
+      curve: Curves.easeInOut,
+    ));
+
+    // Listen to animation updates
+    void animationListener() {
+      _transformationController.value = _zoomAnimation!.value;
+    }
+
+    _zoomAnimationController.addListener(animationListener);
+
+    // Cleanup and update state when animation completes
+    _zoomAnimationController.forward(from: 0.0).then((_) {
+      _zoomAnimationController.removeListener(animationListener);
+      setState(() {
+        isZoomed = true;
+      });
+    });
   }
 
   /// Wrapper functions to update button states
@@ -189,25 +305,88 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
   }
 
   void _resetZoom() {
-    setState(() {
-      final double scaleFactor =
-          initialScale * 0.9; // Using 0.9 as the zoom factor
+    // Get current transformation matrix
+    final Matrix4 currentMatrix = _transformationController.value;
 
-      // Calculate the translation needed to center the content
-      final double translationX =
-          (widget.screenSize.width - (widget.musicSheetWidth * scaleFactor)) /
-              2;
+    // Get current scale and translation
+    final double currentScale = currentMatrix.getMaxScaleOnAxis();
+    final double currentTranslationY = currentMatrix.getTranslation().y;
 
-      // Create a matrix with scale first
-      final Matrix4 scaleMatrix = Matrix4.identity()..scale(scaleFactor);
+    // Target scale
+    final double targetScale = initialScale * 0.9;
 
-      // Then create a matrix with translation
-      final Matrix4 translationMatrix = Matrix4.identity()
-        ..setTranslationRaw(translationX, 50.0, 0);
+    // Calculate screen dimensions
+    final double screenCenterX = widget.screenSize.width / 2;
+    const double keyboardHeight = 312.0;
+    final double appBarHeight = AppBar().preferredSize.height;
+    final double visibleCanvasHeight = widget.screenSize.height -
+        appBarHeight -
+        keyboardHeight -
+        widget.statusBarHeight;
+    final double screenCenterY = visibleCanvasHeight / 2;
 
-      // Combine the matrices: first scale, then translate
-      _transformationController.value = translationMatrix * scaleMatrix;
-      isZoomed = false;
+    // Get the inverse of current matrix to find the canvas point at screen center
+    final Matrix4 inverseMatrix = Matrix4.inverted(currentMatrix);
+    final vector_math.Vector3 canvasCenterPoint = inverseMatrix
+        .transform3(vector_math.Vector3(screenCenterX, screenCenterY, 0));
+
+    // Center the canvas horizontally (canvas center should be at screen center)
+    final double canvasCenterX = widget.musicSheetWidth / 2;
+    double translationX = screenCenterX - (canvasCenterX * targetScale);
+
+    // For Y, keep the same canvas Y position at screen center
+    double translationY = screenCenterY - (canvasCenterPoint.y * targetScale);
+
+    // Clamp translation to keep within canvas bounds
+    final double canvasWidth = widget.musicSheetWidth;
+    final double scaledCanvasWidth = canvasWidth * targetScale;
+    final double scaledCanvasHeight =
+        5000 * targetScale; // Approximate max height
+
+    // Clamp X: ensure canvas doesn't scroll too far left or right
+    // Only clamp if canvas is wider than screen
+    if (scaledCanvasWidth > widget.screenSize.width) {
+      final double minTranslationX =
+          widget.screenSize.width - scaledCanvasWidth;
+      final double maxTranslationX = 0;
+      translationX = translationX.clamp(minTranslationX, maxTranslationX);
+    }
+
+    // Clamp Y: ensure canvas doesn't scroll too far up or down
+    // Only clamp if canvas is taller than screen
+    if (scaledCanvasHeight > visibleCanvasHeight) {
+      final double minTranslationY = visibleCanvasHeight - scaledCanvasHeight;
+      final double maxTranslationY = 0;
+      translationY = translationY.clamp(minTranslationY, maxTranslationY);
+    }
+
+    // Create target transformation matrix
+    final Matrix4 targetMatrix = Matrix4.identity()
+      ..translate(translationX, translationY)
+      ..scale(targetScale);
+
+    // Create animation from current to target matrix
+    _zoomAnimation = Matrix4Tween(
+      begin: currentMatrix,
+      end: targetMatrix,
+    ).animate(CurvedAnimation(
+      parent: _zoomAnimationController,
+      curve: Curves.easeInOut,
+    ));
+
+    // Listen to animation updates
+    void animationListener() {
+      _transformationController.value = _zoomAnimation!.value;
+    }
+
+    _zoomAnimationController.addListener(animationListener);
+
+    // Cleanup and update state when animation completes
+    _zoomAnimationController.forward(from: 0.0).then((_) {
+      _zoomAnimationController.removeListener(animationListener);
+      setState(() {
+        isZoomed = false;
+      });
     });
   }
 
@@ -215,6 +394,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer> {
   void dispose() {
     _transformationController.removeListener(_onZoomChanged);
     _transformationController.dispose();
+    _zoomAnimationController.dispose();
     _cursorTimer.cancel();
     super.dispose();
   }

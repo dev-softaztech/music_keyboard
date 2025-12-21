@@ -87,6 +87,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   Function()? _shouldShowTieButtonCallback;
   Function()? _shouldShowFlipNoteCallback;
 
+  // Callback function for zooming to a note
+  Function(int row, int index)? _zoomToNoteCallback;
+
   // PDF export state variables
   int? _pdfRenderStartRow;
   int? _pdfRenderEndRow;
@@ -167,6 +170,14 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         }
         if (_shouldShowFlipNoteCallback != null) {
           _shouldShowFlipNoteCallback!();
+        }
+
+        // Zoom to the newly added note
+        if (_zoomToNoteCallback != null) {
+          _zoomToNoteCallback!(
+            selectedNoteProvider.selectedRow,
+            selectedNoteProvider.selectedIndex,
+          );
         }
       });
     } catch (e) {
@@ -1006,6 +1017,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                               _shouldShowTieButtonCallback =
                                   shouldShowTieButton;
                               _shouldShowFlipNoteCallback = shouldShowFlipNote;
+                            },
+                            onZoomToNoteCallback: (zoomToNoteCallback) {
+                              _zoomToNoteCallback = zoomToNoteCallback;
                             },
                           ),
                           const Spacer(), // Pushes the keyboard container to the bottom
