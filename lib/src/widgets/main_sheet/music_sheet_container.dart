@@ -179,7 +179,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
         verticalOffset + (rowIndex * (rowSpacing + rowHeight)) + 50;
 
     // Target scale (zoom level)
-    const double targetScale = 1.0;
+    const double targetScale = 0.7;
 
     // Calculate the center of the VISIBLE canvas area (excluding keyboard and status bar)
     const double keyboardHeight = 312.0;

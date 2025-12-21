@@ -261,15 +261,15 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
     for (int i = 0; i < overflowNotes.length; i++) {
       final note = overflowNotes[i];
-      if (note.type != NoteType.space) {
-        if (note.type == NoteType.clef || note.type == NoteType.timeSignature) {
-          notesWidth += getNoteWidth(note);
-        } else if (note.type == NoteType.keySignature) {
-          notesWidth += getNoteWidth(note) + 10;
-        } else {
-          notesWidth += smallestSpacingSize;
-        }
+
+      if (note.type == NoteType.clef || note.type == NoteType.timeSignature) {
+        notesWidth += getNoteWidth(note);
+      } else if (note.type == NoteType.keySignature) {
+        notesWidth += getNoteWidth(note) + 10;
+      } else {
+        notesWidth += smallestSpacingSize;
       }
+
       if (notesWidth > maxRowSize) {
         startIndex = i;
         break;
@@ -502,14 +502,12 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
     for (int i = 0; i < notes.length; i++) {
       final note = notes[i];
-      if (note.type != NoteType.space) {
-        if (note.type == NoteType.clef || note.type == NoteType.timeSignature) {
-          clefAndKeySigLength += getNoteWidth(note);
-        } else if (note.type == NoteType.keySignature) {
-          clefAndKeySigLength += getNoteWidth(note) + 10;
-        } else {
-          countOfNormalNotes++;
-        }
+      if (note.type == NoteType.clef || note.type == NoteType.timeSignature) {
+        clefAndKeySigLength += getNoteWidth(note);
+      } else if (note.type == NoteType.keySignature) {
+        clefAndKeySigLength += getNoteWidth(note) + 10;
+      } else {
+        countOfNormalNotes++;
       }
     }
 
@@ -558,15 +556,14 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
         for (int j = 0; j < sheet.sheetRows[i].notes.length; j++) {
           final note = sheet.sheetRows[i].notes[j];
-          if (note.type != NoteType.space) {
-            if (note.type == NoteType.clef ||
-                note.type == NoteType.timeSignature) {
-              clefAndKeySigLength += getNoteWidth(note);
-            } else if (note.type == NoteType.keySignature) {
-              clefAndKeySigLength += getNoteWidth(note) + 10;
-            } else {
-              countOfNormalNotes++;
-            }
+
+          if (note.type == NoteType.clef ||
+              note.type == NoteType.timeSignature) {
+            clefAndKeySigLength += getNoteWidth(note);
+          } else if (note.type == NoteType.keySignature) {
+            clefAndKeySigLength += getNoteWidth(note) + 10;
+          } else {
+            countOfNormalNotes++;
           }
         }
 
@@ -1670,132 +1667,49 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                             ),
                                           )),
                                       const SizedBox(width: 7),
-                                      Consumer<CurrentSelectedNoteProvider>(
-                                        builder:
-                                            (context, selectedNoteProvider, _) {
-                                          // Check if the note before the current selected note has type NoteType.space
-                                          bool shouldShowRedBorder = false;
-
-                                          if (selectedNoteProvider
-                                                      .insertionIndex >
-                                                  0 &&
-                                              sheet
-                                                  .sheetRows[
-                                                      selectedNoteProvider
-                                                          .selectedRow]
-                                                  .notes
-                                                  .isNotEmpty) {
-                                            if (selectedNoteProvider
-                                                    .selectedIndex <
-                                                sheet
-                                                    .sheetRows[
-                                                        selectedNoteProvider
-                                                            .selectedRow]
-                                                    .notes
-                                                    .length) {
-                                              MusicalNote currentNote = sheet
-                                                      .sheetRows[
-                                                          selectedNoteProvider
-                                                              .selectedRow]
-                                                      .notes[
-                                                  selectedNoteProvider
-                                                      .selectedIndex];
-                                              shouldShowRedBorder =
-                                                  currentNote.type ==
-                                                      NoteType.space;
-                                            }
-                                          }
-
-                                          return Flexible(
-                                              flex: 2,
-                                              child: SizedBox(
-                                                height: 30,
-                                                child: ElevatedButton(
-                                                  onPressed: () {
-                                                    if (shouldShowRedBorder) {
-                                                      MusicalNote noteToRemove = sheet
-                                                              .sheetRows[
-                                                                  selectedNoteProvider
-                                                                      .selectedRow]
-                                                              .notes[
-                                                          selectedNoteProvider
-                                                              .selectedIndex];
-                                                      sheet
-                                                          .sheetRows[
-                                                              selectedNoteProvider
-                                                                  .selectedRow]
-                                                          .notes
-                                                          .remove(noteToRemove);
-
-                                                      selectedNoteProvider
-                                                          .updateSelectedIndexAndInsertionPoint(
-                                                              selectedNoteProvider
-                                                                  .selectedRow,
-                                                              selectedNoteProvider
-                                                                      .selectedIndex -
-                                                                  1);
-
-                                                      selectedNoteProvider
-                                                          .adjustSlurIndicesForSpaceNote(
-                                                              noteToRemove,
-                                                              sheet
-                                                                  .sheetRows[
-                                                                      selectedNoteProvider
-                                                                          .selectedRow]
-                                                                  .notes,
-                                                              selectedNoteProvider
-                                                                      .selectedIndex -
-                                                                  1,
-                                                              false);
-                                                    } else {
-                                                      handleKeyPress(MusicalNote(
-                                                          pitch: "D",
-                                                          octave: 4,
-                                                          type: NoteType.space,
-                                                          isBeamed: false,
-                                                          unicodeCharacter:
-                                                              _selectedBarUnicode));
-                                                    }
-                                                  },
-                                                  style:
-                                                      ElevatedButton.styleFrom(
-                                                    backgroundColor:
-                                                        Colors.grey[100],
-                                                    shape:
-                                                        RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              8),
-                                                      side: BorderSide(
-                                                          color:
-                                                              shouldShowRedBorder
-                                                                  ? Colors.red
-                                                                  : Colors
-                                                                      .black,
-                                                          width: 1),
-                                                    ),
-                                                    padding: EdgeInsets.zero,
-                                                  ),
-                                                  child: Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .center,
-                                                    children: [
-                                                      const Text(
-                                                        'SPACE',
-                                                        style: TextStyle(
-                                                          color: Colors.black,
-                                                          fontSize: 13,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
+                                      Flexible(
+                                          flex: 2,
+                                          child: SizedBox(
+                                            height: 30,
+                                            child: ElevatedButton(
+                                              onPressed: () {
+                                                handleKeyPress(MusicalNote(
+                                                    pitch: "D",
+                                                    octave: 4,
+                                                    type: NoteType.space,
+                                                    isBeamed: false,
+                                                    unicodeCharacter:
+                                                        _selectedBarUnicode));
+                                              },
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor:
+                                                    Colors.grey[100],
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                  side: BorderSide(
+                                                      color: Colors.black,
+                                                      width: 1),
                                                 ),
-                                              ));
-                                        },
-                                      ),
+                                                padding: EdgeInsets.zero,
+                                              ),
+                                              child: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  const Text(
+                                                    'SPACE',
+                                                    style: TextStyle(
+                                                      color: Colors.black,
+                                                      fontSize: 13,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          )),
                                       const SizedBox(width: 7),
                                       Flexible(
                                           flex: 2, // 20%

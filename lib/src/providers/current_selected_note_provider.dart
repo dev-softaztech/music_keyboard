@@ -32,12 +32,6 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
       MusicalNote note, List<SheetRows> sheetNoteRows, BuildContext context) {
     final notes = sheetNoteRows[selectedRow].notes;
 
-    if (note.type == NoteType.space &&
-        notes.isNotEmpty &&
-        notes[selectedIndex].type == NoteType.space) {
-      return;
-    }
-
     context.read<SheetUndoManager>().saveState(sheetNoteRows);
 
     notes.insert(insertionIndex, note);

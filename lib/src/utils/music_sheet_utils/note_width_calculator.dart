@@ -31,6 +31,15 @@ int calculateInsertionIndex(
       return -1;
     }
 
+    // Calculate spacing for space notes
+    double spaceNoteSpacing = 0;
+    if (note.type == NoteType.space && i > 0) {
+      // Check if previous note is also a space note
+      bool prevIsSpace = notes[i - 1].type == NoteType.space;
+      // First space note in sequence: no spacing, subsequent: full spacing
+      spaceNoteSpacing = prevIsSpace ? rowSpacing : 0;
+    }
+
     if (note.type != NoteType.space) {
       final noteWidth = getNoteWidth(note);
 
@@ -52,6 +61,16 @@ int calculateInsertionIndex(
               : note.type == NoteType.keySignature
                   ? noteWidth + 10
                   : rowSpacing;
+    } else {
+      // Handle space note tap detection
+      if (spaceNoteSpacing > 0) {
+        // For subsequent space notes with spacing, check if tap is in their range
+        if (tapPositionX > currentX - halfRowSpacing &&
+            tapPositionX < currentX + halfRowSpacing) {
+          return i;
+        }
+      }
+      currentX += spaceNoteSpacing;
     }
   }
 
@@ -69,12 +88,24 @@ double calculateXPositionForIndex(int index, List<MusicalNote> notes,
 
   for (int i = 0; i < index && i < notes.length; i++) {
     final note = notes[i];
+
+    // Calculate spacing for space notes
+    double spaceNoteSpacing = 0;
+    if (note.type == NoteType.space && i > 0) {
+      // Check if previous note is also a space note
+      bool prevIsSpace = notes[i - 1].type == NoteType.space;
+      // First space note in sequence: no spacing, subsequent: full spacing
+      spaceNoteSpacing = prevIsSpace ? rowSpacing : 0;
+    }
+
     if (note.type != NoteType.space) {
       x += note.type == NoteType.clef || note.type == NoteType.timeSignature
           ? getNoteWidth(note)
           : note.type == NoteType.keySignature
               ? getNoteWidth(note) + 10
               : rowSpacing;
+    } else {
+      x += spaceNoteSpacing;
     }
   }
 
