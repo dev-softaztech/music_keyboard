@@ -216,7 +216,8 @@ class _KeyboardBySymbolsState extends State<KeyboardBySymbols> {
     // Calculate the note's Y position relative to the staff to determine if it needs ledger lines
     const double lineSpacing = 10.0; // Approximate line spacing
     const double staffTop = 20.0; // Approximate staff top
-    const double staffBottom = staffTop + (4 * lineSpacing);
+    const double rowHeight = (4 * lineSpacing);
+    const double staffBottom = staffTop + rowHeight;
 
     final double noteY =
         calculateNoteYVerticalKeyboard(pitch, octave, lineSpacing, staffTop);
@@ -224,14 +225,14 @@ class _KeyboardBySymbolsState extends State<KeyboardBySymbols> {
     // When cursor is on treble row (first row): disable keys below the first ledger line below the staff
     if (isCursorOnTrebleRow) {
       // First ledger line below staff is at staffBottom + lineSpacing
-      final double firstLedgerLineBelowStaff = staffBottom + lineSpacing;
+      final double firstLedgerLineBelowStaff = staffBottom + rowHeight;
       return noteY > firstLedgerLineBelowStaff;
     }
 
     // When cursor is on bass row (second row): disable keys above the first ledger line above the staff
     if (!isCursorOnTrebleRow) {
       // First ledger line above staff is at staffTop - lineSpacing
-      final double firstLedgerLineAboveStaff = staffTop - lineSpacing;
+      final double firstLedgerLineAboveStaff = staffTop - rowHeight;
       return noteY < firstLedgerLineAboveStaff;
     }
 
