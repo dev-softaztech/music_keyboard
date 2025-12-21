@@ -399,6 +399,58 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
     super.dispose();
   }
 
+  void _handleDoubleTap(TapDownDetails details) {
+    // Skip if we're in highlight mode
+    if (_dragStart != null && _dragEnd != null && _dragRow != null) {
+      return;
+    }
+
+    final RenderBox renderBox = context.findRenderObject() as RenderBox;
+    final Offset localOffset = renderBox.globalToLocal(details.globalPosition);
+
+    // Get the TransformationController from InteractiveViewer
+    final Matrix4 transformMatrix = _transformationController.value;
+
+    // Apply inverse transformation to adjust for zoom/pan
+    final Matrix4 inverseMatrix = Matrix4.inverted(transformMatrix);
+    final vector_math.Vector3 transformedPosition = inverseMatrix
+        .transform3(vector_math.Vector3(localOffset.dx, localOffset.dy, 0));
+
+    final double tapX = transformedPosition.x;
+    final double tapY = transformedPosition.y;
+
+    int closestRowIndex = findClosestRow(widget.sheetNoteRows, tapY);
+
+    // Check if we're tapping on a dynamic marking - don't zoom if so
+    for (int i = 0;
+        i < widget.sheetNoteRows[closestRowIndex].notes.length;
+        i++) {
+      final note = widget.sheetNoteRows[closestRowIndex].notes[i];
+      if (note.isCrescendoStart || note.isDecrescendoStart) {
+        var endIndex = note.isCrescendoStart
+            ? (note.crescendoEndIndex! <
+                    widget.sheetNoteRows[closestRowIndex].notes.length - 1
+                ? note.crescendoEndIndex!
+                : widget.sheetNoteRows[closestRowIndex].notes.length - 1)
+            : note.decrescendoEndIndex! <
+                    widget.sheetNoteRows[closestRowIndex].notes.length - 1
+                ? note.decrescendoEndIndex!
+                : widget.sheetNoteRows[closestRowIndex].notes.length - 1;
+
+        final rect = getDynamicMarkingRect(i, endIndex, closestRowIndex);
+        if (rect.contains(Offset(tapX, tapY))) {
+          return; // Don't zoom if tapping on dynamic marking
+        }
+      }
+    }
+
+    int closestNoteIndex = findClosestNoteIndex(
+        widget.sheetNoteRows[closestRowIndex].notes, tapX, closestRowIndex);
+
+    // Zoom to the double-tapped note
+    _zoomToNote(closestRowIndex, closestNoteIndex);
+  }
+
   void _handleTap(TapDownDetails details) {
     if (_dragStart != null && _dragEnd != null && _dragRow != null) {
       final RenderBox renderBox = context.findRenderObject() as RenderBox;
@@ -1409,6 +1461,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
         Stack(children: [
           GestureDetector(
               onTapDown: _handleTap,
+              onDoubleTapDown: _handleDoubleTap,
               onLongPressStart: _handleLongPressStart,
               child: Listener(
                 onPointerMove: _handlePointerMove,
