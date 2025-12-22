@@ -33,6 +33,7 @@ class MusicSheetContainer extends StatefulWidget {
   final Function(Function() shouldShowTieButton, Function() shouldShowFlipNote)?
       onButtonStateCallbacks;
   final Function(Function(int row, int index))? onZoomToNoteCallback;
+  final Function()? onCopyRowsCallback;
 
   // New parameters for partial rendering
   final int? renderStartRow;
@@ -53,6 +54,7 @@ class MusicSheetContainer extends StatefulWidget {
     this.onClearHighlightingCallback,
     this.onButtonStateCallbacks,
     this.onZoomToNoteCallback,
+    this.onCopyRowsCallback,
     this.renderStartRow,
     this.renderEndRow,
     this.showTitleAndComposer = true,
@@ -1970,7 +1972,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
             Positioned(
               bottom: 52,
               left: 0,
-              right: 0,
+              right: 120,
               child: Center(
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -2030,13 +2032,58 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
               ),
             ),
 
+          // Select Rows Mode UI - Copy Button
+          if (selectRowsModeProvider.isSelectRowsMode &&
+              selectRowsModeProvider.selectedRowCount >= 1)
+            Positioned(
+              bottom: 10,
+              left: 120,
+              right: 0,
+              child: Center(
+                child: Material(
+                  color: Colors.transparent,
+                  elevation: 5,
+                  shadowColor: Colors.black.withOpacity(0.3),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                  child: RawMaterialButton(
+                    onPressed: widget.onCopyRowsCallback,
+                    fillColor: Colors.white,
+                    constraints:
+                        const BoxConstraints.tightFor(width: 80, height: 35),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25),
+                      side: const BorderSide(color: Colors.black, width: 1),
+                    ),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.copy, size: 16, color: Colors.black),
+                        SizedBox(width: 4),
+                        Text(
+                          'Copy',
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
           // Select Rows Mode UI - Add Curly Braces Button
           if (selectRowsModeProvider.isSelectRowsMode &&
               _getValidBraceGroups(selectRowsModeProvider).isNotEmpty)
             Positioned(
               bottom: 10,
               left: 0,
-              right: 0,
+              right: 120,
               child: Center(
                 child: Row(
                   mainAxisSize: MainAxisSize.min,

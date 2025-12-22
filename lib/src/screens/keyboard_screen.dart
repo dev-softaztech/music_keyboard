@@ -96,6 +96,140 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   int? _pdfRenderEndRow;
   bool _pdfShowTitleAndComposer = true;
 
+  // Clipboard for row copy/paste
+  List<SheetRows>? _clipboardRows;
+
+  /// Copy selected rows to clipboard
+  void _copySelectedRows() {
+    final selectRowsModeProvider = context.read<SelectRowsModeProvider>();
+    final selectedRows = selectRowsModeProvider.selectedRows.toList();
+
+    if (selectedRows.isEmpty) return;
+
+    // Sort selected rows to maintain order
+    selectedRows.sort();
+
+    // Deep clone the selected rows
+    _clipboardRows = selectedRows.map((rowIndex) {
+      final originalRow = sheet.sheetRows[rowIndex];
+      final clonedNotes = originalRow.notes
+          .map((note) => MusicalNote(
+                pitch: note.pitch,
+                octave: note.octave,
+                type: note.type,
+                isBeamed: note.isBeamed,
+                unicodeCharacter: note.unicodeCharacter,
+                noteY: note.noteY,
+                topTimeSignatureCharacter: note.topTimeSignatureCharacter,
+                bottomTimeSignatureCharacter: note.bottomTimeSignatureCharacter,
+                keySignatureName: note.keySignatureName,
+                keySignatureClefType: note.keySignatureClefType,
+                clefType: note.clefType,
+                accidentalCharacter: note.accidentalCharacter,
+                isTiedToNext: note.isTiedToNext,
+                isCrescendoStart: note.isCrescendoStart,
+                crescendoEndIndex: note.crescendoEndIndex,
+                isDecrescendoStart: note.isDecrescendoStart,
+                decrescendoEndIndex: note.decrescendoEndIndex,
+                slurEndIndex: note.slurEndIndex,
+                dynamicCharacter: note.dynamicCharacter,
+                rehearsalMarking: note.rehearsalMarking,
+                tempoNumber: note.tempoNumber,
+                swing: note.swing,
+                swingText: note.swingText,
+                isUpsideDown: note.isUpsideDown,
+              ))
+          .toList();
+
+      return SheetRows(
+        notes: clonedNotes,
+        rowProperties: RowProperties(
+          tempoNumber: originalRow.rowProperties.tempoNumber,
+          swing: originalRow.rowProperties.swing,
+          swingText: originalRow.rowProperties.swingText,
+        ),
+      );
+    }).toList();
+
+    // Show confirmation message
+    ToastUtils.showToast('Copied ${selectedRows.length} rows to clipboard.');
+  }
+
+  /// Paste rows from clipboard after the currently selected row
+  void _pasteRows() {
+    if (_clipboardRows == null || _clipboardRows!.isEmpty) return;
+
+    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+    final rowSpacingProvider = context.read<ListOfSpacingForEachRow>();
+    var rowSpacingList = rowSpacingProvider.rowSpacingList;
+
+    // Get the insertion index (after currently selected row)
+    int insertionIndex = selectedNoteProvider.selectedRow + 1;
+
+    // Deep clone the clipboard rows for insertion
+    final rowsToInsert = _clipboardRows!.map((clipboardRow) {
+      final clonedNotes = clipboardRow.notes
+          .map((note) => MusicalNote(
+                pitch: note.pitch,
+                octave: note.octave,
+                type: note.type,
+                isBeamed: note.isBeamed,
+                unicodeCharacter: note.unicodeCharacter,
+                noteY: note.noteY,
+                topTimeSignatureCharacter: note.topTimeSignatureCharacter,
+                bottomTimeSignatureCharacter: note.bottomTimeSignatureCharacter,
+                keySignatureName: note.keySignatureName,
+                keySignatureClefType: note.keySignatureClefType,
+                clefType: note.clefType,
+                accidentalCharacter: note.accidentalCharacter,
+                isTiedToNext: note.isTiedToNext,
+                isCrescendoStart: note.isCrescendoStart,
+                crescendoEndIndex: note.crescendoEndIndex,
+                isDecrescendoStart: note.isDecrescendoStart,
+                decrescendoEndIndex: note.decrescendoEndIndex,
+                slurEndIndex: note.slurEndIndex,
+                dynamicCharacter: note.dynamicCharacter,
+                rehearsalMarking: note.rehearsalMarking,
+                tempoNumber: note.tempoNumber,
+                swing: note.swing,
+                swingText: note.swingText,
+                isUpsideDown: note.isUpsideDown,
+              ))
+          .toList();
+
+      return SheetRows(
+        notes: clonedNotes,
+        rowProperties: RowProperties(
+          tempoNumber: clipboardRow.rowProperties.tempoNumber,
+          swing: clipboardRow.rowProperties.swing,
+          swingText: clipboardRow.rowProperties.swingText,
+        ),
+      );
+    }).toList();
+
+    // Insert the rows
+    sheet.sheetRows.insertAll(insertionIndex, rowsToInsert);
+
+    // Add corresponding spacing entries
+    for (int i = 0; i < rowsToInsert.length; i++) {
+      rowSpacingList.insert(insertionIndex + i, defaultNoteSpacing);
+    }
+
+    // Update row spacing provider
+    rowSpacingProvider.updateRowSpacingList(rowSpacingList);
+
+    // Update curly brace groups for the row insertion
+    sheet.sheetProperties
+        .updateCurlyBracesForRowInsertion(insertionIndex, rowsToInsert.length);
+
+    // Update cursor position to the first inserted row
+    selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
+        insertionIndex, rowsToInsert[0].notes.isNotEmpty ? 0 : -1);
+
+    // Show confirmation message
+    ToastUtils.showToast('Pasted ${rowsToInsert.length} rows.');
+  }
+
   @override
   void initState() {
     super.initState();
@@ -1037,6 +1171,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                             onZoomToNoteCallback: (zoomToNoteCallback) {
                               _zoomToNoteCallback = zoomToNoteCallback;
                             },
+                            onCopyRowsCallback: _copySelectedRows,
                           ),
                           const Spacer(), // Pushes the keyboard container to the bottom
                         ],
@@ -1332,10 +1467,6 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                     // Clear any highlighted notes when entering select rows mode
                                     _clearHighlighting();
                                   },
-                                  borderRadius: const BorderRadius.only(
-                                    bottomLeft: Radius.circular(8),
-                                    bottomRight: Radius.circular(8),
-                                  ),
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(
                                         vertical: 12, horizontal: 16),
@@ -1350,6 +1481,42 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                     ),
                                   ),
                                 ),
+                                // Divider
+                                Container(
+                                  height: 1,
+                                  color: Colors.grey[300],
+                                ),
+                                // Paste Rows Button (only if clipboard has data)
+                                if (_clipboardRows != null &&
+                                    _clipboardRows!.isNotEmpty) ...[
+                                  InkWell(
+                                    onTap: () {
+                                      setState(() {
+                                        showToolsMenu = false;
+                                      });
+                                      _pasteRows();
+                                    },
+                                    borderRadius: const BorderRadius.only(
+                                      bottomLeft: Radius.circular(8),
+                                      bottomRight: Radius.circular(8),
+                                    ),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 12, horizontal: 16),
+                                      child: Row(
+                                        children: [
+                                          const Icon(Icons.paste,
+                                              size: 20, color: Colors.black),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                              'Paste ${_clipboardRows!.length} Rows',
+                                              style: const TextStyle(
+                                                  fontSize: 14)),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
 
                                 // Title Button
                               ],
