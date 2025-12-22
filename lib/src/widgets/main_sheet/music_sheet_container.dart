@@ -452,19 +452,50 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
   }
 
   void _handleTap(TapDownDetails details) {
+    final RenderBox renderBox = context.findRenderObject() as RenderBox;
+    final Offset localOffset = renderBox.globalToLocal(details.globalPosition);
+
+    final Matrix4 transformMatrix = _transformationController.value;
+    final Matrix4 inverseMatrix = Matrix4.inverted(transformMatrix);
+    final vector_math.Vector3 transformedPosition = inverseMatrix
+        .transform3(vector_math.Vector3(localOffset.dx, localOffset.dy, 0));
+
+    final double tapX = transformedPosition.x;
+    final double tapY = transformedPosition.y;
+
+    // First check if tapping outside a selected dynamic marking to deselect it
+    if (_editingDynamicIndex != null && _editingDynamicRow != null) {
+      final note = widget
+          .sheetNoteRows[_editingDynamicRow!].notes[_editingDynamicIndex!];
+      var endIndex = note.isCrescendoStart
+          ? (note.crescendoEndIndex! <
+                  widget.sheetNoteRows[_editingDynamicRow!].notes.length - 1
+              ? note.crescendoEndIndex!
+              : widget.sheetNoteRows[_editingDynamicRow!].notes.length - 1)
+          : note.decrescendoEndIndex! <
+                  widget.sheetNoteRows[_editingDynamicRow!].notes.length - 1
+              ? note.decrescendoEndIndex!
+              : widget.sheetNoteRows[_editingDynamicRow!].notes.length - 1;
+
+      final rect = getDynamicMarkingRect(
+          _editingDynamicIndex!, endIndex, _editingDynamicRow!);
+
+      // If tapping outside the current selected marking, deselect it
+      if (!rect.contains(Offset(tapX, tapY))) {
+        setState(() {
+          _editingDynamicIndex = null;
+          _editingDynamicRow = null;
+          _totalDragDelta = Offset.zero;
+        });
+        // Continue to check if tapping on another marking or note
+      } else {
+        // Tapping inside the same marking, keep it selected
+        return;
+      }
+    }
+
+    // Handle highlight range interactions
     if (_dragStart != null && _dragEnd != null && _dragRow != null) {
-      final RenderBox renderBox = context.findRenderObject() as RenderBox;
-      final Offset localOffset =
-          renderBox.globalToLocal(details.globalPosition);
-
-      final Matrix4 transformMatrix = _transformationController.value;
-      final Matrix4 inverseMatrix = Matrix4.inverted(transformMatrix);
-      final vector_math.Vector3 transformedPosition = inverseMatrix
-          .transform3(vector_math.Vector3(localOffset.dx, localOffset.dy, 0));
-
-      final double tapX = transformedPosition.x;
-      final double tapY = transformedPosition.y;
-
       final Rect highlightRect = _calculateHighlightRect();
       final Offset leftHandle =
           Offset(highlightRect.left, highlightRect.center.dx);
@@ -511,50 +542,38 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
       return; // Do nothing if tap is inside highlight
     }
 
-    final RenderBox renderBox = context.findRenderObject() as RenderBox;
-    final Offset localOffset = renderBox.globalToLocal(details.globalPosition);
+    // IMPORTANT: Check ALL rows for dynamic markings BEFORE determining closest row
+    // This prevents the issue where tapping on a marking selects the row below
+    // because the marking is drawn below the staff
+    for (int rowIndex = 0; rowIndex < widget.sheetNoteRows.length; rowIndex++) {
+      for (int i = 0; i < widget.sheetNoteRows[rowIndex].notes.length; i++) {
+        final note = widget.sheetNoteRows[rowIndex].notes[i];
+        if (note.isCrescendoStart || note.isDecrescendoStart) {
+          var endIndex = note.isCrescendoStart
+              ? (note.crescendoEndIndex! <
+                      widget.sheetNoteRows[rowIndex].notes.length - 1
+                  ? note.crescendoEndIndex!
+                  : widget.sheetNoteRows[rowIndex].notes.length - 1)
+              : note.decrescendoEndIndex! <
+                      widget.sheetNoteRows[rowIndex].notes.length - 1
+                  ? note.decrescendoEndIndex!
+                  : widget.sheetNoteRows[rowIndex].notes.length - 1;
 
-    //  Get the TransformationController from InteractiveViewer
-    final Matrix4 transformMatrix = _transformationController.value;
-
-    //  Apply inverse transformation to adjust for zoom/pan
-    final Matrix4 inverseMatrix = Matrix4.inverted(transformMatrix);
-    final vector_math.Vector3 transformedPosition = inverseMatrix
-        .transform3(vector_math.Vector3(localOffset.dx, localOffset.dy, 0));
-
-    //  Now, transformedPosition.x and transformedPosition.y are the correct values
-    final double tapX = transformedPosition.x;
-    final double tapY = transformedPosition.y;
-
-    int closestRowIndex = findClosestRow(widget.sheetNoteRows, tapY);
-
-    // Check if a dynamic marking was tapped
-    for (int i = 0;
-        i < widget.sheetNoteRows[closestRowIndex].notes.length;
-        i++) {
-      final note = widget.sheetNoteRows[closestRowIndex].notes[i];
-      if (note.isCrescendoStart || note.isDecrescendoStart) {
-        var endIndex = note.isCrescendoStart
-            ? (note.crescendoEndIndex! <
-                    widget.sheetNoteRows[closestRowIndex].notes.length - 1
-                ? note.crescendoEndIndex!
-                : widget.sheetNoteRows[closestRowIndex].notes.length - 1)
-            : note.decrescendoEndIndex! <
-                    widget.sheetNoteRows[closestRowIndex].notes.length - 1
-                ? note.decrescendoEndIndex!
-                : widget.sheetNoteRows[closestRowIndex].notes.length - 1;
-
-        final rect = getDynamicMarkingRect(i, endIndex, closestRowIndex);
-        if (rect.contains(Offset(tapX, tapY))) {
-          setState(() {
-            _editingDynamicIndex = i;
-            _editingDynamicRow = closestRowIndex;
-            _totalDragDelta = Offset.zero;
-          });
-          return;
+          final rect = getDynamicMarkingRect(i, endIndex, rowIndex);
+          if (rect.contains(Offset(tapX, tapY))) {
+            setState(() {
+              _editingDynamicIndex = i;
+              _editingDynamicRow = rowIndex;
+              _totalDragDelta = Offset.zero;
+            });
+            return;
+          }
         }
       }
     }
+
+    // Only determine closest row AFTER checking for dynamic markings
+    int closestRowIndex = findClosestRow(widget.sheetNoteRows, tapY);
 
     int closestNoteIndex = findClosestNoteIndex(
         widget.sheetNoteRows[closestRowIndex].notes, tapX, closestRowIndex);
@@ -980,7 +999,9 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
       y += 20;
     }
 
-    return Rect.fromLTRB(startX, y - 7.5, endX + 70, y + 40);
+    // Make the hit area larger and more generous for easier tapping
+    // Extend left, right, top, and bottom by extra padding
+    return Rect.fromLTRB(startX - 10, y - 20, endX + 90, y + 50);
   }
 
   bool _shouldShowTieButton() {
