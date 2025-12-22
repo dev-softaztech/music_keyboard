@@ -1276,7 +1276,29 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
     return "";
   }
 
+  /// Check if any of the selected rows already have curly braces
+  bool _selectedRowsHaveCurlyBraces(List<int> selectedRows) {
+    return widget.sheetProperties.curlyBraceGroups.any((group) {
+      return selectedRows
+          .any((row) => row >= group.startRow && row <= group.endRow);
+    });
+  }
+
   // Remove action methods
+  void _removeCurlyBraces() {
+    context.read<SheetUndoManager>().saveState(widget.sheetNoteRows);
+
+    final selectRowsModeProvider = context.read<SelectRowsModeProvider>();
+    final selectedRows = selectRowsModeProvider.selectedRows.toList();
+
+    setState(() {
+      widget.sheetProperties.curlyBraceGroups.removeWhere((group) {
+        return selectedRows
+            .any((row) => row >= group.startRow && row <= group.endRow);
+      });
+    });
+  }
+
   void _removeTie() {
     final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
     context.read<SheetUndoManager>().saveState(widget.sheetNoteRows);
@@ -1883,6 +1905,73 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
               ),
             ),
 
+          // Select Rows Mode UI - Remove Curly Braces Button
+          if (selectRowsModeProvider.isSelectRowsMode &&
+              _selectedRowsHaveCurlyBraces(
+                  selectRowsModeProvider.selectedRows.toList()))
+            Positioned(
+              bottom: 52,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'x',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontSize: 21,
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    Material(
+                      color: Colors.transparent,
+                      elevation: 5,
+                      shadowColor: Colors.black.withOpacity(0.3),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                      child: RawMaterialButton(
+                        onPressed: () {
+                          setState(() {
+                            // Save state for undo
+                            context
+                                .read<SheetUndoManager>()
+                                .saveState(widget.sheetNoteRows);
+
+                            // Remove curly braces from all selected rows
+                            final selectedRows =
+                                selectRowsModeProvider.selectedRows.toList();
+                            widget.sheetProperties.curlyBraceGroups
+                                .removeWhere((group) {
+                              return selectedRows.any((row) =>
+                                  row >= group.startRow && row <= group.endRow);
+                            });
+                          });
+                        },
+                        fillColor: Colors.white,
+                        constraints: const BoxConstraints.tightFor(
+                            width: 100, height: 35),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                          side: const BorderSide(color: Colors.red, width: 1),
+                        ),
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        child: const Text(
+                          'Curly Braces',
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
           // Select Rows Mode UI - Add Curly Braces Button
           if (selectRowsModeProvider.isSelectRowsMode &&
               selectRowsModeProvider.selectedRows.length >= 2)
@@ -1891,51 +1980,64 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
               left: 0,
               right: 0,
               child: Center(
-                child: Material(
-                  color: Colors.transparent,
-                  elevation: 5,
-                  shadowColor: Colors.black.withOpacity(0.3),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                  child: RawMaterialButton(
-                    onPressed: () {
-                      setState(() {
-                        // Save state for undo
-                        context
-                            .read<SheetUndoManager>()
-                            .saveState(widget.sheetNoteRows);
-
-                        // Add curly brace group to sheet properties
-                        final sortedRows = selectRowsModeProvider.selectedRows
-                            .toList()
-                          ..sort();
-
-                        final newGroup = CurlyBraceGroup(
-                          startRow: sortedRows.first,
-                          endRow: sortedRows.last,
-                        );
-
-                        widget.sheetProperties.curlyBraceGroups.add(newGroup);
-                      });
-                    },
-                    fillColor: Colors.white,
-                    constraints:
-                        const BoxConstraints.tightFor(width: 140, height: 35),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25),
-                      side: const BorderSide(color: Colors.black, width: 1),
-                    ),
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    child: const Text(
-                      'Add Curly Braces',
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '+',
                       style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
+                        color: Color.fromARGB(255, 63, 63, 63),
+                        fontSize: 21,
                       ),
                     ),
-                  ),
+                    const SizedBox(width: 2),
+                    Material(
+                      color: Colors.transparent,
+                      elevation: 5,
+                      shadowColor: Colors.black.withOpacity(0.3),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                      child: RawMaterialButton(
+                        onPressed: () {
+                          setState(() {
+                            // Save state for undo
+                            context
+                                .read<SheetUndoManager>()
+                                .saveState(widget.sheetNoteRows);
+
+                            // Add curly brace group to sheet properties
+                            final sortedRows =
+                                selectRowsModeProvider.selectedRows.toList()
+                                  ..sort();
+
+                            final newGroup = CurlyBraceGroup(
+                              startRow: sortedRows.first,
+                              endRow: sortedRows.last,
+                            );
+
+                            widget.sheetProperties.curlyBraceGroups
+                                .add(newGroup);
+                          });
+                        },
+                        fillColor: Colors.white,
+                        constraints: const BoxConstraints.tightFor(
+                            width: 100, height: 35),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                          side: const BorderSide(color: Colors.black, width: 1),
+                        ),
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        child: const Text(
+                          'Curly Braces',
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
