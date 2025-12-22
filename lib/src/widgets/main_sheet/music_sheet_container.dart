@@ -1644,7 +1644,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                                   selectedRow: selectedNoteProvider.selectedRow,
                                   selectedIndex:
                                       selectedNoteProvider.selectedIndex,
-                                  showCursor: _showCursor,
+                                  showCursor: _showCursor &&
+                                      !selectRowsModeProvider.isSelectRowsMode,
                                   rowSpacingList:
                                       rowSpacingProvider.rowSpacingList,
                                   rowSpacing:
@@ -1673,90 +1674,92 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
               )),
 
           //Undo
-          Positioned(
-              top: 55,
-              right: 5,
-              child: Material(
-                color: Colors.transparent,
-                elevation: 5,
-                shadowColor: Colors.black.withOpacity(0.3),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25),
-                ),
-                child: Consumer<SheetUndoManager>(
-                  builder: (context, undoManager, child) => RawMaterialButton(
-                    onPressed: undoManager.canUndo
-                        ? () {
-                            final previousState = undoManager.undo();
-                            if (previousState != null) {
-                              final selectedNoteProvider =
-                                  context.read<CurrentSelectedNoteProvider>();
-                              final currentRow =
-                                  selectedNoteProvider.selectedRow;
-                              final currentIndex =
-                                  selectedNoteProvider.selectedIndex;
+          if (!selectRowsModeProvider.isSelectRowsMode)
+            Positioned(
+                top: 55,
+                right: 5,
+                child: Material(
+                  color: Colors.transparent,
+                  elevation: 5,
+                  shadowColor: Colors.black.withOpacity(0.3),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                  child: Consumer<SheetUndoManager>(
+                    builder: (context, undoManager, child) => RawMaterialButton(
+                      onPressed: undoManager.canUndo
+                          ? () {
+                              final previousState = undoManager.undo();
+                              if (previousState != null) {
+                                final selectedNoteProvider =
+                                    context.read<CurrentSelectedNoteProvider>();
+                                final currentRow =
+                                    selectedNoteProvider.selectedRow;
+                                final currentIndex =
+                                    selectedNoteProvider.selectedIndex;
 
-                              // Replace the current sheet rows with the previous state
-                              widget.sheetNoteRows.clear();
-                              widget.sheetNoteRows.addAll(previousState);
+                                // Replace the current sheet rows with the previous state
+                                widget.sheetNoteRows.clear();
+                                widget.sheetNoteRows.addAll(previousState);
 
-                              // Update cursor position based on what still exists
-                              int newRow = currentRow;
-                              int newIndex = currentIndex;
+                                // Update cursor position based on what still exists
+                                int newRow = currentRow;
+                                int newIndex = currentIndex;
 
-                              // Check if the current row still exists
-                              if (newRow >= widget.sheetNoteRows.length) {
-                                // Row doesn't exist, move to end of previous row
-                                newRow = widget.sheetNoteRows.length - 1;
-                                newIndex =
-                                    widget.sheetNoteRows[newRow].notes.isEmpty
-                                        ? 0
-                                        : widget.sheetNoteRows[newRow].notes
-                                                .length -
-                                            1;
-                              } else {
-                                // Row exists, check if the index still exists
-                                if (newIndex >=
-                                    widget.sheetNoteRows[newRow].notes.length) {
-                                  // Index doesn't exist, move to last note in the row
+                                // Check if the current row still exists
+                                if (newRow >= widget.sheetNoteRows.length) {
+                                  // Row doesn't exist, move to end of previous row
+                                  newRow = widget.sheetNoteRows.length - 1;
                                   newIndex =
                                       widget.sheetNoteRows[newRow].notes.isEmpty
                                           ? 0
                                           : widget.sheetNoteRows[newRow].notes
                                                   .length -
                                               1;
+                                } else {
+                                  // Row exists, check if the index still exists
+                                  if (newIndex >=
+                                      widget
+                                          .sheetNoteRows[newRow].notes.length) {
+                                    // Index doesn't exist, move to last note in the row
+                                    newIndex = widget
+                                            .sheetNoteRows[newRow].notes.isEmpty
+                                        ? 0
+                                        : widget.sheetNoteRows[newRow].notes
+                                                .length -
+                                            1;
+                                  }
                                 }
+
+                                // Update the cursor position
+                                selectedNoteProvider
+                                    .updateSelectedIndexAndInsertionPoint(
+                                        newRow, newIndex);
+
+                                // Clear any active highlighting
+                                clearHighlighting();
+
+                                // Trigger a rebuild
+                                setState(() {});
                               }
-
-                              // Update the cursor position
-                              selectedNoteProvider
-                                  .updateSelectedIndexAndInsertionPoint(
-                                      newRow, newIndex);
-
-                              // Clear any active highlighting
-                              clearHighlighting();
-
-                              // Trigger a rebuild
-                              setState(() {});
                             }
-                          }
-                        : null,
-                    fillColor: Colors.white,
-                    constraints:
-                        const BoxConstraints.tightFor(width: 35, height: 35),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25),
-                      side: const BorderSide(color: Colors.black, width: 1),
-                    ),
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    child: const Icon(
-                      Icons.undo,
-                      color: Colors.black,
-                      size: 24,
+                          : null,
+                      fillColor: Colors.white,
+                      constraints:
+                          const BoxConstraints.tightFor(width: 35, height: 35),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25),
+                        side: const BorderSide(color: Colors.black, width: 1),
+                      ),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      child: const Icon(
+                        Icons.undo,
+                        color: Colors.black,
+                        size: 24,
+                      ),
                     ),
                   ),
-                ),
-              )),
+                )),
 
           // Floating Reset Button (Only Shows When Zoomed)
           if (isZoomed)
@@ -1848,7 +1851,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
           if (selectRowsModeProvider.isSelectRowsMode)
             Positioned(
               top: 10,
-              left: 5,
+              right: 5,
               child: Material(
                 color: Colors.transparent,
                 elevation: 5,
@@ -1862,50 +1865,18 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                   },
                   fillColor: Colors.red,
                   constraints:
-                      const BoxConstraints.tightFor(width: 35, height: 35),
+                      const BoxConstraints.tightFor(width: 50, height: 35),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(25),
                     side: const BorderSide(color: Colors.white, width: 2),
                   ),
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  child: const Icon(
-                    Icons.close,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                ),
-              ),
-            ),
-
-          // Select Rows Mode UI - Counter
-          if (selectRowsModeProvider.isSelectRowsMode)
-            Positioned(
-              top: 10,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.black, width: 2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.3),
-                        spreadRadius: 2,
-                        blurRadius: 5,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: Text(
-                    '${selectRowsModeProvider.selectedRows.length} Row${selectRowsModeProvider.selectedRows.length == 1 ? '' : 's'} Selected',
-                    style: const TextStyle(
-                      fontSize: 16,
+                  child: const Text(
+                    'Exit',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black,
                     ),
                   ),
                 ),
@@ -1946,25 +1917,22 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                         );
 
                         widget.sheetProperties.curlyBraceGroups.add(newGroup);
-
-                        // Exit select rows mode
-                        selectRowsModeProvider.exitSelectRowsMode();
                       });
                     },
-                    fillColor: Colors.blue,
+                    fillColor: Colors.white,
                     constraints:
-                        const BoxConstraints.tightFor(width: 180, height: 45),
+                        const BoxConstraints.tightFor(width: 140, height: 35),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(25),
-                      side: const BorderSide(color: Colors.white, width: 2),
+                      side: const BorderSide(color: Colors.black, width: 1),
                     ),
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     child: const Text(
                       'Add Curly Braces',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: Colors.black,
                       ),
                     ),
                   ),
@@ -1972,140 +1940,143 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
               ),
             ),
 
-          Positioned(
-            bottom: 5,
-            right: 5,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (_showDynamicRemoveButton) ...[
-                  const SizedBox(height: 5),
-                  _buildStyledButton(_getDynamicCharacter(), () {
-                    _removeDynamicCharacter();
-                  }, true, false),
-                ],
-                if (_showHighlightButtons || _showDecrescendoRemoveButton) ...[
-                  const SizedBox(height: 5),
-                  _buildStyledButton('\uE53F', () {
-                    if (_showDecrescendoRemoveButton) {
-                      _removeDecrescendo();
-                    } else {
-                      if (_dragRow != null &&
-                          _dragStart != null &&
-                          _dragEnd != null) {
-                        context
-                            .read<CurrentSelectedNoteProvider>()
-                            .decrescendoNotes(_dragRow!, _dragStart!, _dragEnd!,
-                                widget.sheetNoteRows, context);
+          if (!selectRowsModeProvider.isSelectRowsMode)
+            Positioned(
+              bottom: 5,
+              right: 5,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (_showDynamicRemoveButton) ...[
+                    const SizedBox(height: 5),
+                    _buildStyledButton(_getDynamicCharacter(), () {
+                      _removeDynamicCharacter();
+                    }, true, false),
+                  ],
+                  if (_showHighlightButtons ||
+                      _showDecrescendoRemoveButton) ...[
+                    const SizedBox(height: 5),
+                    _buildStyledButton('\uE53F', () {
+                      if (_showDecrescendoRemoveButton) {
+                        _removeDecrescendo();
+                      } else {
+                        if (_dragRow != null &&
+                            _dragStart != null &&
+                            _dragEnd != null) {
+                          context
+                              .read<CurrentSelectedNoteProvider>()
+                              .decrescendoNotes(_dragRow!, _dragStart!,
+                                  _dragEnd!, widget.sheetNoteRows, context);
 
-                        _showDecrescendoRemoveButton = true;
-                        _showCrescendoRemoveButton = false;
+                          _showDecrescendoRemoveButton = true;
+                          _showCrescendoRemoveButton = false;
+                        }
                       }
-                    }
-                  }, true, !_showDecrescendoRemoveButton)
-                ],
-                if (_showHighlightButtons || _showCrescendoRemoveButton) ...[
-                  const SizedBox(height: 5),
-                  _buildStyledButton('\uE53E', () {
-                    if (_showCrescendoRemoveButton) {
-                      _removeCrescendo();
-                    } else {
-                      if (_dragRow != null &&
-                          _dragStart != null &&
-                          _dragEnd != null) {
-                        context
-                            .read<CurrentSelectedNoteProvider>()
-                            .crescendoNotes(_dragRow!, _dragStart!, _dragEnd!,
-                                widget.sheetNoteRows, context);
+                    }, true, !_showDecrescendoRemoveButton)
+                  ],
+                  if (_showHighlightButtons || _showCrescendoRemoveButton) ...[
+                    const SizedBox(height: 5),
+                    _buildStyledButton('\uE53E', () {
+                      if (_showCrescendoRemoveButton) {
+                        _removeCrescendo();
+                      } else {
+                        if (_dragRow != null &&
+                            _dragStart != null &&
+                            _dragEnd != null) {
+                          context
+                              .read<CurrentSelectedNoteProvider>()
+                              .crescendoNotes(_dragRow!, _dragStart!, _dragEnd!,
+                                  widget.sheetNoteRows, context);
 
-                        _showCrescendoRemoveButton = true;
-                        _showDecrescendoRemoveButton = false;
+                          _showCrescendoRemoveButton = true;
+                          _showDecrescendoRemoveButton = false;
+                        }
                       }
-                    }
-                  }, true, !_showCrescendoRemoveButton)
-                ],
-                if (_showHighlightButtons || _showSlurRemoveButton) ...[
-                  const SizedBox(height: 5),
-                  _buildStyledButton('SLUR', () {
-                    if (_showSlurRemoveButton) {
-                      _removeSlur();
-                    } else {
+                    }, true, !_showCrescendoRemoveButton)
+                  ],
+                  if (_showHighlightButtons || _showSlurRemoveButton) ...[
+                    const SizedBox(height: 5),
+                    _buildStyledButton('SLUR', () {
+                      if (_showSlurRemoveButton) {
+                        _removeSlur();
+                      } else {
+                        if (_dragRow != null &&
+                            _dragStart != null &&
+                            _dragEnd != null) {
+                          context.read<CurrentSelectedNoteProvider>().slurNotes(
+                              _dragRow!,
+                              _dragStart!,
+                              _dragEnd!,
+                              widget.sheetNoteRows,
+                              context);
+                          _showSlurRemoveButton = true;
+                        }
+                      }
+                    }, false, !_showSlurRemoveButton)
+                  ],
+                  if (_showHighlightButtons && _showBeamAddButton) ...[
+                    const SizedBox(height: 5),
+                    _buildStyledButton('BEAM', () {
                       if (_dragRow != null &&
                           _dragStart != null &&
                           _dragEnd != null) {
-                        context.read<CurrentSelectedNoteProvider>().slurNotes(
+                        context.read<CurrentSelectedNoteProvider>().beamNotes(
                             _dragRow!,
                             _dragStart!,
                             _dragEnd!,
                             widget.sheetNoteRows,
                             context);
-                        _showSlurRemoveButton = true;
+
+                        _showBeamRemoveButton = true;
+                        _showBeamAddButton = false;
                       }
-                    }
-                  }, false, !_showSlurRemoveButton)
-                ],
-                if (_showHighlightButtons && _showBeamAddButton) ...[
-                  const SizedBox(height: 5),
-                  _buildStyledButton('BEAM', () {
-                    if (_dragRow != null &&
-                        _dragStart != null &&
-                        _dragEnd != null) {
-                      context.read<CurrentSelectedNoteProvider>().beamNotes(
-                          _dragRow!,
-                          _dragStart!,
-                          _dragEnd!,
-                          widget.sheetNoteRows,
-                          context);
+                    }, false, true)
+                  ],
+                  if (_showBeamRemoveButton) ...[
+                    const SizedBox(height: 5),
+                    _buildStyledButton('BEAM', () {
+                      _removeBeam();
+                    }, false, false),
+                  ],
+                  if (_showTieButton) ...[
+                    const SizedBox(height: 5),
+                    _buildStyledButton('TIE', () {
+                      if (_showTieRemoveState) {
+                        _removeTie();
+                      } else {
+                        final selectedNoteProvider =
+                            context.read<CurrentSelectedNoteProvider>();
+                        final row = selectedNoteProvider.selectedRow;
+                        final index = selectedNoteProvider.selectedIndex;
 
-                      _showBeamRemoveButton = true;
-                      _showBeamAddButton = false;
-                    }
-                  }, false, true)
-                ],
-                if (_showBeamRemoveButton) ...[
-                  const SizedBox(height: 5),
-                  _buildStyledButton('BEAM', () {
-                    _removeBeam();
-                  }, false, false),
-                ],
-                if (_showTieButton) ...[
-                  const SizedBox(height: 5),
-                  _buildStyledButton('TIE', () {
-                    if (_showTieRemoveState) {
-                      _removeTie();
-                    } else {
-                      final selectedNoteProvider =
-                          context.read<CurrentSelectedNoteProvider>();
-                      final row = selectedNoteProvider.selectedRow;
-                      final index = selectedNoteProvider.selectedIndex;
+                        if (index >= 0 &&
+                            index + 1 <
+                                widget.sheetNoteRows[row].notes.length) {
+                          MusicalNote currentNote =
+                              widget.sheetNoteRows[row].notes[index];
+                          MusicalNote nextNote =
+                              widget.sheetNoteRows[row].notes[index + 1];
 
-                      if (index >= 0 &&
-                          index + 1 < widget.sheetNoteRows[row].notes.length) {
-                        MusicalNote currentNote =
-                            widget.sheetNoteRows[row].notes[index];
-                        MusicalNote nextNote =
-                            widget.sheetNoteRows[row].notes[index + 1];
-
-                        if (currentNote.pitch == nextNote.pitch) {
-                          setState(() {
-                            currentNote.isTiedToNext =
-                                !currentNote.isTiedToNext;
-                          });
-                          _showTieRemoveState = true;
+                          if (currentNote.pitch == nextNote.pitch) {
+                            setState(() {
+                              currentNote.isTiedToNext =
+                                  !currentNote.isTiedToNext;
+                            });
+                            _showTieRemoveState = true;
+                          }
                         }
                       }
-                    }
-                  }, false, !_showTieRemoveState),
+                    }, false, !_showTieRemoveState),
+                  ],
+                  if (_showTempoEditButton) ...[
+                    const SizedBox(height: 5),
+                    _buildStyledButton('TEMPO', () {
+                      _showTempoPopup();
+                    }, false, true),
+                  ],
                 ],
-                if (_showTempoEditButton) ...[
-                  const SizedBox(height: 5),
-                  _buildStyledButton('TEMPO', () {
-                    _showTempoPopup();
-                  }, false, true),
-                ],
-              ],
+              ),
             ),
-          ),
         ]),
         PreferredSize(
           preferredSize: const Size.fromHeight(2.0), // Border thickness

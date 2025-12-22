@@ -977,6 +977,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     final screenSize = MediaQuery.of(context).size;
     final statusBarHeight = mediaQuery.padding.top;
     final double musicSheetWidth = sheet.format.config.musicSheetWidth;
+    final selectRowsModeProvider = Provider.of<SelectRowsModeProvider>(context);
 
     return Scaffold(
         body: SafeArea(
@@ -1027,43 +1028,44 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                     ),
 
                     // Floating Tools Menu Button - Top Right
-                    Positioned(
-                      top: 10,
-                      right: 5,
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            showToolsMenu = !showToolsMenu;
-                            showMenu = false;
-                          });
-                        },
-                        child: Container(
-                          width: 35,
-                          height: 35,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(25),
-                            border: Border.all(
-                              color: Colors.black,
-                              width: 1,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.3),
-                                spreadRadius: 2,
-                                blurRadius: 5,
-                                offset: const Offset(0, 3),
+                    if (!selectRowsModeProvider.isSelectRowsMode)
+                      Positioned(
+                        top: 10,
+                        right: 5,
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              showToolsMenu = !showToolsMenu;
+                              showMenu = false;
+                            });
+                          },
+                          child: Container(
+                            width: 35,
+                            height: 35,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(25),
+                              border: Border.all(
+                                color: Colors.black,
+                                width: 1,
                               ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.build,
-                            color: Color.fromARGB(255, 0, 0, 0),
-                            size: 24,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.3),
+                                  spreadRadius: 2,
+                                  blurRadius: 5,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.build,
+                              color: Color.fromARGB(255, 0, 0, 0),
+                              size: 24,
+                            ),
                           ),
                         ),
                       ),
-                    ),
 
                     // Tap outside to close menu (positioned first so it's behind the menu)
                     if (showToolsMenu)
@@ -1311,6 +1313,8 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                         context.read<SelectRowsModeProvider>();
                                     selectRowsModeProvider
                                         .enterSelectRowsMode();
+                                    // Clear any highlighted notes when entering select rows mode
+                                    _clearHighlighting();
                                   },
                                   borderRadius: const BorderRadius.only(
                                     bottomLeft: Radius.circular(8),
