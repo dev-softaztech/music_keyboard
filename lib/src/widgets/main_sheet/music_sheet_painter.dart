@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/sheet_rows.dart';
 import 'package:music_keyboard/models/sheet_format.dart';
+import 'package:music_keyboard/models/sheet_properties.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/key_signature_position_calculator.dart';
 import 'package:music_keyboard/src/utils/pdf_exporter.dart';
 import 'package:vector_math/vector_math.dart' as vec;
@@ -34,6 +35,12 @@ class MusicSheetPainter extends CustomPainter {
   final int? renderEndRow;
   final bool showTitleAndComposer;
 
+  // Select Rows mode parameters
+  final Set<int>? selectedRowsForCurlyBrace;
+
+  // Curly brace groups (permanent)
+  final List<CurlyBraceGroup> curlyBraceGroups;
+
   MusicSheetPainter({
     required this.title,
     required this.composer,
@@ -53,7 +60,9 @@ class MusicSheetPainter extends CustomPainter {
     this.renderStartRow,
     this.renderEndRow,
     this.showTitleAndComposer = true,
-  });
+    this.selectedRowsForCurlyBrace,
+    List<CurlyBraceGroup>? curlyBraceGroups,
+  }) : curlyBraceGroups = curlyBraceGroups ?? [];
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -539,10 +548,17 @@ class MusicSheetPainter extends CustomPainter {
                     : currentRowSpacing;
       }
 
+      // Draw selection highlight for selected notes
       if (selectionRow == rowIndex &&
           selectionStart != null &&
           selectionEnd != null) {
         drawHighlight(canvas, size, rowIndex, staffTop, lineSpacing);
+      }
+
+      // Draw row highlight for select rows mode
+      if (selectedRowsForCurlyBrace != null &&
+          selectedRowsForCurlyBrace!.contains(rowIndex)) {
+        _drawRowHighlight(canvas, size, staffTop, lineSpacing);
       }
 
       // We no longer add automatic bar lines here as it's now handled in CurrentSelectedNoteProvider
@@ -570,8 +586,159 @@ class MusicSheetPainter extends CustomPainter {
       noteColour = Colors.black;
     }
 
+    // Draw permanent curly braces from saved groups (after all rows are drawn)
+    if (curlyBraceGroups.isNotEmpty) {
+      _drawPermanentCurlyBraces(
+          canvas,
+          size,
+          lineSpacing,
+          adjustedVerticalOffset,
+          cumulativeMarginOffsets,
+          sheetHeight,
+          startRow);
+    }
+
     // Draw connecting elements for connected row formats (piano, grand, etc.)
     _drawConnectedRowElements(canvas, size);
+  }
+
+  /// Draw permanent curly braces from saved groups
+  void _drawPermanentCurlyBraces(
+      Canvas canvas,
+      Size size,
+      double lineSpacing,
+      double adjustedVerticalOffset,
+      Map<int, double> cumulativeMarginOffsets,
+      double sheetHeight,
+      int startRow) {
+    for (final group in curlyBraceGroups) {
+      final firstRow = group.startRow;
+      final lastRow = group.endRow;
+      final rowCount = lastRow - firstRow + 1;
+
+      if (rowCount < 2) continue; // Need at least 2 rows for a curly brace
+
+      // Calculate Y positions for top and bottom of the curly brace
+      final int adjustedFirstRow = firstRow - startRow;
+      final int adjustedLastRow = lastRow - startRow;
+
+      final double firstMarginOffset = cumulativeMarginOffsets[firstRow] ?? 0.0;
+      final double lastMarginOffset = cumulativeMarginOffsets[lastRow] ?? 0.0;
+
+      final double topY = adjustedVerticalOffset +
+          (adjustedFirstRow * (rowSpacing + sheetHeight)) +
+          firstMarginOffset;
+      final double bottomY = adjustedVerticalOffset +
+          (adjustedLastRow * (rowSpacing + sheetHeight)) +
+          lastMarginOffset +
+          sheetHeight;
+
+      // Draw the curly brace
+      _drawCurlyBrace(canvas, topY, bottomY, rowCount);
+    }
+  }
+
+  /// Draw curly braces for selected rows in select rows mode
+  void _drawCurlyBraceForSelectedRows(
+      Canvas canvas,
+      Size size,
+      double lineSpacing,
+      double adjustedVerticalOffset,
+      Map<int, double> cumulativeMarginOffsets,
+      double sheetHeight,
+      int startRow) {
+    // Convert set to sorted list to find continuous groups
+    final sortedRows = selectedRowsForCurlyBrace!.toList()..sort();
+
+    // Find continuous groups of selected rows
+    List<List<int>> groups = [];
+    List<int> currentGroup = [sortedRows[0]];
+
+    for (int i = 1; i < sortedRows.length; i++) {
+      if (sortedRows[i] == sortedRows[i - 1] + 1) {
+        // Continuous, add to current group
+        currentGroup.add(sortedRows[i]);
+      } else {
+        // Gap found, start new group
+        groups.add(currentGroup);
+        currentGroup = [sortedRows[i]];
+      }
+    }
+    groups.add(currentGroup); // Add the last group
+
+    // Draw curly brace for each continuous group
+    for (final group in groups) {
+      if (group.length < 2) continue; // Need at least 2 rows for a curly brace
+
+      final firstRow = group.first;
+      final lastRow = group.last;
+      final rowCount = group.length;
+
+      // Calculate Y positions for top and bottom of the curly brace
+      final int adjustedFirstRow = firstRow - startRow;
+      final int adjustedLastRow = lastRow - startRow;
+
+      final double firstMarginOffset = cumulativeMarginOffsets[firstRow] ?? 0.0;
+      final double lastMarginOffset = cumulativeMarginOffsets[lastRow] ?? 0.0;
+
+      final double topY = adjustedVerticalOffset +
+          (adjustedFirstRow * (rowSpacing + sheetHeight)) +
+          firstMarginOffset;
+      final double bottomY = adjustedVerticalOffset +
+          (adjustedLastRow * (rowSpacing + sheetHeight)) +
+          lastMarginOffset +
+          sheetHeight;
+
+      // Draw the curly brace
+      _drawCurlyBrace(canvas, topY, bottomY, rowCount);
+    }
+  }
+
+  /// Draw a single curly brace on the left side spanning from topY to bottomY
+  void _drawCurlyBrace(
+      Canvas canvas, double topY, double bottomY, int rowCount) {
+    const double leftX =
+        50.0; // Position to the left of staff lines (which start at x=60)
+    final double height = bottomY - topY;
+
+    // For 2 rows (piano), draw a single curly brace
+    // For 3-5 rows, repeat curly braces to fill the space
+    final int braceCount = rowCount == 2 ? 1 : ((rowCount / 2).ceil());
+    final double braceHeight = height / braceCount;
+
+    // Use Bravura font character \uE000 for curly brace
+    const String braceChar = '\uE000';
+
+    for (int i = 0; i < braceCount; i++) {
+      final double braceTopY = topY + (i * braceHeight);
+      final double braceCenterY = braceTopY + (braceHeight / 2);
+
+      // Calculate font size based on the height we need to fill
+      // The Bravura brace character has a natural aspect ratio
+      final double fontSize =
+          braceHeight * 1.1; // Slightly larger to ensure coverage
+
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: braceChar,
+          style: TextStyle(
+            fontFamily: 'Bravura',
+            fontSize: fontSize,
+            color: Colors.black,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+
+      textPainter.layout();
+
+      // Center the brace vertically
+      final double yPos = braceCenterY - (textPainter.height / 2);
+      // Position slightly to the left
+      final double xPos = leftX - (textPainter.width / 2);
+
+      textPainter.paint(canvas, Offset(xPos, yPos));
+    }
   }
 
   /// Draw connecting lines and shared bar lines for connected row formats
@@ -1703,6 +1870,25 @@ class MusicSheetPainter extends CustomPainter {
       maxThickness: 3,
       color: color,
     );
+  }
+
+  /// Draw highlight for entire row in select rows mode
+  void _drawRowHighlight(
+      Canvas canvas, Size size, double staffTop, double lineSpacing) {
+    final double sheetHeight = lineSpacing * 4;
+
+    final Rect rowRect = Rect.fromLTRB(
+      60, // Start from left edge of staff
+      staffTop - 20, // A bit above the staff
+      size.width - 60, // End at right edge of staff
+      staffTop + sheetHeight + 20, // A bit below the staff
+    );
+
+    final Paint highlightPaint = Paint()
+      ..color = Colors.blue.withOpacity(0.15)
+      ..style = PaintingStyle.fill;
+
+    canvas.drawRect(rowRect, highlightPaint);
   }
 
   void drawHighlight(Canvas canvas, Size size, int rowIndex, double staffTop,

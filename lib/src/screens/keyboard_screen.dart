@@ -21,6 +21,7 @@ import 'package:music_keyboard/src/widgets/main_sheet/title_popup.dart';
 import 'package:music_keyboard/src/widgets/keyboard/tempo_popup.dart';
 import 'package:music_keyboard/src/widgets/keyboard/rehearsal_markings_popup.dart';
 import 'package:music_keyboard/src/providers/row_spacing_provider.dart';
+import 'package:music_keyboard/src/providers/select_rows_mode_provider.dart';
 import 'package:music_keyboard/src/providers/undo_manager.dart';
 import 'package:music_keyboard/src/widgets/shared/popup_theme.dart';
 import 'package:music_keyboard/src/widgets/shared/pdf_export_loading_overlay.dart';
@@ -1001,6 +1002,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                             statusBarHeight: statusBarHeight,
                             title: _title,
                             composer: _composer,
+                            sheetProperties: sheet.sheetProperties,
                             renderStartRow: _pdfRenderStartRow,
                             renderEndRow: _pdfRenderEndRow,
                             showTitleAndComposer: _pdfShowTitleAndComposer,
@@ -1289,6 +1291,40 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                             size: 20, color: Colors.black),
                                         SizedBox(width: 8),
                                         Text('Rehearsal',
+                                            style: TextStyle(fontSize: 14)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                // Divider
+                                Container(
+                                  height: 1,
+                                  color: Colors.grey[300],
+                                ),
+                                // Select Rows Button
+                                InkWell(
+                                  onTap: () {
+                                    setState(() {
+                                      showToolsMenu = false;
+                                    });
+                                    final selectRowsModeProvider =
+                                        context.read<SelectRowsModeProvider>();
+                                    selectRowsModeProvider
+                                        .enterSelectRowsMode();
+                                  },
+                                  borderRadius: const BorderRadius.only(
+                                    bottomLeft: Radius.circular(8),
+                                    bottomRight: Radius.circular(8),
+                                  ),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 12, horizontal: 16),
+                                    child: const Row(
+                                      children: [
+                                        Icon(Icons.check_box_outlined,
+                                            size: 20, color: Colors.black),
+                                        SizedBox(width: 8),
+                                        Text('Select Rows',
                                             style: TextStyle(fontSize: 14)),
                                       ],
                                     ),

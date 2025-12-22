@@ -4,6 +4,7 @@ import 'package:music_keyboard/src/providers/current_selected_note_provider.dart
 import 'package:music_keyboard/src/providers/is_connected_provider.dart';
 import 'package:music_keyboard/src/providers/list_of_spacing_for_each_row.dart';
 import 'package:music_keyboard/src/providers/row_spacing_provider.dart';
+import 'package:music_keyboard/src/providers/select_rows_mode_provider.dart';
 import 'package:music_keyboard/src/providers/selected_accidental_provider.dart';
 import 'package:music_keyboard/src/providers/selected_number_provider.dart';
 import 'package:music_keyboard/src/providers/selected_unicode_provider.dart';
@@ -52,6 +53,7 @@ void main() async {
       ChangeNotifierProvider(create: (_) => ListOfSpacingForEachRow()),
       ChangeNotifierProvider(create: (_) => RowSpacingProvider()),
       ChangeNotifierProvider(create: (_) => SheetUndoManager()),
+      ChangeNotifierProvider(create: (_) => SelectRowsModeProvider()),
     ], child: MyApp(settingsController: settingsController)),
   );
 }

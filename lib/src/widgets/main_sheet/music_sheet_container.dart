@@ -5,7 +5,9 @@ import 'package:music_keyboard/models/sheet_format.dart';
 import 'package:music_keyboard/src/providers/current_selected_note_provider.dart';
 import 'package:music_keyboard/src/providers/list_of_spacing_for_each_row.dart';
 import 'package:music_keyboard/src/providers/row_spacing_provider.dart';
+import 'package:music_keyboard/src/providers/select_rows_mode_provider.dart';
 import 'package:music_keyboard/src/providers/undo_manager.dart';
+import 'package:music_keyboard/models/sheet_properties.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/drawing_helpers.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/note_width_calculator.dart';
 import 'package:music_keyboard/src/utils/pdf_exporter.dart';
@@ -26,6 +28,7 @@ class MusicSheetContainer extends StatefulWidget {
   final double statusBarHeight;
   final String title;
   final String composer;
+  final SheetProperties sheetProperties;
   final Function(VoidCallback)? onClearHighlightingCallback;
   final Function(Function() shouldShowTieButton, Function() shouldShowFlipNote)?
       onButtonStateCallbacks;
@@ -46,6 +49,7 @@ class MusicSheetContainer extends StatefulWidget {
     required this.statusBarHeight,
     required this.title,
     required this.composer,
+    required this.sheetProperties,
     this.onClearHighlightingCallback,
     this.onButtonStateCallbacks,
     this.onZoomToNoteCallback,
@@ -462,6 +466,17 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
 
     final double tapX = transformedPosition.x;
     final double tapY = transformedPosition.y;
+
+    // Check if we're in Select Rows mode
+    final selectRowsModeProvider = context.read<SelectRowsModeProvider>();
+    if (selectRowsModeProvider.isSelectRowsMode) {
+      // In select rows mode, only handle row tapping
+      int tappedRow = findClosestRow(widget.sheetNoteRows, tapY);
+      setState(() {
+        selectRowsModeProvider.toggleRowSelection(tappedRow);
+      });
+      return;
+    }
 
     // First check if tapping outside a selected dynamic marking to deselect it
     if (_editingDynamicIndex != null && _editingDynamicRow != null) {
@@ -1470,6 +1485,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
         Provider.of<CurrentSelectedNoteProvider>(context);
     final rowSpacingProvider = Provider.of<ListOfSpacingForEachRow>(context);
     final globalRowSpacingProvider = Provider.of<RowSpacingProvider>(context);
+    final selectRowsModeProvider = Provider.of<SelectRowsModeProvider>(context);
 
     var keyboardHeight = 312;
     var canvasHeight = widget.screenSize.height -
@@ -1605,6 +1621,14 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                                       renderEndRow: widget.renderEndRow,
                                       showTitleAndComposer:
                                           widget.showTitleAndComposer,
+                                      selectedRowsForCurlyBrace:
+                                          selectRowsModeProvider
+                                                  .isSelectRowsMode
+                                              ? selectRowsModeProvider
+                                                  .selectedRows
+                                              : null,
+                                      curlyBraceGroups: widget
+                                          .sheetProperties.curlyBraceGroups,
                                     ),
                                     size: Size(widget.musicSheetWidth,
                                         totalHeight), // Dynamic height
@@ -1630,6 +1654,12 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                                   selectionRow: _dragRow,
                                   editingDynamicIndex: _editingDynamicIndex,
                                   editingDynamicRow: _editingDynamicRow,
+                                  selectedRowsForCurlyBrace:
+                                      selectRowsModeProvider.isSelectRowsMode
+                                          ? selectRowsModeProvider.selectedRows
+                                          : null,
+                                  curlyBraceGroups:
+                                      widget.sheetProperties.curlyBraceGroups,
                                 ),
                                 size: Size(widget.musicSheetWidth, totalHeight),
                               )
@@ -1814,6 +1844,134 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                               .isUpsideDown),
                 ],
               ])),
+          // Select Rows Mode UI - Exit Button
+          if (selectRowsModeProvider.isSelectRowsMode)
+            Positioned(
+              top: 10,
+              left: 5,
+              child: Material(
+                color: Colors.transparent,
+                elevation: 5,
+                shadowColor: Colors.black.withOpacity(0.3),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                child: RawMaterialButton(
+                  onPressed: () {
+                    selectRowsModeProvider.exitSelectRowsMode();
+                  },
+                  fillColor: Colors.red,
+                  constraints:
+                      const BoxConstraints.tightFor(width: 35, height: 35),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
+                    side: const BorderSide(color: Colors.white, width: 2),
+                  ),
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  child: const Icon(
+                    Icons.close,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+              ),
+            ),
+
+          // Select Rows Mode UI - Counter
+          if (selectRowsModeProvider.isSelectRowsMode)
+            Positioned(
+              top: 10,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.black, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.3),
+                        spreadRadius: 2,
+                        blurRadius: 5,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    '${selectRowsModeProvider.selectedRows.length} Row${selectRowsModeProvider.selectedRows.length == 1 ? '' : 's'} Selected',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+          // Select Rows Mode UI - Add Curly Braces Button
+          if (selectRowsModeProvider.isSelectRowsMode &&
+              selectRowsModeProvider.selectedRows.length >= 2)
+            Positioned(
+              bottom: 10,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Material(
+                  color: Colors.transparent,
+                  elevation: 5,
+                  shadowColor: Colors.black.withOpacity(0.3),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                  child: RawMaterialButton(
+                    onPressed: () {
+                      setState(() {
+                        // Save state for undo
+                        context
+                            .read<SheetUndoManager>()
+                            .saveState(widget.sheetNoteRows);
+
+                        // Add curly brace group to sheet properties
+                        final sortedRows = selectRowsModeProvider.selectedRows
+                            .toList()
+                          ..sort();
+
+                        final newGroup = CurlyBraceGroup(
+                          startRow: sortedRows.first,
+                          endRow: sortedRows.last,
+                        );
+
+                        widget.sheetProperties.curlyBraceGroups.add(newGroup);
+
+                        // Exit select rows mode
+                        selectRowsModeProvider.exitSelectRowsMode();
+                      });
+                    },
+                    fillColor: Colors.blue,
+                    constraints:
+                        const BoxConstraints.tightFor(width: 180, height: 45),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25),
+                      side: const BorderSide(color: Colors.white, width: 2),
+                    ),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    child: const Text(
+                      'Add Curly Braces',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
           Positioned(
             bottom: 5,
             right: 5,
