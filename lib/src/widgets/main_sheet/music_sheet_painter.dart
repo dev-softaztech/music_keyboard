@@ -638,67 +638,11 @@ class MusicSheetPainter extends CustomPainter {
     }
   }
 
-  /// Draw curly braces for selected rows in select rows mode
-  void _drawCurlyBraceForSelectedRows(
-      Canvas canvas,
-      Size size,
-      double lineSpacing,
-      double adjustedVerticalOffset,
-      Map<int, double> cumulativeMarginOffsets,
-      double sheetHeight,
-      int startRow) {
-    // Convert set to sorted list to find continuous groups
-    final sortedRows = selectedRowsForCurlyBrace!.toList()..sort();
-
-    // Find continuous groups of selected rows
-    List<List<int>> groups = [];
-    List<int> currentGroup = [sortedRows[0]];
-
-    for (int i = 1; i < sortedRows.length; i++) {
-      if (sortedRows[i] == sortedRows[i - 1] + 1) {
-        // Continuous, add to current group
-        currentGroup.add(sortedRows[i]);
-      } else {
-        // Gap found, start new group
-        groups.add(currentGroup);
-        currentGroup = [sortedRows[i]];
-      }
-    }
-    groups.add(currentGroup); // Add the last group
-
-    // Draw curly brace for each continuous group
-    for (final group in groups) {
-      if (group.length < 2) continue; // Need at least 2 rows for a curly brace
-
-      final firstRow = group.first;
-      final lastRow = group.last;
-      final rowCount = group.length;
-
-      // Calculate Y positions for top and bottom of the curly brace
-      final int adjustedFirstRow = firstRow - startRow;
-      final int adjustedLastRow = lastRow - startRow;
-
-      final double firstMarginOffset = cumulativeMarginOffsets[firstRow] ?? 0.0;
-      final double lastMarginOffset = cumulativeMarginOffsets[lastRow] ?? 0.0;
-
-      final double topY = adjustedVerticalOffset +
-          (adjustedFirstRow * (rowSpacing + sheetHeight)) +
-          firstMarginOffset;
-      final double bottomY = adjustedVerticalOffset +
-          (adjustedLastRow * (rowSpacing + sheetHeight)) +
-          lastMarginOffset +
-          sheetHeight;
-
-      // Draw the curly brace
-      _drawCurlyBrace(canvas, topY, bottomY, rowCount);
-    }
-  }
-
   /// Draw a single curly brace on the left side spanning from topY to bottomY
   void _drawCurlyBrace(
       Canvas canvas, double topY, double bottomY, int rowCount) {
     const double leftX =
-        50.0; // Position to the left of staff lines (which start at x=60)
+        45.0; // Position to the left of staff lines (which start at x=60)
     final double height = bottomY - topY;
 
     // For 2 rows (piano), draw a single curly brace
@@ -733,7 +677,7 @@ class MusicSheetPainter extends CustomPainter {
       textPainter.layout();
 
       // Center the brace vertically
-      final double yPos = braceCenterY - (textPainter.height / 2);
+      final double yPos = braceCenterY - (textPainter.height / 2) + 120;
       // Position slightly to the left
       final double xPos = leftX - (textPainter.width / 2);
 

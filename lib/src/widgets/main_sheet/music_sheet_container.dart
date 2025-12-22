@@ -1284,6 +1284,21 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
     });
   }
 
+  /// Get the connected row group index for a given row
+  /// For example, if rowsPerGroup is 2 (piano), row 0 and 1 return 0, row 2 and 3 return 1, etc.
+  int _getRowGroupIndex(int rowIndex) {
+    final rowsPerGroup = widget.sheetFormat.rowsPerGroup;
+    return rowIndex ~/ rowsPerGroup;
+  }
+
+  /// Check if all selected rows belong to the same connected row group
+  bool _selectedRowsInSameGroup(List<int> selectedRows) {
+    if (selectedRows.isEmpty) return false;
+
+    final firstRowGroup = _getRowGroupIndex(selectedRows.first);
+    return selectedRows.every((row) => _getRowGroupIndex(row) == firstRowGroup);
+  }
+
   // Remove action methods
   void _removeCurlyBraces() {
     context.read<SheetUndoManager>().saveState(widget.sheetNoteRows);
@@ -1974,7 +1989,14 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
 
           // Select Rows Mode UI - Add Curly Braces Button
           if (selectRowsModeProvider.isSelectRowsMode &&
-              selectRowsModeProvider.selectedRows.length >= 2)
+              (() {
+                final groups = selectRowsModeProvider.getContiguousGroups();
+                final selectedRows =
+                    selectRowsModeProvider.selectedRows.toList();
+                return groups.length == 1 &&
+                    (groups.first[1] - groups.first[0] + 1) >= 2 &&
+                    _selectedRowsInSameGroup(selectedRows);
+              })())
             Positioned(
               bottom: 10,
               left: 0,
@@ -2006,18 +2028,19 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                                 .read<SheetUndoManager>()
                                 .saveState(widget.sheetNoteRows);
 
-                            // Add curly brace group to sheet properties
-                            final sortedRows =
-                                selectRowsModeProvider.selectedRows.toList()
-                                  ..sort();
-
-                            final newGroup = CurlyBraceGroup(
-                              startRow: sortedRows.first,
-                              endRow: sortedRows.last,
-                            );
-
-                            widget.sheetProperties.curlyBraceGroups
-                                .add(newGroup);
+                            // Add curly brace groups for each contiguous group with 2+ rows
+                            final groups =
+                                selectRowsModeProvider.getContiguousGroups();
+                            for (final group in groups) {
+                              if (group[1] - group[0] + 1 >= 2) {
+                                final newGroup = CurlyBraceGroup(
+                                  startRow: group[0],
+                                  endRow: group[1],
+                                );
+                                widget.sheetProperties.curlyBraceGroups
+                                    .add(newGroup);
+                              }
+                            }
                           });
                         },
                         fillColor: Colors.white,
