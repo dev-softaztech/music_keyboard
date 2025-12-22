@@ -6,6 +6,22 @@ class SheetProperties {
     this.rowSpacing = 140.0,
     List<CurlyBraceGroup>? curlyBraceGroups,
   }) : curlyBraceGroups = curlyBraceGroups ?? [];
+
+  /// Updates curly brace groups when rows are inserted at the given index
+  void updateCurlyBracesForRowInsertion(int insertionIndex, int rowsAdded) {
+    final updatedGroups = <CurlyBraceGroup>[];
+    for (final group in curlyBraceGroups) {
+      final newStartRow = group.startRow >= insertionIndex
+          ? group.startRow + rowsAdded
+          : group.startRow;
+      final newEndRow = group.endRow >= insertionIndex
+          ? group.endRow + rowsAdded
+          : group.endRow;
+      updatedGroups
+          .add(CurlyBraceGroup(startRow: newStartRow, endRow: newEndRow));
+    }
+    curlyBraceGroups = updatedGroups;
+  }
 }
 
 /// Represents a group of rows that should be connected with a curly brace

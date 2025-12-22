@@ -305,6 +305,10 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     updateRowSpacing(selectedNoteProvider.selectedRow, selectedNoteProvider,
         sheet.sheetRows[selectedNoteProvider.selectedRow].notes);
     rowSpacingProvider.updateRowSpacingList(rowSpacingList);
+
+    // Update curly brace groups for the row insertion
+    sheet.sheetProperties
+        .updateCurlyBracesForRowInsertion(insertionPoint, rowsToAdd);
   }
 
   /// Determines if a row is in a treble position (first row of a connected group)
@@ -382,6 +386,10 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
           SheetRows(notes: [], rowProperties: RowProperties(tempoNumber: 0)));
       rowSpacingList.insert(rowSpacingList.length, defaultNoteSpacing);
       rowSpacingProvider.updateRowSpacingList(rowSpacingList);
+
+      // Update curly brace groups for the row insertion
+      sheet.sheetProperties.updateCurlyBracesForRowInsertion(
+          selectedNoteProvider.selectedRow + 1, 1);
     } else if (sheet
                 .sheetRows[selectedNoteProvider.selectedRow + 1].notes.length +
             notesInCurrentBar >
@@ -391,6 +399,10 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
           SheetRows(notes: [], rowProperties: RowProperties(tempoNumber: 0)));
       rowSpacingList.insert(rowSpacingList.length, defaultNoteSpacing);
       rowSpacingProvider.updateRowSpacingList(rowSpacingList);
+
+      // Update curly brace groups for the row insertion
+      sheet.sheetProperties.updateCurlyBracesForRowInsertion(
+          selectedNoteProvider.selectedRow + 1, 1);
     }
   }
 
@@ -674,6 +686,10 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         }
 
         rowSpacingProvider.updateRowSpacingList(rowSpacingList);
+
+        // Update curly brace groups for the row insertion
+        sheet.sheetProperties
+            .updateCurlyBracesForRowInsertion(insertionPoint, rowsToAdd);
 
         // Determine which row in the new group to move to
         // For piano mode: move to the same type of row (treble to treble, bass to bass)
