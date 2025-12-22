@@ -1299,6 +1299,49 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
     return selectedRows.every((row) => _getRowGroupIndex(row) == firstRowGroup);
   }
 
+  /// Get valid curly brace groups from selected rows
+  /// Returns contiguous groups within each row group that have 2+ rows
+  List<List<int>> _getValidBraceGroups(
+      SelectRowsModeProvider selectRowsModeProvider) {
+    final selectedRows = selectRowsModeProvider.selectedRows.toList();
+    final validGroups = <List<int>>[];
+
+    // Group selected rows by their row group
+    final rowsByGroup = <int, List<int>>{};
+    for (final row in selectedRows) {
+      final groupIndex = _getRowGroupIndex(row);
+      rowsByGroup.putIfAbsent(groupIndex, () => []).add(row);
+    }
+
+    // For each row group, find contiguous groups
+    for (final groupRows in rowsByGroup.values) {
+      groupRows.sort(); // Ensure sorted
+      final contiguousGroups = <List<int>>[];
+      int start = groupRows[0];
+      int end = groupRows[0];
+
+      for (int i = 1; i < groupRows.length; i++) {
+        if (groupRows[i] == end + 1) {
+          end = groupRows[i];
+        } else {
+          contiguousGroups.add([start, end]);
+          start = groupRows[i];
+          end = groupRows[i];
+        }
+      }
+      contiguousGroups.add([start, end]); // Add the last group
+
+      // Add groups with 2+ rows
+      for (final group in contiguousGroups) {
+        if (group[1] - group[0] + 1 >= 2) {
+          validGroups.add(group);
+        }
+      }
+    }
+
+    return validGroups;
+  }
+
   // Remove action methods
   void _removeCurlyBraces() {
     context.read<SheetUndoManager>().saveState(widget.sheetNoteRows);
@@ -1989,14 +2032,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
 
           // Select Rows Mode UI - Add Curly Braces Button
           if (selectRowsModeProvider.isSelectRowsMode &&
-              (() {
-                final groups = selectRowsModeProvider.getContiguousGroups();
-                final selectedRows =
-                    selectRowsModeProvider.selectedRows.toList();
-                return groups.length == 1 &&
-                    (groups.first[1] - groups.first[0] + 1) >= 2 &&
-                    _selectedRowsInSameGroup(selectedRows);
-              })())
+              _getValidBraceGroups(selectRowsModeProvider).isNotEmpty)
             Positioned(
               bottom: 10,
               left: 0,
@@ -2028,18 +2064,16 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                                 .read<SheetUndoManager>()
                                 .saveState(widget.sheetNoteRows);
 
-                            // Add curly brace groups for each contiguous group with 2+ rows
-                            final groups =
-                                selectRowsModeProvider.getContiguousGroups();
-                            for (final group in groups) {
-                              if (group[1] - group[0] + 1 >= 2) {
-                                final newGroup = CurlyBraceGroup(
-                                  startRow: group[0],
-                                  endRow: group[1],
-                                );
-                                widget.sheetProperties.curlyBraceGroups
-                                    .add(newGroup);
-                              }
+                            // Add curly brace groups for each valid contiguous group within the same row group with 2+ rows
+                            final validGroups =
+                                _getValidBraceGroups(selectRowsModeProvider);
+                            for (final group in validGroups) {
+                              final newGroup = CurlyBraceGroup(
+                                startRow: group[0],
+                                endRow: group[1],
+                              );
+                              widget.sheetProperties.curlyBraceGroups
+                                  .add(newGroup);
                             }
                           });
                         },
