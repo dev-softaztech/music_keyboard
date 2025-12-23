@@ -657,17 +657,12 @@ class MusicSheetPainter extends CustomPainter {
       final double braceTopY = topY + (i * braceHeight);
       final double braceCenterY = braceTopY + (braceHeight / 2);
 
-      // Calculate font size based on the height we need to fill
-      // The Bravura brace character has a natural aspect ratio
-      final double fontSize =
-          braceHeight * 1.1; // Slightly larger to ensure coverage
-
       final textPainter = TextPainter(
         text: TextSpan(
           text: braceChar,
           style: TextStyle(
             fontFamily: 'Bravura',
-            fontSize: fontSize,
+            fontSize: braceHeight,
             color: Colors.black,
           ),
         ),
@@ -677,7 +672,7 @@ class MusicSheetPainter extends CustomPainter {
       textPainter.layout();
 
       // Center the brace vertically
-      final double yPos = braceCenterY - (textPainter.height / 2) + 120;
+      final double yPos = braceCenterY - (textPainter.height / 2) + 110;
       // Position slightly to the left
       final double xPos = leftX - (textPainter.width / 2);
 
