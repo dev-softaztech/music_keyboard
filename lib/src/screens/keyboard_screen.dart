@@ -114,8 +114,14 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     if (!_hasUnsavedChanges || sheet.id == null) return;
 
     try {
+      print('DEBUG: Saving sheet with id ${sheet.id}');
+      print('DEBUG: Sheet has ${sheet.sheetRows.length} rows');
+      if (sheet.sheetRows.isNotEmpty) {
+        print('DEBUG: First row has ${sheet.sheetRows[0].notes.length} notes');
+      }
       await _dbHelper.updateSheet(sheet);
       _hasUnsavedChanges = false;
+      print('DEBUG: Sheet saved successfully');
     } catch (e) {
       print('Error saving sheet to database: $e');
     }
@@ -294,6 +300,10 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
   @override
   void dispose() {
+    // Save any unsaved changes before disposing
+    if (_hasUnsavedChanges && sheet.id != null) {
+      _dbHelper.updateSheet(sheet);
+    }
     // Cancel auto-save timer
     _autoSaveTimer?.cancel();
     // Clean up any active overlays

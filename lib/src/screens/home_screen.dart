@@ -6,6 +6,7 @@ import 'package:music_keyboard/models/sheet_rows.dart';
 import 'package:music_keyboard/models/sheet_format.dart';
 import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/src/database/sheet_database_helper.dart';
+import 'package:music_keyboard/src/widgets/home/sheet_preview_card.dart';
 import 'keyboard_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -19,6 +20,45 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   SheetFormat _selectedFormat = SheetFormat.single;
+  List<Sheet> _savedSheets = [];
+  bool _isLoadingSheets = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedSheets();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Reload sheets whenever the screen becomes active
+    _loadSavedSheets();
+  }
+
+  Future<void> _loadSavedSheets() async {
+    try {
+      final dbHelper = SheetDatabaseHelper();
+      final sheets = await dbHelper.getAllSheets();
+      print('DEBUG: Loaded ${sheets.length} sheets from database');
+      for (var sheet in sheets) {
+        print('DEBUG: Sheet ${sheet.id} has ${sheet.sheetRows.length} rows');
+        if (sheet.sheetRows.isNotEmpty) {
+          print(
+              'DEBUG: First row has ${sheet.sheetRows[0].notes.length} notes');
+        }
+      }
+      setState(() {
+        _savedSheets = sheets;
+        _isLoadingSheets = false;
+      });
+    } catch (e) {
+      print('Error loading sheets: $e');
+      setState(() {
+        _isLoadingSheets = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -152,17 +192,51 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 48),
 
-                  // Additional info or features can be added here
-                  Text(
-                    'Tap the button above to begin creating your musical masterpiece',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
+                  // Sheets Section
+                  if (_savedSheets.isNotEmpty) ...[
+                    const Text(
+                      'Sheets',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF242038),
+                      ),
                     ),
-                    textAlign: TextAlign.center,
-                  ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      height: 300,
+                      child: _isLoadingSheets
+                          ? const Center(child: CircularProgressIndicator())
+                          : GridView.builder(
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 3,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
+                                childAspectRatio: 0.8,
+                              ),
+                              itemCount: _savedSheets.length,
+                              itemBuilder: (context, index) {
+                                final sheet = _savedSheets[index];
+                                return SheetPreviewCard(
+                                  sheet: sheet,
+                                  onTap: () => _openSheet(context, sheet),
+                                );
+                              },
+                            ),
+                    ),
+                  ] else if (!_isLoadingSheets) ...[
+                    Text(
+                      'No saved sheets yet. Tap "Start Composing" to create your first sheet!',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -280,5 +354,17 @@ class _HomeScreenState extends State<HomeScreen> {
       KeyboardScreen.routeName,
       arguments: initialSheet,
     );
+  }
+
+  void _openSheet(BuildContext context, Sheet sheet) async {
+    // Navigate to keyboard screen with the selected sheet
+    await Navigator.pushNamed(
+      context,
+      KeyboardScreen.routeName,
+      arguments: sheet,
+    );
+
+    // Reload sheets when returning from keyboard screen
+    _loadSavedSheets();
   }
 }
