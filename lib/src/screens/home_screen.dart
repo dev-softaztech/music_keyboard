@@ -63,185 +63,210 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color.fromARGB(255, 255, 253, 253),
-              Color.fromARGB(255, 245, 245, 245),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // App Icon/Logo placeholder
-                  Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(60),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          spreadRadius: 2,
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.music_note,
-                      size: 60,
-                      color: Color(0xFF242038),
-                    ),
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // App Title
-                  const Text(
-                    'Music Keyboard',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF242038),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Subtitle
-                  const Text(
-                    'Draft home page',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.grey,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-
-                  const SizedBox(height: 48),
-
-                  // Format Selection Section
-                  const Text(
-                    'Choose Format',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF242038),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Format Selection Cards
-                  Row(
+      body: Column(
+        children: [
+          Expanded(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color.fromARGB(255, 255, 253, 253),
+                    Color.fromARGB(255, 245, 245, 245),
+                  ],
+                ),
+              ),
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: _buildFormatCard(
-                          SheetFormat.single,
-                          Icons.queue_music,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _buildFormatCard(
-                          SheetFormat.twoRows,
-                          Icons.piano,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // Start Composing Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: () => _navigateToKeyboard(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF242038),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        elevation: 4,
-                      ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      // Header row with logo and title
+                      Row(
                         children: [
-                          Text(
-                            'Start Composing',
+                          // App Icon/Logo placeholder
+                          Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(30),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  spreadRadius: 2,
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.music_note,
+                              size: 30,
+                              color: Color(0xFF242038),
+                            ),
+                          ),
+
+                          const SizedBox(width: 16),
+
+                          // App Title
+                          const Text(
+                            'Music Keyboard',
                             style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF242038),
                             ),
                           ),
                         ],
                       ),
-                    ),
-                  ),
 
-                  const SizedBox(height: 48),
+                      const SizedBox(height: 48),
 
-                  // Sheets Section
-                  if (_savedSheets.isNotEmpty) ...[
-                    const Text(
-                      'Sheets',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF242038),
+                      // Format Selection Section
+                      const Text(
+                        'Choose Format',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF242038),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      height: 300,
-                      child: _isLoadingSheets
-                          ? const Center(child: CircularProgressIndicator())
-                          : GridView.builder(
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 3,
-                                crossAxisSpacing: 12,
-                                mainAxisSpacing: 12,
-                                childAspectRatio: 0.8,
-                              ),
-                              itemCount: _savedSheets.length,
-                              itemBuilder: (context, index) {
-                                final sheet = _savedSheets[index];
-                                return SheetPreviewCard(
-                                  sheet: sheet,
-                                  onTap: () => _openSheet(context, sheet),
-                                );
-                              },
+
+                      const SizedBox(height: 16),
+
+                      // Format Selection Cards
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildFormatCard(
+                              SheetFormat.single,
+                              Icons.queue_music,
                             ),
-                    ),
-                  ] else if (!_isLoadingSheets) ...[
-                    Text(
-                      'No saved sheets yet. Tap "Start Composing" to create your first sheet!',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildFormatCard(
+                              SheetFormat.twoRows,
+                              Icons.piano,
+                            ),
+                          ),
+                        ],
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ],
+
+                      const SizedBox(height: 32),
+
+                      // Start Composing Button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 56,
+                        child: ElevatedButton(
+                          onPressed: () => _navigateToKeyboard(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF242038),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            elevation: 4,
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Start Composing',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 48),
+
+                      // Sheets Section
+                      if (_savedSheets.isNotEmpty) ...[
+                        const Text(
+                          'Sheets',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF242038),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Expanded(
+                          child: _isLoadingSheets
+                              ? const Center(child: CircularProgressIndicator())
+                              : GridView.builder(
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 3,
+                                    crossAxisSpacing: 12,
+                                    mainAxisSpacing: 12,
+                                    childAspectRatio: 0.8,
+                                  ),
+                                  itemCount: _savedSheets.length,
+                                  itemBuilder: (context, index) {
+                                    final sheet = _savedSheets[index];
+                                    return SheetPreviewCard(
+                                      sheet: sheet,
+                                      onTap: () => _openSheet(context, sheet),
+                                    );
+                                  },
+                                ),
+                        ),
+                      ] else if (!_isLoadingSheets) ...[
+                        Expanded(
+                          child: Center(
+                            child: Text(
+                              'No saved sheets yet. Tap "Start Composing" to create your first sheet!',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
-        ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Container(
+              height: 50,
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                border: Border(
+                  top: BorderSide(
+                    color: Colors.black,
+                    width: 1,
+                  ),
+                ),
+                color: Colors.white,
+              ),
+              alignment: Alignment.center,
+              child: const Text(
+                'AD BANNER',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
