@@ -5,6 +5,7 @@ import 'package:music_keyboard/models/sheet_properties.dart';
 import 'package:music_keyboard/models/sheet_rows.dart';
 import 'package:music_keyboard/models/sheet_format.dart';
 import 'package:music_keyboard/models/music_note.dart';
+import 'package:music_keyboard/src/database/sheet_database_helper.dart';
 import 'keyboard_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -233,7 +234,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _navigateToKeyboard(BuildContext context) {
+  void _navigateToKeyboard(BuildContext context) async {
     // Create initial rows based on selected format
     List<SheetRows> initialRows = [];
 
@@ -265,7 +266,15 @@ class _HomeScreenState extends State<HomeScreen> {
       format: _selectedFormat,
     );
 
-    // Navigate to keyboard screen with the initialized Sheet
+    // Insert the sheet into the database and get the assigned ID
+    try {
+      final dbHelper = SheetDatabaseHelper();
+      await dbHelper.insertSheet(initialSheet);
+    } catch (e) {
+      print('Error inserting sheet into database: $e');
+    }
+
+    // Navigate to keyboard screen with the initialized Sheet (now with ID)
     Navigator.pushNamed(
       context,
       KeyboardScreen.routeName,

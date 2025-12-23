@@ -26,6 +26,27 @@ class SheetProperties {
     }
     curlyBraceGroups = updatedGroups;
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'rowSpacing': rowSpacing,
+      'curlyBraceGroups':
+          curlyBraceGroups.map((group) => group.toJson()).toList(),
+      'title': title,
+      'composer': composer,
+    };
+  }
+
+  factory SheetProperties.fromJson(Map<String, dynamic> json) {
+    return SheetProperties(
+      rowSpacing: json['rowSpacing'] ?? 140.0,
+      curlyBraceGroups: (json['curlyBraceGroups'] as List<dynamic>?)
+          ?.map((groupJson) => CurlyBraceGroup.fromJson(groupJson))
+          .toList(),
+      title: json['title'] ?? '',
+      composer: json['composer'] ?? '',
+    );
+  }
 }
 
 /// Represents a group of rows that should be connected with a curly brace
@@ -48,4 +69,18 @@ class CurlyBraceGroup {
 
   @override
   int get hashCode => startRow.hashCode ^ endRow.hashCode;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'startRow': startRow,
+      'endRow': endRow,
+    };
+  }
+
+  factory CurlyBraceGroup.fromJson(Map<String, dynamic> json) {
+    return CurlyBraceGroup(
+      startRow: json['startRow'] ?? 0,
+      endRow: json['endRow'] ?? 0,
+    );
+  }
 }

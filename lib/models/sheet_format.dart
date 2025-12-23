@@ -126,4 +126,13 @@ extension SheetFormatExtension on SheetFormat {
         );
     }
   }
+
+  String toJson() => toString().split('.').last;
+
+  static SheetFormat fromJson(String value) {
+    return SheetFormat.values.firstWhere(
+      (e) => e.toString().split('.').last == value,
+      orElse: () => SheetFormat.single,
+    );
+  }
 }

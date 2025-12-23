@@ -86,6 +86,70 @@ class MusicalNote {
         keySignatureClefType: keySignatureClefType,
         clefType: clefType);
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'pitch': pitch,
+      'octave': octave,
+      'type': type.toJson(),
+      'isBeamed': isBeamed,
+      'isTiedToNext': isTiedToNext,
+      'isCrescendoStart': isCrescendoStart,
+      'isDecrescendoStart': isDecrescendoStart,
+      'crescendoEndIndex': crescendoEndIndex,
+      'decrescendoEndIndex': decrescendoEndIndex,
+      'unicodeCharacter': unicodeCharacter,
+      'accidentalCharacter': accidentalCharacter,
+      'slurEndIndex': slurEndIndex,
+      'noteY': noteY,
+      'isUpsideDown': isUpsideDown,
+      'duration': duration,
+      'topTimeSignatureCharacter': topTimeSignatureCharacter,
+      'bottomTimeSignatureCharacter': bottomTimeSignatureCharacter,
+      'dynamicCharacter': dynamicCharacter,
+      'accentCharacter': accentCharacter,
+      'isTriplet': isTriplet,
+      'tempoNumber': tempoNumber,
+      'swing': swing,
+      'swingText': swingText,
+      'rehearsalMarking': rehearsalMarking,
+      'keySignatureName': keySignatureName,
+      'keySignatureClefType': keySignatureClefType,
+      'clefType': clefType,
+    };
+  }
+
+  factory MusicalNote.fromJson(Map<String, dynamic> json) {
+    return MusicalNote(
+      pitch: json['pitch'] ?? '',
+      octave: json['octave'] ?? 4,
+      type: NoteTypeExtension.fromJson(json['type'] ?? 'quarter'),
+      isBeamed: json['isBeamed'] ?? false,
+      isTiedToNext: json['isTiedToNext'] ?? false,
+      isCrescendoStart: json['isCrescendoStart'] ?? false,
+      isDecrescendoStart: json['isDecrescendoStart'] ?? false,
+      crescendoEndIndex: json['crescendoEndIndex'],
+      decrescendoEndIndex: json['decrescendoEndIndex'],
+      unicodeCharacter: json['unicodeCharacter'] ?? '',
+      accidentalCharacter: json['accidentalCharacter'] ?? '',
+      slurEndIndex: json['slurEndIndex'],
+      noteY: json['noteY'] ?? 0.0,
+      isUpsideDown: json['isUpsideDown'],
+      duration: json['duration'] ?? 0.0,
+      topTimeSignatureCharacter: json['topTimeSignatureCharacter'] ?? '',
+      bottomTimeSignatureCharacter: json['bottomTimeSignatureCharacter'] ?? '',
+      dynamicCharacter: json['dynamicCharacter'] ?? '',
+      accentCharacter: json['accentCharacter'] ?? '',
+      isTriplet: json['isTriplet'] ?? false,
+      tempoNumber: json['tempoNumber'] ?? 0.0,
+      swing: json['swing'] ?? false,
+      swingText: json['swingText'] ?? '',
+      rehearsalMarking: json['rehearsalMarking'] ?? '',
+      keySignatureName: json['keySignatureName'] ?? '',
+      keySignatureClefType: json['keySignatureClefType'] ?? '',
+      clefType: json['clefType'] ?? '',
+    );
+  }
 }
 
 enum NoteType {
@@ -103,4 +167,15 @@ enum NoteType {
   timeSignature,
   space,
   keySignature
+}
+
+extension NoteTypeExtension on NoteType {
+  String toJson() => toString().split('.').last;
+
+  static NoteType fromJson(String value) {
+    return NoteType.values.firstWhere(
+      (e) => e.toString().split('.').last == value,
+      orElse: () => NoteType.quarter,
+    );
+  }
 }

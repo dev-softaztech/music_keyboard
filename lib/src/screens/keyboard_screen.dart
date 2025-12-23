@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/music_note.dart';
+import 'package:music_keyboard/src/database/sheet_database_helper.dart';
 import 'package:music_keyboard/models/row_properties.dart';
 import 'package:music_keyboard/models/sheet.dart';
 import 'package:music_keyboard/models/sheet_properties.dart';
@@ -96,6 +98,35 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
   // Clipboard for row copy/paste
   List<SheetRows>? _clipboardRows;
+
+  // Auto-save functionality
+  bool _hasUnsavedChanges = false;
+  Timer? _autoSaveTimer;
+  final SheetDatabaseHelper _dbHelper = SheetDatabaseHelper();
+
+  /// Mark that changes have been made to the sheet
+  void _markAsChanged() {
+    _hasUnsavedChanges = true;
+  }
+
+  /// Save the sheet to the database if there are unsaved changes
+  Future<void> _saveSheetToDatabase() async {
+    if (!_hasUnsavedChanges || sheet.id == null) return;
+
+    try {
+      await _dbHelper.updateSheet(sheet);
+      _hasUnsavedChanges = false;
+    } catch (e) {
+      print('Error saving sheet to database: $e');
+    }
+  }
+
+  /// Initialize auto-save timer
+  void _initializeAutoSave() {
+    _autoSaveTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      _saveSheetToDatabase();
+    });
+  }
 
   /// Copy selected rows to clipboard
   void _copySelectedRows() {
@@ -255,11 +286,16 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
       if (sheet.sheetRows.isNotEmpty && sheet.sheetRows[0].notes.isNotEmpty) {
         selectedNoteProvider.updateSelectedIndexAndInsertionPoint(0, 0);
       }
+
+      // Initialize auto-save timer
+      _initializeAutoSave();
     });
   }
 
   @override
   void dispose() {
+    // Cancel auto-save timer
+    _autoSaveTimer?.cancel();
     // Clean up any active overlays
     _removeBarOverlay();
     _removeLoadingOverlay();
@@ -296,6 +332,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
         updateRowSpacing(selectedNoteProvider.selectedRow, selectedNoteProvider,
             sheet.sheetRows[selectedNoteProvider.selectedRow].notes);
+
+        // Mark as changed for auto-save
+        _markAsChanged();
 
         // Call the button state callback functions from MusicSheetContainer
         if (_shouldShowTieButtonCallback != null) {
@@ -921,6 +960,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
       }
 
       updateRowSpacing(selectedRow, selectedNoteProvider, notes);
+
+      // Mark as changed for auto-save
+      _markAsChanged();
     });
   }
 
@@ -1599,10 +1641,12 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                               children: [
                                 // Home Button
                                 InkWell(
-                                  onTap: () {
+                                  onTap: () async {
                                     setState(() {
                                       showMenu = false;
                                     });
+                                    // Save the sheet before navigating home
+                                    await _saveSheetToDatabase();
                                     // Reset insertion and selected note index to default
                                     final selectedNoteProvider = context
                                         .read<CurrentSelectedNoteProvider>();
