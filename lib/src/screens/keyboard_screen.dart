@@ -73,8 +73,6 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   bool showToolsMenu = false;
   bool isBeamLockActive = false;
   DateTime? _lastTapTime;
-  String _title = '';
-  String _composer = '';
 
   //String keyType = "clefs";
   String _selectedBarUnicode = '\ue030';
@@ -961,8 +959,8 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
       await PdfExporter.exportMultiPageToPdf(
         sheetRows: sheet.sheetRows,
         rowSpacing: rowSpacingProvider.rowSpacing,
-        title: _title,
-        composer: _composer,
+        title: sheet.sheetProperties.title,
+        composer: sheet.sheetProperties.composer,
         screenshotController: screenshotController,
         sheetFormat: sheet.format,
         updateSheetForCapture: (int startRow, int endRow, bool showTitle) {
@@ -1151,8 +1149,6 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                             sheetFormat: sheet.format,
                             musicSheetWidth: musicSheetWidth,
                             statusBarHeight: statusBarHeight,
-                            title: _title,
-                            composer: _composer,
                             sheetProperties: sheet.sheetProperties,
                             renderStartRow: _pdfRenderStartRow,
                             renderEndRow: _pdfRenderEndRow,
@@ -1259,12 +1255,16 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                     showDialog(
                                       context: context,
                                       builder: (context) => TitlePopup(
-                                        initialTitle: _title,
-                                        initialComposer: _composer,
+                                        initialTitle:
+                                            sheet.sheetProperties.title,
+                                        initialComposer:
+                                            sheet.sheetProperties.composer,
                                         onSave: (newTitle, newComposer) {
                                           setState(() {
-                                            _title = newTitle;
-                                            _composer = newComposer;
+                                            sheet.sheetProperties.title =
+                                                newTitle;
+                                            sheet.sheetProperties.composer =
+                                                newComposer;
                                           });
                                         },
                                       ),

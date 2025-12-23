@@ -26,8 +26,6 @@ class MusicSheetContainer extends StatefulWidget {
   final SheetFormat sheetFormat;
   final double musicSheetWidth;
   final double statusBarHeight;
-  final String title;
-  final String composer;
   final SheetProperties sheetProperties;
   final Function(VoidCallback)? onClearHighlightingCallback;
   final Function(Function() shouldShowTieButton, Function() shouldShowFlipNote)?
@@ -48,8 +46,6 @@ class MusicSheetContainer extends StatefulWidget {
     required this.sheetFormat,
     required this.musicSheetWidth,
     required this.statusBarHeight,
-    required this.title,
-    required this.composer,
     required this.sheetProperties,
     this.onClearHighlightingCallback,
     this.onButtonStateCallbacks,
@@ -1683,8 +1679,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                                   controller: widget.screenshotController,
                                   child: CustomPaint(
                                     painter: MusicSheetPainter(
-                                      title: widget.title,
-                                      composer: widget.composer,
+                                      title: widget.sheetProperties.title,
+                                      composer: widget.sheetProperties.composer,
                                       sheetNoteRows: widget.sheetNoteRows,
                                       sheetFormat: widget.sheetFormat,
                                       selectedRow:
@@ -1719,8 +1715,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                               ),
                               CustomPaint(
                                 painter: MusicSheetPainter(
-                                  title: widget.title,
-                                  composer: widget.composer,
+                                  title: widget.sheetProperties.title,
+                                  composer: widget.sheetProperties.composer,
                                   sheetNoteRows: widget.sheetNoteRows,
                                   sheetFormat: widget.sheetFormat,
                                   selectedRow: selectedNoteProvider.selectedRow,

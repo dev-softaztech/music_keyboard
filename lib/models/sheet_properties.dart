@@ -1,10 +1,14 @@
 class SheetProperties {
   double rowSpacing;
   List<CurlyBraceGroup> curlyBraceGroups;
+  String title;
+  String composer;
 
   SheetProperties({
     this.rowSpacing = 140.0,
     List<CurlyBraceGroup>? curlyBraceGroups,
+    this.title = '',
+    this.composer = '',
   }) : curlyBraceGroups = curlyBraceGroups ?? [];
 
   /// Updates curly brace groups when rows are inserted at the given index
