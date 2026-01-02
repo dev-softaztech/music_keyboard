@@ -8,6 +8,8 @@ import 'package:music_keyboard/models/sheet.dart';
 import 'package:music_keyboard/models/sheet_properties.dart';
 import 'package:music_keyboard/models/sheet_rows.dart';
 import 'package:music_keyboard/models/sheet_format.dart';
+import 'package:music_keyboard/models/clipboard_item.dart';
+import 'package:music_keyboard/src/widgets/clipboard_popup.dart';
 import 'package:music_keyboard/src/providers/current_selected_note_provider.dart';
 import 'package:music_keyboard/src/providers/is_connected_provider.dart';
 import 'package:music_keyboard/src/providers/list_of_spacing_for_each_row.dart';
@@ -96,13 +98,12 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   int? _pdfRenderEndRow;
   bool _pdfShowTitleAndComposer = true;
 
-  // Clipboard for row copy/paste
-  List<SheetRows>? _clipboardRows;
+  // Database helper for clipboard operations
+  final SheetDatabaseHelper _dbHelper = SheetDatabaseHelper();
 
   // Auto-save functionality
   bool _hasUnsavedChanges = false;
   Timer? _autoSaveTimer;
-  final SheetDatabaseHelper _dbHelper = SheetDatabaseHelper();
 
   /// Mark that changes have been made to the sheet
   void _markAsChanged() {
@@ -135,7 +136,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   }
 
   /// Copy selected rows to clipboard
-  void _copySelectedRows() {
+  Future<void> _copySelectedRows() async {
     final selectRowsModeProvider = context.read<SelectRowsModeProvider>();
     final selectedRows = selectRowsModeProvider.selectedRows.toList();
 
@@ -145,7 +146,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     selectedRows.sort();
 
     // Deep clone the selected rows
-    _clipboardRows = selectedRows.map((rowIndex) {
+    final rowsToCopy = selectedRows.map((rowIndex) {
       final originalRow = sheet.sheetRows[rowIndex];
       final clonedNotes = originalRow.notes
           .map((note) => MusicalNote(
@@ -186,14 +187,23 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
       );
     }).toList();
 
-    // Show confirmation message
-    ToastUtils.showToast('Copied ${selectedRows.length} rows to clipboard.');
+    // Save to database
+    final clipboardItem = ClipboardItem(
+      dateCopied: DateTime.now(),
+      rows: rowsToCopy,
+    );
+
+    try {
+      await _dbHelper.insertClipboardItem(clipboardItem);
+      ToastUtils.showToast('Copied ${selectedRows.length} rows to clipboard.');
+    } catch (e) {
+      print('Error saving to clipboard: $e');
+      ToastUtils.showToast('Failed to copy to clipboard.', isError: true);
+    }
   }
 
-  /// Paste rows from clipboard after the currently selected row
-  void _pasteRows() {
-    if (_clipboardRows == null || _clipboardRows!.isEmpty) return;
-
+  /// Paste rows from clipboard item after the currently selected row
+  void _pasteRows(ClipboardItem clipboardItem) {
     final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
     final rowSpacingProvider = context.read<ListOfSpacingForEachRow>();
     var rowSpacingList = rowSpacingProvider.rowSpacingList;
@@ -202,7 +212,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     int insertionIndex = selectedNoteProvider.selectedRow + 1;
 
     // Deep clone the clipboard rows for insertion
-    final rowsToInsert = _clipboardRows!.map((clipboardRow) {
+    final rowsToInsert = clipboardItem.rows.map((clipboardRow) {
       final clonedNotes = clipboardRow.notes
           .map((note) => MusicalNote(
                 pitch: note.pitch,
@@ -263,6 +273,18 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
     // Show confirmation message
     ToastUtils.showToast('Pasted ${rowsToInsert.length} rows.');
+  }
+
+  /// Show clipboard popup
+  void _showClipboardPopup() {
+    showDialog(
+      context: context,
+      builder: (context) => ClipboardPopup(
+        onPasteItem: (clipboardItem) {
+          _pasteRows(clipboardItem);
+        },
+      ),
+    );
   }
 
   @override
@@ -1538,37 +1560,32 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                   height: 1,
                                   color: Colors.grey[300],
                                 ),
-                                // Paste Rows Button (only if clipboard has data)
-                                if (_clipboardRows != null &&
-                                    _clipboardRows!.isNotEmpty) ...[
-                                  InkWell(
-                                    onTap: () {
-                                      setState(() {
-                                        showToolsMenu = false;
-                                      });
-                                      _pasteRows();
-                                    },
-                                    borderRadius: const BorderRadius.only(
-                                      bottomLeft: Radius.circular(8),
-                                      bottomRight: Radius.circular(8),
-                                    ),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 12, horizontal: 16),
-                                      child: Row(
-                                        children: [
-                                          const Icon(Icons.paste,
-                                              size: 20, color: Colors.black),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                              'Paste ${_clipboardRows!.length} Rows',
-                                              style: const TextStyle(
-                                                  fontSize: 14)),
-                                        ],
-                                      ),
+                                // Clipboard Button
+                                InkWell(
+                                  onTap: () {
+                                    setState(() {
+                                      showToolsMenu = false;
+                                    });
+                                    _showClipboardPopup();
+                                  },
+                                  borderRadius: const BorderRadius.only(
+                                    bottomLeft: Radius.circular(8),
+                                    bottomRight: Radius.circular(8),
+                                  ),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 12, horizontal: 16),
+                                    child: const Row(
+                                      children: [
+                                        Icon(Icons.content_paste,
+                                            size: 20, color: Colors.black),
+                                        SizedBox(width: 8),
+                                        Text('Clipboard',
+                                            style: TextStyle(fontSize: 14)),
+                                      ],
                                     ),
                                   ),
-                                ],
+                                ),
 
                                 // Title Button
                               ],

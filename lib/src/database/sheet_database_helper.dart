@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:music_keyboard/models/sheet.dart';
+import 'package:music_keyboard/models/clipboard_item.dart';
+import 'package:music_keyboard/models/sheet_rows.dart';
 
 class SheetDatabaseHelper {
   static final SheetDatabaseHelper _instance = SheetDatabaseHelper._internal();
@@ -23,8 +25,9 @@ class SheetDatabaseHelper {
     String path = join(await getDatabasesPath(), 'music_sheets.db');
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
@@ -37,6 +40,28 @@ class SheetDatabaseHelper {
         last_updated TEXT NOT NULL
       )
     ''');
+
+    await db.execute('''
+      CREATE TABLE clipboard(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        date_copied TEXT NOT NULL,
+        rows_data TEXT NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('''
+        CREATE TABLE clipboard(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          date_copied TEXT NOT NULL,
+          rows_data TEXT NOT NULL
+        )
+      ''');
+    }
   }
 
   /// Insert a new sheet into the database
@@ -111,6 +136,71 @@ class SheetDatabaseHelper {
     final db = await database;
     return await db.delete(
       'sheets',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  /// Insert a new clipboard item into the database
+  Future<int> insertClipboardItem(ClipboardItem item) async {
+    final db = await database;
+
+    final Map<String, dynamic> row = {
+      'name': item.name,
+      'date_copied': item.dateCopied.toIso8601String(),
+      'rows_data': jsonEncode(item.rows.map((row) => row.toJson()).toList()),
+    };
+
+    final id = await db.insert('clipboard', row);
+    item.id = id;
+    return id;
+  }
+
+  /// Get all clipboard items ordered by date copied (most recent first)
+  Future<List<ClipboardItem>> getAllClipboardItems() async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'clipboard',
+      orderBy: 'date_copied DESC',
+    );
+
+    return List.generate(maps.length, (i) {
+      final rowsData = jsonDecode(maps[i]['rows_data']) as List<dynamic>;
+      final rows =
+          rowsData.map((rowJson) => SheetRows.fromJson(rowJson)).toList();
+
+      return ClipboardItem(
+        id: maps[i]['id'],
+        name: maps[i]['name'],
+        dateCopied: DateTime.parse(maps[i]['date_copied']),
+        rows: rows,
+      );
+    });
+  }
+
+  /// Update an existing clipboard item in the database
+  Future<int> updateClipboardItem(ClipboardItem item) async {
+    final db = await database;
+
+    final Map<String, dynamic> row = {
+      'name': item.name,
+      'date_copied': item.dateCopied.toIso8601String(),
+      'rows_data': jsonEncode(item.rows.map((row) => row.toJson()).toList()),
+    };
+
+    return await db.update(
+      'clipboard',
+      row,
+      where: 'id = ?',
+      whereArgs: [item.id],
+    );
+  }
+
+  /// Delete a clipboard item by its ID
+  Future<int> deleteClipboardItem(int id) async {
+    final db = await database;
+    return await db.delete(
+      'clipboard',
       where: 'id = ?',
       whereArgs: [id],
     );
