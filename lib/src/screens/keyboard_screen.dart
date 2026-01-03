@@ -322,6 +322,11 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         selectedNoteProvider.updateSelectedIndexAndInsertionPoint(0, 0);
       }
 
+      // Update row spacing for all rows in the opened sheet
+      for (int i = 0; i < sheet.sheetRows.length; i++) {
+        updateRowSpacing(i, selectedNoteProvider, sheet.sheetRows[i].notes);
+      }
+
       // Initialize auto-save timer
       _initializeAutoSave();
     });
