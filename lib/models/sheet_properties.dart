@@ -27,6 +27,41 @@ class SheetProperties {
     curlyBraceGroups = updatedGroups;
   }
 
+  /// Updates curly brace groups when rows are deleted starting at the given index
+  void updateCurlyBracesForRowDeletion(int deletionIndex, int rowsDeleted) {
+    final updatedGroups = <CurlyBraceGroup>[];
+    for (final group in curlyBraceGroups) {
+      // If the group is completely before the deletion point, keep it as is
+      if (group.endRow < deletionIndex) {
+        updatedGroups.add(group);
+      }
+      // If the group is completely after the deletion point, shift it left
+      else if (group.startRow >= deletionIndex + rowsDeleted) {
+        updatedGroups.add(CurlyBraceGroup(
+          startRow: group.startRow - rowsDeleted,
+          endRow: group.endRow - rowsDeleted,
+        ));
+      }
+      // If the group overlaps with the deleted rows, adjust accordingly
+      else {
+        final newStartRow =
+            group.startRow < deletionIndex ? group.startRow : deletionIndex;
+        final newEndRow = group.endRow >= deletionIndex + rowsDeleted
+            ? group.endRow - rowsDeleted
+            : deletionIndex - 1;
+
+        // Only add the group if it still has valid rows
+        if (newStartRow <= newEndRow) {
+          updatedGroups.add(CurlyBraceGroup(
+            startRow: newStartRow,
+            endRow: newEndRow,
+          ));
+        }
+      }
+    }
+    curlyBraceGroups = updatedGroups;
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'rowSpacing': rowSpacing,

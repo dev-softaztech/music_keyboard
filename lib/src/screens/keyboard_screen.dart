@@ -759,12 +759,12 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     ];
 
     // For Piano format, update spacing for entire connected group
-    if (sheet.format == SheetFormat.twoRows) {
-      _updateConnectedRowGroupSpacing(rowIndex, selectedNoteProvider,
-          rowSpacingProvider, rowSpacingList, listOfSpacingSizes);
-    } else {
+    if (sheet.format == SheetFormat.single) {
       // Single format - original behavior
       _updateSingleRowSpacing(rowIndex, selectedNoteProvider, notes,
+          rowSpacingProvider, rowSpacingList, listOfSpacingSizes);
+    } else {
+      _updateConnectedRowGroupSpacing(rowIndex, selectedNoteProvider,
           rowSpacingProvider, rowSpacingList, listOfSpacingSizes);
     }
   }
@@ -1004,16 +1004,74 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
       final notes = sheet.sheetRows[selectedRow].notes;
 
       if (notes.isEmpty) {
-        sheet.sheetRows.remove(sheet.sheetRows[selectedRow]);
+        // Handle empty row removal based on sheet format
+        if (sheet.format == SheetFormat.single) {
+          // Single format: always remove empty rows
+          if (selectedRow == 0) {
+            // Cannot remove the first row in single format
+            return;
+          }
 
-        rowSpacingList.remove(rowSpacingList[selectedRow]);
-        rowSpacingProvider.updateRowSpacingList(rowSpacingList);
+          sheet.sheetRows.removeAt(selectedRow);
+          rowSpacingList.removeAt(selectedRow);
+          rowSpacingProvider.updateRowSpacingList(rowSpacingList);
 
-        selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
-            selectedRow - 1,
-            sheet.sheetRows[selectedRow - 1].notes.isEmpty
-                ? 0
-                : sheet.sheetRows[selectedRow - 1].notes.length - 1);
+          // Update curly braces for row deletion
+          sheet.sheetProperties.updateCurlyBracesForRowDeletion(selectedRow, 1);
+
+          // Move cursor to previous row
+          selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
+              selectedRow - 1,
+              sheet.sheetRows[selectedRow - 1].notes.isEmpty
+                  ? -1
+                  : sheet.sheetRows[selectedRow - 1].notes.length - 1);
+        } else {
+          // Multi-row format: check if entire row group should be removed
+          final int rowsPerGroup = sheet.format.rowsPerGroup;
+          final int groupStartRow =
+              (selectedRow ~/ rowsPerGroup) * rowsPerGroup;
+          final int groupEndRow = math.min(
+              groupStartRow + rowsPerGroup - 1, sheet.sheetRows.length - 1);
+
+          // Check if all rows in the group are empty
+          bool allRowsInGroupEmpty = true;
+          for (int i = groupStartRow; i <= groupEndRow; i++) {
+            if (sheet.sheetRows[i].notes.isNotEmpty) {
+              allRowsInGroupEmpty = false;
+              break;
+            }
+          }
+
+          if (allRowsInGroupEmpty) {
+            // Remove entire row group
+            if (groupStartRow == 0) {
+              // Cannot remove the first row group
+              return;
+            }
+
+            final int rowsToRemove = groupEndRow - groupStartRow + 1;
+
+            // Remove all rows in the group
+            sheet.sheetRows
+                .removeRange(groupStartRow, groupStartRow + rowsToRemove);
+            rowSpacingList.removeRange(
+                groupStartRow, groupStartRow + rowsToRemove);
+            rowSpacingProvider.updateRowSpacingList(rowSpacingList);
+
+            // Update curly braces for row deletion
+            sheet.sheetProperties
+                .updateCurlyBracesForRowDeletion(groupStartRow, rowsToRemove);
+
+            // Move cursor to the row before the removed group
+            final int newCursorRow = groupStartRow - 1;
+            selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
+                newCursorRow,
+                sheet.sheetRows[newCursorRow].notes.isEmpty
+                    ? -1
+                    : sheet.sheetRows[newCursorRow].notes.length - 1);
+          }
+          // If not all rows are empty, don't remove anything
+        }
       } else if (notes.isNotEmpty && selectedNoteProvider.insertionIndex >= 0) {
         if (selectedIndex >= notes.length) {
           selectedIndex = notes.length - 1;
@@ -1055,7 +1113,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
             noteToRemove, notes, removedNoteIndex, false);
       }
 
-      updateRowSpacing(selectedRow, selectedNoteProvider, notes);
+      updateRowSpacing(selectedRow - 1, selectedNoteProvider, notes);
 
       // Mark as changed for auto-save
       _markAsChanged();
