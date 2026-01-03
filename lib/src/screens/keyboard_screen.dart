@@ -278,8 +278,61 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
           rowIndex, selectedNoteProvider, sheet.sheetRows[rowIndex].notes);
     }
 
+    // Ensure the last row group is complete according to the sheet format
+    _ensureCompleteLastRowGroup(rowSpacingProvider, rowSpacingList);
+
     // Show confirmation message
     ToastUtils.showToast('Pasted ${rowsToInsert.length} rows.');
+  }
+
+  /// Ensure the last row group is complete according to the sheet format
+  void _ensureCompleteLastRowGroup(
+    ListOfSpacingForEachRow rowSpacingProvider,
+    List<double> rowSpacingList,
+  ) {
+    final int rowsPerGroup = sheet.format.rowsPerGroup;
+
+    // For single format, groups are always complete
+    if (rowsPerGroup == 1) return;
+
+    final int totalRows = sheet.sheetRows.length;
+    final int remainder = totalRows % rowsPerGroup;
+
+    // If the last group is complete, no action needed
+    if (remainder == 0) return;
+
+    final int rowsToAdd = rowsPerGroup - remainder;
+    final List<String> clefs = sheet.format.defaultClefs;
+
+    // Add the required empty rows with appropriate clefs
+    for (int i = 0; i < rowsToAdd; i++) {
+      final newRow =
+          SheetRows(notes: [], rowProperties: RowProperties(tempoNumber: 0));
+
+      // Add appropriate clef for each row in the group
+      // Use the clefs starting from the position in the group
+      final int clefIndex = remainder + i;
+      if (clefIndex < clefs.length) {
+        newRow.notes.add(MusicalNote(
+          pitch: "G",
+          octave: 4,
+          type: NoteType.clef,
+          isBeamed: false,
+          unicodeCharacter: clefs[clefIndex],
+          clefType: clefs[clefIndex],
+        ));
+      }
+
+      sheet.sheetRows.add(newRow);
+      rowSpacingList.add(defaultNoteSpacing);
+    }
+
+    // Update row spacing provider
+    rowSpacingProvider.updateRowSpacingList(rowSpacingList);
+
+    // Update curly brace groups for the row addition
+    sheet.sheetProperties
+        .updateCurlyBracesForRowInsertion(totalRows, rowsToAdd);
   }
 
   /// Show clipboard popup
@@ -306,11 +359,10 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     // Set the rowSpacing value from SheetProperties to RowSpacingProvider after the first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final rowSpacingListProvider = context.read<ListOfSpacingForEachRow>();
-      if (sheet.format == SheetFormat.twoRows) {
-        rowSpacingListProvider.updateRowSpacingList([26, 26]);
-      } else if (sheet.format == SheetFormat.fourRows) {
-        rowSpacingListProvider.updateRowSpacingList([26, 26, 26, 26]);
-      }
+      // Initialize rowSpacingList to match the number of rows in the sheet
+      List<double> initialSpacing =
+          List.filled(sheet.sheetRows.length, 26.0, growable: true);
+      rowSpacingListProvider.updateRowSpacingList(initialSpacing);
 
       final rowSpacingProvider = context.read<RowSpacingProvider>();
       rowSpacingProvider
