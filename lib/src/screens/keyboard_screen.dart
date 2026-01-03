@@ -271,6 +271,13 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
         insertionIndex, rowsToInsert[0].notes.isNotEmpty ? 0 : -1);
 
+    // Update row spacing for all newly inserted rows
+    for (int i = 0; i < rowsToInsert.length; i++) {
+      final rowIndex = insertionIndex + i;
+      updateRowSpacing(
+          rowIndex, selectedNoteProvider, sheet.sheetRows[rowIndex].notes);
+    }
+
     // Show confirmation message
     ToastUtils.showToast('Pasted ${rowsToInsert.length} rows.');
   }
