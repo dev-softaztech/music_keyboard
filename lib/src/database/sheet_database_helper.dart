@@ -114,7 +114,9 @@ class SheetDatabaseHelper {
     if (maps.isEmpty) return null;
 
     final sheetData = jsonDecode(maps[0]['sheet_data']);
-    return Sheet.fromJson(sheetData);
+    final sheet = Sheet.fromJson(sheetData);
+    sheet.id = maps[0]['id']; // Set the ID from the database
+    return sheet;
   }
 
   /// Get all sheets ordered by last updated (most recent first)
@@ -127,7 +129,9 @@ class SheetDatabaseHelper {
 
     return List.generate(maps.length, (i) {
       final sheetData = jsonDecode(maps[i]['sheet_data']);
-      return Sheet.fromJson(sheetData);
+      final sheet = Sheet.fromJson(sheetData);
+      sheet.id = maps[i]['id']; // Set the ID from the database
+      return sheet;
     });
   }
 

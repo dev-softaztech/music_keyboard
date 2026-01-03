@@ -1347,6 +1347,8 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                             sheet.sheetProperties.composer =
                                                 newComposer;
                                           });
+                                          // Mark as changed for auto-save
+                                          _markAsChanged();
                                         },
                                       ),
                                     );

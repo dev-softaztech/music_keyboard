@@ -7,6 +7,7 @@ import 'package:music_keyboard/models/sheet_format.dart';
 import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/src/database/sheet_database_helper.dart';
 import 'package:music_keyboard/src/widgets/home/sheet_preview_card.dart';
+import 'package:music_keyboard/src/widgets/shared/popup_theme.dart';
 import 'keyboard_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -83,7 +84,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   child: SafeArea(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                      padding: const EdgeInsets.only(
+                          left: 32.0, right: 32.0, bottom: 27.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -219,6 +221,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                       itemCount: _savedSheets.length,
                                       itemBuilder: (context, index) {
                                         final sheet = _savedSheets[index];
+                                        // Skip sheets without IDs (shouldn't happen with the fix, but defensive)
+                                        if (sheet.id == null) {
+                                          return const SizedBox.shrink();
+                                        }
                                         return SheetPreviewCard(
                                           sheet: sheet,
                                           onTap: _isSelectionMode
@@ -444,8 +450,21 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final dbHelper = SheetDatabaseHelper();
       await dbHelper.insertSheet(initialSheet);
+
+      // Verify the sheet has an ID before proceeding
+      if (initialSheet.id == null) {
+        throw Exception('Sheet was inserted but no ID was assigned');
+      }
     } catch (e) {
       print('Error inserting sheet into database: $e');
+      // Show error message to user and don't navigate
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to create new sheet. Please try again.'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
     }
 
     // Navigate to keyboard screen with the initialized Sheet (now with ID)
@@ -488,13 +507,71 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _deleteSelectedSheets() async {
     if (_selectedSheets.isEmpty) return;
 
-    final dbHelper = SheetDatabaseHelper();
-    for (final sheetId in _selectedSheets) {
-      await dbHelper.deleteSheet(sheetId);
-    }
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          insetPadding: const EdgeInsets.all(PopupTheme.dialogMargin),
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.8,
+            decoration: PopupTheme.dialogDecoration,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header
+                PopupTheme.buildHeader(
+                  title: 'Confirm Deletion',
+                  onClose: () => Navigator.of(context).pop(false),
+                ),
 
-    await _loadSavedSheets();
-    _exitSelectionMode();
+                // Content
+                Padding(
+                  padding: const EdgeInsets.all(PopupTheme.contentPadding),
+                  child: Text(
+                    'Are you sure you want to delete ${_selectedSheets.length} sheet${_selectedSheets.length != 1 ? 's' : ''}?',
+                    style: PopupTheme.bodyStyle,
+                  ),
+                ),
+
+                // Actions
+                Padding(
+                  padding: const EdgeInsets.all(PopupTheme.actionsPadding),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        style: PopupTheme.secondaryButtonStyle,
+                        child: const Text('Cancel'),
+                      ),
+                      const SizedBox(width: 12),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        style: PopupTheme.secondaryButtonStyle.copyWith(
+                          foregroundColor:
+                              MaterialStateProperty.all(Colors.red),
+                        ),
+                        child: const Text('Delete'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      final dbHelper = SheetDatabaseHelper();
+      for (final sheetId in _selectedSheets) {
+        await dbHelper.deleteSheet(sheetId);
+      }
+
+      await _loadSavedSheets();
+      _exitSelectionMode();
+    }
   }
 
   void _openSheet(BuildContext context, Sheet sheet) async {

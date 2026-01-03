@@ -22,7 +22,6 @@ class Sheet {
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
       'sheetRows': sheetRows.map((row) => row.toJson()).toList(),
       'sheetProperties': sheetProperties.toJson(),
       'format': format.toJson(),
