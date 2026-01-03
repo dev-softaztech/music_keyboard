@@ -1243,12 +1243,15 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
   bool _shouldShowFlipNote() {
     final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
 
-    // Check if there's no active highlighted notes AND current selected note is beamed
+    // Check if there's no active highlighted notes AND current selected note is valid
     if (_dragStart == null && _dragEnd == null) {
       final row = selectedNoteProvider.selectedRow;
       final index = selectedNoteProvider.selectedIndex;
 
-      if (index >= 0 && index < widget.sheetNoteRows[row].notes.length) {
+      if (row >= 0 &&
+          row < widget.sheetNoteRows.length &&
+          index >= 0 &&
+          index < widget.sheetNoteRows[row].notes.length) {
         final selectedNote = widget.sheetNoteRows[row].notes[index];
         return selectedNote.type != NoteType.accidental &&
             selectedNote.type != NoteType.bar &&
@@ -1874,7 +1877,14 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
               right: 0,
               child:
                   Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                if (_showFlipNoteButton) ...[
+                if (_showFlipNoteButton &&
+                    selectedNoteProvider.selectedRow >= 0 &&
+                    selectedNoteProvider.selectedRow <
+                        widget.sheetNoteRows.length &&
+                    selectedNoteProvider.selectedIndex >= 0 &&
+                    selectedNoteProvider.selectedIndex <
+                        widget.sheetNoteRows[selectedNoteProvider.selectedRow]
+                            .notes.length) ...[
                   _buildNoteFlipButton('Flip Note', () {
                     setState(() {
                       if (_dragStart != null &&

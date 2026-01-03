@@ -78,7 +78,7 @@ class SheetPreviewPainter extends CustomPainter {
           text: _getNoteUnicode(note, isUpsideDown),
           style: TextStyle(
             fontFamily: 'Bravura',
-            fontSize: size.height / 6,
+            fontSize: size.height / 5,
             color: lineColor,
           ),
         ),
