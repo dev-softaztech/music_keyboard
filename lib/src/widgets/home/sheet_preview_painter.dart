@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/music_note.dart';
+import 'package:music_keyboard/models/note_unicode_characters.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/note_position_calculator.dart';
 
 class SheetPreviewPainter extends CustomPainter {
@@ -78,7 +79,7 @@ class SheetPreviewPainter extends CustomPainter {
           text: _getNoteUnicode(note, isUpsideDown),
           style: TextStyle(
             fontFamily: 'Bravura',
-            fontSize: size.height / 5,
+            fontSize: size.height / 4,
             color: lineColor,
           ),
         ),
@@ -92,11 +93,10 @@ class SheetPreviewPainter extends CustomPainter {
       textPainter.paint(canvas, Offset(x, y));
 
       // Draw accidental if present
-      if (note.accidentalCharacter != null &&
-          note.accidentalCharacter!.isNotEmpty) {
+      if (note.accidentalCharacter.isNotEmpty) {
         _drawAccidental(
           canvas,
-          note.accidentalCharacter!,
+          note.accidentalCharacter,
           x,
           y,
           isUpsideDown,
@@ -107,21 +107,51 @@ class SheetPreviewPainter extends CustomPainter {
   }
 
   String _getNoteUnicode(MusicalNote note, bool isUpsideDown) {
-    // Map note types to their unicode characters
-    // This is simplified - you might want to use the actual NoteUnicodeCharacters class
+    // Define unicode characters for note durations
+    List<NoteUnicodeCharacters> unicodeCharacters = [
+      NoteUnicodeCharacters(normal: '\ue1d2', upsideDown: '\ue1d2'), //whole
+      NoteUnicodeCharacters(normal: '\ue1d3', upsideDown: '\ue1d4'), //half
+      NoteUnicodeCharacters(normal: '\ue1d5', upsideDown: '\ue1d6'), //quarter
+      NoteUnicodeCharacters(normal: '\ue1d7', upsideDown: '\ue1d8'), //eighth
+      NoteUnicodeCharacters(normal: '\ue1d9', upsideDown: '\ue1da'), //sixteenth
+      NoteUnicodeCharacters(
+          normal: '\ue1db', upsideDown: '\ue1dc'), //thirtysecond
+      NoteUnicodeCharacters(
+          normal: '\ue1dd', upsideDown: '\ue1de'), //sixtyfourth
+    ];
+
+    // Define clef unicode characters
+    Map<String, String> clefCharacters = {
+      'Treble': '\uf472',
+      'Bass': '\uf474',
+      'Alto': '\uf473',
+      'Tenor': '\uf473',
+    };
+
     switch (note.type) {
       case NoteType.whole:
-        return '\uE0A2';
       case NoteType.half:
-        return isUpsideDown ? '\uE0A4' : '\uE0A3';
       case NoteType.quarter:
-        return isUpsideDown ? '\uE0A5' : '\uE0A4';
       case NoteType.eighth:
-        return isUpsideDown ? '\uE0A9' : '\uE0A8';
       case NoteType.sixteenth:
-        return isUpsideDown ? '\uE0AB' : '\uE0AA';
-      default:
-        return note.unicodeCharacter ?? '\uE0A4';
+      case NoteType.thirtySecond:
+      case NoteType.sixtyFourth:
+        final index = note.type.index;
+        if (index < unicodeCharacters.length) {
+          return isUpsideDown
+              ? unicodeCharacters[index].upsideDown
+              : unicodeCharacters[index].normal;
+        }
+        return note.unicodeCharacter;
+      case NoteType.clef:
+        return clefCharacters[note.clefType] ?? note.unicodeCharacter;
+      case NoteType.rest:
+      case NoteType.accidental:
+      case NoteType.bar:
+      case NoteType.timeSignature:
+      case NoteType.keySignature:
+      case NoteType.space:
+        return note.unicodeCharacter;
     }
   }
 
