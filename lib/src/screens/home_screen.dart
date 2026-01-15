@@ -4,6 +4,7 @@ import 'package:music_keyboard/models/sheet.dart';
 import 'package:music_keyboard/models/sheet_properties.dart';
 import 'package:music_keyboard/models/sheet_rows.dart';
 import 'package:music_keyboard/models/sheet_format.dart';
+import 'package:music_keyboard/models/keyboard_type.dart';
 import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/src/database/sheet_database_helper.dart';
 import 'package:music_keyboard/src/widgets/home/sheet_preview_card.dart';
@@ -21,6 +22,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   SheetFormat _selectedFormat = SheetFormat.single;
+  KeyboardType _selectedKeyboardType = KeyboardType.sheet;
   List<Sheet> _savedSheets = [];
   bool _isLoadingSheets = true;
   bool _isSelectionMode = false;
@@ -130,6 +132,51 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
 
                           const SizedBox(height: 48),
+
+                          // Keyboard Type Selection Section
+                          const Text(
+                            'Choose Keyboard Type',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF242038),
+                            ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Keyboard Type Radio Buttons
+                          Column(
+                            children: KeyboardType.values.map((type) {
+                              return RadioListTile<KeyboardType>(
+                                title: Text(
+                                  type.displayName,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF242038),
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  type.description,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                                value: type,
+                                groupValue: _selectedKeyboardType,
+                                onChanged: (KeyboardType? value) {
+                                  setState(() {
+                                    _selectedKeyboardType = value!;
+                                  });
+                                },
+                                activeColor: const Color(0xFF242038),
+                              );
+                            }).toList(),
+                          ),
+
+                          const SizedBox(height: 24),
 
                           // Format Selection Section
                           const Text(
@@ -439,11 +486,12 @@ class _HomeScreenState extends State<HomeScreen> {
       initialRows.add(row);
     }
 
-    // Initialize a new Sheet object with the selected format
+    // Initialize a new Sheet object with the selected format and keyboard type
     final initialSheet = Sheet(
       sheetRows: initialRows,
       sheetProperties: SheetProperties(),
       format: _selectedFormat,
+      keyboardType: _selectedKeyboardType,
     );
 
     // Insert the sheet into the database and get the assigned ID

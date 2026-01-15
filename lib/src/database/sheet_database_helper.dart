@@ -25,7 +25,7 @@ class SheetDatabaseHelper {
     String path = join(await getDatabasesPath(), 'music_sheets.db');
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );

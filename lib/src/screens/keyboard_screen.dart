@@ -8,6 +8,7 @@ import 'package:music_keyboard/models/sheet.dart';
 import 'package:music_keyboard/models/sheet_properties.dart';
 import 'package:music_keyboard/models/sheet_rows.dart';
 import 'package:music_keyboard/models/sheet_format.dart';
+import 'package:music_keyboard/models/keyboard_type.dart';
 import 'package:music_keyboard/models/clipboard_item.dart';
 import 'package:music_keyboard/src/widgets/clipboard_popup.dart';
 import 'package:music_keyboard/src/providers/current_selected_note_provider.dart';
@@ -1315,6 +1316,28 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     );
   }
 
+  /// Build the appropriate keyboard layout based on the sheet's keyboard type
+  Widget _buildKeyboardLayout() {
+    // For now, all keyboard types use the same NotesKeyboardLayout
+    // This will be customized in future tasks
+    switch (sheet.keyboardType) {
+      case KeyboardType.sheet:
+      case KeyboardType.drumTab:
+      case KeyboardType.guitarTab:
+        return NotesKeyboardLayout(
+          sheetNoteRows: sheet.sheetRows,
+          showNotesKeyboard: showNotesKeyboard,
+          sheetFormat: sheet.format,
+          onToggleKeyboard: (isNotes) {
+            setState(() {
+              showNotesKeyboard = isNotes;
+            });
+          },
+          onKeyPress: handleKeyPress,
+        );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
@@ -1908,17 +1931,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                       sheetNoteRows: sheet.sheetRows,
                                     )
                                   else
-                                    NotesKeyboardLayout(
-                                      sheetNoteRows: sheet.sheetRows,
-                                      showNotesKeyboard: showNotesKeyboard,
-                                      sheetFormat: sheet.format,
-                                      onToggleKeyboard: (isNotes) {
-                                        setState(() {
-                                          showNotesKeyboard = isNotes;
-                                        });
-                                      },
-                                      onKeyPress: handleKeyPress,
-                                    ),
+                                    _buildKeyboardLayout(),
                                 ],
                               ),
                               if (!_showDynamicsKeyboard)

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/sheet.dart';
 import 'package:music_keyboard/models/music_note.dart';
+import 'package:music_keyboard/models/keyboard_type.dart';
 import 'package:music_keyboard/src/widgets/home/sheet_preview_painter.dart';
 import 'package:intl/intl.dart';
 
@@ -96,6 +97,15 @@ class SheetPreviewCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 9,
                           color: Colors.grey[600],
+                        ),
+                      ),
+                      const SizedBox(height: 1),
+                      Text(
+                        sheet.keyboardType.displayName,
+                        style: TextStyle(
+                          fontSize: 8,
+                          color: Colors.grey[500],
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],

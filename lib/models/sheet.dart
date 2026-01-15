@@ -1,12 +1,14 @@
 import 'package:music_keyboard/models/sheet_properties.dart';
 import 'package:music_keyboard/models/sheet_rows.dart';
 import 'package:music_keyboard/models/sheet_format.dart';
+import 'package:music_keyboard/models/keyboard_type.dart';
 
 class Sheet {
   int? id; // Database primary key
   List<SheetRows> sheetRows;
   SheetProperties sheetProperties;
   SheetFormat format;
+  KeyboardType keyboardType;
   DateTime createdOn;
   DateTime lastUpdated;
 
@@ -15,6 +17,7 @@ class Sheet {
     required this.sheetRows,
     required this.sheetProperties,
     this.format = SheetFormat.single,
+    this.keyboardType = KeyboardType.sheet,
     DateTime? createdOn,
     DateTime? lastUpdated,
   })  : createdOn = createdOn ?? DateTime.now(),
@@ -25,6 +28,7 @@ class Sheet {
       'sheetRows': sheetRows.map((row) => row.toJson()).toList(),
       'sheetProperties': sheetProperties.toJson(),
       'format': format.toJson(),
+      'keyboardType': keyboardType.toJson(),
       'createdOn': createdOn.toIso8601String(),
       'lastUpdated': lastUpdated.toIso8601String(),
     };
@@ -39,6 +43,8 @@ class Sheet {
           [],
       sheetProperties: SheetProperties.fromJson(json['sheetProperties'] ?? {}),
       format: SheetFormatExtension.fromJson(json['format'] ?? 'single'),
+      keyboardType:
+          KeyboardTypeExtension.fromJson(json['keyboardType'] ?? 'sheet'),
       createdOn:
           DateTime.parse(json['createdOn'] ?? DateTime.now().toIso8601String()),
       lastUpdated: DateTime.parse(
