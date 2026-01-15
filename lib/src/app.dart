@@ -4,6 +4,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'screens/home_screen.dart';
+import 'screens/configure_sheet_screen.dart';
 import 'screens/keyboard_screen.dart';
 import 'screens/settings/settings_controller.dart';
 import 'screens/settings/settings_view.dart';
@@ -96,6 +97,8 @@ class MyApp extends StatelessWidget {
                 switch (routeSettings.name) {
                   case SettingsView.routeName:
                     return SettingsView(controller: settingsController);
+                  case ConfigureSheetScreen.routeName:
+                    return const ConfigureSheetScreen();
                   case KeyboardScreen.routeName:
                     return const KeyboardScreen();
                   case HomeScreen.routeName:

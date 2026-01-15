@@ -1,14 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:music_keyboard/models/row_properties.dart';
 import 'package:music_keyboard/models/sheet.dart';
-import 'package:music_keyboard/models/sheet_properties.dart';
-import 'package:music_keyboard/models/sheet_rows.dart';
-import 'package:music_keyboard/models/sheet_format.dart';
-import 'package:music_keyboard/models/keyboard_type.dart';
-import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/src/database/sheet_database_helper.dart';
 import 'package:music_keyboard/src/widgets/home/sheet_preview_card.dart';
 import 'package:music_keyboard/src/widgets/shared/popup_theme.dart';
+import 'configure_sheet_screen.dart';
 import 'keyboard_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -21,8 +16,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  SheetFormat _selectedFormat = SheetFormat.single;
-  KeyboardType _selectedKeyboardType = KeyboardType.sheet;
   List<Sheet> _savedSheets = [];
   bool _isLoadingSheets = true;
   bool _isSelectionMode = false;
@@ -131,92 +124,15 @@ class _HomeScreenState extends State<HomeScreen> {
                             ],
                           ),
 
-                          const SizedBox(height: 48),
-
-                          // Keyboard Type Selection Section
-                          const Text(
-                            'Choose Keyboard Type',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF242038),
-                            ),
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          // Keyboard Type Radio Buttons
-                          Column(
-                            children: KeyboardType.values.map((type) {
-                              return RadioListTile<KeyboardType>(
-                                title: Text(
-                                  type.displayName,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF242038),
-                                  ),
-                                ),
-                                subtitle: Text(
-                                  type.description,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                                value: type,
-                                groupValue: _selectedKeyboardType,
-                                onChanged: (KeyboardType? value) {
-                                  setState(() {
-                                    _selectedKeyboardType = value!;
-                                  });
-                                },
-                                activeColor: const Color(0xFF242038),
-                              );
-                            }).toList(),
-                          ),
-
-                          const SizedBox(height: 24),
-
-                          // Format Selection Section
-                          const Text(
-                            'Choose Format',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF242038),
-                            ),
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          // Format Selection Cards
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildFormatCard(
-                                  SheetFormat.single,
-                                  Icons.queue_music,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: _buildFormatCard(
-                                  SheetFormat.twoRows,
-                                  Icons.piano,
-                                ),
-                              ),
-                            ],
-                          ),
-
-                          const SizedBox(height: 32),
+                          const SizedBox(height: 80),
 
                           // Start Composing Button
                           SizedBox(
                             width: double.infinity,
                             height: 56,
                             child: ElevatedButton(
-                              onPressed: () => _navigateToKeyboard(context),
+                              onPressed: () =>
+                                  _navigateToConfigureSheet(context),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF242038),
                                 foregroundColor: Colors.white,
@@ -228,6 +144,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               child: const Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
+                                  Icon(Icons.add, size: 24),
+                                  SizedBox(width: 8),
                                   Text(
                                     'Start Composing',
                                     style: TextStyle(
@@ -399,128 +317,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildFormatCard(SheetFormat format, IconData icon) {
-    final bool isSelected = _selectedFormat == format;
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedFormat = format;
-        });
-      },
-      child: Container(
-        height: 100,
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF242038) : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? const Color(0xFF242038) : Colors.grey[300]!,
-            width: 2,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              spreadRadius: 1,
-              blurRadius: 6,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 32,
-              color: isSelected ? Colors.white : const Color(0xFF242038),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              format.displayName,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.white : const Color(0xFF242038),
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              format.description,
-              style: TextStyle(
-                fontSize: 11,
-                color: isSelected
-                    ? Colors.white.withOpacity(0.8)
-                    : Colors.grey[600],
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _navigateToKeyboard(BuildContext context) async {
-    // Create initial rows based on selected format
-    List<SheetRows> initialRows = [];
-
-    for (int i = 0; i < _selectedFormat.rowsPerGroup; i++) {
-      final row = SheetRows(
-        notes: [],
-        rowProperties: RowProperties(tempoNumber: 0),
-      );
-
-      // Add appropriate clef for each row
-      if (i < _selectedFormat.defaultClefs.length) {
-        row.notes.add(MusicalNote(
-          pitch: "G",
-          octave: 4,
-          type: NoteType.clef,
-          isBeamed: false,
-          unicodeCharacter: _selectedFormat.defaultClefs[i],
-          clefType: _selectedFormat.defaultClefs[i],
-        ));
-      }
-
-      initialRows.add(row);
-    }
-
-    // Initialize a new Sheet object with the selected format and keyboard type
-    final initialSheet = Sheet(
-      sheetRows: initialRows,
-      sheetProperties: SheetProperties(),
-      format: _selectedFormat,
-      keyboardType: _selectedKeyboardType,
-    );
-
-    // Insert the sheet into the database and get the assigned ID
-    try {
-      final dbHelper = SheetDatabaseHelper();
-      await dbHelper.insertSheet(initialSheet);
-
-      // Verify the sheet has an ID before proceeding
-      if (initialSheet.id == null) {
-        throw Exception('Sheet was inserted but no ID was assigned');
-      }
-    } catch (e) {
-      print('Error inserting sheet into database: $e');
-      // Show error message to user and don't navigate
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to create new sheet. Please try again.'),
-          duration: Duration(seconds: 3),
-        ),
-      );
-      return;
-    }
-
-    // Navigate to keyboard screen with the initialized Sheet (now with ID)
-    Navigator.pushNamed(
-      context,
-      KeyboardScreen.routeName,
-      arguments: initialSheet,
-    );
+  void _navigateToConfigureSheet(BuildContext context) {
+    Navigator.pushNamed(context, ConfigureSheetScreen.routeName);
   }
 
   void _enterSelectionMode(int sheetId) {
