@@ -63,3 +63,7 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: assets/images/temp-logo.png
+  remove_alpha_ios: true
+  remove_alpha_android: true
+  background_color_ios: "#ffffff"  # white background, change as needed
+  background_color_android: "#ffffff"

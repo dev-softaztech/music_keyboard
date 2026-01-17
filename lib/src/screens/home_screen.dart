@@ -84,47 +84,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Header row with logo and title
-                          Row(
-                            children: [
-                              // App Icon/Logo placeholder
-                              Container(
-                                width: 60,
-                                height: 60,
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(30),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
-                                      spreadRadius: 2,
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: const Icon(
-                                  Icons.music_note,
-                                  size: 30,
-                                  color: Color(0xFF242038),
-                                ),
-                              ),
-
-                              const SizedBox(width: 16),
-
-                              // App Title
-                              const Text(
-                                'Music Keyboard',
-                                style: TextStyle(
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF242038),
-                                ),
-                              ),
-                            ],
+                          // Header with logo banner
+                          Center(
+                            child: Image.asset(
+                              'assets/images/temp-logo-banner.png',
+                              fit: BoxFit.contain,
+                            ),
                           ),
 
-                          const SizedBox(height: 80),
+                          const SizedBox(height: 40),
 
                           // Start Composing Button
                           SizedBox(
@@ -158,7 +126,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
 
-                          const SizedBox(height: 48),
+                          const SizedBox(height: 30),
 
                           // Sheets Section
                           if (_savedSheets.isNotEmpty) ...[

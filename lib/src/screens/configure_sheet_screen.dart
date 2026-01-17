@@ -48,176 +48,209 @@ class _ConfigureSheetScreenState extends State<ConfigureSheetScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Color(0xFF242038)),
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color.fromARGB(255, 255, 253, 253),
-              Color.fromARGB(255, 245, 245, 245),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(32.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Title Text Field
-                      SizedBox(
-                        height: 40,
-                        child: TextField(
-                          controller: _titleController,
-                          style: const TextStyle(fontSize: 12),
-                          decoration: InputDecoration(
-                            labelText: 'Title',
-                            hintText: 'Enter sheet title',
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(6),
-                              borderSide: const BorderSide(
-                                  color: Color(0xFF242038), width: 2),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-
-                      // Composer Text Field
-                      SizedBox(
-                        height: 40,
-                        child: TextField(
-                          controller: _composerController,
-                          style: const TextStyle(fontSize: 12),
-                          decoration: InputDecoration(
-                            labelText: 'Composer',
-                            hintText: 'Enter composer name',
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(6),
-                              borderSide: const BorderSide(
-                                  color: Color(0xFF242038), width: 2),
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 32),
-
-                      // Keyboard Type Selection Section
-                      const Text(
-                        'Choose Keyboard Type',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF242038),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Keyboard Type Cards
-                      Row(
+      body: Stack(
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color.fromARGB(255, 255, 253, 253),
+                  Color.fromARGB(255, 245, 245, 245),
+                ],
+              ),
+            ),
+            child: SafeArea(
+              child: Column(
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(32.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: _buildKeyboardTypeCard(
-                              KeyboardType.sheet,
-                              Icons.music_note,
+                          // Title Text Field
+                          SizedBox(
+                            height: 40,
+                            child: TextField(
+                              controller: _titleController,
+                              style: const TextStyle(fontSize: 12),
+                              decoration: InputDecoration(
+                                labelText: 'Title',
+                                hintText: 'Enter sheet title',
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                  borderSide: const BorderSide(
+                                      color: Color(0xFF242038), width: 2),
+                                ),
+                              ),
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildKeyboardTypeCard(
-                              KeyboardType.drumTab,
-                              Icons.audiotrack,
+                          const SizedBox(height: 8),
+
+                          // Composer Text Field
+                          SizedBox(
+                            height: 40,
+                            child: TextField(
+                              controller: _composerController,
+                              style: const TextStyle(fontSize: 12),
+                              decoration: InputDecoration(
+                                labelText: 'Composer',
+                                hintText: 'Enter composer name',
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                  borderSide: const BorderSide(
+                                      color: Color(0xFF242038), width: 2),
+                                ),
+                              ),
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildKeyboardTypeCard(
-                              KeyboardType.guitarTab,
-                              Icons.piano,
+
+                          const SizedBox(height: 32),
+
+                          // Keyboard Type Selection Section
+                          const Text(
+                            'Choose Keyboard Type',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF242038),
                             ),
                           ),
+                          const SizedBox(height: 16),
+
+                          // Keyboard Type Cards
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildKeyboardTypeCard(
+                                  KeyboardType.sheet,
+                                  Icons.music_note,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildKeyboardTypeCard(
+                                  KeyboardType.drumTab,
+                                  Icons.audiotrack,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildKeyboardTypeCard(
+                                  KeyboardType.guitarTab,
+                                  Icons.piano,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          // Format Selection Section
+                          const Text(
+                            'Choose Sheet Format',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF242038),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Format Selection Cards - All 5 formats
+                          _buildAllFormatCards(),
+
+                          const SizedBox(height: 24),
                         ],
                       ),
-
-                      const SizedBox(height: 24),
-
-                      // Format Selection Section
-                      const Text(
-                        'Choose Sheet Format',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF242038),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Format Selection Cards - All 5 formats
-                      _buildAllFormatCards(),
-
-                      const SizedBox(height: 24),
-                    ],
-                  ),
-                ),
-              ),
-
-              // Create Button (pinned to bottom)
-              Container(
-                padding: const EdgeInsets.all(32.0),
-                decoration: const BoxDecoration(
-                  color: Color.fromARGB(255, 245, 245, 245),
-                ),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: _isCreating ? null : () => _createSheet(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF242038),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      elevation: 4,
                     ),
-                    child: _isCreating
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : const Text(
-                            'Create Sheet',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                            ),
+                  ),
+
+                  // Create Button (pinned to bottom)
+                  Container(
+                    padding: const EdgeInsets.only(
+                        left: 32.0, top: 32.0, right: 32.0, bottom: 42.0),
+                    decoration: const BoxDecoration(
+                      color: Color.fromARGB(255, 245, 245, 245),
+                    ),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed:
+                            _isCreating ? null : () => _createSheet(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF242038),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
                           ),
+                          elevation: 4,
+                        ),
+                        child: _isCreating
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white),
+                                ),
+                              )
+                            : const Text(
+                                'Create Sheet',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // AD BANNER (always visible)
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Container(
+              height: 50,
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                border: Border(
+                  top: BorderSide(
+                    color: Colors.black,
+                    width: 1,
                   ),
                 ),
+                color: Colors.white,
               ),
-            ],
+              alignment: Alignment.center,
+              child: const Text(
+                'AD BANNER',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
