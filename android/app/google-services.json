@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "901229537114",
+    "project_id": "motez-notes",
+    "storage_bucket": "motez-notes.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:901229537114:android:ea333fecb1965f06fef563",
+        "android_client_info": {
+          "package_name": "com.example.music_keyboard"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAM1hA2Pf0_6ofvdiU6yYlKLC2ZBl-0mfg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
