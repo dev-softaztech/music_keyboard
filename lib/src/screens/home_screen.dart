@@ -2,9 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/sheet.dart';
 import 'package:music_keyboard/src/database/sheet_database_helper.dart';
 import 'package:music_keyboard/src/widgets/home/sheet_preview_card.dart';
+import 'package:music_keyboard/src/providers/auth_provider.dart' as app;
+import 'package:music_keyboard/src/services/firestore_service.dart';
+import 'package:music_keyboard/src/services/dynamic_link_service.dart';
 import 'package:music_keyboard/src/widgets/shared/popup_theme.dart';
+import 'package:provider/provider.dart';
 import 'configure_sheet_screen.dart';
 import 'keyboard_screen.dart';
+import 'login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -36,7 +41,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadSavedSheets() async {
     try {
-      final dbHelper = SheetDatabaseHelper();
+      final authProvider =
+          Provider.of<app.AuthProvider>(context, listen: false);
+      final userId = authProvider.user?.uid;
+      final dbHelper = SheetDatabaseHelper(
+        userId: userId,
+        firestoreService: userId != null ? FirestoreService() : null,
+      );
       final sheets = await dbHelper.getAllSheets();
       print('DEBUG: Loaded ${sheets.length} sheets from database');
       for (var sheet in sheets) {
@@ -60,7 +71,32 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<app.AuthProvider>(context);
     return Scaffold(
+      appBar: AppBar(
+        actions: [
+          if (authProvider.user != null)
+            IconButton(
+              icon: const Icon(Icons.logout),
+              onPressed: () {
+                authProvider.signOut();
+              },
+            )
+          else
+            TextButton(
+              onPressed: () {
+                Navigator.pushNamed(context, LoginScreen.routeName);
+              },
+              child: const Text(
+                'Login / Sign Up',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+        ],
+      ),
       body: Stack(
         children: [
           Column(
@@ -170,6 +206,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                               .contains(sheet.id),
                                           onLongPress: () =>
                                               _enterSelectionMode(sheet.id!),
+                                          onShare: () => _shareSheet(sheet),
                                         );
                                       },
                                     ),
@@ -289,6 +326,17 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.pushNamed(context, ConfigureSheetScreen.routeName);
   }
 
+  Future<void> _shareSheet(Sheet sheet) async {
+    try {
+      final dynamicLinkService = DynamicLinkService();
+      final Uri shareLink = await dynamicLinkService.createDynamicLink(sheet);
+      print('Share link: $shareLink');
+      // TODO: Implement actual sharing UI (e.g., Share dialog)
+    } catch (e) {
+      print('Error sharing sheet: $e');
+    }
+  }
+
   void _enterSelectionMode(int sheetId) {
     if (!_isSelectionMode) {
       setState(() {
@@ -378,7 +426,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     if (confirmed == true) {
-      final dbHelper = SheetDatabaseHelper();
+      final authProvider =
+          Provider.of<app.AuthProvider>(context, listen: false);
+      final userId = authProvider.user?.uid;
+      final dbHelper = SheetDatabaseHelper(
+        userId: userId,
+        firestoreService: userId != null ? FirestoreService() : null,
+      );
       for (final sheetId in _selectedSheets) {
         await dbHelper.deleteSheet(sheetId);
       }

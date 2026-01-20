@@ -3,9 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
-import 'screens/home_screen.dart';
+import 'package:music_keyboard/src/wrapper.dart';
 import 'screens/configure_sheet_screen.dart';
 import 'screens/keyboard_screen.dart';
+import 'screens/login_screen.dart';
 import 'screens/settings/settings_controller.dart';
 import 'screens/settings/settings_view.dart';
 
@@ -101,13 +102,15 @@ class MyApp extends StatelessWidget {
                     return const ConfigureSheetScreen();
                   case KeyboardScreen.routeName:
                     return const KeyboardScreen();
-                  case HomeScreen.routeName:
+                  case LoginScreen.routeName:
+                    return const LoginScreen();
                   default:
-                    return const HomeScreen();
+                    return const Wrapper();
                 }
               },
             );
           },
+          home: const Wrapper(),
         );
       },
     );

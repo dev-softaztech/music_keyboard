@@ -5,6 +5,7 @@ import 'package:music_keyboard/models/keyboard_type.dart';
 
 class Sheet {
   int? id; // Database primary key
+  String? userId;
   List<SheetRows> sheetRows;
   SheetProperties sheetProperties;
   SheetFormat format;
@@ -14,6 +15,7 @@ class Sheet {
 
   Sheet({
     this.id,
+    this.userId,
     required this.sheetRows,
     required this.sheetProperties,
     this.format = SheetFormat.single,
@@ -25,6 +27,8 @@ class Sheet {
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
+      'userId': userId,
       'sheetRows': sheetRows.map((row) => row.toJson()).toList(),
       'sheetProperties': sheetProperties.toJson(),
       'format': format.toJson(),
@@ -37,6 +41,7 @@ class Sheet {
   factory Sheet.fromJson(Map<String, dynamic> json) {
     return Sheet(
       id: json['id'],
+      userId: json['userId'],
       sheetRows: (json['sheetRows'] as List<dynamic>?)
               ?.map((rowJson) => SheetRows.fromJson(rowJson))
               .toList() ??

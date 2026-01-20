@@ -4,16 +4,29 @@ import 'package:path/path.dart';
 import 'package:music_keyboard/models/sheet.dart';
 import 'package:music_keyboard/models/clipboard_item.dart';
 import 'package:music_keyboard/models/sheet_rows.dart';
+import 'package:music_keyboard/src/services/firestore_service.dart';
 
 class SheetDatabaseHelper {
   static final SheetDatabaseHelper _instance = SheetDatabaseHelper._internal();
   static Database? _database;
+  final FirestoreService? _firestoreService;
+  final String? _userId;
 
-  factory SheetDatabaseHelper() {
+  factory SheetDatabaseHelper(
+      {String? userId, FirestoreService? firestoreService}) {
+    if (userId != null && firestoreService != null) {
+      return SheetDatabaseHelper._internal(
+        userId: userId,
+        firestoreService: firestoreService,
+      );
+    }
     return _instance;
   }
 
-  SheetDatabaseHelper._internal();
+  SheetDatabaseHelper._internal(
+      {String? userId, FirestoreService? firestoreService})
+      : _userId = userId,
+        _firestoreService = firestoreService;
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -81,6 +94,11 @@ class SheetDatabaseHelper {
 
     final id = await db.insert('sheets', row);
     sheet.id = id;
+
+    if (_userId != null && _firestoreService != null) {
+      await _firestoreService!.addSheet(sheet, _userId!);
+    }
+
     return id;
   }
 
@@ -94,12 +112,18 @@ class SheetDatabaseHelper {
       'last_updated': sheet.lastUpdated.toIso8601String(),
     };
 
-    return await db.update(
+    final result = await db.update(
       'sheets',
       row,
       where: 'id = ?',
       whereArgs: [sheet.id],
     );
+
+    if (_userId != null && _firestoreService != null) {
+      await _firestoreService!.updateSheet(sheet, _userId!);
+    }
+
+    return result;
   }
 
   /// Get a sheet by its ID
@@ -138,11 +162,17 @@ class SheetDatabaseHelper {
   /// Delete a sheet by its ID
   Future<int> deleteSheet(int id) async {
     final db = await database;
-    return await db.delete(
+    final result = await db.delete(
       'sheets',
       where: 'id = ?',
       whereArgs: [id],
     );
+
+    if (_userId != null && _firestoreService != null) {
+      await _firestoreService!.deleteSheet(id, _userId!);
+    }
+
+    return result;
   }
 
   /// Insert a new clipboard item into the database

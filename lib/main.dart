@@ -9,6 +9,9 @@ import 'package:music_keyboard/src/providers/selected_accidental_provider.dart';
 import 'package:music_keyboard/src/providers/selected_number_provider.dart';
 import 'package:music_keyboard/src/providers/selected_unicode_provider.dart';
 import 'package:music_keyboard/src/providers/undo_manager.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:music_keyboard/firebase_options.dart';
+import 'package:music_keyboard/src/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 
 import 'src/app.dart';
@@ -18,6 +21,10 @@ import 'src/screens/settings/settings_service.dart';
 void main() async {
   // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   // Set preferred orientations to portrait only
   await SystemChrome.setPreferredOrientations([
@@ -45,6 +52,7 @@ void main() async {
   // SettingsView.
   runApp(
     MultiProvider(providers: [
+      ChangeNotifierProvider(create: (_) => AuthProvider()),
       ChangeNotifierProvider(create: (_) => SelectedNumberProvider()),
       ChangeNotifierProvider(create: (_) => SelectedUnicodeProvider()),
       ChangeNotifierProvider(create: (_) => SelectedAccidentalProvider()),

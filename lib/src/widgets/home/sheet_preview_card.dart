@@ -11,6 +11,7 @@ class SheetPreviewCard extends StatelessWidget {
   final bool isSelectionMode;
   final bool isSelected;
   final VoidCallback? onLongPress;
+  final VoidCallback? onShare;
 
   const SheetPreviewCard({
     super.key,
@@ -19,6 +20,7 @@ class SheetPreviewCard extends StatelessWidget {
     this.isSelectionMode = false,
     this.isSelected = false,
     this.onLongPress,
+    this.onShare,
   });
 
   @override
@@ -136,6 +138,15 @@ class SheetPreviewCard extends StatelessWidget {
                         color: Colors.white,
                       )
                     : null,
+              ),
+            ),
+          if (!isSelectionMode)
+            Positioned(
+              top: 8,
+              right: 8,
+              child: IconButton(
+                icon: const Icon(Icons.share),
+                onPressed: onShare,
               ),
             ),
         ],
