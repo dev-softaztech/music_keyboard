@@ -3,6 +3,8 @@ import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/sheet.dart';
 import 'package:music_keyboard/src/screens/keyboard_screen.dart';
+import 'package:music_keyboard/src/database/sheet_database_helper.dart';
+import 'package:music_keyboard/src/utils/toast_utils.dart';
 
 class DynamicLinkService {
   static final DynamicLinkService _instance = DynamicLinkService._internal();
@@ -12,8 +14,6 @@ class DynamicLinkService {
   final AppLinks _appLinks = AppLinks();
   StreamSubscription<Uri>? _linkSubscription;
 
-  // TODO: Replace this with your actual Firebase Hosting domain
-  // For example: 'https://music-keyboard-app.web.app' or 'https://yourdomain.com'
   static const String _baseUrl = 'https://motez-notes.web.app/';
 
   /// Creates a deep link URL for sharing a sheet
@@ -39,8 +39,8 @@ class DynamicLinkService {
 
     // Listen for deep links while the app is running
     _linkSubscription = _appLinks.uriLinkStream.listen(
-      (Uri uri) {
-        _handleDeepLink(context, uri);
+      (Uri uri) async {
+        await _handleDeepLink(context, uri);
       },
       onError: (error) {
         debugPrint('Error listening to deep links: $error');
@@ -49,7 +49,7 @@ class DynamicLinkService {
   }
 
   /// Handle incoming deep links
-  void _handleDeepLink(BuildContext context, Uri uri) {
+  Future<void> _handleDeepLink(BuildContext context, Uri uri) async {
     debugPrint('Received deep link: $uri');
 
     // Extract the sheet ID from the query parameters
@@ -58,14 +58,35 @@ class DynamicLinkService {
     if (sheetId != null) {
       try {
         final int sheetIdInt = int.parse(sheetId);
-        // Navigate to the keyboard screen with the sheet ID
-        Navigator.pushNamed(
-          context,
-          KeyboardScreen.routeName,
-          arguments: sheetIdInt,
-        );
+
+        // Load the sheet from the database
+        final SheetDatabaseHelper dbHelper = SheetDatabaseHelper();
+        final Sheet? sheet = await dbHelper.getSheet(sheetIdInt);
+
+        // Ensure navigation happens after the current frame to avoid context issues
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!context.mounted) return;
+
+          if (sheet != null) {
+            // Navigate to the keyboard screen with the loaded sheet
+            Navigator.pushNamed(
+              context,
+              KeyboardScreen.routeName,
+              arguments: sheet,
+            );
+          } else {
+            debugPrint('Sheet with ID $sheetIdInt not found');
+            // Show error message to user and navigate to home screen
+            ToastUtils.showToast('Sheet not available', isError: true);
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/',
+              (route) => false,
+            );
+          }
+        });
       } catch (e) {
-        debugPrint('Error parsing sheet ID: $e');
+        debugPrint('Error parsing sheet ID or loading sheet: $e');
       }
     } else {
       debugPrint('No sheet ID found in deep link');
