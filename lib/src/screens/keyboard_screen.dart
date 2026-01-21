@@ -31,8 +31,10 @@ import 'package:music_keyboard/src/providers/undo_manager.dart';
 import 'package:music_keyboard/src/widgets/shared/popup_theme.dart';
 import 'package:music_keyboard/src/widgets/shared/pdf_export_loading_overlay.dart';
 import 'package:music_keyboard/src/utils/haptic_feedback_utils.dart';
+import 'package:music_keyboard/src/services/dynamic_link_service.dart';
 import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
+import 'package:share_plus/share_plus.dart';
 
 class KeyboardScreen extends StatelessWidget {
   const KeyboardScreen({super.key, this.initialSheet});
@@ -1129,6 +1131,20 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     }
   }
 
+  // Share the current sheet
+  Future<void> _shareSheet() async {
+    try {
+      final dynamicLinkService = DynamicLinkService();
+      final Uri shareLink = await dynamicLinkService.createDynamicLink(sheet);
+      final shareText =
+          "Check out this sheet written on Mote'z Notes $shareLink";
+      await Share.share(shareText);
+    } catch (e) {
+      print('Error sharing sheet: $e');
+      ToastUtils.showToast("Failed to share sheet!", isError: true);
+    }
+  }
+
   // Save the current screenshot to the gallery and show a toast
   Future<void> handleSavePress() async {
     try {
@@ -1773,6 +1789,40 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                           ),
                           child: const Icon(
                             Icons.menu,
+                            color: Color.fromARGB(255, 0, 0, 0),
+                            size: 24,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Floating Share Button - Below menu button
+                    Positioned(
+                      top: 55,
+                      left: 5,
+                      child: GestureDetector(
+                        onTap: _shareSheet,
+                        child: Container(
+                          width: 35,
+                          height: 35,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(25),
+                            border: Border.all(
+                              color: Colors.black,
+                              width: 1,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.3),
+                                spreadRadius: 2,
+                                blurRadius: 5,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.share,
                             color: Color.fromARGB(255, 0, 0, 0),
                             size: 24,
                           ),

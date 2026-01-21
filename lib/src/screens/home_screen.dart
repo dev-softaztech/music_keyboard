@@ -207,7 +207,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                               .contains(sheet.id),
                                           onLongPress: () =>
                                               _enterSelectionMode(sheet.id!),
-                                          onShare: () => _shareSheet(sheet),
                                         );
                                       },
                                     ),
