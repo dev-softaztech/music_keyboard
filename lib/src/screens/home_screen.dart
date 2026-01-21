@@ -5,6 +5,7 @@ import 'package:music_keyboard/src/widgets/home/sheet_preview_card.dart';
 import 'package:music_keyboard/src/providers/auth_provider.dart' as app;
 import 'package:music_keyboard/src/services/firestore_service.dart';
 import 'package:music_keyboard/src/services/dynamic_link_service.dart';
+import 'package:music_keyboard/src/services/sync_service.dart';
 import 'package:music_keyboard/src/widgets/shared/popup_theme.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -45,6 +46,13 @@ class _HomeScreenState extends State<HomeScreen> {
       final authProvider =
           Provider.of<app.AuthProvider>(context, listen: false);
       final userId = authProvider.user?.uid;
+
+      // If user is logged in, sync sheets from Firebase first
+      if (userId != null) {
+        final syncService = SyncService();
+        await syncService.syncSheets(userId);
+      }
+
       final dbHelper = SheetDatabaseHelper(
         userId: userId,
         firestoreService: userId != null ? FirestoreService() : null,
@@ -478,11 +486,47 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _openSheet(BuildContext context, Sheet sheet) async {
+    final authProvider = Provider.of<app.AuthProvider>(context, listen: false);
+    final userId = authProvider.user?.uid;
+
+    Sheet sheetToOpen = sheet;
+
+    // If user is logged in, check for latest version from Firebase
+    if (userId != null) {
+      try {
+        final firestoreService = FirestoreService();
+        final firebaseSheet =
+            await firestoreService.getSheet(sheet.id!, userId);
+
+        if (firebaseSheet != null) {
+          // Compare lastUpdated timestamps
+          if (firebaseSheet.lastUpdated.isAfter(sheet.lastUpdated)) {
+            // Firebase version is newer, update local
+            final dbHelper = SheetDatabaseHelper(
+              userId: userId,
+              firestoreService: firestoreService,
+            );
+            await dbHelper.updateSheet(firebaseSheet);
+            sheetToOpen = firebaseSheet;
+            print('Updated local sheet with newer Firebase version');
+          } else if (sheet.lastUpdated.isAfter(firebaseSheet.lastUpdated)) {
+            // Local version is newer, update Firebase
+            await firestoreService.updateSheet(sheet, userId);
+            print('Updated Firebase with newer local version');
+          }
+          // If timestamps are equal, no sync needed
+        }
+      } catch (e) {
+        print('Error syncing sheet on open: $e');
+        // Continue with local version if sync fails
+      }
+    }
+
     // Navigate to keyboard screen with the selected sheet
     await Navigator.pushNamed(
       context,
       KeyboardScreen.routeName,
-      arguments: sheet,
+      arguments: sheetToOpen,
     );
 
     // Reload sheets when returning from keyboard screen

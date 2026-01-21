@@ -7,6 +7,9 @@ import 'package:music_keyboard/models/sheet_format.dart';
 import 'package:music_keyboard/models/keyboard_type.dart';
 import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/src/database/sheet_database_helper.dart';
+import 'package:music_keyboard/src/services/firestore_service.dart';
+import 'package:music_keyboard/src/providers/auth_provider.dart' as app;
+import 'package:provider/provider.dart';
 import 'keyboard_screen.dart';
 
 class ConfigureSheetScreen extends StatefulWidget {
@@ -477,7 +480,13 @@ class _ConfigureSheetScreenState extends State<ConfigureSheetScreen> {
       );
 
       // Insert the sheet into the database and get the assigned ID
-      final dbHelper = SheetDatabaseHelper();
+      final authProvider =
+          Provider.of<app.AuthProvider>(context, listen: false);
+      final userId = authProvider.user?.uid;
+      final dbHelper = SheetDatabaseHelper(
+        userId: userId,
+        firestoreService: userId != null ? FirestoreService() : null,
+      );
       await dbHelper.insertSheet(initialSheet);
 
       // Verify the sheet has an ID before proceeding

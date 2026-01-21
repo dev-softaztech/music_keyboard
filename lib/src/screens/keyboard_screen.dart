@@ -32,6 +32,8 @@ import 'package:music_keyboard/src/widgets/shared/popup_theme.dart';
 import 'package:music_keyboard/src/widgets/shared/pdf_export_loading_overlay.dart';
 import 'package:music_keyboard/src/utils/haptic_feedback_utils.dart';
 import 'package:music_keyboard/src/services/dynamic_link_service.dart';
+import 'package:music_keyboard/src/services/firestore_service.dart';
+import 'package:music_keyboard/src/providers/auth_provider.dart' as app;
 import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
@@ -102,7 +104,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   bool _pdfShowTitleAndComposer = true;
 
   // Database helper for clipboard operations
-  final SheetDatabaseHelper _dbHelper = SheetDatabaseHelper();
+  late SheetDatabaseHelper _dbHelper;
 
   // Auto-save functionality
   bool _hasUnsavedChanges = false;
@@ -358,6 +360,18 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         Sheet(sheetRows: [
           SheetRows(notes: [], rowProperties: RowProperties(tempoNumber: 0))
         ], sheetProperties: SheetProperties());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Initialize dbHelper with auth info
+    final authProvider = Provider.of<app.AuthProvider>(context, listen: false);
+    final userId = authProvider.user?.uid;
+    _dbHelper = SheetDatabaseHelper(
+      userId: userId,
+      firestoreService: userId != null ? FirestoreService() : null,
+    );
 
     // Set the rowSpacing value from SheetProperties to RowSpacingProvider after the first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {

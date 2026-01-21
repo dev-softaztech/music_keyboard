@@ -7,24 +7,11 @@ import 'package:music_keyboard/models/sheet_rows.dart';
 import 'package:music_keyboard/src/services/firestore_service.dart';
 
 class SheetDatabaseHelper {
-  static final SheetDatabaseHelper _instance = SheetDatabaseHelper._internal();
   static Database? _database;
   final FirestoreService? _firestoreService;
   final String? _userId;
 
-  factory SheetDatabaseHelper(
-      {String? userId, FirestoreService? firestoreService}) {
-    if (userId != null && firestoreService != null) {
-      return SheetDatabaseHelper._internal(
-        userId: userId,
-        firestoreService: firestoreService,
-      );
-    }
-    return _instance;
-  }
-
-  SheetDatabaseHelper._internal(
-      {String? userId, FirestoreService? firestoreService})
+  SheetDatabaseHelper({String? userId, FirestoreService? firestoreService})
       : _userId = userId,
         _firestoreService = firestoreService;
 

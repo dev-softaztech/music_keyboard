@@ -31,6 +31,25 @@ class FirestoreService {
         .delete();
   }
 
+  Future<Sheet?> getSheet(int sheetId, String userId) async {
+    try {
+      final doc = await _db
+          .collection('users')
+          .doc(userId)
+          .collection('sheets')
+          .doc(sheetId.toString())
+          .get();
+
+      if (doc.exists) {
+        return Sheet.fromJson(doc.data()!);
+      }
+      return null;
+    } catch (e) {
+      print('Error getting sheet from Firebase: $e');
+      return null;
+    }
+  }
+
   Stream<List<Sheet>> getSheets(String userId) {
     return _db
         .collection('users')
