@@ -74,30 +74,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<app.AuthProvider>(context);
     return Scaffold(
-      appBar: AppBar(
-        actions: [
-          if (authProvider.user != null)
-            IconButton(
-              icon: const Icon(Icons.logout),
-              onPressed: () {
-                authProvider.signOut();
-              },
-            )
-          else
-            TextButton(
-              onPressed: () {
-                Navigator.pushNamed(context, LoginScreen.routeName);
-              },
-              child: const Text(
-                'Login / Sign Up',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-        ],
-      ),
       body: Stack(
         children: [
           Column(
@@ -233,6 +209,47 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
+          // Sign in/sign up button (when not signed in and not in selection mode)
+          if (authProvider.user == null && !_isSelectionMode)
+            Positioned(
+              bottom: 60, // Above the AD BANNER
+              left: 16,
+              right: 16,
+              child: Center(
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pushNamed(context, LoginScreen.routeName);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF242038),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 4,
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.login, size: 24),
+                        SizedBox(width: 8),
+                        Text(
+                          'Sign In / Sign Up',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
           // Floating selection buttons
           if (_isSelectionMode)
             Positioned(
@@ -289,6 +306,23 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ],
+              ),
+            ),
+
+          // Logout button (when signed in and not in selection mode)
+          if (authProvider.user != null && !_isSelectionMode)
+            Positioned(
+              bottom:
+                  70, // Above the AD BANNER, slightly higher than sign in button
+              right: 16,
+              child: FloatingActionButton(
+                onPressed: () {
+                  authProvider.signOut();
+                },
+                backgroundColor: const Color(0xFF242038),
+                foregroundColor: Colors.white,
+                elevation: 4,
+                child: const Icon(Icons.logout),
               ),
             ),
           // AD BANNER (always visible)

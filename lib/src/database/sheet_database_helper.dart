@@ -140,6 +140,8 @@ class SheetDatabaseHelper {
     final sheetData = jsonDecode(maps[0]['sheet_data']);
     final sheet = Sheet.fromJson(sheetData);
     sheet.id = maps[0]['id']; // Set the ID from the database
+    sheet.createdOn = DateTime.parse(maps[0]['created_on']);
+    sheet.lastUpdated = DateTime.parse(maps[0]['last_updated']);
     return sheet;
   }
 
@@ -155,6 +157,8 @@ class SheetDatabaseHelper {
       final sheetData = jsonDecode(maps[i]['sheet_data']);
       final sheet = Sheet.fromJson(sheetData);
       sheet.id = maps[i]['id']; // Set the ID from the database
+      sheet.createdOn = DateTime.parse(maps[i]['created_on']);
+      sheet.lastUpdated = DateTime.parse(maps[i]['last_updated']);
       return sheet;
     });
   }
