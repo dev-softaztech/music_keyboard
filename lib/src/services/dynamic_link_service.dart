@@ -14,6 +14,9 @@ class DynamicLinkService {
   final AppLinks _appLinks = AppLinks();
   StreamSubscription<Uri>? _linkSubscription;
 
+  // Flag to prevent multiple automatic navigations from deep links
+  bool _hasHandledInitialLink = false;
+
   static const String _baseUrl = 'https://motez-notes.web.app/';
 
   /// Creates a deep link URL for sharing a sheet
@@ -67,7 +70,17 @@ class DynamicLinkService {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!context.mounted) return;
 
+          // Prevent automatic navigation if we've already handled an initial link
+          if (_hasHandledInitialLink) {
+            debugPrint(
+                'Skipping automatic deep link navigation - already handled initial link');
+            return;
+          }
+
           if (sheet != null) {
+            // Mark that we've handled an initial link to prevent further automatic navigation
+            _hasHandledInitialLink = true;
+
             // Navigate to the keyboard screen with the loaded sheet
             Navigator.pushNamed(
               context,
