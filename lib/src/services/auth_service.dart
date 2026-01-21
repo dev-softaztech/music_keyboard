@@ -17,11 +17,17 @@ class AuthService {
   }
 
   Future<User?> signUpWithEmailAndPassword(
-      String email, String password) async {
+      String email, String password, String name) async {
     try {
       UserCredential result = await _firebaseAuth
           .createUserWithEmailAndPassword(email: email, password: password);
-      return result.user;
+
+      // Update the user's display name
+      await result.user?.updateProfile(displayName: name);
+      // Reload the user to get updated profile
+      await result.user?.reload();
+
+      return _firebaseAuth.currentUser;
     } catch (e) {
       throw e;
     }

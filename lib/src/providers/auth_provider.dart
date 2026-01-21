@@ -27,8 +27,9 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<void> signUp(String email, String password) async {
-    _user = await _authService.signUpWithEmailAndPassword(email, password);
+  Future<void> signUp(String email, String password, String name) async {
+    _user =
+        await _authService.signUpWithEmailAndPassword(email, password, name);
     if (_user != null) {
       await _syncService.uploadLocalSheetsOnLogin(_user!.uid);
       notifyListeners();
