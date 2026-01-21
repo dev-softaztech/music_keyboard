@@ -21,16 +21,20 @@ class AuthProvider with ChangeNotifier {
     _user = await _authService.signInWithEmailAndPassword(email, password);
     if (_user != null) {
       await _syncService.syncSheets(_user!.uid);
+      notifyListeners();
+    } else {
+      throw Exception('Invalid email or password');
     }
-    notifyListeners();
   }
 
   Future<void> signUp(String email, String password) async {
     _user = await _authService.signUpWithEmailAndPassword(email, password);
     if (_user != null) {
       await _syncService.uploadLocalSheetsOnLogin(_user!.uid);
+      notifyListeners();
+    } else {
+      throw Exception('Sign up failed. Email may already be in use.');
     }
-    notifyListeners();
   }
 
   Future<void> signOut() async {
