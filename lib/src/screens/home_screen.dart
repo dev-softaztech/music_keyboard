@@ -7,6 +7,7 @@ import 'package:music_keyboard/src/services/firestore_service.dart';
 import 'package:music_keyboard/src/services/dynamic_link_service.dart';
 import 'package:music_keyboard/src/widgets/shared/popup_theme.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'configure_sheet_screen.dart';
 import 'keyboard_screen.dart';
 import 'login_screen.dart';
@@ -330,8 +331,9 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final dynamicLinkService = DynamicLinkService();
       final Uri shareLink = await dynamicLinkService.createDynamicLink(sheet);
-      print('Share link: $shareLink');
-      // TODO: Implement actual sharing UI (e.g., Share dialog)
+      final shareText =
+          "Check out this sheet written on Mote'z Notes $shareLink";
+      await Share.share(shareText);
     } catch (e) {
       print('Error sharing sheet: $e');
     }
