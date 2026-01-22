@@ -28,6 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isSelectionMode = false;
   Set<String> _selectedSheets = {};
   bool _isSyncing = false; // Guard to prevent concurrent syncs
+  String? _syncErrorMessage; // Track sync error messages
 
   @override
   void initState() {
@@ -99,6 +100,63 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     } finally {
       // Always reset the sync flag
+      _isSyncing = false;
+    }
+  }
+
+  /// Handle pull-to-refresh action
+  Future<void> _handleRefresh() async {
+    // Clear any previous error messages
+    setState(() {
+      _syncErrorMessage = null;
+    });
+
+    final authProvider = Provider.of<app.AuthProvider>(context, listen: false);
+    final userId = authProvider.user?.uid;
+
+    // Only sync if user is logged in
+    if (userId == null) {
+      setState(() {
+        _syncErrorMessage = 'Unable to sync';
+      });
+      return;
+    }
+
+    // Prevent concurrent sync operations
+    if (_isSyncing) {
+      print('HomeScreen: Sync already in progress, skipping...');
+      return;
+    }
+
+    try {
+      _isSyncing = true;
+      print('HomeScreen: Manual refresh triggered, starting sync...');
+
+      final syncService = SyncService();
+      await syncService.syncSheets(userId);
+
+      final dbHelper = SheetDatabaseHelper(
+        userId: userId,
+        firestoreService: FirestoreService(),
+      );
+      final sheets = await dbHelper.getAllSheets();
+      print(
+          'HomeScreen: Manual refresh completed with ${sheets.length} sheets');
+
+      if (mounted) {
+        setState(() {
+          _savedSheets = sheets;
+          _syncErrorMessage = null; // Clear error on success
+        });
+      }
+    } catch (e) {
+      print('HomeScreen: Error during manual refresh: $e');
+      if (mounted) {
+        setState(() {
+          _syncErrorMessage = 'Unable to sync';
+        });
+      }
+    } finally {
       _isSyncing = false;
     }
   }
@@ -176,48 +234,67 @@ class _HomeScreenState extends State<HomeScreen> {
 
                           // Sheets Section
                           if (_savedSheets.isNotEmpty) ...[
-                            const Text(
-                              'Sheets',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF242038),
-                              ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'Sheets',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF242038),
+                                  ),
+                                ),
+                                if (_syncErrorMessage != null)
+                                  Text(
+                                    _syncErrorMessage!,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.red[700],
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                              ],
                             ),
                             const SizedBox(height: 16),
                             Expanded(
                               child: _isLoadingSheets
                                   ? const Center(
                                       child: CircularProgressIndicator())
-                                  : GridView.builder(
-                                      gridDelegate:
-                                          const SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: 3,
-                                        crossAxisSpacing: 12,
-                                        mainAxisSpacing: 12,
-                                        childAspectRatio: 0.8,
+                                  : RefreshIndicator(
+                                      onRefresh: _handleRefresh,
+                                      color: const Color(0xFF242038),
+                                      backgroundColor: Colors.white,
+                                      child: GridView.builder(
+                                        gridDelegate:
+                                            const SliverGridDelegateWithFixedCrossAxisCount(
+                                          crossAxisCount: 3,
+                                          crossAxisSpacing: 12,
+                                          mainAxisSpacing: 12,
+                                          childAspectRatio: 0.8,
+                                        ),
+                                        itemCount: _savedSheets.length,
+                                        itemBuilder: (context, index) {
+                                          final sheet = _savedSheets[index];
+                                          // Skip sheets without IDs (shouldn't happen with the fix, but defensive)
+                                          if (sheet.id == null) {
+                                            return const SizedBox.shrink();
+                                          }
+                                          return SheetPreviewCard(
+                                            sheet: sheet,
+                                            onTap: _isSelectionMode
+                                                ? () => _toggleSheetSelection(
+                                                    sheet.id!)
+                                                : () =>
+                                                    _openSheet(context, sheet),
+                                            isSelectionMode: _isSelectionMode,
+                                            isSelected: _selectedSheets
+                                                .contains(sheet.id),
+                                            onLongPress: () =>
+                                                _enterSelectionMode(sheet.id!),
+                                          );
+                                        },
                                       ),
-                                      itemCount: _savedSheets.length,
-                                      itemBuilder: (context, index) {
-                                        final sheet = _savedSheets[index];
-                                        // Skip sheets without IDs (shouldn't happen with the fix, but defensive)
-                                        if (sheet.id == null) {
-                                          return const SizedBox.shrink();
-                                        }
-                                        return SheetPreviewCard(
-                                          sheet: sheet,
-                                          onTap: _isSelectionMode
-                                              ? () => _toggleSheetSelection(
-                                                  sheet.id!)
-                                              : () =>
-                                                  _openSheet(context, sheet),
-                                          isSelectionMode: _isSelectionMode,
-                                          isSelected: _selectedSheets
-                                              .contains(sheet.id),
-                                          onLongPress: () =>
-                                              _enterSelectionMode(sheet.id!),
-                                        );
-                                      },
                                     ),
                             ),
                           ] else if (!_isLoadingSheets) ...[
