@@ -138,6 +138,54 @@ class SheetDatabaseHelper {
     return sheet.id!;
   }
 
+  /// Upsert a sheet (insert if new, update if exists)
+  /// This is specifically for sync operations where we might receive
+  /// a sheet that already exists locally
+  Future<String> upsertSheet(Sheet sheet) async {
+    if (sheet.id == null || sheet.id!.isEmpty) {
+      // No ID means it's a new sheet, use insert
+      return await insertSheet(sheet);
+    }
+
+    // Check if sheet exists
+    final existingSheet = await getSheet(sheet.id!);
+
+    if (existingSheet == null) {
+      // Sheet doesn't exist, insert it (preserving its timestamps from remote)
+      final db = await database;
+      final Map<String, dynamic> row = {
+        'id': sheet.id,
+        'sheet_data': jsonEncode(sheet.toJson()),
+        'created_on': sheet.createdOn.toIso8601String(),
+        'last_updated': sheet.lastUpdated.toIso8601String(),
+      };
+
+      await db.insert('sheets', row);
+      print('SheetDatabaseHelper: Inserted new sheet ${sheet.id}');
+
+      // Note: Don't sync to Firestore here - this is called during sync FROM Firestore
+      return sheet.id!;
+    } else {
+      // Sheet exists, update it
+      final db = await database;
+      final Map<String, dynamic> row = {
+        'sheet_data': jsonEncode(sheet.toJson()),
+        'last_updated': sheet.lastUpdated.toIso8601String(),
+      };
+
+      await db.update(
+        'sheets',
+        row,
+        where: 'id = ?',
+        whereArgs: [sheet.id],
+      );
+      print('SheetDatabaseHelper: Updated existing sheet ${sheet.id}');
+
+      // Note: Don't sync to Firestore here - this is called during sync FROM Firestore
+      return sheet.id!;
+    }
+  }
+
   /// Update an existing sheet in the database
   Future<int> updateSheet(Sheet sheet) async {
     final db = await database;

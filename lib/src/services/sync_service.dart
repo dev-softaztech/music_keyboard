@@ -3,14 +3,36 @@ import 'package:music_keyboard/src/database/sheet_database_helper.dart';
 import 'package:music_keyboard/src/services/firestore_service.dart';
 
 class SyncService {
-  final SheetDatabaseHelper _dbHelper = SheetDatabaseHelper();
   final FirestoreService _firestoreService = FirestoreService();
 
   Future<void> syncSheets(String userId) async {
+    print('=== Starting sync for user: $userId ===');
+
+    // Create database helper with userId context
+    final _dbHelper = SheetDatabaseHelper(
+      userId: userId,
+      firestoreService: _firestoreService,
+    );
+
     // Get local sheets, remote sheets, and deleted sheet IDs
     final localSheets = await _dbHelper.getAllSheets();
-    final remoteSheets = await _firestoreService.getSheets(userId).first;
+    print('Local sheets: ${localSheets.length}');
+    if (localSheets.isNotEmpty) {
+      print('Local sheet IDs: ${localSheets.map((s) => s.id).toList()}');
+    }
+
+    // Use getSheetsOnce for reliable server fetch
+    final remoteSheets = await _firestoreService.getSheetsOnce(userId);
+    print('Remote sheets: ${remoteSheets.length}');
+    if (remoteSheets.isNotEmpty) {
+      print('Remote sheet IDs: ${remoteSheets.map((s) => s.id).toList()}');
+    }
+
     final deletedIds = await _firestoreService.getDeletedSheetIds(userId);
+    print('Deleted sheet IDs: ${deletedIds.length}');
+    if (deletedIds.isNotEmpty) {
+      print('Deleted IDs: $deletedIds');
+    }
 
     print(
         'Syncing: ${localSheets.length} local, ${remoteSheets.length} remote, ${deletedIds.length} deleted');
@@ -76,13 +98,16 @@ class SyncService {
       );
 
       if (localSheet.id == null) {
-        // New remote sheet, add locally
-        print('Adding new remote sheet: ${remoteSheet.id}');
-        await _dbHelper.insertSheet(remoteSheet);
+        // New remote sheet, use upsert to safely add it
+        print('SyncService: Adding new remote sheet: ${remoteSheet.id}');
+        await _dbHelper.upsertSheet(remoteSheet);
       } else if (remoteSheet.lastUpdated.isAfter(localSheet.lastUpdated)) {
         // Remote is newer, update local
-        print('Updating local sheet (remote newer): ${remoteSheet.id}');
+        print(
+            'SyncService: Updating local sheet (remote newer): ${remoteSheet.id}');
         await _dbHelper.updateSheet(remoteSheet);
+      } else {
+        print('SyncService: Sheet ${remoteSheet.id} is up to date');
       }
     }
 
@@ -93,6 +118,10 @@ class SyncService {
   }
 
   Future<void> uploadLocalSheetsOnLogin(String userId) async {
+    final _dbHelper = SheetDatabaseHelper(
+      userId: userId,
+      firestoreService: _firestoreService,
+    );
     final localSheets = await _dbHelper.getAllSheets();
     for (final sheet in localSheets) {
       sheet.userId = userId;

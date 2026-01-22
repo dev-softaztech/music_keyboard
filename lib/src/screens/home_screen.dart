@@ -27,6 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoadingSheets = true;
   bool _isSelectionMode = false;
   Set<String> _selectedSheets = {};
+  bool _isSyncing = false; // Guard to prevent concurrent syncs
 
   @override
   void initState() {
@@ -42,15 +43,28 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadSavedSheets() async {
+    // Prevent concurrent sync operations
+    if (_isSyncing) {
+      print('HomeScreen: Sync already in progress, skipping...');
+      return;
+    }
+
     try {
+      _isSyncing = true;
+      setState(() {
+        _isLoadingSheets = true;
+      });
+
       final authProvider =
           Provider.of<app.AuthProvider>(context, listen: false);
       final userId = authProvider.user?.uid;
 
       // If user is logged in, sync sheets from Firebase first
       if (userId != null) {
+        print('HomeScreen: User logged in, starting sync...');
         final syncService = SyncService();
         await syncService.syncSheets(userId);
+        print('HomeScreen: Sync completed, loading sheets from database...');
       }
 
       final dbHelper = SheetDatabaseHelper(
@@ -58,23 +72,34 @@ class _HomeScreenState extends State<HomeScreen> {
         firestoreService: userId != null ? FirestoreService() : null,
       );
       final sheets = await dbHelper.getAllSheets();
-      print('DEBUG: Loaded ${sheets.length} sheets from database');
+      print('HomeScreen: Loaded ${sheets.length} sheets from database');
       for (var sheet in sheets) {
-        print('DEBUG: Sheet ${sheet.id} has ${sheet.sheetRows.length} rows');
+        print(
+            'HomeScreen: Sheet ${sheet.id} has ${sheet.sheetRows.length} rows');
         if (sheet.sheetRows.isNotEmpty) {
           print(
-              'DEBUG: First row has ${sheet.sheetRows[0].notes.length} notes');
+              'HomeScreen: First row has ${sheet.sheetRows[0].notes.length} notes');
         }
       }
-      setState(() {
-        _savedSheets = sheets;
-        _isLoadingSheets = false;
-      });
+
+      // Force UI refresh with new data
+      if (mounted) {
+        setState(() {
+          _savedSheets = sheets;
+          _isLoadingSheets = false;
+        });
+        print('HomeScreen: UI updated with ${sheets.length} sheets');
+      }
     } catch (e) {
-      print('Error loading sheets: $e');
-      setState(() {
-        _isLoadingSheets = false;
-      });
+      print('HomeScreen: Error loading sheets: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingSheets = false;
+        });
+      }
+    } finally {
+      // Always reset the sync flag
+      _isSyncing = false;
     }
   }
 

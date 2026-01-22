@@ -39,9 +39,21 @@ class Sheet {
   }
 
   factory Sheet.fromJson(Map<String, dynamic> json) {
+    // Ensure ID is always a string, even if stored as a number
+    String? id;
+    if (json['id'] != null) {
+      id = json['id'].toString();
+    }
+
+    // Ensure userId is always a string if present
+    String? userId;
+    if (json['userId'] != null) {
+      userId = json['userId'].toString();
+    }
+
     return Sheet(
-      id: json['id'],
-      userId: json['userId'],
+      id: id,
+      userId: userId,
       sheetRows: (json['sheetRows'] as List<dynamic>?)
               ?.map((rowJson) => SheetRows.fromJson(rowJson))
               .toList() ??

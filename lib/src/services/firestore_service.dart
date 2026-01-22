@@ -63,6 +63,63 @@ class FirestoreService {
             snapshot.docs.map((doc) => Sheet.fromJson(doc.data())).toList());
   }
 
+  /// Get sheets once using direct fetch (more reliable for one-time sync)
+  /// This forces Firestore to attempt a server fetch instead of returning cached data
+  Future<List<Sheet>> getSheetsOnce(String userId) async {
+    try {
+      print('FirestoreService: Fetching sheets from server for user $userId');
+      final snapshot = await _db
+          .collection('users')
+          .doc(userId)
+          .collection('sheets')
+          .get(const GetOptions(source: Source.server));
+
+      final sheets = snapshot.docs
+          .map((doc) {
+            try {
+              return Sheet.fromJson(doc.data());
+            } catch (e) {
+              print('Error parsing sheet ${doc.id}: $e');
+              return null;
+            }
+          })
+          .whereType<Sheet>()
+          .toList();
+
+      print('FirestoreService: Found ${sheets.length} sheets');
+      return sheets;
+    } catch (e) {
+      print('Error fetching sheets from Firestore: $e');
+      // If server fetch fails, try cache as fallback
+      try {
+        print('FirestoreService: Falling back to cache');
+        final snapshot = await _db
+            .collection('users')
+            .doc(userId)
+            .collection('sheets')
+            .get();
+
+        final sheets = snapshot.docs
+            .map((doc) {
+              try {
+                return Sheet.fromJson(doc.data());
+              } catch (e) {
+                print('Error parsing sheet ${doc.id}: $e');
+                return null;
+              }
+            })
+            .whereType<Sheet>()
+            .toList();
+
+        print('FirestoreService: Found ${sheets.length} sheets from cache');
+        return sheets;
+      } catch (cacheError) {
+        print('Error fetching from cache: $cacheError');
+        return [];
+      }
+    }
+  }
+
   /// Mark a sheet as deleted by adding its ID to the deletions list
   Future<void> markSheetAsDeleted(String sheetId, String userId) async {
     try {
@@ -75,7 +132,7 @@ class FirestoreService {
         'deletedSheets': FieldValue.arrayUnion([
           {
             'sheetId': sheetId,
-            'deletedAt': FieldValue.serverTimestamp(),
+            'deletedAt': Timestamp.now(),
           }
         ]),
       }, SetOptions(merge: true));
