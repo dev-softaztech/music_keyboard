@@ -26,7 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Sheet> _savedSheets = [];
   bool _isLoadingSheets = true;
   bool _isSelectionMode = false;
-  Set<int> _selectedSheets = {};
+  Set<String> _selectedSheets = {};
 
   @override
   void initState() {
@@ -101,7 +101,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: SafeArea(
                     child: Padding(
                       padding: const EdgeInsets.only(
-                          left: 32.0, right: 32.0, bottom: 27.0),
+                          left: 32.0, top: 27, right: 32.0, bottom: 27.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -380,7 +380,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _enterSelectionMode(int sheetId) {
+  void _enterSelectionMode(String sheetId) {
     if (!_isSelectionMode) {
       setState(() {
         _isSelectionMode = true;
@@ -389,7 +389,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _toggleSheetSelection(int sheetId) {
+  void _toggleSheetSelection(String sheetId) {
     setState(() {
       if (_selectedSheets.contains(sheetId)) {
         _selectedSheets.remove(sheetId);
@@ -476,8 +476,17 @@ class _HomeScreenState extends State<HomeScreen> {
         userId: userId,
         firestoreService: userId != null ? FirestoreService() : null,
       );
+      final firestoreService = FirestoreService();
+
       for (final sheetId in _selectedSheets) {
+        // Delete from local database
         await dbHelper.deleteSheet(sheetId);
+
+        // If user is logged in, delete from Firebase and mark as deleted
+        if (userId != null) {
+          await firestoreService.deleteSheet(sheetId, userId);
+          await firestoreService.markSheetAsDeleted(sheetId, userId);
+        }
       }
 
       await _loadSavedSheets();

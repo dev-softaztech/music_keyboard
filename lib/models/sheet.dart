@@ -4,7 +4,7 @@ import 'package:music_keyboard/models/sheet_format.dart';
 import 'package:music_keyboard/models/keyboard_type.dart';
 
 class Sheet {
-  int? id; // Database primary key
+  String? id; // Unique GUID identifier
   String? userId;
   List<SheetRows> sheetRows;
   SheetProperties sheetProperties;

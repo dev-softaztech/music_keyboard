@@ -58,13 +58,11 @@ class DynamicLinkService {
     // Extract the sheet ID from the query parameters
     final String? sheetId = uri.queryParameters['id'];
 
-    if (sheetId != null) {
+    if (sheetId != null && sheetId.isNotEmpty) {
       try {
-        final int sheetIdInt = int.parse(sheetId);
-
         // Load the sheet from the database
         final SheetDatabaseHelper dbHelper = SheetDatabaseHelper();
-        final Sheet? sheet = await dbHelper.getSheet(sheetIdInt);
+        final Sheet? sheet = await dbHelper.getSheet(sheetId);
 
         // Ensure navigation happens after the current frame to avoid context issues
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -88,7 +86,7 @@ class DynamicLinkService {
               arguments: sheet,
             );
           } else {
-            debugPrint('Sheet with ID $sheetIdInt not found');
+            debugPrint('Sheet with ID $sheetId not found');
             // Show error message to user and navigate to home screen
             ToastUtils.showToast('Sheet not available', isError: true);
             Navigator.pushNamedAndRemoveUntil(

@@ -4,12 +4,15 @@ import 'package:music_keyboard/models/sheet.dart';
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
+  // Cleanup threshold: Remove deletion records older than 90 days
+  static const int deletionCleanupDays = 90;
+
   Future<void> addSheet(Sheet sheet, String userId) {
     return _db
         .collection('users')
         .doc(userId)
         .collection('sheets')
-        .doc(sheet.id.toString())
+        .doc(sheet.id!)
         .set(sheet.toJson());
   }
 
@@ -18,26 +21,26 @@ class FirestoreService {
         .collection('users')
         .doc(userId)
         .collection('sheets')
-        .doc(sheet.id.toString())
+        .doc(sheet.id!)
         .update(sheet.toJson());
   }
 
-  Future<void> deleteSheet(int sheetId, String userId) {
+  Future<void> deleteSheet(String sheetId, String userId) {
     return _db
         .collection('users')
         .doc(userId)
         .collection('sheets')
-        .doc(sheetId.toString())
+        .doc(sheetId)
         .delete();
   }
 
-  Future<Sheet?> getSheet(int sheetId, String userId) async {
+  Future<Sheet?> getSheet(String sheetId, String userId) async {
     try {
       final doc = await _db
           .collection('users')
           .doc(userId)
           .collection('sheets')
-          .doc(sheetId.toString())
+          .doc(sheetId)
           .get();
 
       if (doc.exists) {
@@ -58,5 +61,132 @@ class FirestoreService {
         .snapshots()
         .map((snapshot) =>
             snapshot.docs.map((doc) => Sheet.fromJson(doc.data())).toList());
+  }
+
+  /// Mark a sheet as deleted by adding its ID to the deletions list
+  Future<void> markSheetAsDeleted(String sheetId, String userId) async {
+    try {
+      await _db
+          .collection('users')
+          .doc(userId)
+          .collection('metadata')
+          .doc('deletions')
+          .set({
+        'deletedSheets': FieldValue.arrayUnion([
+          {
+            'sheetId': sheetId,
+            'deletedAt': FieldValue.serverTimestamp(),
+          }
+        ]),
+      }, SetOptions(merge: true));
+    } catch (e) {
+      print('Error marking sheet as deleted: $e');
+    }
+  }
+
+  /// Get list of deleted sheet IDs
+  Future<List<String>> getDeletedSheetIds(String userId) async {
+    try {
+      final doc = await _db
+          .collection('users')
+          .doc(userId)
+          .collection('metadata')
+          .doc('deletions')
+          .get();
+
+      if (doc.exists && doc.data() != null) {
+        final deletedSheets = doc.data()!['deletedSheets'] as List<dynamic>?;
+        if (deletedSheets != null) {
+          return deletedSheets
+              .map((item) => item['sheetId'] as String)
+              .toList();
+        }
+      }
+      return [];
+    } catch (e) {
+      print('Error getting deleted sheet IDs: $e');
+      return [];
+    }
+  }
+
+  /// Remove deletion records older than 90 days to prevent unbounded growth
+  Future<void> cleanupOldDeletions(String userId) async {
+    try {
+      final doc = await _db
+          .collection('users')
+          .doc(userId)
+          .collection('metadata')
+          .doc('deletions')
+          .get();
+
+      if (!doc.exists || doc.data() == null) return;
+
+      final deletedSheets = doc.data()!['deletedSheets'] as List<dynamic>?;
+      if (deletedSheets == null || deletedSheets.isEmpty) return;
+
+      final cutoffDate = DateTime.now()
+          .subtract(Duration(days: deletionCleanupDays))
+          .millisecondsSinceEpoch;
+
+      final sheetsToRemove = <Map<String, dynamic>>[];
+
+      for (final item in deletedSheets) {
+        final deletedAt = item['deletedAt'] as Timestamp?;
+        if (deletedAt != null &&
+            deletedAt.millisecondsSinceEpoch < cutoffDate) {
+          sheetsToRemove.add(item as Map<String, dynamic>);
+        }
+      }
+
+      if (sheetsToRemove.isNotEmpty) {
+        await _db
+            .collection('users')
+            .doc(userId)
+            .collection('metadata')
+            .doc('deletions')
+            .update({
+          'deletedSheets': FieldValue.arrayRemove(sheetsToRemove),
+        });
+        print('Cleaned up ${sheetsToRemove.length} old deletion records');
+      }
+    } catch (e) {
+      print('Error cleaning up old deletions: $e');
+    }
+  }
+
+  /// Remove a specific sheet ID from the deletions list
+  /// (useful if a sheet with the same ID is being recreated)
+  Future<void> removeFromDeletionsList(String sheetId, String userId) async {
+    try {
+      final doc = await _db
+          .collection('users')
+          .doc(userId)
+          .collection('metadata')
+          .doc('deletions')
+          .get();
+
+      if (!doc.exists || doc.data() == null) return;
+
+      final deletedSheets = doc.data()!['deletedSheets'] as List<dynamic>?;
+      if (deletedSheets == null) return;
+
+      final itemToRemove = deletedSheets.firstWhere(
+        (item) => item['sheetId'] == sheetId,
+        orElse: () => null,
+      );
+
+      if (itemToRemove != null) {
+        await _db
+            .collection('users')
+            .doc(userId)
+            .collection('metadata')
+            .doc('deletions')
+            .update({
+          'deletedSheets': FieldValue.arrayRemove([itemToRemove]),
+        });
+      }
+    } catch (e) {
+      print('Error removing sheet from deletions list: $e');
+    }
   }
 }

@@ -5,6 +5,7 @@ import 'package:music_keyboard/models/sheet.dart';
 import 'package:music_keyboard/models/clipboard_item.dart';
 import 'package:music_keyboard/models/sheet_rows.dart';
 import 'package:music_keyboard/src/services/firestore_service.dart';
+import 'package:uuid/uuid.dart';
 
 class SheetDatabaseHelper {
   static Database? _database;
@@ -25,7 +26,7 @@ class SheetDatabaseHelper {
     String path = join(await getDatabasesPath(), 'music_sheets.db');
     return await openDatabase(
       path,
-      version: 3,
+      version: 4,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -34,7 +35,7 @@ class SheetDatabaseHelper {
   Future<void> _onCreate(Database db, int version) async {
     await db.execute('''
       CREATE TABLE sheets(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id TEXT PRIMARY KEY,
         sheet_data TEXT NOT NULL,
         created_on TEXT NOT NULL,
         last_updated TEXT NOT NULL
@@ -62,31 +63,79 @@ class SheetDatabaseHelper {
         )
       ''');
     }
+
+    if (oldVersion < 4) {
+      // Migration from integer IDs to GUID-based IDs
+      await _migrateToGuidIds(db);
+    }
+  }
+
+  Future<void> _migrateToGuidIds(Database db) async {
+    const uuid = Uuid();
+
+    // Create new table with TEXT id
+    await db.execute('''
+      CREATE TABLE sheets_new(
+        id TEXT PRIMARY KEY,
+        sheet_data TEXT NOT NULL,
+        created_on TEXT NOT NULL,
+        last_updated TEXT NOT NULL
+      )
+    ''');
+
+    // Get all existing sheets
+    final List<Map<String, dynamic>> oldSheets = await db.query('sheets');
+
+    // Migrate each sheet with a new GUID
+    for (final oldSheet in oldSheets) {
+      final String newId = uuid.v4();
+      final sheetData = jsonDecode(oldSheet['sheet_data']);
+
+      // Update the ID in the sheet data
+      sheetData['id'] = newId;
+
+      await db.insert('sheets_new', {
+        'id': newId,
+        'sheet_data': jsonEncode(sheetData),
+        'created_on': oldSheet['created_on'],
+        'last_updated': oldSheet['last_updated'],
+      });
+    }
+
+    // Drop old table and rename new table
+    await db.execute('DROP TABLE IF EXISTS sheets');
+    await db.execute('ALTER TABLE sheets_new RENAME TO sheets');
   }
 
   /// Insert a new sheet into the database
-  Future<int> insertSheet(Sheet sheet) async {
+  Future<String> insertSheet(Sheet sheet) async {
     final db = await database;
     final now = DateTime.now();
+    const uuid = Uuid();
+
+    // Generate GUID if not already set
+    if (sheet.id == null || sheet.id!.isEmpty) {
+      sheet.id = uuid.v4();
+    }
 
     // Update timestamps
     sheet.createdOn = now;
     sheet.lastUpdated = now;
 
     final Map<String, dynamic> row = {
+      'id': sheet.id,
       'sheet_data': jsonEncode(sheet.toJson()),
       'created_on': now.toIso8601String(),
       'last_updated': now.toIso8601String(),
     };
 
-    final id = await db.insert('sheets', row);
-    sheet.id = id;
+    await db.insert('sheets', row);
 
     if (_userId != null && _firestoreService != null) {
       await _firestoreService!.addSheet(sheet, _userId!);
     }
 
-    return id;
+    return sheet.id!;
   }
 
   /// Update an existing sheet in the database
@@ -114,7 +163,7 @@ class SheetDatabaseHelper {
   }
 
   /// Get a sheet by its ID
-  Future<Sheet?> getSheet(int id) async {
+  Future<Sheet?> getSheet(String id) async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
       'sheets',
@@ -151,7 +200,7 @@ class SheetDatabaseHelper {
   }
 
   /// Delete a sheet by its ID
-  Future<int> deleteSheet(int id) async {
+  Future<int> deleteSheet(String id) async {
     final db = await database;
     final result = await db.delete(
       'sheets',
