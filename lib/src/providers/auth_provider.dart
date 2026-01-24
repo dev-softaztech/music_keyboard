@@ -20,7 +20,12 @@ class AuthProvider with ChangeNotifier {
   Future<void> signIn(String email, String password) async {
     _user = await _authService.signInWithEmailAndPassword(email, password);
     if (_user != null) {
-      await _syncService.syncSheets(_user!.uid);
+      // Try to sync, but don't fail login if sync fails
+      try {
+        await _syncService.syncSheets(_user!.uid);
+      } catch (e) {
+        print('Sync failed after login, but user can continue: $e');
+      }
       notifyListeners();
     } else {
       throw Exception('Invalid email or password');

@@ -66,38 +66,18 @@ class FirestoreService {
   /// Get sheets once using direct fetch (more reliable for one-time sync)
   /// This forces Firestore to attempt a server fetch instead of returning cached data
   Future<List<Sheet>> getSheetsOnce(String userId) async {
-    try {
-      print('FirestoreService: Fetching sheets from server for user $userId');
-      final snapshot = await _db
-          .collection('users')
-          .doc(userId)
-          .collection('sheets')
-          .get(const GetOptions(source: Source.server));
+    const int maxRetries = 3;
+    int attempt = 0;
 
-      final sheets = snapshot.docs
-          .map((doc) {
-            try {
-              return Sheet.fromJson(doc.data());
-            } catch (e) {
-              print('Error parsing sheet ${doc.id}: $e');
-              return null;
-            }
-          })
-          .whereType<Sheet>()
-          .toList();
-
-      print('FirestoreService: Found ${sheets.length} sheets');
-      return sheets;
-    } catch (e) {
-      print('Error fetching sheets from Firestore: $e');
-      // If server fetch fails, try cache as fallback
+    while (attempt < maxRetries) {
       try {
-        print('FirestoreService: Falling back to cache');
+        print(
+            'FirestoreService: Fetching sheets from server for user $userId (attempt ${attempt + 1})');
         final snapshot = await _db
             .collection('users')
             .doc(userId)
             .collection('sheets')
-            .get();
+            .get(const GetOptions(source: Source.server));
 
         final sheets = snapshot.docs
             .map((doc) {
@@ -111,13 +91,59 @@ class FirestoreService {
             .whereType<Sheet>()
             .toList();
 
-        print('FirestoreService: Found ${sheets.length} sheets from cache');
+        print('FirestoreService: Found ${sheets.length} sheets');
         return sheets;
-      } catch (cacheError) {
-        print('Error fetching from cache: $cacheError');
-        return [];
+      } catch (e) {
+        attempt++;
+        print('Error fetching sheets from Firestore (attempt $attempt): $e');
+
+        // Check if it's a retryable error (service unavailable)
+        final errorString = e.toString().toLowerCase();
+        final isRetryable = errorString.contains('unavailable') ||
+            errorString.contains('deadline exceeded') ||
+            errorString.contains('cancelled');
+
+        if (attempt < maxRetries && isRetryable) {
+          // Exponential backoff: wait 2^attempt seconds
+          final delaySeconds = 1 << attempt; // 1, 2, 4 seconds
+          print('FirestoreService: Retrying in $delaySeconds seconds...');
+          await Future.delayed(Duration(seconds: delaySeconds));
+        } else {
+          // If not retryable or max retries reached, fall back to cache
+          print(
+              'FirestoreService: Max retries reached or non-retryable error, falling back to cache');
+          try {
+            print('FirestoreService: Falling back to cache');
+            final snapshot = await _db
+                .collection('users')
+                .doc(userId)
+                .collection('sheets')
+                .get();
+
+            final sheets = snapshot.docs
+                .map((doc) {
+                  try {
+                    return Sheet.fromJson(doc.data());
+                  } catch (e) {
+                    print('Error parsing sheet ${doc.id}: $e');
+                    return null;
+                  }
+                })
+                .whereType<Sheet>()
+                .toList();
+
+            print('FirestoreService: Found ${sheets.length} sheets from cache');
+            return sheets;
+          } catch (cacheError) {
+            print('Error fetching from cache: $cacheError');
+            return [];
+          }
+        }
       }
     }
+
+    // This should never be reached, but just in case
+    return [];
   }
 
   /// Mark a sheet as deleted by adding its ID to the deletions list
