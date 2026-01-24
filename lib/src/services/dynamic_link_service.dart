@@ -16,8 +16,9 @@ class DynamicLinkService {
   final AppLinks _appLinks = AppLinks();
   StreamSubscription<Uri>? _linkSubscription;
 
-  // Flag to prevent multiple automatic navigations from deep links
-  bool _hasHandledInitialLink = false;
+  // Track the last processed link to prevent duplicate processing
+  String? _lastProcessedLinkString;
+  DateTime? _lastProcessedTime;
 
   static const String _baseUrl = 'https://motez-notes.web.app/';
 
@@ -67,15 +68,29 @@ class DynamicLinkService {
       return;
     }
 
-    // Prevent automatic navigation if we've already handled an initial link
-    if (_hasHandledInitialLink) {
+    // Prevent duplicate processing of the same link within 10 seconds
+    // (Android system can fire the same deep link multiple times rapidly)
+    final now = DateTime.now();
+    final currentLinkString = uri.toString();
+
+    if (_lastProcessedLinkString == currentLinkString &&
+        _lastProcessedTime != null) {
+      final millisecondsSinceLastProcess =
+          now.difference(_lastProcessedTime!).inMilliseconds;
       debugPrint(
-          'Skipping automatic deep link navigation - already handled initial link');
-      return;
+          'Time since last process: $millisecondsSinceLastProcess milliseconds');
+
+      if (millisecondsSinceLastProcess < 10000) {
+        debugPrint(
+            'Skipping duplicate deep link - same link processed within 10 seconds');
+        return;
+      }
     }
 
-    // Mark that we've handling an initial link
-    _hasHandledInitialLink = true;
+    // Update the last processed link and time
+    _lastProcessedLinkString = currentLinkString;
+    _lastProcessedTime = now;
+    debugPrint('Processing deep link - will navigate to sheet');
 
     try {
       // Get current user to check if this is their own sheet
@@ -139,15 +154,20 @@ class DynamicLinkService {
 
       // Ensure navigation happens after the current frame to avoid context issues
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!context.mounted) return;
+        if (!context.mounted) {
+          debugPrint('Deep link processing completed (context not mounted)');
+          return;
+        }
 
         if (sheet != null) {
+          debugPrint('Navigating to keyboard screen with sheet');
           // Navigate to the keyboard screen with the loaded sheet
           Navigator.pushNamed(
             context,
             KeyboardScreen.routeName,
             arguments: sheet,
           );
+          debugPrint('Deep link processing completed (navigation successful)');
         } else {
           debugPrint('Sheet could not be loaded');
           // Show error message to user
@@ -157,10 +177,13 @@ class DynamicLinkService {
             '/',
             (route) => false,
           );
+          debugPrint('Deep link processing completed (navigation to home)');
         }
       });
     } catch (e) {
       debugPrint('Error handling deep link: $e');
+      debugPrint('Deep link processing completed (error occurred)');
+
       // Ensure navigation to home on error
       if (context.mounted) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
