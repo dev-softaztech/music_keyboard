@@ -38,6 +38,9 @@ class MusicSheetContainer extends StatefulWidget {
   final int? renderEndRow;
   final bool showTitleAndComposer;
 
+  // Read-only mode flag
+  final bool isReadOnly;
+
   const MusicSheetContainer({
     super.key,
     required this.screenSize,
@@ -54,6 +57,7 @@ class MusicSheetContainer extends StatefulWidget {
     this.renderStartRow,
     this.renderEndRow,
     this.showTitleAndComposer = true,
+    this.isReadOnly = false,
   });
 
   @override
@@ -637,6 +641,11 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
   }
 
   void _handleLongPressStart(LongPressStartDetails details) {
+    // Disable long press highlighting in read-only mode
+    if (widget.isReadOnly) {
+      return;
+    }
+
     final RenderBox renderBox = context.findRenderObject() as RenderBox;
     final Offset localOffset = renderBox.globalToLocal(details.globalPosition);
 
@@ -1568,7 +1577,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
     final globalRowSpacingProvider = Provider.of<RowSpacingProvider>(context);
     final selectRowsModeProvider = Provider.of<SelectRowsModeProvider>(context);
 
-    var keyboardHeight = 312;
+    // Adjust keyboard height based on read-only mode
+    var keyboardHeight = widget.isReadOnly ? 0 : 312;
     var canvasHeight = widget.screenSize.height -
         AppBar().preferredSize.height -
         keyboardHeight -
@@ -1755,7 +1765,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
               )),
 
           //Undo
-          if (!selectRowsModeProvider.isSelectRowsMode)
+          if (!selectRowsModeProvider.isSelectRowsMode && !widget.isReadOnly)
             Positioned(
                 top: 55,
                 right: 5,
@@ -1845,7 +1855,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
           // Floating Reset Button (Only Shows When Zoomed)
           if (isZoomed)
             Positioned(
-                top: 100,
+                top: widget.isReadOnly ? 10 : 100,
                 right: 5,
                 child: Material(
                   color: Colors.transparent,

@@ -6,6 +6,7 @@ import 'package:music_keyboard/models/keyboard_type.dart';
 class Sheet {
   String? id; // Unique GUID identifier
   String? userId;
+  String? ownerName; // Display name of the sheet owner
   List<SheetRows> sheetRows;
   SheetProperties sheetProperties;
   SheetFormat format;
@@ -16,6 +17,7 @@ class Sheet {
   Sheet({
     this.id,
     this.userId,
+    this.ownerName,
     required this.sheetRows,
     required this.sheetProperties,
     this.format = SheetFormat.single,
@@ -29,6 +31,7 @@ class Sheet {
     return {
       'id': id,
       'userId': userId,
+      'ownerName': ownerName,
       'sheetRows': sheetRows.map((row) => row.toJson()).toList(),
       'sheetProperties': sheetProperties.toJson(),
       'format': format.toJson(),
@@ -54,6 +57,7 @@ class Sheet {
     return Sheet(
       id: id,
       userId: userId,
+      ownerName: json['ownerName']?.toString(),
       sheetRows: (json['sheetRows'] as List<dynamic>?)
               ?.map((rowJson) => SheetRows.fromJson(rowJson))
               .toList() ??

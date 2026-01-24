@@ -11,9 +11,12 @@ class SheetDatabaseHelper {
   static Database? _database;
   final FirestoreService? _firestoreService;
   final String? _userId;
+  final String? _ownerName;
 
-  SheetDatabaseHelper({String? userId, FirestoreService? firestoreService})
+  SheetDatabaseHelper(
+      {String? userId, String? ownerName, FirestoreService? firestoreService})
       : _userId = userId,
+        _ownerName = ownerName,
         _firestoreService = firestoreService;
 
   Future<Database> get database async {
@@ -118,9 +121,12 @@ class SheetDatabaseHelper {
       sheet.id = uuid.v4();
     }
 
-    // Set userId if available
+    // Set userId and ownerName if available
     if (_userId != null) {
       sheet.userId = _userId;
+    }
+    if (_ownerName != null) {
+      sheet.ownerName = _ownerName;
     }
 
     // Update timestamps
@@ -198,9 +204,12 @@ class SheetDatabaseHelper {
     final db = await database;
     sheet.lastUpdated = DateTime.now();
 
-    // Set userId if available
+    // Set userId and ownerName if available
     if (_userId != null) {
       sheet.userId = _userId;
+    }
+    if (_ownerName != null) {
+      sheet.ownerName = _ownerName;
     }
 
     final Map<String, dynamic> row = {
