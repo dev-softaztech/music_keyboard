@@ -11,7 +11,11 @@
            // Try to open the app
            const urlParams = new URLSearchParams(window.location.search);
            const sheetId = urlParams.get('id');
-           if (sheetId) {
+           const userId = urlParams.get('userId');
+           if (sheetId && userId) {
+               window.location.href = `music_keyboard://sheet?id=${sheetId}&userId=${userId}`;
+           } else if (sheetId) {
+               // Fallback for old links without userId
                window.location.href = `music_keyboard://sheet?id=${sheetId}`;
            }
        </script>

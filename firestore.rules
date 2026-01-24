@@ -1,0 +1,27 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users collection rules
+    match /users/{userId} {
+      // Allow users to read and write their own user document
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // Sheets subcollection
+      match /sheets/{sheetId} {
+        // Users can read, write, and delete their own sheets
+        allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+        
+        // Allow any authenticated user to read sheets (for sharing functionality)
+        // This enables cross-account sharing via share links
+        allow read: if request.auth != null;
+      }
+      
+      // Metadata subcollection (for deletions tracking)
+      match /metadata/{document} {
+        // Users can read and write their own metadata
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+  }
+}

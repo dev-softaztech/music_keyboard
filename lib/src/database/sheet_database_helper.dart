@@ -118,6 +118,11 @@ class SheetDatabaseHelper {
       sheet.id = uuid.v4();
     }
 
+    // Set userId if available
+    if (_userId != null) {
+      sheet.userId = _userId;
+    }
+
     // Update timestamps
     sheet.createdOn = now;
     sheet.lastUpdated = now;
@@ -151,7 +156,8 @@ class SheetDatabaseHelper {
     final existingSheet = await getSheet(sheet.id!);
 
     if (existingSheet == null) {
-      // Sheet doesn't exist, insert it (preserving its timestamps from remote)
+      // Sheet doesn't exist, insert it (preserving its timestamps and userId from remote)
+      // Note: sheet.userId should already be set from Firebase, but ensure it's not overwritten
       final db = await database;
       final Map<String, dynamic> row = {
         'id': sheet.id,
@@ -161,12 +167,13 @@ class SheetDatabaseHelper {
       };
 
       await db.insert('sheets', row);
-      print('SheetDatabaseHelper: Inserted new sheet ${sheet.id}');
+      print(
+          'SheetDatabaseHelper: Inserted new sheet ${sheet.id} with userId ${sheet.userId}');
 
       // Note: Don't sync to Firestore here - this is called during sync FROM Firestore
       return sheet.id!;
     } else {
-      // Sheet exists, update it
+      // Sheet exists, update it (preserve userId from remote if available)
       final db = await database;
       final Map<String, dynamic> row = {
         'sheet_data': jsonEncode(sheet.toJson()),
@@ -190,6 +197,11 @@ class SheetDatabaseHelper {
   Future<int> updateSheet(Sheet sheet) async {
     final db = await database;
     sheet.lastUpdated = DateTime.now();
+
+    // Set userId if available
+    if (_userId != null) {
+      sheet.userId = _userId;
+    }
 
     final Map<String, dynamic> row = {
       'sheet_data': jsonEncode(sheet.toJson()),

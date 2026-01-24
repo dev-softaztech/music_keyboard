@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:music_keyboard/models/sheet.dart';
 import 'package:music_keyboard/src/screens/keyboard_screen.dart';
 import 'package:music_keyboard/src/database/sheet_database_helper.dart';
+import 'package:music_keyboard/src/services/firestore_service.dart';
 import 'package:music_keyboard/src/utils/toast_utils.dart';
 
 class DynamicLinkService {
@@ -22,8 +24,9 @@ class DynamicLinkService {
   /// Creates a deep link URL for sharing a sheet
   /// This generates a simple URL that will be handled by the app
   Future<Uri> createDynamicLink(Sheet sheet) async {
-    // Create a simple URL with the sheet ID as a query parameter
-    final Uri deepLink = Uri.parse('$_baseUrl/sheet?id=${sheet.id}');
+    // Create a URL with both sheet ID and owner's user ID
+    final Uri deepLink =
+        Uri.parse('$_baseUrl/sheet?id=${sheet.id}&userId=${sheet.userId}');
     return deepLink;
   }
 
@@ -55,52 +58,121 @@ class DynamicLinkService {
   Future<void> _handleDeepLink(BuildContext context, Uri uri) async {
     debugPrint('Received deep link: $uri');
 
-    // Extract the sheet ID from the query parameters
+    // Extract the sheet ID and owner's user ID from the query parameters
     final String? sheetId = uri.queryParameters['id'];
+    final String? ownerId = uri.queryParameters['userId'];
 
-    if (sheetId != null && sheetId.isNotEmpty) {
-      try {
-        // Load the sheet from the database
-        final SheetDatabaseHelper dbHelper = SheetDatabaseHelper();
-        final Sheet? sheet = await dbHelper.getSheet(sheetId);
+    if (sheetId == null || sheetId.isEmpty) {
+      debugPrint('No sheet ID found in deep link');
+      return;
+    }
 
-        // Ensure navigation happens after the current frame to avoid context issues
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!context.mounted) return;
+    // Prevent automatic navigation if we've already handled an initial link
+    if (_hasHandledInitialLink) {
+      debugPrint(
+          'Skipping automatic deep link navigation - already handled initial link');
+      return;
+    }
 
-          // Prevent automatic navigation if we've already handled an initial link
-          if (_hasHandledInitialLink) {
-            debugPrint(
-                'Skipping automatic deep link navigation - already handled initial link');
-            return;
+    // Mark that we've handling an initial link
+    _hasHandledInitialLink = true;
+
+    try {
+      // Get current user to check if this is their own sheet
+      final User? currentUser = FirebaseAuth.instance.currentUser;
+      final String? currentUserId = currentUser?.uid;
+
+      // First, try to load the sheet from the local database
+      final SheetDatabaseHelper dbHelper = SheetDatabaseHelper();
+      Sheet? sheet = await dbHelper.getSheet(sheetId);
+
+      // If sheet not found locally and we have an owner ID, try fetching from Firebase
+      if (sheet == null && ownerId != null && ownerId.isNotEmpty) {
+        debugPrint(
+            'Sheet not found locally, attempting to fetch from Firebase...');
+
+        // Show loading indicator
+        if (context.mounted) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (BuildContext dialogContext) {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            },
+          );
+        }
+
+        try {
+          // Fetch the sheet from Firebase
+          final FirestoreService firestoreService = FirestoreService();
+          sheet = await firestoreService.getSheet(sheetId, ownerId);
+
+          // Close loading indicator
+          if (context.mounted) {
+            Navigator.of(context, rootNavigator: true).pop();
           }
 
           if (sheet != null) {
-            // Mark that we've handled an initial link to prevent further automatic navigation
-            _hasHandledInitialLink = true;
+            debugPrint('Sheet fetched successfully from Firebase');
 
-            // Navigate to the keyboard screen with the loaded sheet
-            Navigator.pushNamed(
-              context,
-              KeyboardScreen.routeName,
-              arguments: sheet,
-            );
+            // If this is the current user's own sheet, save it to local database
+            if (currentUserId != null && ownerId == currentUserId) {
+              debugPrint('Saving own sheet to local database');
+              await dbHelper.insertSheet(sheet);
+            } else {
+              debugPrint(
+                  'Sheet belongs to another user, loading without saving locally');
+            }
           } else {
-            debugPrint('Sheet with ID $sheetId not found');
-            // Show error message to user and navigate to home screen
-            ToastUtils.showToast('Sheet not available', isError: true);
-            Navigator.pushNamedAndRemoveUntil(
-              context,
-              '/',
-              (route) => false,
-            );
+            debugPrint('Sheet not found in Firebase');
           }
-        });
-      } catch (e) {
-        debugPrint('Error parsing sheet ID or loading sheet: $e');
+        } catch (e) {
+          debugPrint('Error fetching sheet from Firebase: $e');
+          // Close loading indicator if still open
+          if (context.mounted) {
+            Navigator.of(context, rootNavigator: true).pop();
+          }
+        }
       }
-    } else {
-      debugPrint('No sheet ID found in deep link');
+
+      // Ensure navigation happens after the current frame to avoid context issues
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+
+        if (sheet != null) {
+          // Navigate to the keyboard screen with the loaded sheet
+          Navigator.pushNamed(
+            context,
+            KeyboardScreen.routeName,
+            arguments: sheet,
+          );
+        } else {
+          debugPrint('Sheet could not be loaded');
+          // Show error message to user
+          ToastUtils.showToast('Cannot open right now', isError: true);
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/',
+            (route) => false,
+          );
+        }
+      });
+    } catch (e) {
+      debugPrint('Error handling deep link: $e');
+      // Ensure navigation to home on error
+      if (context.mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!context.mounted) return;
+          ToastUtils.showToast('Cannot open right now', isError: true);
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/',
+            (route) => false,
+          );
+        });
+      }
     }
   }
 
