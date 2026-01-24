@@ -2078,6 +2078,72 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                         ),
                       ),
 
+                    // Save Copy Widget - Read-Only Mode (Positioned above ad banner)
+                    if (isViewingOtherUsersSheet)
+                      Positioned(
+                        bottom: 5, // Above the ad banner
+                        left: 0,
+                        right: 0,
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          child: Material(
+                            elevation: 5,
+                            shadowColor: Colors.black.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.black,
+                                  width: 1,
+                                ),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    "${sheet.ownerName ?? 'Unknown'}'s sheet",
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    height: 46,
+                                    child: ElevatedButton(
+                                      onPressed: _saveSheetCopy,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor:
+                                            const Color(0xFF242038),
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                        ),
+                                        elevation: 4,
+                                      ),
+                                      child: const Text(
+                                        'Save Copy',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+
                     // Keyboard Section Pinned to Bottom
                     if (!isViewingOtherUsersSheet)
                       Positioned(
@@ -2430,65 +2496,6 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                   ],
                 ),
               ),
-
-              // Save Copy Widget - Read-Only Mode
-              if (isViewingOtherUsersSheet)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                  child: Material(
-                    elevation: 5,
-                    shadowColor: Colors.black.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Colors.black,
-                          width: 1,
-                        ),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            "${sheet.ownerName ?? 'Unknown'}'s sheet",
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 46,
-                            child: ElevatedButton(
-                              onPressed: _saveSheetCopy,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF242038),
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                elevation: 4,
-                              ),
-                              child: const Text(
-                                'Save Copy',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
 
               Align(
                 alignment: Alignment.bottomCenter,
