@@ -107,6 +107,7 @@ class DynamicLinkService {
             'Sheet not found locally, attempting to fetch from Firebase...');
 
         // Show loading indicator
+        final loadingStartTime = DateTime.now();
         if (context.mounted) {
           showDialog(
             context: context,
@@ -123,6 +124,12 @@ class DynamicLinkService {
           // Fetch the sheet from Firebase
           final FirestoreService firestoreService = FirestoreService();
           sheet = await firestoreService.getSheet(sheetId, ownerId);
+
+          // Ensure loading dialog shows for at least 500ms to prevent flashing
+          final elapsed = DateTime.now().difference(loadingStartTime);
+          if (elapsed < const Duration(milliseconds: 500)) {
+            await Future.delayed(const Duration(milliseconds: 500) - elapsed);
+          }
 
           // Close loading indicator
           if (context.mounted) {
@@ -142,13 +149,32 @@ class DynamicLinkService {
             }
           } else {
             debugPrint('Sheet not found in Firebase');
+            // Show specific error for not found
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (context.mounted) {
+                ToastUtils.showToast('Sheet not found or access denied',
+                    isError: true);
+              }
+            });
           }
         } catch (e) {
           debugPrint('Error fetching sheet from Firebase: $e');
+          // Ensure loading dialog shows for at least 500ms
+          final elapsed = DateTime.now().difference(loadingStartTime);
+          if (elapsed < const Duration(milliseconds: 500)) {
+            await Future.delayed(const Duration(milliseconds: 500) - elapsed);
+          }
           // Close loading indicator if still open
           if (context.mounted) {
             Navigator.of(context, rootNavigator: true).pop();
           }
+          // Show specific error
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) {
+              ToastUtils.showToast('Failed to load sheet - check connection',
+                  isError: true);
+            }
+          });
         }
       }
 
@@ -170,8 +196,7 @@ class DynamicLinkService {
           debugPrint('Deep link processing completed (navigation successful)');
         } else {
           debugPrint('Sheet could not be loaded');
-          // Show error message to user
-          ToastUtils.showToast('Cannot open right now', isError: true);
+          // Error messages are already shown above, just navigate to home
           Navigator.pushNamedAndRemoveUntil(
             context,
             '/',

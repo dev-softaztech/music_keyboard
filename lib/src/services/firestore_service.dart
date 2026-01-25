@@ -1,5 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:music_keyboard/models/sheet.dart';
+
+// Top-level function for parsing sheet in background isolate
+Sheet? _parseSheet(Map<String, dynamic> json) {
+  try {
+    return Sheet.fromJson(json);
+  } catch (e) {
+    print('Error parsing sheet: $e');
+    return null;
+  }
+}
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -41,10 +52,11 @@ class FirestoreService {
           .doc(userId)
           .collection('sheets')
           .doc(sheetId)
-          .get();
+          .get()
+          .timeout(const Duration(seconds: 10));
 
       if (doc.exists) {
-        return Sheet.fromJson(doc.data()!);
+        return await compute(_parseSheet, doc.data()!);
       }
       return null;
     } catch (e) {
