@@ -123,7 +123,9 @@ class DynamicLinkService {
             barrierDismissible: false,
             builder: (BuildContext dialogContext) {
               return const Center(
-                child: CircularProgressIndicator(),
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                ),
               );
             },
           );
