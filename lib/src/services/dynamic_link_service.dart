@@ -7,6 +7,7 @@ import 'package:music_keyboard/src/screens/keyboard_screen.dart';
 import 'package:music_keyboard/src/database/sheet_database_helper.dart';
 import 'package:music_keyboard/src/services/firestore_service.dart';
 import 'package:music_keyboard/src/utils/toast_utils.dart';
+import 'package:music_keyboard/src/app.dart';
 
 class DynamicLinkService {
   static final DynamicLinkService _instance = DynamicLinkService._internal();
@@ -19,6 +20,9 @@ class DynamicLinkService {
   // Track the last processed link to prevent duplicate processing
   String? _lastProcessedLinkString;
   DateTime? _lastProcessedTime;
+
+  // Prevent checking initial link multiple times during the same app session
+  bool _hasCheckedInitialLink = false;
 
   static const String _baseUrl = 'https://motez-notes.web.app/';
 
@@ -35,13 +39,17 @@ class DynamicLinkService {
   /// This should be called when the app starts
   Future<void> initDynamicLinks(BuildContext context) async {
     // Handle the initial link if the app was opened via a deep link
-    try {
-      final Uri? initialLink = await _appLinks.getInitialLink();
-      if (initialLink != null) {
-        _handleDeepLink(context, initialLink);
+    // Only check once per app session to prevent re-processing when navigating back to home
+    if (!_hasCheckedInitialLink) {
+      try {
+        final Uri? initialLink = await _appLinks.getInitialLink();
+        if (initialLink != null) {
+          _handleDeepLink(context, initialLink);
+        }
+      } catch (e) {
+        debugPrint('Error handling initial link: $e');
       }
-    } catch (e) {
-      debugPrint('Error handling initial link: $e');
+      _hasCheckedInitialLink = true;
     }
 
     // Listen for deep links while the app is running
@@ -108,9 +116,10 @@ class DynamicLinkService {
 
         // Show loading indicator
         final loadingStartTime = DateTime.now();
-        if (context.mounted) {
+        final navigatorContext = MyApp.navigatorKey.currentContext;
+        if (navigatorContext != null && navigatorContext.mounted) {
           showDialog(
-            context: context,
+            context: navigatorContext,
             barrierDismissible: false,
             builder: (BuildContext dialogContext) {
               return const Center(
@@ -132,8 +141,9 @@ class DynamicLinkService {
           }
 
           // Close loading indicator
-          if (context.mounted) {
-            Navigator.of(context, rootNavigator: true).pop();
+          final currentContext = MyApp.navigatorKey.currentContext;
+          if (currentContext != null && currentContext.mounted) {
+            Navigator.of(currentContext, rootNavigator: true).pop();
           }
 
           if (sheet != null) {
@@ -151,7 +161,8 @@ class DynamicLinkService {
             debugPrint('Sheet not found in Firebase');
             // Show specific error for not found
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (context.mounted) {
+              final currentContext = MyApp.navigatorKey.currentContext;
+              if (currentContext != null && currentContext.mounted) {
                 ToastUtils.showToast('Sheet not found or access denied',
                     isError: true);
               }
@@ -165,12 +176,14 @@ class DynamicLinkService {
             await Future.delayed(const Duration(milliseconds: 500) - elapsed);
           }
           // Close loading indicator if still open
-          if (context.mounted) {
-            Navigator.of(context, rootNavigator: true).pop();
+          final currentContext = MyApp.navigatorKey.currentContext;
+          if (currentContext != null && currentContext.mounted) {
+            Navigator.of(currentContext, rootNavigator: true).pop();
           }
           // Show specific error
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (context.mounted) {
+            final currentContext = MyApp.navigatorKey.currentContext;
+            if (currentContext != null && currentContext.mounted) {
               ToastUtils.showToast('Failed to load sheet - check connection',
                   isError: true);
             }
@@ -180,8 +193,10 @@ class DynamicLinkService {
 
       // Ensure navigation happens after the current frame to avoid context issues
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!context.mounted) {
-          debugPrint('Deep link processing completed (context not mounted)');
+        final navigatorContext = MyApp.navigatorKey.currentContext;
+        if (navigatorContext == null || !navigatorContext.mounted) {
+          debugPrint(
+              'Deep link processing completed (navigator context not available)');
           return;
         }
 
@@ -189,7 +204,7 @@ class DynamicLinkService {
           debugPrint('Navigating to keyboard screen with sheet');
           // Navigate to the keyboard screen with the loaded sheet
           Navigator.pushNamed(
-            context,
+            navigatorContext,
             KeyboardScreen.routeName,
             arguments: sheet,
           );
@@ -198,7 +213,7 @@ class DynamicLinkService {
           debugPrint('Sheet could not be loaded');
           // Error messages are already shown above, just navigate to home
           Navigator.pushNamedAndRemoveUntil(
-            context,
+            navigatorContext,
             '/',
             (route) => false,
           );
@@ -210,17 +225,17 @@ class DynamicLinkService {
       debugPrint('Deep link processing completed (error occurred)');
 
       // Ensure navigation to home on error
-      if (context.mounted) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!context.mounted) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final navigatorContext = MyApp.navigatorKey.currentContext;
+        if (navigatorContext != null && navigatorContext.mounted) {
           ToastUtils.showToast('Cannot open right now', isError: true);
           Navigator.pushNamedAndRemoveUntil(
-            context,
+            navigatorContext,
             '/',
             (route) => false,
           );
-        });
-      }
+        }
+      });
     }
   }
 
