@@ -1248,6 +1248,58 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
   // Share the current sheet
   Future<void> _shareSheet() async {
+    final authProvider = Provider.of<app.AuthProvider>(context, listen: false);
+    if (authProvider.user == null) {
+      // User is not signed in, show sign in prompt
+      showDialog(
+        context: context,
+        barrierDismissible: true,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text(
+              'Sign in to share this sheet with friends.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            actions: <Widget>[
+              Center(
+                child: SizedBox(
+                  width: 200,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop(); // Close the dialog
+                      Navigator.pushNamed(
+                          context, '/login'); // Go to login screen
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF242038),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 4,
+                    ),
+                    child: const Text(
+                      'Sign In / Sign Up',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+      return;
+    }
+
     try {
       final dynamicLinkService = DynamicLinkService();
       final Uri shareLink = await dynamicLinkService.createDynamicLink(sheet);
