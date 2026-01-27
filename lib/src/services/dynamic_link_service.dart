@@ -105,6 +105,28 @@ class DynamicLinkService {
       final User? currentUser = FirebaseAuth.instance.currentUser;
       final String? currentUserId = currentUser?.uid;
 
+      // If user is not signed in and this is a shared sheet, show sign-in prompt
+      if (currentUser == null && ownerId != null && ownerId.isNotEmpty) {
+        debugPrint(
+            'User not signed in, showing sign-in prompt for shared sheet');
+        // Navigate to home and show sign-in popup
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final navigatorContext = MyApp.navigatorKey.currentContext;
+          if (navigatorContext != null && navigatorContext.mounted) {
+            Navigator.pushNamedAndRemoveUntil(
+              navigatorContext,
+              '/',
+              (route) => false,
+            );
+            // Show sign-in prompt after navigation
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _showSignInPromptForSharedSheet(navigatorContext);
+            });
+          }
+        });
+        return;
+      }
+
       // First, try to load the sheet from the local database
       final SheetDatabaseHelper dbHelper = SheetDatabaseHelper();
       Sheet? sheet = await dbHelper.getSheet(sheetId);
@@ -239,6 +261,56 @@ class DynamicLinkService {
         }
       });
     }
+  }
+
+  /// Show sign-in prompt for shared sheet access
+  void _showSignInPromptForSharedSheet(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text(
+            'Sign in to view a shared sheet',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          actions: <Widget>[
+            Center(
+              child: SizedBox(
+                width: 200,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Close the dialog
+                    Navigator.pushNamed(
+                        context, '/login'); // Go to login screen
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF242038),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 4,
+                  ),
+                  child: const Text(
+                    'Sign In / Sign Up',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   /// Dispose of the link subscription
