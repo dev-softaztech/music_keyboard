@@ -1720,6 +1720,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                                               : null,
                                       curlyBraceGroups: widget
                                           .sheetProperties.curlyBraceGroups,
+                                      isReadOnly: widget.isReadOnly,
                                     ),
                                     size: Size(widget.musicSheetWidth,
                                         totalHeight), // Dynamic height
@@ -1752,6 +1753,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                                           : null,
                                   curlyBraceGroups:
                                       widget.sheetProperties.curlyBraceGroups,
+                                  isReadOnly: widget.isReadOnly,
                                 ),
                                 size: Size(widget.musicSheetWidth, totalHeight),
                               )

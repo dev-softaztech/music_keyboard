@@ -41,6 +41,9 @@ class MusicSheetPainter extends CustomPainter {
   // Curly brace groups (permanent)
   final List<CurlyBraceGroup> curlyBraceGroups;
 
+  // Read-only mode flag
+  final bool isReadOnly;
+
   MusicSheetPainter({
     required this.title,
     required this.composer,
@@ -62,6 +65,7 @@ class MusicSheetPainter extends CustomPainter {
     this.showTitleAndComposer = true,
     this.selectedRowsForCurlyBrace,
     List<CurlyBraceGroup>? curlyBraceGroups,
+    this.isReadOnly = false,
   }) : curlyBraceGroups = curlyBraceGroups ?? [];
 
   @override
@@ -324,7 +328,7 @@ class MusicSheetPainter extends CustomPainter {
                     ? selectionStart!
                     : selectionEnd!);
 
-        if (isSelected || inHighlight) {
+        if ((isSelected || inHighlight) && !isReadOnly) {
           paint = Paint()..color = const Color.fromARGB(255, 222, 15, 0);
           noteColour = const Color.fromARGB(255, 222, 15, 0);
         } else {
@@ -564,8 +568,8 @@ class MusicSheetPainter extends CustomPainter {
       // We no longer add automatic bar lines here as it's now handled in CurrentSelectedNoteProvider
 
       if (rowIndex == selectedRow) {
-        // Draw the cursor if showCursor is true
-        if (showCursor) {
+        // Draw the cursor if showCursor is true and not in read-only mode
+        if (showCursor && !isReadOnly) {
           drawInsertionCursor(canvas, paint, staffTop, selectedIndex + 1, size,
               currentRowSpacing, sheetNoteRows[rowIndex].notes, lineSpacing);
         }
