@@ -172,7 +172,10 @@ class SheetDatabaseHelper {
         'last_updated': sheet.lastUpdated.toIso8601String(),
       };
 
-      await db.insert('sheets', row);
+      // Use ConflictAlgorithm.replace to handle any existing sheets with the same ID
+      // This prevents UNIQUE constraint errors during re-sync after sign out/sign in
+      await db.insert('sheets', row,
+          conflictAlgorithm: ConflictAlgorithm.replace);
       print(
           'SheetDatabaseHelper: Inserted new sheet ${sheet.id} with userId ${sheet.userId}');
 
@@ -282,6 +285,14 @@ class SheetDatabaseHelper {
     }
 
     return result;
+  }
+
+  /// Delete all sheets from the local database
+  Future<int> deleteAllSheets() async {
+    final db = await database;
+    // The delete operation automatically commits in sqflite
+    // ConflictAlgorithm.replace in upsertSheet() handles any edge cases
+    return await db.delete('sheets');
   }
 
   /// Insert a new clipboard item into the database

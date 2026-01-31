@@ -134,4 +134,42 @@ class SyncService {
       await _firestoreService.addSheet(sheet, userId);
     }
   }
+
+  /// Check if there are any local sheets that haven't been synced to Firebase
+  Future<bool> hasUnsyncedSheets(String userId) async {
+    try {
+      final _dbHelper = SheetDatabaseHelper(userId: userId);
+      final localSheets = await _dbHelper.getAllSheets();
+
+      if (localSheets.isEmpty) return false;
+
+      final remoteSheets = await _firestoreService.getSheetsOnce(userId);
+
+      // Check if any local sheet is missing from remote or newer than remote
+      for (final localSheet in localSheets) {
+        if (localSheet.id == null) continue;
+
+        final remoteSheet = remoteSheets.firstWhere(
+          (sheet) => sheet.id == localSheet.id,
+          orElse: () => Sheet(
+            id: null,
+            sheetRows: [],
+            sheetProperties: localSheet.sheetProperties,
+            lastUpdated: DateTime.fromMicrosecondsSinceEpoch(0),
+          ),
+        );
+
+        if (remoteSheet.id == null ||
+            localSheet.lastUpdated.isAfter(remoteSheet.lastUpdated)) {
+          return true; // Found an unsynced sheet
+        }
+      }
+
+      return false;
+    } catch (e) {
+      print('Error checking for unsynced sheets: $e');
+      // If we can't check (no internet), assume there might be unsynced sheets
+      return true;
+    }
+  }
 }

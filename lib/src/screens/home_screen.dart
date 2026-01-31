@@ -426,9 +426,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   70, // Above the AD BANNER, slightly higher than sign in button
               right: 16,
               child: FloatingActionButton(
-                onPressed: () {
-                  authProvider.signOut();
-                },
+                onPressed: () => _handleSignOut(context, authProvider),
                 backgroundColor: const Color(0xFF242038),
                 foregroundColor: Colors.white,
                 elevation: 4,
@@ -468,6 +466,79 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _navigateToConfigureSheet(BuildContext context) {
     Navigator.pushNamed(context, ConfigureSheetScreen.routeName);
+  }
+
+  Future<void> _handleSignOut(
+      BuildContext context, app.AuthProvider authProvider) async {
+    // Check for unsynced sheets
+    final hasUnsynced = await authProvider.hasUnsyncedSheets();
+
+    if (hasUnsynced) {
+      // Show warning dialog
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (BuildContext context) {
+          return Dialog(
+            insetPadding: const EdgeInsets.all(PopupTheme.dialogMargin),
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.8,
+              decoration: PopupTheme.dialogDecoration,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header
+                  PopupTheme.buildHeader(
+                    title: 'Unsynced Sheets',
+                    onClose: () => Navigator.of(context).pop(false),
+                  ),
+
+                  // Content
+                  Padding(
+                    padding: const EdgeInsets.all(PopupTheme.contentPadding),
+                    child: Text(
+                      'If you sign out some sheets that have not synced will be deleted. Please sign out when you have an internet connection.',
+                      style: PopupTheme.bodyStyle,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+
+                  // Actions
+                  Padding(
+                    padding: const EdgeInsets.all(PopupTheme.actionsPadding),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          style: PopupTheme.secondaryButtonStyle,
+                          child: const Text('Cancel'),
+                        ),
+                        const SizedBox(width: 12),
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(true),
+                          style: PopupTheme.secondaryButtonStyle.copyWith(
+                            foregroundColor:
+                                MaterialStateProperty.all(Colors.red),
+                          ),
+                          child: const Text('Confirm'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+
+      if (confirmed == true) {
+        await authProvider.signOut();
+      }
+    } else {
+      // No unsynced sheets, sign out directly
+      await authProvider.signOut();
+    }
   }
 
   Future<void> _shareSheet(Sheet sheet) async {
