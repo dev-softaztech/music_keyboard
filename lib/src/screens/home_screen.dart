@@ -177,7 +177,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Container(
                   width: double.infinity,
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
                     color: Colors.orange[100],
                     border: Border(
@@ -189,14 +189,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Row(
                       children: [
                         Icon(Icons.warning_amber_rounded,
-                            color: Colors.orange[900]),
+                            color: Colors.orange[900], size: 20),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             'Please verify your email',
                             style: TextStyle(
                               color: Colors.orange[900],
-                              fontSize: 14,
+                              fontSize: 13,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -207,11 +207,16 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: TextButton.styleFrom(
                             foregroundColor: Colors.orange[900],
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 8),
+                                horizontal: 12, vertical: 4),
+                            minimumSize: const Size(0, 32),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
                           child: const Text(
                             'Resend',
-                            style: TextStyle(fontWeight: FontWeight.w600),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                       ],
