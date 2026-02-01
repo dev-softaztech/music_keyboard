@@ -22,6 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
+    final keyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
 
     return Scaffold(
       body: LayoutBuilder(
@@ -215,40 +216,41 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-              // Back button at bottom left
-              Positioned(
-                bottom: 60,
-                left: 16,
-                child: SizedBox(
-                  width: constraints.maxWidth / 2 - 16,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF242038),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      elevation: 4,
-                    ),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.arrow_back, size: 24),
-                        SizedBox(width: 8),
-                        Text(
-                          'Back',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                          ),
+              // Back button at bottom left - only visible when keyboard is not shown
+              if (!keyboardVisible)
+                Positioned(
+                  bottom: 60,
+                  left: 16,
+                  child: SizedBox(
+                    width: constraints.maxWidth / 2 - 16,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF242038),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
                         ),
-                      ],
+                        elevation: 4,
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.arrow_back, size: 24),
+                          SizedBox(width: 8),
+                          Text(
+                            'Back',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
             ],
           );
         },
