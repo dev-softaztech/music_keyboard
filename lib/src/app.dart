@@ -7,6 +7,7 @@ import 'package:music_keyboard/src/wrapper.dart';
 import 'screens/configure_sheet_screen.dart';
 import 'screens/keyboard_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/reset_password_screen.dart';
 import 'screens/settings/settings_controller.dart';
 import 'screens/settings/settings_view.dart';
 
@@ -111,6 +112,9 @@ class MyApp extends StatelessWidget {
                     return const KeyboardScreen();
                   case LoginScreen.routeName:
                     return const LoginScreen();
+                  case ResetPasswordScreen.routeName:
+                    final oobCode = routeSettings.arguments as String;
+                    return ResetPasswordScreen(oobCode: oobCode);
                   default:
                     return const Wrapper();
                 }

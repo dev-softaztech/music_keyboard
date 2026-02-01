@@ -11,6 +11,8 @@ class AuthProvider with ChangeNotifier {
 
   User? get user => _user;
 
+  bool get isEmailVerified => _authService.isEmailVerified;
+
   AuthProvider() {
     _authService.authStateChanges.listen((user) {
       _user = user;
@@ -66,5 +68,37 @@ class AuthProvider with ChangeNotifier {
 
     await _authService.signOut();
     notifyListeners();
+  }
+
+  /// Send email verification to the current user
+  Future<void> sendEmailVerification() async {
+    await _authService.sendEmailVerification();
+  }
+
+  /// Send password reset email
+  Future<void> sendPasswordResetEmail(String email) async {
+    await _authService.sendPasswordResetEmail(email);
+  }
+
+  /// Reload user to get updated email verification status
+  Future<void> reloadUser() async {
+    await _authService.reloadUser();
+    _user = _authService.currentUser;
+    notifyListeners();
+  }
+
+  /// Apply email verification code
+  Future<void> applyActionCode(String code) async {
+    await _authService.applyActionCode(code);
+  }
+
+  /// Check action code validity
+  Future<ActionCodeInfo> checkActionCode(String code) async {
+    return await _authService.checkActionCode(code);
+  }
+
+  /// Confirm password reset
+  Future<void> confirmPasswordReset(String code, String newPassword) async {
+    await _authService.confirmPasswordReset(code, newPassword);
   }
 }

@@ -164,11 +164,60 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<app.AuthProvider>(context);
+    final showVerificationBanner =
+        authProvider.user != null && !authProvider.isEmailVerified;
+
     return Scaffold(
       body: Stack(
         children: [
           Column(
             children: [
+              // Email verification banner
+              if (showVerificationBanner)
+                Container(
+                  width: double.infinity,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange[100],
+                    border: Border(
+                      bottom: BorderSide(color: Colors.orange[300]!, width: 1),
+                    ),
+                  ),
+                  child: SafeArea(
+                    bottom: false,
+                    child: Row(
+                      children: [
+                        Icon(Icons.warning_amber_rounded,
+                            color: Colors.orange[900]),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Please verify your email',
+                            style: TextStyle(
+                              color: Colors.orange[900],
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () =>
+                              _resendVerificationEmail(authProvider),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.orange[900],
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                          ),
+                          child: const Text(
+                            'Resend',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               Expanded(
                 child: Container(
                   decoration: const BoxDecoration(
@@ -713,5 +762,28 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Reload sheets when returning from keyboard screen
     _loadSavedSheets();
+  }
+
+  Future<void> _resendVerificationEmail(app.AuthProvider authProvider) async {
+    try {
+      await authProvider.sendEmailVerification();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Verification email sent! Please check your inbox.'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to send email: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

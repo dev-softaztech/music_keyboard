@@ -67,6 +67,16 @@ class DynamicLinkService {
   Future<void> _handleDeepLink(BuildContext context, Uri uri) async {
     debugPrint('Received deep link: $uri');
 
+    // Check if this is a Firebase Auth action link
+    final String? mode = uri.queryParameters['mode'];
+    final String? oobCode = uri.queryParameters['oobCode'];
+
+    if (mode != null && oobCode != null) {
+      // Handle Firebase Auth action
+      await _handleFirebaseAuthAction(context, mode, oobCode);
+      return;
+    }
+
     // Extract the sheet ID and owner's user ID from the query parameters
     final String? sheetId = uri.queryParameters['id'];
     final String? ownerId = uri.queryParameters['userId'];
@@ -253,6 +263,66 @@ class DynamicLinkService {
         final navigatorContext = MyApp.navigatorKey.currentContext;
         if (navigatorContext != null && navigatorContext.mounted) {
           ToastUtils.showToast('Cannot open right now', isError: true);
+          Navigator.pushNamedAndRemoveUntil(
+            navigatorContext,
+            '/',
+            (route) => false,
+          );
+        }
+      });
+    }
+  }
+
+  /// Handle Firebase Auth action links (email verification, password reset)
+  Future<void> _handleFirebaseAuthAction(
+      BuildContext context, String mode, String oobCode) async {
+    debugPrint('Handling Firebase Auth action: mode=$mode');
+
+    try {
+      if (mode == 'verifyEmail') {
+        // Handle email verification
+        await FirebaseAuth.instance.applyActionCode(oobCode);
+
+        // Reload the current user to update verification status
+        await FirebaseAuth.instance.currentUser?.reload();
+
+        // Navigate to home and show success message
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final navigatorContext = MyApp.navigatorKey.currentContext;
+          if (navigatorContext != null && navigatorContext.mounted) {
+            Navigator.pushNamedAndRemoveUntil(
+              navigatorContext,
+              '/',
+              (route) => false,
+            );
+
+            // Show success toast
+            ToastUtils.showToast('Email verified');
+          }
+        });
+      } else if (mode == 'resetPassword') {
+        // Handle password reset - navigate to reset password screen
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final navigatorContext = MyApp.navigatorKey.currentContext;
+          if (navigatorContext != null && navigatorContext.mounted) {
+            Navigator.pushNamed(
+              navigatorContext,
+              '/reset-password',
+              arguments: oobCode,
+            );
+          }
+        });
+      } else {
+        debugPrint('Unknown Firebase Auth action mode: $mode');
+      }
+    } catch (e) {
+      debugPrint('Error handling Firebase Auth action: $e');
+
+      // Show error message
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final navigatorContext = MyApp.navigatorKey.currentContext;
+        if (navigatorContext != null && navigatorContext.mounted) {
+          ToastUtils.showToast('Action failed or expired', isError: true);
           Navigator.pushNamedAndRemoveUntil(
             navigatorContext,
             '/',

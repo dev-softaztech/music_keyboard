@@ -2,23 +2,33 @@ import 'package:flutter/material.dart';
 import 'package:music_keyboard/src/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 
-class SignupScreen extends StatefulWidget {
-  const SignupScreen({super.key});
+class ResetPasswordScreen extends StatefulWidget {
+  final String oobCode;
+
+  const ResetPasswordScreen({super.key, required this.oobCode});
+
+  static const routeName = '/reset-password';
 
   @override
-  _SignupScreenState createState() => _SignupScreenState();
+  _ResetPasswordScreenState createState() => _ResetPasswordScreenState();
 }
 
-class _SignupScreenState extends State<SignupScreen> {
-  final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
+class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   bool _isLoading = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context);
-
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -33,8 +43,7 @@ class _SignupScreenState extends State<SignupScreen> {
         ),
         child: SafeArea(
           child: Padding(
-            padding:
-                const EdgeInsets.only(left: 32.0, right: 32.0, bottom: 27.0),
+            padding: const EdgeInsets.all(32.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -48,62 +57,33 @@ class _SignupScreenState extends State<SignupScreen> {
 
                 const SizedBox(height: 40),
 
-                // Name field
-                TextField(
-                  controller: _nameController,
-                  decoration: InputDecoration(
-                    labelText: 'Name',
-                    labelStyle: const TextStyle(
-                      color: Color(0xFF242038),
-                      fontSize: 16,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFF242038)),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          const BorderSide(color: Color(0xFF242038), width: 2),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
+                // Title
+                const Text(
+                  'Reset Password',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF242038),
                   ),
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
 
-                // Email field
-                TextField(
-                  controller: _emailController,
-                  decoration: InputDecoration(
-                    labelText: 'Email',
-                    labelStyle: const TextStyle(
-                      color: Color(0xFF242038),
-                      fontSize: 16,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFF242038)),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          const BorderSide(color: Color(0xFF242038), width: 2),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
+                const Text(
+                  'Enter your new password below.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey,
                   ),
-                  keyboardType: TextInputType.emailAddress,
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 32),
 
-                // Password field
+                // New Password field
                 TextField(
                   controller: _passwordController,
                   decoration: InputDecoration(
-                    labelText: 'Password',
+                    labelText: 'New Password',
                     labelStyle: const TextStyle(
                       color: Color(0xFF242038),
                       fontSize: 16,
@@ -119,18 +99,70 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                     filled: true,
                     fillColor: Colors.white,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                        color: const Color(0xFF242038),
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
+                    ),
                   ),
-                  obscureText: true,
+                  obscureText: _obscurePassword,
+                ),
+
+                const SizedBox(height: 16),
+
+                // Confirm Password field
+                TextField(
+                  controller: _confirmPasswordController,
+                  decoration: InputDecoration(
+                    labelText: 'Confirm Password',
+                    labelStyle: const TextStyle(
+                      color: Color(0xFF242038),
+                      fontSize: 16,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFF242038)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide:
+                          const BorderSide(color: Color(0xFF242038), width: 2),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureConfirmPassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                        color: const Color(0xFF242038),
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscureConfirmPassword = !_obscureConfirmPassword;
+                        });
+                      },
+                    ),
+                  ),
+                  obscureText: _obscureConfirmPassword,
                 ),
 
                 const SizedBox(height: 30),
 
-                // Sign Up Button
+                // Reset Password Button
                 SizedBox(
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : () => _signUp(authProvider),
+                    onPressed: _isLoading ? null : _resetPassword,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF242038),
                       foregroundColor: Colors.white,
@@ -144,10 +176,10 @@ class _SignupScreenState extends State<SignupScreen> {
                         : const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.person_add, size: 24),
+                              Icon(Icons.lock_reset, size: 24),
                               SizedBox(width: 8),
                               Text(
-                                'Sign Up',
+                                'Reset Password',
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w600,
@@ -155,25 +187,6 @@ class _SignupScreenState extends State<SignupScreen> {
                               ),
                             ],
                           ),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // Back to sign in link
-                Center(
-                  child: TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: const Text(
-                      'Already have an account? Sign in',
-                      style: TextStyle(
-                        color: Color(0xFF242038),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
                   ),
                 ),
               ],
@@ -184,12 +197,27 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 
-  Future<void> _signUp(AuthProvider authProvider) async {
-    if (_nameController.text.isEmpty ||
-        _emailController.text.isEmpty ||
-        _passwordController.text.isEmpty) {
+  Future<void> _resetPassword() async {
+    final password = _passwordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+
+    if (password.isEmpty || confirmPassword.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill in all fields')),
+      );
+      return;
+    }
+
+    if (password != confirmPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Passwords do not match')),
+      );
+      return;
+    }
+
+    if (password.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password must be at least 6 characters')),
       );
       return;
     }
@@ -197,35 +225,36 @@ class _SignupScreenState extends State<SignupScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await authProvider.signUp(
-        _emailController.text.trim(),
-        _passwordController.text.trim(),
-        _nameController.text.trim(),
-      );
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await authProvider.confirmPasswordReset(widget.oobCode, password);
 
-      // Send email verification
-      try {
-        await authProvider.sendEmailVerification();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Password reset successful! Please sign in.'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+
+        // Navigate to login screen after a short delay
+        await Future.delayed(const Duration(seconds: 1));
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                  'Account created! Please check your email to verify your account.'),
-              duration: Duration(seconds: 4),
-            ),
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            '/login',
+            (route) => false,
           );
         }
-      } catch (e) {
-        // Don't block signup if verification email fails
-        print('Failed to send verification email: $e');
       }
-
-      // If successful, pop back to login screen, which will pop to home
-      Navigator.of(context).pop();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Sign up failed: ${e.toString()}')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to reset password: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);

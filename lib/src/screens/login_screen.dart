@@ -110,7 +110,25 @@ class _LoginScreenState extends State<LoginScreen> {
                                 obscureText: true,
                               ),
 
-                              const SizedBox(height: 30),
+                              const SizedBox(height: 12),
+
+                              // Forgot Password link
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: TextButton(
+                                  onPressed: _showForgotPasswordDialog,
+                                  child: const Text(
+                                    'Forgot Password?',
+                                    style: TextStyle(
+                                      color: Color(0xFF242038),
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(height: 18),
 
                               // Login Button
                               SizedBox(
@@ -237,8 +255,13 @@ class _LoginScreenState extends State<LoginScreen> {
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
-      // If successful, pop back to home screen
-      Navigator.of(context).pop();
+      // If successful, navigate to home screen (clear navigation stack)
+      if (mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/',
+          (route) => false,
+        );
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Login failed: ${e.toString()}')),
@@ -248,5 +271,176 @@ class _LoginScreenState extends State<LoginScreen> {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  void _showForgotPasswordDialog() {
+    final emailController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Reset Password',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF242038),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(dialogContext).pop(),
+                      color: const Color(0xFF242038),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
+                const Text(
+                  'Enter your email address and we\'ll send you a link to reset your password.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey,
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Email field
+                TextField(
+                  controller: emailController,
+                  decoration: InputDecoration(
+                    labelText: 'Email',
+                    labelStyle: const TextStyle(
+                      color: Color(0xFF242038),
+                      fontSize: 16,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFF242038)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide:
+                          const BorderSide(color: Color(0xFF242038), width: 2),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                  autofocus: true,
+                ),
+
+                const SizedBox(height: 24),
+
+                // Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(dialogContext).pop(),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF242038),
+                          side: const BorderSide(color: Color(0xFF242038)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          final email = emailController.text.trim();
+                          if (email.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text('Please enter your email')),
+                            );
+                            return;
+                          }
+
+                          Navigator.of(dialogContext).pop();
+
+                          try {
+                            final authProvider = Provider.of<AuthProvider>(
+                                context,
+                                listen: false);
+                            await authProvider.sendPasswordResetEmail(email);
+
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                      'Password reset email sent! Check your inbox.'),
+                                  duration: Duration(seconds: 4),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                      'Failed to send email: ${e.toString()}'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF242038),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        child: const Text(
+                          'Send Link',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 }
