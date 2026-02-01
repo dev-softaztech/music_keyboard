@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter/material.dart';
 import 'package:music_keyboard/src/providers/auth_provider.dart';
 import 'package:music_keyboard/src/screens/signup_screen.dart';
@@ -278,8 +279,15 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } catch (e) {
+      String errorMessage = 'Login failed';
+      if (e is firebase_auth.FirebaseAuthException &&
+          e.code == 'invalid-credential') {
+        errorMessage = 'Email or password are not correct';
+      } else {
+        errorMessage += ': ${e.toString()}';
+      }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login failed: ${e.toString()}')),
+        SnackBar(content: Text(errorMessage)),
       );
     } finally {
       if (mounted) {
