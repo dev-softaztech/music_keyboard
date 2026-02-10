@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/music_note.dart';
-import 'package:music_keyboard/src/widgets/keyboard/key_signature_painter.dart';
+import 'package:music_keyboard/src/widgets/keyboard/sheet_keyboard_widgets/key_signature_painter.dart';
 import 'package:music_keyboard/src/widgets/shared/popup_theme.dart';
 
 class KeySignatureData {

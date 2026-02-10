@@ -16,15 +16,16 @@ import 'package:music_keyboard/src/providers/is_connected_provider.dart';
 import 'package:music_keyboard/src/providers/list_of_spacing_for_each_row.dart';
 import 'package:music_keyboard/src/providers/selected_accidental_provider.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/note_width_calculator.dart';
-import 'package:music_keyboard/src/widgets/keyboard/dynamics_keyboard.dart';
-import 'package:music_keyboard/src/widgets/keyboard/notes_keyboard_layout.dart';
+import 'package:music_keyboard/src/widgets/keyboard/sheet_keyboard_widgets/dynamics_keyboard.dart';
+import 'package:music_keyboard/src/widgets/keyboard/guitar_keyboard_widgets/guitar_keyboard_layout.dart';
+import 'package:music_keyboard/src/widgets/keyboard/sheet_keyboard_widgets/notes_keyboard_layout.dart';
 import 'package:music_keyboard/src/widgets/main_sheet/music_sheet_container.dart';
 import 'package:music_keyboard/src/utils/pdf_exporter.dart';
 import 'package:music_keyboard/src/utils/screenshot_saver.dart';
 import 'package:music_keyboard/src/utils/toast_utils.dart';
 import 'package:music_keyboard/src/widgets/main_sheet/title_popup.dart';
 import 'package:music_keyboard/src/widgets/keyboard/tempo_popup.dart';
-import 'package:music_keyboard/src/widgets/keyboard/rehearsal_markings_popup.dart';
+import 'package:music_keyboard/src/widgets/keyboard/sheet_keyboard_widgets/rehearsal_markings_popup.dart';
 import 'package:music_keyboard/src/providers/row_spacing_provider.dart';
 import 'package:music_keyboard/src/providers/select_rows_mode_provider.dart';
 import 'package:music_keyboard/src/providers/undo_manager.dart';
@@ -1506,8 +1507,20 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     switch (sheet.keyboardType) {
       case KeyboardType.sheet:
       case KeyboardType.drumTab:
-      case KeyboardType.guitarTab:
         return NotesKeyboardLayout(
+          sheetNoteRows: sheet.sheetRows,
+          showNotesKeyboard: showNotesKeyboard,
+          sheetFormat: sheet.format,
+          onToggleKeyboard: (isNotes) {
+            setState(() {
+              showNotesKeyboard = isNotes;
+            });
+          },
+          onKeyPress: handleKeyPress,
+        );
+
+      case KeyboardType.guitarTab:
+        return GuitarKeyboardLayout(
           sheetNoteRows: sheet.sheetRows,
           showNotesKeyboard: showNotesKeyboard,
           sheetFormat: sheet.format,
