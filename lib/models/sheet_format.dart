@@ -1,3 +1,4 @@
+import 'package:music_keyboard/models/keyboard_type.dart';
 import 'package:music_keyboard/models/sheet_format_config.dart';
 
 enum SheetFormat {
@@ -55,30 +56,87 @@ extension SheetFormatExtension on SheetFormat {
     }
   }
 
-  /// Default clefs for each row in a group (in order)
-  List<String> get defaultClefs {
+  /// Default clefs for each row in a group (in order) for the given keyboard type
+  List<String> defaultClefsFor(KeyboardType keyboardType) {
     switch (this) {
       case SheetFormat.single:
-        return ['\uf472']; // Treble clef
+        switch (keyboardType) {
+          case KeyboardType.sheet:
+            return ['\uf472']; // Treble clef
+          case KeyboardType.drumTab:
+            return ['\uf472']; // Treble clef
+          case KeyboardType.guitarTab:
+            return ['\uF40C']; // Treble clef
+        }
       case SheetFormat.twoRows:
-        return ['\uf472', '\uf474']; // Treble, Bass
+        switch (keyboardType) {
+          case KeyboardType.sheet:
+            return ['\uf472', '\uf474']; // Treble, Bass
+          case KeyboardType.drumTab:
+            return ['\uf472', '\uf474']; // Treble, Bass
+          case KeyboardType.guitarTab:
+            return ['\uf472', '\uf474']; // Treble, Bass
+        }
       case SheetFormat.threeRows:
-        return ['\uf472', '\uf472', '\uf474']; // Treble, Treble, Bass
+        switch (keyboardType) {
+          case KeyboardType.sheet:
+            return ['\uf472', '\uf472', '\uf474']; // Treble, Treble, Bass
+          case KeyboardType.drumTab:
+            return ['\uf472', '\uf472', '\uf474']; // Treble, Treble, Bass
+          case KeyboardType.guitarTab:
+            return ['\uf472', '\uf472', '\uf474']; // Treble, Treble, Bass
+        }
       case SheetFormat.fourRows:
-        return [
-          '\uf472',
-          '\uf472',
-          '\uf472',
-          '\uf474'
-        ]; // Treble, Treble, Treble, Bass
+        switch (keyboardType) {
+          case KeyboardType.sheet:
+            return [
+              '\uf472',
+              '\uf472',
+              '\uf472',
+              '\uf474'
+            ]; // Treble, Treble, Treble, Bass
+          case KeyboardType.drumTab:
+            return [
+              '\uf472',
+              '\uf472',
+              '\uf472',
+              '\uf474'
+            ]; // Treble, Treble, Treble, Bass
+          case KeyboardType.guitarTab:
+            return [
+              '\uf472',
+              '\uf472',
+              '\uf472',
+              '\uf474'
+            ]; // Treble, Treble, Treble, Bass
+        }
       case SheetFormat.fiveRows:
-        return [
-          '\uf472',
-          '\uf472',
-          '\uf472',
-          '\uf472',
-          '\uf474'
-        ]; // Treble, Treble, Treble, Treble, Bass
+        switch (keyboardType) {
+          case KeyboardType.sheet:
+            return [
+              '\uf472',
+              '\uf472',
+              '\uf472',
+              '\uf472',
+              '\uf474'
+            ]; // Treble, Treble, Treble, Treble, Bass
+          case KeyboardType.drumTab:
+            return [
+              '\uf472',
+              '\uf472',
+              '\uf472',
+              '\uf472',
+              '\uf474'
+            ]; // Treble, Treble, Treble, Treble, Bass
+          case KeyboardType.guitarTab:
+            return [
+              '\uf472',
+              '\uf472',
+              '\uf472',
+              '\uf472',
+              '\uf474'
+            ]; // Treble, Treble, Treble, Treble, Bass
+        }
     }
   }
 

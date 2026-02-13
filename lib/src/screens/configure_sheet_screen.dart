@@ -449,14 +449,15 @@ class _ConfigureSheetScreenState extends State<ConfigureSheetScreen> {
         );
 
         // Add appropriate clef for each row
-        if (i < _selectedFormat.defaultClefs.length) {
+        if (i < _selectedFormat.defaultClefsFor(_selectedKeyboardType).length) {
           row.notes.add(MusicalNote(
             pitch: "G",
             octave: 4,
             type: NoteType.clef,
             isBeamed: false,
-            unicodeCharacter: _selectedFormat.defaultClefs[i],
-            clefType: _selectedFormat.defaultClefs[i],
+            unicodeCharacter:
+                _selectedFormat.defaultClefsFor(_selectedKeyboardType)[i],
+            clefType: _selectedFormat.defaultClefsFor(_selectedKeyboardType)[i],
           ));
         }
 

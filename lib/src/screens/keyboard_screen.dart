@@ -311,7 +311,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     if (remainder == 0) return;
 
     final int rowsToAdd = rowsPerGroup - remainder;
-    final List<String> clefs = sheet.format.defaultClefs;
+    final List<String> clefs = sheet.format.defaultClefsFor(sheet.keyboardType);
 
     // Add the required empty rows with appropriate clefs
     for (int i = 0; i < rowsToAdd; i++) {
@@ -522,7 +522,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
       double maxRowSize) {
     // Create new rows based on sheet format
     final int rowsToAdd = sheet.format.rowsPerGroup;
-    final List<String> clefs = sheet.format.defaultClefs;
+    final List<String> clefs = sheet.format.defaultClefsFor(sheet.keyboardType);
 
     // Calculate where the current connected group ends
     final int rowsPerGroup = sheet.format.rowsPerGroup;
@@ -952,7 +952,8 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         var rowSpacingList = rowSpacingProvider.rowSpacingList;
 
         final int rowsToAdd = sheet.format.rowsPerGroup;
-        final List<String> clefs = sheet.format.defaultClefs;
+        final List<String> clefs =
+            sheet.format.defaultClefsFor(sheet.keyboardType);
 
         // Calculate where the current connected group ends
         final int rowsPerGroup = sheet.format.rowsPerGroup;
