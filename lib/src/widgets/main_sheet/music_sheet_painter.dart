@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/sheet_rows.dart';
 import 'package:music_keyboard/models/sheet_format.dart';
 import 'package:music_keyboard/models/sheet_properties.dart';
+import 'package:music_keyboard/models/keyboard_type.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/key_signature_position_calculator.dart';
 import 'package:music_keyboard/src/utils/pdf_exporter.dart';
 import 'package:vector_math/vector_math.dart' as vec;
@@ -18,6 +19,7 @@ class MusicSheetPainter extends CustomPainter {
   final String composer;
   final List<SheetRows> sheetNoteRows;
   final SheetFormat sheetFormat;
+  final KeyboardType keyboardType;
   final int selectedRow;
   final int selectedIndex;
   final bool showCursor;
@@ -49,6 +51,7 @@ class MusicSheetPainter extends CustomPainter {
     required this.composer,
     required this.sheetNoteRows,
     required this.sheetFormat,
+    required this.keyboardType,
     required this.selectedRow,
     required this.selectedIndex,
     required this.showCursor,
@@ -80,7 +83,7 @@ class MusicSheetPainter extends CustomPainter {
     Paint paint = Paint()..color = Colors.black;
     Color noteColour = Colors.black;
     const double lineSpacing = 10;
-    const double sheetHeight = lineSpacing * 4;
+    final double sheetHeight = lineSpacing * (keyboardType.lineCount - 1);
 
     // Draw title and composer only if showTitleAndComposer is true
     if (showTitleAndComposer) {
@@ -340,8 +343,18 @@ class MusicSheetPainter extends CustomPainter {
           _drawKeySignature(
               canvas, paint, note, lineSpacing, staffTop, x, noteColour);
         } else {
-          drawNote(canvas, paint, note, lineSpacing, staffTop, x,
-              sheetNoteRows[rowIndex].notes, i, currentRowSpacing, noteColour);
+          drawNote(
+              canvas,
+              paint,
+              note,
+              lineSpacing,
+              staffTop,
+              x,
+              sheetNoteRows[rowIndex].notes,
+              i,
+              currentRowSpacing,
+              noteColour,
+              keyboardType);
         }
 
         if (note.isTriplet) {
@@ -1205,7 +1218,8 @@ class MusicSheetPainter extends CustomPainter {
 
   void drawStaffLines(Canvas canvas, Paint paint, double staffTop,
       double lineSpacing, double sheetHeight, Size size) {
-    for (int i = 0; i < 5; i++) {
+    // Draw horizontal staff lines based on keyboard type
+    for (int i = 0; i < keyboardType.lineCount; i++) {
       final y = staffTop + i * lineSpacing;
       canvas.drawLine(
         Offset(60, y),
@@ -1214,6 +1228,7 @@ class MusicSheetPainter extends CustomPainter {
       );
     }
 
+    // Draw vertical lines at start and end of staff
     canvas.drawLine(Offset(60, staffTop), Offset(60, staffTop + (sheetHeight)),
         paint..strokeWidth = 1.0);
     canvas.drawLine(

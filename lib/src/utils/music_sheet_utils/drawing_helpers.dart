@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:music_keyboard/models/keyboard_type.dart';
 import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/note_position_calculator.dart';
 
@@ -12,7 +13,8 @@ void drawNote(
     List<MusicalNote> notes,
     int index,
     double noteSpacing,
-    Color noteColour) {
+    Color noteColour,
+    KeyboardType keyboardType) {
   if (note.type == NoteType.clef || note.type == NoteType.bar) {
     drawClefKey(canvas, paint, note, lineSpacing, staffTop, noteX, notes, index,
         noteColour);
@@ -41,12 +43,15 @@ void drawClefKey(
     List<MusicalNote> notes,
     int index,
     Color noteColour) {
+  var fontSize = 40.0;
+  if (note.unicodeCharacter == "\uF40C") fontSize = 35;
+
   final textPainter = TextPainter(
     text: TextSpan(
       text: note.unicodeCharacter,
       style: TextStyle(
         fontFamily: 'Bravura',
-        fontSize: 40,
+        fontSize: fontSize,
         color: noteColour,
       ),
     ),
@@ -71,6 +76,8 @@ void drawClefKey(
   if (note.unicodeCharacter == "\ue08a" || note.unicodeCharacter == "\ue08b") {
     offsetY = offsetY - 20;
   }
+
+  if (note.unicodeCharacter == "\uF40C") offsetY = offsetY - 4;
 
   textPainter.paint(canvas, Offset(offsetX, offsetY + 0.5));
 }

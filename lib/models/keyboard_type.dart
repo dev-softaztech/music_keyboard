@@ -35,4 +35,16 @@ extension KeyboardTypeExtension on KeyboardType {
       orElse: () => KeyboardType.sheet,
     );
   }
+
+  /// Returns the number of lines in a staff for this keyboard type
+  int get lineCount {
+    switch (this) {
+      case KeyboardType.sheet:
+        return 5;
+      case KeyboardType.drumTab:
+        return 5;
+      case KeyboardType.guitarTab:
+        return 6;
+    }
+  }
 }

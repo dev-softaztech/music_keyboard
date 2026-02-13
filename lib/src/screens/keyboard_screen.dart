@@ -1563,6 +1563,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                             screenshotController: screenshotController,
                             sheetNoteRows: sheet.sheetRows,
                             sheetFormat: sheet.format,
+                            keyboardType: sheet.keyboardType,
                             musicSheetWidth: musicSheetWidth,
                             statusBarHeight: statusBarHeight,
                             sheetProperties: sheet.sheetProperties,

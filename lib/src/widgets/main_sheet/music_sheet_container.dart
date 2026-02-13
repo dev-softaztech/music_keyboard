@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/models/sheet_rows.dart';
 import 'package:music_keyboard/models/sheet_format.dart';
+import 'package:music_keyboard/models/keyboard_type.dart';
 import 'package:music_keyboard/src/providers/current_selected_note_provider.dart';
 import 'package:music_keyboard/src/providers/list_of_spacing_for_each_row.dart';
 import 'package:music_keyboard/src/providers/row_spacing_provider.dart';
@@ -24,6 +25,7 @@ class MusicSheetContainer extends StatefulWidget {
   final ScreenshotController screenshotController;
   final List<SheetRows> sheetNoteRows;
   final SheetFormat sheetFormat;
+  final KeyboardType keyboardType;
   final double musicSheetWidth;
   final double statusBarHeight;
   final SheetProperties sheetProperties;
@@ -47,6 +49,7 @@ class MusicSheetContainer extends StatefulWidget {
     required this.screenshotController,
     required this.sheetNoteRows,
     required this.sheetFormat,
+    required this.keyboardType,
     required this.musicSheetWidth,
     required this.statusBarHeight,
     required this.sheetProperties,
@@ -1696,6 +1699,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                                       composer: widget.sheetProperties.composer,
                                       sheetNoteRows: widget.sheetNoteRows,
                                       sheetFormat: widget.sheetFormat,
+                                      keyboardType: widget.keyboardType,
                                       selectedRow:
                                           -1, // No selected row in screenshot
                                       selectedIndex:
@@ -1733,6 +1737,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                                   composer: widget.sheetProperties.composer,
                                   sheetNoteRows: widget.sheetNoteRows,
                                   sheetFormat: widget.sheetFormat,
+                                  keyboardType: widget.keyboardType,
                                   selectedRow: selectedNoteProvider.selectedRow,
                                   selectedIndex:
                                       selectedNoteProvider.selectedIndex,
