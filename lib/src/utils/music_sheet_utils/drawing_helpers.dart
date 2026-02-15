@@ -574,7 +574,7 @@ void drawGuitarTabFrets(Canvas canvas, MusicalNote parentChord,
       text: TextSpan(
         text: childNote.unicodeCharacter, // Fret number as string
         style: TextStyle(
-          fontSize: 12,
+          fontSize: 11,
           //fontWeight: FontWeight.bold,
           color: noteColour,
         ),
@@ -588,6 +588,24 @@ void drawGuitarTabFrets(Canvas canvas, MusicalNote parentChord,
     final double xPos = noteX - (textPainter.width / 2);
     final double yPos = stringY - (textPainter.height / 2);
 
+    // Draw white background rectangle behind the fret number
+    final Paint backgroundPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+
+    // Add slight padding around the text
+    final double paddingVertical = 2;
+    final double paddingHorizontal = 0.5;
+    final Rect backgroundRect = Rect.fromLTRB(
+      xPos - paddingHorizontal,
+      yPos + paddingVertical,
+      xPos + textPainter.width + paddingHorizontal,
+      yPos + textPainter.height - paddingVertical,
+    );
+
+    canvas.drawRect(backgroundRect, backgroundPaint);
+
+    // Draw the text on top of the white background
     textPainter.paint(canvas, Offset(xPos, yPos));
   }
 }
