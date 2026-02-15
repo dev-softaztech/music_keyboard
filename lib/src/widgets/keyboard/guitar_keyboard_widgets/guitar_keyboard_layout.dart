@@ -150,6 +150,44 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     );
   }
 
+  Widget _buildNextLastButton(bool isNextNote) {
+    double buttonWidth = MediaQuery.of(context).size.width / 2.8;
+
+    return Container(
+      height: 31,
+      width: buttonWidth,
+      margin: const EdgeInsets.symmetric(horizontal: 3),
+      child: ElevatedButton(
+        onPressed: () {
+          // TODO: Implement
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 1,
+          padding: EdgeInsets.zero,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: isNextNote
+              ? [
+                  const Text('Next', style: TextStyle(fontSize: 14)),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.arrow_forward, size: 18),
+                ]
+              : [
+                  const Icon(Icons.arrow_back, size: 18),
+                  const SizedBox(width: 4),
+                  const Text('Back', style: TextStyle(fontSize: 14)),
+                ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentSelectedNoteProvider =
@@ -169,120 +207,176 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       padding: const EdgeInsets.all(8),
       child: Column(
         children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                height: 30,
+                width: 25,
+                decoration: BoxDecoration(
+                  borderRadius:
+                      BorderRadius.circular(8), // Match your button's shape
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey,
+                      blurRadius: 5,
+                      spreadRadius: 0,
+                      offset: Offset.zero, // This centers the shadow
+                    ),
+                  ],
+                ),
+                child: ElevatedButton(
+                  onPressed: () {
+                    // TODO: Implement string selection functionality
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey[100],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(5),
+                      side: const BorderSide(
+                          color: Color.fromARGB(255, 218, 218, 218), width: 1),
+                    ),
+                    padding: EdgeInsets.zero,
+                  ),
+                  child: Text(
+                    '\uF40A',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.black,
+                      fontFamily: 'Bravura',
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                _buildNextLastButton(false),
+                _buildNextLastButton(true)
+              ]),
+            ],
+          ),
           const SizedBox(height: 10),
-          // First technique row with 7 buttons
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildTechniqueButton('P.M.', isUnicode: false),
-              const SizedBox(width: 7),
-              _buildTechniqueButton('P.H.', isUnicode: false),
-              const SizedBox(width: 7),
-              _buildTechniqueButton('\uE589'),
-              const SizedBox(width: 7),
-              _buildTechniqueButton('\uE4BA'),
-              const SizedBox(width: 7),
-              _buildTechniqueButton('bend',
-                  svgAssetPath: 'assets/svgs/bend.svg'),
-              const SizedBox(width: 7),
-              _buildTechniqueButton('pre-bend',
-                  svgAssetPath: 'assets/svgs/pre-bend.svg'),
-              const SizedBox(width: 7),
-              _buildTechniqueButton('\uE610'),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildStringButton('E'),
+                  const SizedBox(height: 7),
+                  _buildStringButton('A'),
+                  const SizedBox(height: 7),
+                  _buildStringButton('D'),
+                  const SizedBox(height: 7),
+                  _buildStringButton('G'),
+                  const SizedBox(height: 7),
+                  _buildStringButton('B'),
+                  const SizedBox(height: 7),
+                  _buildStringButton('E'),
+                ],
+              ),
+              Column(
+                children: [
+                  const SizedBox(height: 5),
+                  // First technique row with 7 buttons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildTechniqueButton('P.M.', isUnicode: false),
+                      const SizedBox(width: 7),
+                      _buildTechniqueButton('P.H.', isUnicode: false),
+                      const SizedBox(width: 7),
+                      _buildTechniqueButton('\uE589'),
+                      const SizedBox(width: 7),
+                      _buildTechniqueButton('\uE4BA'),
+                      const SizedBox(width: 7),
+                      _buildTechniqueButton('bend',
+                          svgAssetPath: 'assets/svgs/bend.svg'),
+                      const SizedBox(width: 7),
+                      _buildTechniqueButton('pre-bend',
+                          svgAssetPath: 'assets/svgs/pre-bend.svg'),
+                      const SizedBox(width: 7),
+                      _buildTechniqueButton('\uE610'),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // Second technique row with 7 buttons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildTechniqueButton('\uE682 '),
+                      const SizedBox(width: 7),
+                      _buildTechniqueButton('Ham.', isUnicode: false),
+                      const SizedBox(width: 7),
+                      _buildTechniqueButton('\uEA6D'),
+                      const SizedBox(width: 7),
+                      _buildTechniqueButton('\uEA6E'),
+                      const SizedBox(width: 7),
+                      _buildTechniqueButton('bend-release',
+                          svgAssetPath: 'assets/svgs/bend-release.svg'),
+                      const SizedBox(width: 7),
+                      _buildTechniqueButton('pre-bend-release',
+                          svgAssetPath: 'assets/svgs/pre-bend-release.svg'),
+                      const SizedBox(width: 7),
+                      _buildTechniqueButton('\uE612'),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Row(
+                      //mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        _buildFretButton(1),
+                        _buildFretButton(2),
+                        _buildFretButton(3),
+                        _buildFretButton(4),
+                        _buildFretButton(5),
+                        _buildFretButton(6),
+                        _buildFretButton(7),
+                        _buildFretButton(8),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  // Fret numbers row 2 (9-16)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildFretButton(9),
+                        _buildFretButton(10),
+                        _buildFretButton(11),
+                        _buildFretButton(12),
+                        _buildFretButton(13),
+                        _buildFretButton(14),
+                        _buildFretButton(15),
+                        _buildFretButton(16),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  // Fret numbers row 3 (17-24)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildFretButton(17),
+                        _buildFretButton(18),
+                        _buildFretButton(19),
+                        _buildFretButton(20),
+                        _buildFretButton(21),
+                        _buildFretButton(22),
+                        _buildFretButton(23),
+                        _buildFretButton(24),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ],
-          ),
-          const SizedBox(height: 8),
-          // Second technique row with 7 buttons
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildTechniqueButton('\uE682 '),
-              const SizedBox(width: 7),
-              _buildTechniqueButton('Ham.', isUnicode: false),
-              const SizedBox(width: 7),
-              _buildTechniqueButton('\uEA6D'),
-              const SizedBox(width: 7),
-              _buildTechniqueButton('\uEA6E'),
-              const SizedBox(width: 7),
-              _buildTechniqueButton('bend-release',
-                  svgAssetPath: 'assets/svgs/bend-release.svg'),
-              const SizedBox(width: 7),
-              _buildTechniqueButton('pre-bend-release',
-                  svgAssetPath: 'assets/svgs/pre-bend-release.svg'),
-              const SizedBox(width: 7),
-              _buildTechniqueButton('\uE612'),
-            ],
-          ),
-          const SizedBox(height: 15),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildStringButton('E'),
-              const SizedBox(width: 7),
-              _buildStringButton('A'),
-              const SizedBox(width: 7),
-              _buildStringButton('D'),
-              const SizedBox(width: 7),
-              _buildStringButton('G'),
-              const SizedBox(width: 7),
-              _buildStringButton('B'),
-              const SizedBox(width: 7),
-              _buildStringButton('E'),
-            ],
-          ),
-          const SizedBox(height: 15),
-          // Fret numbers row 1 (1-8)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildFretButton(1),
-                _buildFretButton(2),
-                _buildFretButton(3),
-                _buildFretButton(4),
-                _buildFretButton(5),
-                _buildFretButton(6),
-                _buildFretButton(7),
-                _buildFretButton(8),
-              ],
-            ),
-          ),
-          const SizedBox(height: 5),
-          // Fret numbers row 2 (9-16)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildFretButton(9),
-                _buildFretButton(10),
-                _buildFretButton(11),
-                _buildFretButton(12),
-                _buildFretButton(13),
-                _buildFretButton(14),
-                _buildFretButton(15),
-                _buildFretButton(16),
-              ],
-            ),
-          ),
-          const SizedBox(height: 5),
-          // Fret numbers row 3 (17-24)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildFretButton(17),
-                _buildFretButton(18),
-                _buildFretButton(19),
-                _buildFretButton(20),
-                _buildFretButton(21),
-                _buildFretButton(22),
-                _buildFretButton(23),
-                _buildFretButton(24),
-              ],
-            ),
           ),
         ],
       ),
