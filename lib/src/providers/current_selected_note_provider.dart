@@ -30,7 +30,7 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
   /// **Add a note to the sheet and handle automatic bar line placement**
   void addNote(
       MusicalNote note, List<SheetRows> sheetNoteRows, BuildContext context) {
-    final notes = sheetNoteRows[selectedRow].notes;
+    final notes = sheetNoteRows[selectedRow].chords;
 
     context.read<SheetUndoManager>().saveState(sheetNoteRows);
 
@@ -161,7 +161,7 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
 
     // Apply beaming to all notes in the range
     for (int i = startIndex; i <= endIndex; i++) {
-      sheetNoteRows[row].notes[i].isBeamed = true;
+      sheetNoteRows[row].chords[i].isBeamed = true;
     }
 
     notifyListeners();
@@ -178,7 +178,7 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
       endIndex = tempIndex;
     }
 
-    MusicalNote firstNote = sheetNoteRows[row].notes[startIndex];
+    MusicalNote firstNote = sheetNoteRows[row].chords[startIndex];
     firstNote.slurEndIndex = endIndex;
 
     notifyListeners();
@@ -195,8 +195,8 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
     }
 
     // Remove any overlapping dynamics
-    for (int i = 0; i < sheetNoteRows[row].notes.length; i++) {
-      final note = sheetNoteRows[row].notes[i];
+    for (int i = 0; i < sheetNoteRows[row].chords.length; i++) {
+      final note = sheetNoteRows[row].chords[i];
       if (note.isCrescendoStart && note.crescendoEndIndex != null) {
         if ((i >= startIndex && i <= endIndex) ||
             (note.crescendoEndIndex! >= startIndex &&
@@ -215,7 +215,7 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
       }
     }
 
-    MusicalNote firstNote = sheetNoteRows[row].notes[startIndex];
+    MusicalNote firstNote = sheetNoteRows[row].chords[startIndex];
     firstNote.isCrescendoStart = true;
     firstNote.crescendoEndIndex = endIndex;
 
@@ -233,8 +233,8 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
     }
 
     // Remove any overlapping dynamics
-    for (int i = 0; i < sheetNoteRows[row].notes.length; i++) {
-      final note = sheetNoteRows[row].notes[i];
+    for (int i = 0; i < sheetNoteRows[row].chords.length; i++) {
+      final note = sheetNoteRows[row].chords[i];
       if (note.isCrescendoStart && note.crescendoEndIndex != null) {
         if ((i >= startIndex && i <= endIndex) ||
             (note.crescendoEndIndex! >= startIndex &&
@@ -253,7 +253,7 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
       }
     }
 
-    MusicalNote firstNote = sheetNoteRows[row].notes[startIndex];
+    MusicalNote firstNote = sheetNoteRows[row].chords[startIndex];
     firstNote.isDecrescendoStart = true;
     firstNote.decrescendoEndIndex = endIndex;
 
@@ -305,15 +305,15 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
     final row = selectedRow;
     final index = selectedIndex;
 
-    if (index >= 0 && index < sheetNoteRows[row].notes.length) {
-      final selectedNote = sheetNoteRows[row].notes[index];
+    if (index >= 0 && index < sheetNoteRows[row].chords.length) {
+      final selectedNote = sheetNoteRows[row].chords[index];
 
       if (selectedNote.isBeamed) {
         List<int> groupIndices =
-            getBeamedGroupIndices(index, sheetNoteRows[row].notes);
+            getBeamedGroupIndices(index, sheetNoteRows[row].chords);
 
         if (groupIndices.isNotEmpty) {
-          final firstNote = sheetNoteRows[row].notes[groupIndices.first];
+          final firstNote = sheetNoteRows[row].chords[groupIndices.first];
 
           if (firstNote.isUpsideDown == true) {
             firstNote.isUpsideDown = false;

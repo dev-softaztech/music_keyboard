@@ -171,7 +171,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
 
     if (rowIndex >= widget.sheetNoteRows.length || noteIndex < 0) return;
 
-    final notes = widget.sheetNoteRows[rowIndex].notes;
+    final notes = widget.sheetNoteRows[rowIndex].chords;
     if (noteIndex >= notes.length) return;
 
     final currentRowSpacing = rowSpacingList[rowIndex];
@@ -432,19 +432,19 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
 
     // Check if we're tapping on a dynamic marking - don't zoom if so
     for (int i = 0;
-        i < widget.sheetNoteRows[closestRowIndex].notes.length;
+        i < widget.sheetNoteRows[closestRowIndex].chords.length;
         i++) {
-      final note = widget.sheetNoteRows[closestRowIndex].notes[i];
+      final note = widget.sheetNoteRows[closestRowIndex].chords[i];
       if (note.isCrescendoStart || note.isDecrescendoStart) {
         var endIndex = note.isCrescendoStart
             ? (note.crescendoEndIndex! <
-                    widget.sheetNoteRows[closestRowIndex].notes.length - 1
+                    widget.sheetNoteRows[closestRowIndex].chords.length - 1
                 ? note.crescendoEndIndex!
-                : widget.sheetNoteRows[closestRowIndex].notes.length - 1)
+                : widget.sheetNoteRows[closestRowIndex].chords.length - 1)
             : note.decrescendoEndIndex! <
-                    widget.sheetNoteRows[closestRowIndex].notes.length - 1
+                    widget.sheetNoteRows[closestRowIndex].chords.length - 1
                 ? note.decrescendoEndIndex!
-                : widget.sheetNoteRows[closestRowIndex].notes.length - 1;
+                : widget.sheetNoteRows[closestRowIndex].chords.length - 1;
 
         final rect = getDynamicMarkingRect(i, endIndex, closestRowIndex);
         if (rect.contains(Offset(tapX, tapY))) {
@@ -454,7 +454,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
     }
 
     int closestNoteIndex = findClosestNoteIndex(
-        widget.sheetNoteRows[closestRowIndex].notes, tapX, closestRowIndex);
+        widget.sheetNoteRows[closestRowIndex].chords, tapX, closestRowIndex);
 
     // Zoom to the double-tapped note
     _zoomToNote(closestRowIndex, closestNoteIndex);
@@ -486,16 +486,16 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
     // First check if tapping outside a selected dynamic marking to deselect it
     if (_editingDynamicIndex != null && _editingDynamicRow != null) {
       final note = widget
-          .sheetNoteRows[_editingDynamicRow!].notes[_editingDynamicIndex!];
+          .sheetNoteRows[_editingDynamicRow!].chords[_editingDynamicIndex!];
       var endIndex = note.isCrescendoStart
           ? (note.crescendoEndIndex! <
-                  widget.sheetNoteRows[_editingDynamicRow!].notes.length - 1
+                  widget.sheetNoteRows[_editingDynamicRow!].chords.length - 1
               ? note.crescendoEndIndex!
-              : widget.sheetNoteRows[_editingDynamicRow!].notes.length - 1)
+              : widget.sheetNoteRows[_editingDynamicRow!].chords.length - 1)
           : note.decrescendoEndIndex! <
-                  widget.sheetNoteRows[_editingDynamicRow!].notes.length - 1
+                  widget.sheetNoteRows[_editingDynamicRow!].chords.length - 1
               ? note.decrescendoEndIndex!
-              : widget.sheetNoteRows[_editingDynamicRow!].notes.length - 1;
+              : widget.sheetNoteRows[_editingDynamicRow!].chords.length - 1;
 
       final rect = getDynamicMarkingRect(
           _editingDynamicIndex!, endIndex, _editingDynamicRow!);
@@ -566,18 +566,18 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
     // This prevents the issue where tapping on a marking selects the row below
     // because the marking is drawn below the staff
     for (int rowIndex = 0; rowIndex < widget.sheetNoteRows.length; rowIndex++) {
-      for (int i = 0; i < widget.sheetNoteRows[rowIndex].notes.length; i++) {
-        final note = widget.sheetNoteRows[rowIndex].notes[i];
+      for (int i = 0; i < widget.sheetNoteRows[rowIndex].chords.length; i++) {
+        final note = widget.sheetNoteRows[rowIndex].chords[i];
         if (note.isCrescendoStart || note.isDecrescendoStart) {
           var endIndex = note.isCrescendoStart
               ? (note.crescendoEndIndex! <
-                      widget.sheetNoteRows[rowIndex].notes.length - 1
+                      widget.sheetNoteRows[rowIndex].chords.length - 1
                   ? note.crescendoEndIndex!
-                  : widget.sheetNoteRows[rowIndex].notes.length - 1)
+                  : widget.sheetNoteRows[rowIndex].chords.length - 1)
               : note.decrescendoEndIndex! <
-                      widget.sheetNoteRows[rowIndex].notes.length - 1
+                      widget.sheetNoteRows[rowIndex].chords.length - 1
                   ? note.decrescendoEndIndex!
-                  : widget.sheetNoteRows[rowIndex].notes.length - 1;
+                  : widget.sheetNoteRows[rowIndex].chords.length - 1;
 
           final rect = getDynamicMarkingRect(i, endIndex, rowIndex);
           if (rect.contains(Offset(tapX, tapY))) {
@@ -596,7 +596,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
     int closestRowIndex = findClosestRow(widget.sheetNoteRows, tapY);
 
     int closestNoteIndex = findClosestNoteIndex(
-        widget.sheetNoteRows[closestRowIndex].notes, tapX, closestRowIndex);
+        widget.sheetNoteRows[closestRowIndex].chords, tapX, closestRowIndex);
 
     final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
 
@@ -662,7 +662,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
 
     int closestRowIndex = findClosestRow(widget.sheetNoteRows, tapY);
     int noteIndex = findClosestNoteIndex(
-        widget.sheetNoteRows[closestRowIndex].notes, tapX, closestRowIndex);
+        widget.sheetNoteRows[closestRowIndex].chords, tapX, closestRowIndex);
 
     if (noteIndex != -1) {
       setState(() {
@@ -694,40 +694,40 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
 
       if (_isEditingDynamic && _editingDynamicRow != null) {
         int closestNoteIndex = findClosestNoteIndex(
-            widget.sheetNoteRows[_editingDynamicRow!].notes,
+            widget.sheetNoteRows[_editingDynamicRow!].chords,
             tapX,
             _editingDynamicRow!);
         setState(() {
           final note = widget
-              .sheetNoteRows[_editingDynamicRow!].notes[_editingDynamicIndex!];
+              .sheetNoteRows[_editingDynamicRow!].chords[_editingDynamicIndex!];
           if (note.isCrescendoStart) {
             note.crescendoEndIndex = closestNoteIndex.clamp(
                 _editingDynamicIndex!,
-                widget.sheetNoteRows[_editingDynamicRow!].notes.length - 1);
+                widget.sheetNoteRows[_editingDynamicRow!].chords.length - 1);
           } else {
             note.decrescendoEndIndex = closestNoteIndex.clamp(
                 _editingDynamicIndex!,
-                widget.sheetNoteRows[_editingDynamicRow!].notes.length - 1);
+                widget.sheetNoteRows[_editingDynamicRow!].chords.length - 1);
           }
         });
       } else if (_isDragging && _dragRow != null) {
         int closestNoteIndex = findClosestNoteIndex(
-            widget.sheetNoteRows[_dragRow!].notes, tapX, _dragRow!);
+            widget.sheetNoteRows[_dragRow!].chords, tapX, _dragRow!);
 
         setState(() {
           // Handle different drag scenarios
           if (_isDraggingLeftHandle) {
             // Dragging left handle - update _dragStart, keep _dragEnd fixed
             _dragStart = closestNoteIndex.clamp(
-                0, widget.sheetNoteRows[_dragRow!].notes.length - 1);
+                0, widget.sheetNoteRows[_dragRow!].chords.length - 1);
           } else if (_isDraggingRightHandle) {
             // Dragging right handle - update _dragEnd, keep _dragStart fixed
             _dragEnd = closestNoteIndex.clamp(
-                0, widget.sheetNoteRows[_dragRow!].notes.length - 1);
+                0, widget.sheetNoteRows[_dragRow!].chords.length - 1);
           } else {
             // Default behavior for new selections
             _dragEnd = closestNoteIndex.clamp(
-                0, widget.sheetNoteRows[_dragRow!].notes.length - 1);
+                0, widget.sheetNoteRows[_dragRow!].chords.length - 1);
           }
         });
       }
@@ -901,7 +901,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
   }
 
   Rect _calculateHighlightRect() {
-    final rowNotes = widget.sheetNoteRows[_dragRow!].notes;
+    final rowNotes = widget.sheetNoteRows[_dragRow!].chords;
     final rowSpacingList =
         context.read<ListOfSpacingForEachRow>().rowSpacingList;
     final currentRowSpacing = rowSpacingList[_dragRow!];
@@ -993,7 +993,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
   }
 
   Rect getDynamicMarkingRect(int startIndex, int endIndex, int rowIndex) {
-    final rowNotes = widget.sheetNoteRows[rowIndex].notes;
+    final rowNotes = widget.sheetNoteRows[rowIndex].chords;
     final rowSpacingList =
         context.read<ListOfSpacingForEachRow>().rowSpacingList;
     final currentRowSpacing = rowSpacingList[rowIndex];
@@ -1033,12 +1033,12 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
     final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
     final closestRowIndex = selectedNoteProvider.selectedRow;
     int closestNoteIndex = selectedNoteProvider.selectedIndex;
-    final notes = widget.sheetNoteRows[closestRowIndex].notes;
+    final notes = widget.sheetNoteRows[closestRowIndex].chords;
 
     if (_dragStart == null && _dragEnd == null) {
       if (closestNoteIndex > 0 &&
           closestNoteIndex <=
-              widget.sheetNoteRows[closestRowIndex].notes.length) {
+              widget.sheetNoteRows[closestRowIndex].chords.length) {
         if (closestNoteIndex >= notes.length) {
           closestNoteIndex = notes.length - 1;
         }
@@ -1064,8 +1064,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
       final row = selectedNoteProvider.selectedRow;
       final index = selectedNoteProvider.selectedIndex;
 
-      if (index >= 0 && index < widget.sheetNoteRows[row].notes.length) {
-        return widget.sheetNoteRows[row].notes[index].isTiedToNext;
+      if (index >= 0 && index < widget.sheetNoteRows[row].chords.length) {
+        return widget.sheetNoteRows[row].chords[index].isTiedToNext;
       }
     }
     return false;
@@ -1079,8 +1079,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
       final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
       final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
 
-      for (int i = 0; i < widget.sheetNoteRows[_dragRow!].notes.length; i++) {
-        final note = widget.sheetNoteRows[_dragRow!].notes[i];
+      for (int i = 0; i < widget.sheetNoteRows[_dragRow!].chords.length; i++) {
+        final note = widget.sheetNoteRows[_dragRow!].chords[i];
         if (note.isDecrescendoStart && note.decrescendoEndIndex != null) {
           // Check if decrescendo overlaps with highlight range
           if ((i >= start && i <= end) ||
@@ -1096,8 +1096,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
       final index = selectedNoteProvider.selectedIndex;
 
       if (index >= 0) {
-        for (int i = 0; i < widget.sheetNoteRows[row].notes.length; i++) {
-          final note = widget.sheetNoteRows[row].notes[i];
+        for (int i = 0; i < widget.sheetNoteRows[row].chords.length; i++) {
+          final note = widget.sheetNoteRows[row].chords[i];
           if (note.isDecrescendoStart && note.decrescendoEndIndex != null) {
             if (i <= index && note.decrescendoEndIndex! >= index) {
               return true;
@@ -1117,8 +1117,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
       final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
       final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
 
-      for (int i = 0; i < widget.sheetNoteRows[_dragRow!].notes.length; i++) {
-        final note = widget.sheetNoteRows[_dragRow!].notes[i];
+      for (int i = 0; i < widget.sheetNoteRows[_dragRow!].chords.length; i++) {
+        final note = widget.sheetNoteRows[_dragRow!].chords[i];
         if (note.isCrescendoStart && note.crescendoEndIndex != null) {
           // Check if crescendo overlaps with highlight range
           if ((i >= start && i <= end) ||
@@ -1134,8 +1134,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
       final index = selectedNoteProvider.selectedIndex;
 
       if (index >= 0) {
-        for (int i = 0; i < widget.sheetNoteRows[row].notes.length; i++) {
-          final note = widget.sheetNoteRows[row].notes[i];
+        for (int i = 0; i < widget.sheetNoteRows[row].chords.length; i++) {
+          final note = widget.sheetNoteRows[row].chords[i];
           if (note.isCrescendoStart && note.crescendoEndIndex != null) {
             if (i <= index && note.crescendoEndIndex! >= index) {
               return true;
@@ -1155,8 +1155,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
       final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
       final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
 
-      for (int i = 0; i < widget.sheetNoteRows[_dragRow!].notes.length; i++) {
-        final note = widget.sheetNoteRows[_dragRow!].notes[i];
+      for (int i = 0; i < widget.sheetNoteRows[_dragRow!].chords.length; i++) {
+        final note = widget.sheetNoteRows[_dragRow!].chords[i];
         if (note.slurEndIndex != null) {
           // Check if slur overlaps with highlight range
           if ((i >= start && i <= end) ||
@@ -1171,8 +1171,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
       final index = selectedNoteProvider.selectedIndex;
 
       if (index >= 0) {
-        for (int i = 0; i < widget.sheetNoteRows[row].notes.length; i++) {
-          final note = widget.sheetNoteRows[row].notes[i];
+        for (int i = 0; i < widget.sheetNoteRows[row].chords.length; i++) {
+          final note = widget.sheetNoteRows[row].chords[i];
           if (note.slurEndIndex != null) {
             if (i <= index && note.slurEndIndex! >= index) {
               return true;
@@ -1190,7 +1190,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
       final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
 
       for (int i = start; i <= end; i++) {
-        if (!widget.sheetNoteRows[_dragRow!].notes[i].isBeamed) {
+        if (!widget.sheetNoteRows[_dragRow!].chords[i].isBeamed) {
           return true;
         }
       }
@@ -1205,7 +1205,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
       final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
 
       for (int i = start; i <= end; i++) {
-        if (widget.sheetNoteRows[_dragRow!].notes[i].isBeamed) {
+        if (widget.sheetNoteRows[_dragRow!].chords[i].isBeamed) {
           return true;
         }
       }
@@ -1214,8 +1214,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
       final row = selectedNoteProvider.selectedRow;
       final index = selectedNoteProvider.selectedIndex;
 
-      if (index >= 0 && index < widget.sheetNoteRows[row].notes.length) {
-        return widget.sheetNoteRows[row].notes[index].isBeamed;
+      if (index >= 0 && index < widget.sheetNoteRows[row].chords.length) {
+        return widget.sheetNoteRows[row].chords[index].isBeamed;
       }
     }
     return false;
@@ -1227,8 +1227,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
     final index = selectedNoteProvider.selectedIndex;
 
     if (index > 0 &&
-        index < widget.sheetNoteRows[row].notes.length &&
-        widget.sheetNoteRows[row].notes[index].type == NoteType.bar) {
+        index < widget.sheetNoteRows[row].chords.length &&
+        widget.sheetNoteRows[row].chords[index].type == NoteType.bar) {
       return true;
     }
 
@@ -1243,9 +1243,9 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
       final row = selectedNoteProvider.selectedRow;
       final index = selectedNoteProvider.selectedIndex;
 
-      if (index >= 0 && index < widget.sheetNoteRows[row].notes.length) {
+      if (index >= 0 && index < widget.sheetNoteRows[row].chords.length) {
         final dynamicChar =
-            widget.sheetNoteRows[row].notes[index].dynamicCharacter;
+            widget.sheetNoteRows[row].chords[index].dynamicCharacter;
         return dynamicChar.isNotEmpty;
       }
     }
@@ -1263,8 +1263,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
       if (row >= 0 &&
           row < widget.sheetNoteRows.length &&
           index >= 0 &&
-          index < widget.sheetNoteRows[row].notes.length) {
-        final selectedNote = widget.sheetNoteRows[row].notes[index];
+          index < widget.sheetNoteRows[row].chords.length) {
+        final selectedNote = widget.sheetNoteRows[row].chords[index];
         return selectedNote.type != NoteType.accidental &&
             selectedNote.type != NoteType.bar &&
             selectedNote.type != NoteType.clef &&
@@ -1283,8 +1283,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
     final row = selectedNoteProvider.selectedRow;
     final index = selectedNoteProvider.selectedIndex;
 
-    if (index >= 0 && index < widget.sheetNoteRows[row].notes.length) {
-      return widget.sheetNoteRows[row].notes[index].dynamicCharacter;
+    if (index >= 0 && index < widget.sheetNoteRows[row].chords.length) {
+      return widget.sheetNoteRows[row].chords[index].dynamicCharacter;
     }
     return "";
   }
@@ -1377,9 +1377,9 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
     final row = selectedNoteProvider.selectedRow;
     final index = selectedNoteProvider.selectedIndex;
 
-    if (index >= 0 && index < widget.sheetNoteRows[row].notes.length) {
+    if (index >= 0 && index < widget.sheetNoteRows[row].chords.length) {
       setState(() {
-        widget.sheetNoteRows[row].notes[index].isTiedToNext = false;
+        widget.sheetNoteRows[row].chords[index].isTiedToNext = false;
       });
       _showTieRemoveState = false;
     }
@@ -1394,8 +1394,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
       final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
       final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
 
-      for (int i = 0; i < widget.sheetNoteRows[_dragRow!].notes.length; i++) {
-        final note = widget.sheetNoteRows[_dragRow!].notes[i];
+      for (int i = 0; i < widget.sheetNoteRows[_dragRow!].chords.length; i++) {
+        final note = widget.sheetNoteRows[_dragRow!].chords[i];
         if (note.isDecrescendoStart && note.decrescendoEndIndex != null) {
           if ((i >= start && i <= end) ||
               (note.decrescendoEndIndex! >= start &&
@@ -1411,8 +1411,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
       final index = selectedNoteProvider.selectedIndex;
 
       if (index >= 0) {
-        for (int i = 0; i < widget.sheetNoteRows[row].notes.length; i++) {
-          final note = widget.sheetNoteRows[row].notes[i];
+        for (int i = 0; i < widget.sheetNoteRows[row].chords.length; i++) {
+          final note = widget.sheetNoteRows[row].chords[i];
           if (note.isDecrescendoStart && note.decrescendoEndIndex != null) {
             if (i <= index && note.decrescendoEndIndex! >= index) {
               note.isDecrescendoStart = false;
@@ -1435,8 +1435,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
       final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
       final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
 
-      for (int i = 0; i < widget.sheetNoteRows[_dragRow!].notes.length; i++) {
-        final note = widget.sheetNoteRows[_dragRow!].notes[i];
+      for (int i = 0; i < widget.sheetNoteRows[_dragRow!].chords.length; i++) {
+        final note = widget.sheetNoteRows[_dragRow!].chords[i];
         if (note.isCrescendoStart && note.crescendoEndIndex != null) {
           if ((i >= start && i <= end) ||
               (note.crescendoEndIndex! >= start &&
@@ -1452,8 +1452,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
       final index = selectedNoteProvider.selectedIndex;
 
       if (index >= 0) {
-        for (int i = 0; i < widget.sheetNoteRows[row].notes.length; i++) {
-          final note = widget.sheetNoteRows[row].notes[i];
+        for (int i = 0; i < widget.sheetNoteRows[row].chords.length; i++) {
+          final note = widget.sheetNoteRows[row].chords[i];
           if (note.isCrescendoStart && note.crescendoEndIndex != null) {
             if (i <= index && note.crescendoEndIndex! >= index) {
               note.isCrescendoStart = false;
@@ -1476,8 +1476,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
       final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
       final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
 
-      for (int i = 0; i < widget.sheetNoteRows[_dragRow!].notes.length; i++) {
-        final note = widget.sheetNoteRows[_dragRow!].notes[i];
+      for (int i = 0; i < widget.sheetNoteRows[_dragRow!].chords.length; i++) {
+        final note = widget.sheetNoteRows[_dragRow!].chords[i];
         if (note.slurEndIndex != null) {
           if ((i >= start && i <= end) ||
               (note.slurEndIndex! >= start && note.slurEndIndex! <= end)) {
@@ -1491,8 +1491,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
       final index = selectedNoteProvider.selectedIndex;
 
       if (index >= 0) {
-        for (int i = 0; i < widget.sheetNoteRows[row].notes.length; i++) {
-          final note = widget.sheetNoteRows[row].notes[i];
+        for (int i = 0; i < widget.sheetNoteRows[row].chords.length; i++) {
+          final note = widget.sheetNoteRows[row].chords[i];
           if (note.slurEndIndex != null) {
             if (i <= index && note.slurEndIndex! >= index) {
               note.slurEndIndex = null;
@@ -1512,15 +1512,15 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
       final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
 
       for (int i = start; i <= end; i++) {
-        widget.sheetNoteRows[_dragRow!].notes[i].isBeamed = false;
+        widget.sheetNoteRows[_dragRow!].chords[i].isBeamed = false;
       }
     } else {
       final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
       final row = selectedNoteProvider.selectedRow;
       final index = selectedNoteProvider.selectedIndex;
 
-      if (index >= 0 && index < widget.sheetNoteRows[row].notes.length) {
-        widget.sheetNoteRows[row].notes[index].isBeamed = false;
+      if (index >= 0 && index < widget.sheetNoteRows[row].chords.length) {
+        widget.sheetNoteRows[row].chords[index].isBeamed = false;
       }
     }
 
@@ -1535,9 +1535,9 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
     final row = selectedNoteProvider.selectedRow;
     final index = selectedNoteProvider.selectedIndex;
 
-    if (index >= 0 && index < widget.sheetNoteRows[row].notes.length) {
+    if (index >= 0 && index < widget.sheetNoteRows[row].chords.length) {
       setState(() {
-        widget.sheetNoteRows[row].notes[index].dynamicCharacter = "";
+        widget.sheetNoteRows[row].chords[index].dynamicCharacter = "";
       });
     }
 
@@ -1549,8 +1549,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
     final row = selectedNoteProvider.selectedRow;
     final index = selectedNoteProvider.selectedIndex;
 
-    if (index >= 0 && index < widget.sheetNoteRows[row].notes.length) {
-      final barNote = widget.sheetNoteRows[row].notes[index];
+    if (index >= 0 && index < widget.sheetNoteRows[row].chords.length) {
+      final barNote = widget.sheetNoteRows[row].chords[index];
 
       showDialog(
         context: context,
@@ -1808,22 +1808,22 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                                 if (newRow >= widget.sheetNoteRows.length) {
                                   // Row doesn't exist, move to end of previous row
                                   newRow = widget.sheetNoteRows.length - 1;
-                                  newIndex =
-                                      widget.sheetNoteRows[newRow].notes.isEmpty
-                                          ? 0
-                                          : widget.sheetNoteRows[newRow].notes
-                                                  .length -
-                                              1;
+                                  newIndex = widget
+                                          .sheetNoteRows[newRow].chords.isEmpty
+                                      ? 0
+                                      : widget.sheetNoteRows[newRow].chords
+                                              .length -
+                                          1;
                                 } else {
                                   // Row exists, check if the index still exists
                                   if (newIndex >=
-                                      widget
-                                          .sheetNoteRows[newRow].notes.length) {
+                                      widget.sheetNoteRows[newRow].chords
+                                          .length) {
                                     // Index doesn't exist, move to last note in the row
-                                    newIndex = widget
-                                            .sheetNoteRows[newRow].notes.isEmpty
+                                    newIndex = widget.sheetNoteRows[newRow]
+                                            .chords.isEmpty
                                         ? 0
-                                        : widget.sheetNoteRows[newRow].notes
+                                        : widget.sheetNoteRows[newRow].chords
                                                 .length -
                                             1;
                                   }
@@ -1901,7 +1901,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                     selectedNoteProvider.selectedIndex >= 0 &&
                     selectedNoteProvider.selectedIndex <
                         widget.sheetNoteRows[selectedNoteProvider.selectedRow]
-                            .notes.length) ...[
+                            .chords.length) ...[
                   _buildNoteFlipButton('Flip Note', () {
                     setState(() {
                       if (_dragStart != null &&
@@ -1915,7 +1915,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                                 widget
                                     .sheetNoteRows[
                                         selectedNoteProvider.selectedRow]
-                                    .notes)
+                                    .chords)
                             .isNotEmpty) {
                           context
                               .read<CurrentSelectedNoteProvider>()
@@ -1924,7 +1924,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                         } else {
                           var note = widget
                               .sheetNoteRows[selectedNoteProvider.selectedRow]
-                              .notes[selectedNoteProvider.selectedIndex];
+                              .chords[selectedNoteProvider.selectedIndex];
 
                           note.isUpsideDown = note.isUpsideDown == false;
                         }
@@ -1933,22 +1933,22 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                   },
                       widget
                               .sheetNoteRows[selectedNoteProvider.selectedRow]
-                              .notes[selectedNoteProvider.selectedIndex]
+                              .chords[selectedNoteProvider.selectedIndex]
                               .isBeamed
                           ? widget
                               .sheetNoteRows[selectedNoteProvider.selectedRow]
-                              .notes[selectedNoteProvider
+                              .chords[selectedNoteProvider
                                   .getBeamedGroupIndices(
                                       selectedNoteProvider.selectedIndex,
                                       widget
                                           .sheetNoteRows[
                                               selectedNoteProvider.selectedRow]
-                                          .notes)
+                                          .chords)
                                   .first]
                               .isUpsideDown
                           : widget
                               .sheetNoteRows[selectedNoteProvider.selectedRow]
-                              .notes[selectedNoteProvider.selectedIndex]
+                              .chords[selectedNoteProvider.selectedIndex]
                               .isUpsideDown),
                 ],
               ])),
@@ -2280,11 +2280,11 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
 
                         if (index >= 0 &&
                             index + 1 <
-                                widget.sheetNoteRows[row].notes.length) {
+                                widget.sheetNoteRows[row].chords.length) {
                           MusicalNote currentNote =
-                              widget.sheetNoteRows[row].notes[index];
+                              widget.sheetNoteRows[row].chords[index];
                           MusicalNote nextNote =
-                              widget.sheetNoteRows[row].notes[index + 1];
+                              widget.sheetNoteRows[row].chords[index + 1];
 
                           if (currentNote.pitch == nextNote.pitch) {
                             setState(() {

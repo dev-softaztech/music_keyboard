@@ -51,7 +51,7 @@ class SheetUndoManager extends ChangeNotifier {
   /// Create a deep copy of a single sheet row
   SheetRows _deepCopySheetRow(SheetRows original) {
     return SheetRows(
-      notes: original.notes.map((note) => note.copy()).toList(),
+      chords: original.chords.map((note) => note.copy()).toList(),
       rowProperties: _deepCopyRowProperties(original.rowProperties),
     );
   }

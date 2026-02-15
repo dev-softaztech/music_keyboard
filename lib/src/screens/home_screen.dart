@@ -79,7 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
             'HomeScreen: Sheet ${sheet.id} has ${sheet.sheetRows.length} rows');
         if (sheet.sheetRows.isNotEmpty) {
           print(
-              'HomeScreen: First row has ${sheet.sheetRows[0].notes.length} notes');
+              'HomeScreen: First row has ${sheet.sheetRows[0].chords.length} notes');
         }
       }
 

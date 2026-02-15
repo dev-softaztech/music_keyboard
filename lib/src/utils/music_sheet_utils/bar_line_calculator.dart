@@ -61,7 +61,7 @@ class BarLineCalculator {
       List<SheetRows> allRows, int currentRowIndex) {
     MusicalNote? lastTimeSignature;
     for (int i = 0; i <= currentRowIndex; i++) {
-      MusicalNote? rowTimeSignature = findLastTimeSignature(allRows[i].notes);
+      MusicalNote? rowTimeSignature = findLastTimeSignature(allRows[i].chords);
       if (rowTimeSignature != null) {
         lastTimeSignature = rowTimeSignature;
       }

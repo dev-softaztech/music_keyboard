@@ -154,7 +154,7 @@ class SheetPreviewCard extends StatelessWidget {
     final firstRow = sheet.sheetRows[0];
 
     // Extract up to 5 actual notes (excluding clefs, bars, etc.)
-    for (final note in firstRow.notes) {
+    for (final note in firstRow.chords) {
       // Skip clefs, bars, time signatures, key signatures
       if (note.type == NoteType.clef ||
           note.type == NoteType.bar ||

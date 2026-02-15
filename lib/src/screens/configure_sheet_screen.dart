@@ -444,13 +444,13 @@ class _ConfigureSheetScreenState extends State<ConfigureSheetScreen> {
 
       for (int i = 0; i < _selectedFormat.rowsPerGroup; i++) {
         final row = SheetRows(
-          notes: [],
+          chords: [],
           rowProperties: RowProperties(tempoNumber: 0),
         );
 
         // Add appropriate clef for each row
         if (i < _selectedFormat.defaultClefsFor(_selectedKeyboardType).length) {
-          row.notes.add(MusicalNote(
+          row.chords.add(MusicalNote(
             pitch: "G",
             octave: 4,
             type: NoteType.clef,

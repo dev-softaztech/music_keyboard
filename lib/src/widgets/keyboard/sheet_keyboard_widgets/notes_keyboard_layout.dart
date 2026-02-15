@@ -588,11 +588,11 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
     final selectedNoteIndex = currentSelectedNoteProvider.selectedIndex;
     final selectedRow = currentSelectedNoteProvider.selectedRow;
     final selectedNote = (widget.sheetNoteRows.isNotEmpty &&
-            widget.sheetNoteRows[selectedRow].notes.isNotEmpty &&
-            widget.sheetNoteRows[selectedRow].notes.length >
+            widget.sheetNoteRows[selectedRow].chords.isNotEmpty &&
+            widget.sheetNoteRows[selectedRow].chords.length >
                 selectedNoteIndex &&
             selectedNoteIndex != -1)
-        ? widget.sheetNoteRows[selectedRow].notes[selectedNoteIndex]
+        ? widget.sheetNoteRows[selectedRow].chords[selectedNoteIndex]
         : null;
 
     List<NoteUnicodeCharacters> unicodeCharacters = [

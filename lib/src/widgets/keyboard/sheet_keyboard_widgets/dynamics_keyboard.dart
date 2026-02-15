@@ -16,9 +16,10 @@ class DynamicsKeyboard extends StatelessWidget {
         Provider.of<CurrentSelectedNoteProvider>(context);
     final selectedIndex = currentSelectedNoteProvider.selectedIndex;
     final selectedRow = currentSelectedNoteProvider.selectedRow;
-    final selectedNote = sheetNoteRows[selectedRow].notes.length > selectedIndex
-        ? sheetNoteRows[selectedRow].notes[selectedIndex]
-        : null;
+    final selectedNote =
+        sheetNoteRows[selectedRow].chords.length > selectedIndex
+            ? sheetNoteRows[selectedRow].chords[selectedIndex]
+            : null;
 
     final List<String> cresendoCharacters = [
       '\uE53F',

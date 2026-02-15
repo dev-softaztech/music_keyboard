@@ -11,7 +11,7 @@ class BarNumberCalculator {
 
     // Count bars in all previous rows
     for (int i = 0; i < rowIndex; i++) {
-      totalBarsInPreviousRows += countBarsInRow(sheetNoteRows[i].notes);
+      totalBarsInPreviousRows += countBarsInRow(sheetNoteRows[i].chords);
     }
 
     // Return the bar number for this row (previous bars + 1)

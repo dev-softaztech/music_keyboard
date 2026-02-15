@@ -127,7 +127,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
       print('DEBUG: Saving sheet with id ${sheet.id}');
       print('DEBUG: Sheet has ${sheet.sheetRows.length} rows');
       if (sheet.sheetRows.isNotEmpty) {
-        print('DEBUG: First row has ${sheet.sheetRows[0].notes.length} notes');
+        print('DEBUG: First row has ${sheet.sheetRows[0].chords.length} notes');
       }
       await _dbHelper.updateSheet(sheet);
       _hasUnsavedChanges = false;
@@ -157,7 +157,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     // Deep clone the selected rows
     final rowsToCopy = selectedRows.map((rowIndex) {
       final originalRow = sheet.sheetRows[rowIndex];
-      final clonedNotes = originalRow.notes
+      final clonedNotes = originalRow.chords
           .map((note) => MusicalNote(
                 pitch: note.pitch,
                 octave: note.octave,
@@ -187,7 +187,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
           .toList();
 
       return SheetRows(
-        notes: clonedNotes,
+        chords: clonedNotes,
         rowProperties: RowProperties(
           tempoNumber: originalRow.rowProperties.tempoNumber,
           swing: originalRow.rowProperties.swing,
@@ -222,7 +222,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
     // Deep clone the clipboard rows for insertion
     final rowsToInsert = clipboardItem.rows.map((clipboardRow) {
-      final clonedNotes = clipboardRow.notes
+      final clonedNotes = clipboardRow.chords
           .map((note) => MusicalNote(
                 pitch: note.pitch,
                 octave: note.octave,
@@ -252,7 +252,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
           .toList();
 
       return SheetRows(
-        notes: clonedNotes,
+        chords: clonedNotes,
         rowProperties: RowProperties(
           tempoNumber: clipboardRow.rowProperties.tempoNumber,
           swing: clipboardRow.rowProperties.swing,
@@ -278,13 +278,13 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
     // Update cursor position to the first inserted row
     selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
-        insertionIndex, rowsToInsert[0].notes.isNotEmpty ? 0 : -1);
+        insertionIndex, rowsToInsert[0].chords.isNotEmpty ? 0 : -1);
 
     // Update row spacing for all newly inserted rows
     for (int i = 0; i < rowsToInsert.length; i++) {
       final rowIndex = insertionIndex + i;
       updateRowSpacing(
-          rowIndex, selectedNoteProvider, sheet.sheetRows[rowIndex].notes);
+          rowIndex, selectedNoteProvider, sheet.sheetRows[rowIndex].chords);
     }
 
     // Ensure the last row group is complete according to the sheet format
@@ -316,13 +316,13 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     // Add the required empty rows with appropriate clefs
     for (int i = 0; i < rowsToAdd; i++) {
       final newRow =
-          SheetRows(notes: [], rowProperties: RowProperties(tempoNumber: 0));
+          SheetRows(chords: [], rowProperties: RowProperties(tempoNumber: 0));
 
       // Add appropriate clef for each row in the group
       // Use the clefs starting from the position in the group
       final int clefIndex = remainder + i;
       if (clefIndex < clefs.length) {
-        newRow.notes.add(MusicalNote(
+        newRow.chords.add(MusicalNote(
           pitch: "G",
           octave: 4,
           type: NoteType.clef,
@@ -362,7 +362,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     // Initialize sheetNoteRows with passed data or default
     sheet = widget.initialSheet ??
         Sheet(sheetRows: [
-          SheetRows(notes: [], rowProperties: RowProperties(tempoNumber: 0))
+          SheetRows(chords: [], rowProperties: RowProperties(tempoNumber: 0))
         ], sheetProperties: SheetProperties());
   }
 
@@ -401,13 +401,13 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
       // Set the selected index to the first clef note
       final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
-      if (sheet.sheetRows.isNotEmpty && sheet.sheetRows[0].notes.isNotEmpty) {
+      if (sheet.sheetRows.isNotEmpty && sheet.sheetRows[0].chords.isNotEmpty) {
         selectedNoteProvider.updateSelectedIndexAndInsertionPoint(0, 0);
       }
 
       // Update row spacing for all rows in the opened sheet
       for (int i = 0; i < sheet.sheetRows.length; i++) {
-        updateRowSpacing(i, selectedNoteProvider, sheet.sheetRows[i].notes);
+        updateRowSpacing(i, selectedNoteProvider, sheet.sheetRows[i].chords);
       }
 
       // Initialize auto-save timer
@@ -458,7 +458,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
             noteWithAccidental, sheet.sheetRows, context);
 
         updateRowSpacing(selectedNoteProvider.selectedRow, selectedNoteProvider,
-            sheet.sheetRows[selectedNoteProvider.selectedRow].notes);
+            sheet.sheetRows[selectedNoteProvider.selectedRow].chords);
 
         // Mark as changed for auto-save
         _markAsChanged();
@@ -504,7 +504,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
   /// Checks if the specified row contains any bar notes
   bool _hasBarNotesInRow(int rowIndex) {
-    for (var note in sheet.sheetRows[rowIndex].notes) {
+    for (var note in sheet.sheetRows[rowIndex].chords) {
       if (note.type == NoteType.bar) {
         return true;
       }
@@ -535,11 +535,11 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     // Insert new connected rows after the entire current connected group
     for (int i = 0; i < rowsToAdd; i++) {
       final newRow =
-          SheetRows(notes: [], rowProperties: RowProperties(tempoNumber: 0));
+          SheetRows(chords: [], rowProperties: RowProperties(tempoNumber: 0));
 
       // Add appropriate clef for each row
       if (i < clefs.length) {
-        newRow.notes.add(MusicalNote(
+        newRow.chords.add(MusicalNote(
           pitch: "G",
           octave: 4,
           type: NoteType.clef,
@@ -553,7 +553,8 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
       rowSpacingList.insert(insertionPoint + i, defaultNoteSpacing);
     }
 
-    var overflowNotes = sheet.sheetRows[selectedNoteProvider.selectedRow].notes;
+    var overflowNotes =
+        sheet.sheetRows[selectedNoteProvider.selectedRow].chords;
     var endIndex = overflowNotes.length - 1;
     var startIndex = 0;
     var notesWidth = 0.0;
@@ -594,14 +595,14 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         selectedNoteProvider, startIndex, endIndex, targetRowIndex);
 
     // Update cursor position to be safe after moving notes
-    final currentRowNotesLength = sheet.sheetRows[targetRowIndex].notes.length;
+    final currentRowNotesLength = sheet.sheetRows[targetRowIndex].chords.length;
     //if (selectedNoteProvider.selectedIndex >= currentRowNotesLength) {
     selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
         targetRowIndex, math.max(0, currentRowNotesLength - 1));
     //}
 
     updateRowSpacing(selectedNoteProvider.selectedRow, selectedNoteProvider,
-        sheet.sheetRows[selectedNoteProvider.selectedRow].notes);
+        sheet.sheetRows[selectedNoteProvider.selectedRow].chords);
     rowSpacingProvider.updateRowSpacingList(rowSpacingList);
 
     // Update curly brace groups for the row insertion
@@ -644,12 +645,12 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   /// Finds the boundaries of the last bar in the specified row
   Map<String, int> _findLastBarBoundaries(int rowIndex) {
     int lastBarStartIndex = 0;
-    int lastBarEndIndex = sheet.sheetRows[rowIndex].notes.length - 1;
+    int lastBarEndIndex = sheet.sheetRows[rowIndex].chords.length - 1;
 
     // Find the last bar line in the current row
     int lastBarLineIndex = -1;
-    for (int i = sheet.sheetRows[rowIndex].notes.length - 1; i >= 0; i--) {
-      if (sheet.sheetRows[rowIndex].notes[i].type == NoteType.bar) {
+    for (int i = sheet.sheetRows[rowIndex].chords.length - 1; i >= 0; i--) {
+      if (sheet.sheetRows[rowIndex].chords[i].type == NoteType.bar) {
         lastBarLineIndex = i;
         break;
       }
@@ -663,7 +664,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     }
 
     // The end is always the end of the row
-    lastBarEndIndex = sheet.sheetRows[rowIndex].notes.length - 1;
+    lastBarEndIndex = sheet.sheetRows[rowIndex].chords.length - 1;
 
     return {
       'startIndex': lastBarStartIndex,
@@ -681,7 +682,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     if (sheet.sheetRows.length - 1 <= selectedNoteProvider.selectedRow) {
       // Create a new row if we're at the last row
       sheet.sheetRows.insert(selectedNoteProvider.selectedRow + 1,
-          SheetRows(notes: [], rowProperties: RowProperties(tempoNumber: 0)));
+          SheetRows(chords: [], rowProperties: RowProperties(tempoNumber: 0)));
       rowSpacingList.insert(rowSpacingList.length, defaultNoteSpacing);
       rowSpacingProvider.updateRowSpacingList(rowSpacingList);
 
@@ -689,12 +690,12 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
       sheet.sheetProperties.updateCurlyBracesForRowInsertion(
           selectedNoteProvider.selectedRow + 1, 1);
     } else if (sheet
-                .sheetRows[selectedNoteProvider.selectedRow + 1].notes.length +
+                .sheetRows[selectedNoteProvider.selectedRow + 1].chords.length +
             notesInCurrentBar >
         maxNotesPerRow) {
       // If the next row doesn't have enough space, create a new row
       sheet.sheetRows.insert(selectedNoteProvider.selectedRow + 1,
-          SheetRows(notes: [], rowProperties: RowProperties(tempoNumber: 0)));
+          SheetRows(chords: [], rowProperties: RowProperties(tempoNumber: 0)));
       rowSpacingList.insert(rowSpacingList.length, defaultNoteSpacing);
       rowSpacingProvider.updateRowSpacingList(rowSpacingList);
 
@@ -725,38 +726,38 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     List<MusicalNote> notesToMove = [];
     for (int i = startIndex; i <= endIndex; i++) {
       notesToMove
-          .add(sheet.sheetRows[selectedNoteProvider.selectedRow].notes[i]);
+          .add(sheet.sheetRows[selectedNoteProvider.selectedRow].chords[i]);
     }
 
     // Remove the notes from the current row (in reverse order to maintain indices)
     for (int i = endIndex; i >= startIndex; i--) {
-      sheet.sheetRows[selectedNoteProvider.selectedRow].notes.removeAt(i);
+      sheet.sheetRows[selectedNoteProvider.selectedRow].chords.removeAt(i);
     }
 
     // Determine insertion index: after clef if present, otherwise at beginning
     int insertIndex = 0;
-    if (sheet.sheetRows[targetRowIndex].notes.isNotEmpty &&
-        sheet.sheetRows[targetRowIndex].notes[0].type == NoteType.clef) {
+    if (sheet.sheetRows[targetRowIndex].chords.isNotEmpty &&
+        sheet.sheetRows[targetRowIndex].chords[0].type == NoteType.clef) {
       insertIndex = 1;
     }
 
     // Insert the notes at the calculated position
     for (int i = 0; i < notesToMove.length; i++) {
-      sheet.sheetRows[targetRowIndex].notes
+      sheet.sheetRows[targetRowIndex].chords
           .insert(insertIndex + i, notesToMove[i]);
     }
 
-    if (sheet.sheetRows[selectedNoteProvider.selectedRow].notes.isNotEmpty &&
-        sheet.sheetRows[selectedNoteProvider.selectedRow].notes.last.type ==
+    if (sheet.sheetRows[selectedNoteProvider.selectedRow].chords.isNotEmpty &&
+        sheet.sheetRows[selectedNoteProvider.selectedRow].chords.last.type ==
             NoteType.bar) {
-      sheet.sheetRows[selectedNoteProvider.selectedRow].notes.removeLast();
+      sheet.sheetRows[selectedNoteProvider.selectedRow].chords.removeLast();
     }
 
     // Update spacing for both the current row and the target row
     updateRowSpacing(selectedNoteProvider.selectedRow, selectedNoteProvider,
-        sheet.sheetRows[selectedNoteProvider.selectedRow].notes);
+        sheet.sheetRows[selectedNoteProvider.selectedRow].chords);
     updateRowSpacing(targetRowIndex, selectedNoteProvider,
-        sheet.sheetRows[targetRowIndex].notes);
+        sheet.sheetRows[targetRowIndex].chords);
 
     // Update the cursor position to the target row
     if (selectedNoteProvider.insertionIndex >= maxNotesPerRow ||
@@ -865,8 +866,8 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         var clefAndKeySigLength = 0.0;
         var countOfNormalNotes = 0.0;
 
-        for (int j = 0; j < sheet.sheetRows[i].notes.length; j++) {
-          final note = sheet.sheetRows[i].notes[j];
+        for (int j = 0; j < sheet.sheetRows[i].chords.length; j++) {
+          final note = sheet.sheetRows[i].chords[j];
 
           if (note.type == NoteType.clef ||
               note.type == NoteType.timeSignature) {
@@ -911,26 +912,26 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     if (!adjustedSpacingFitsAllNotesOnSingleLine) {
       // Find the row with the most notes to determine which one should overflow
       int mostNotesRowIndex = groupStartRow;
-      int maxNotes = sheet.sheetRows[groupStartRow].notes.length;
+      int maxNotes = sheet.sheetRows[groupStartRow].chords.length;
 
       for (int i = groupStartRow + 1; i <= groupEndRow; i++) {
         if (i < sheet.sheetRows.length &&
-            sheet.sheetRows[i].notes.length > maxNotes) {
-          maxNotes = sheet.sheetRows[i].notes.length;
+            sheet.sheetRows[i].chords.length > maxNotes) {
+          maxNotes = sheet.sheetRows[i].chords.length;
           mostNotesRowIndex = i;
         }
       }
 
       selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
           mostNotesRowIndex,
-          sheet.sheetRows[mostNotesRowIndex].notes.length - 1);
+          sheet.sheetRows[mostNotesRowIndex].chords.length - 1);
 
       handleRowOverflow(
           selectedNoteProvider,
           rowSpacingProvider,
           rowSpacingList,
           listOfSpacingSizes.last,
-          sheet.sheetRows[mostNotesRowIndex].notes,
+          sheet.sheetRows[mostNotesRowIndex].chords,
           maxRowSize);
     } else {
       rowSpacingProvider.updateRowSpacingList(rowSpacingList);
@@ -966,11 +967,11 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         // Insert new connected rows after the entire current connected group
         for (int i = 0; i < rowsToAdd; i++) {
           final newRow = SheetRows(
-              notes: [], rowProperties: RowProperties(tempoNumber: 0));
+              chords: [], rowProperties: RowProperties(tempoNumber: 0));
 
           // Add appropriate clef for each row
           if (i < clefs.length) {
-            newRow.notes.add(MusicalNote(
+            newRow.chords.add(MusicalNote(
               pitch: "G",
               octave: 4,
               type: NoteType.clef,
@@ -1033,7 +1034,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
       var rowSpacingList = rowSpacingProvider.rowSpacingList;
       final selectedRow = selectedNoteProvider.selectedRow;
       int selectedIndex = selectedNoteProvider.selectedIndex;
-      final notes = sheet.sheetRows[selectedRow].notes;
+      final notes = sheet.sheetRows[selectedRow].chords;
 
       if (notes.isEmpty) {
         // Handle empty row removal based on sheet format
@@ -1054,9 +1055,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
           // Move cursor to previous row
           selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
               selectedRow - 1,
-              sheet.sheetRows[selectedRow - 1].notes.isEmpty
+              sheet.sheetRows[selectedRow - 1].chords.isEmpty
                   ? -1
-                  : sheet.sheetRows[selectedRow - 1].notes.length - 1);
+                  : sheet.sheetRows[selectedRow - 1].chords.length - 1);
         } else {
           // Multi-row format: check if entire row group should be removed
           final int rowsPerGroup = sheet.format.rowsPerGroup;
@@ -1068,7 +1069,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
           // Check if all rows in the group are empty
           bool allRowsInGroupEmpty = true;
           for (int i = groupStartRow; i <= groupEndRow; i++) {
-            if (sheet.sheetRows[i].notes.isNotEmpty) {
+            if (sheet.sheetRows[i].chords.isNotEmpty) {
               allRowsInGroupEmpty = false;
               break;
             }
@@ -1098,9 +1099,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
             final int newCursorRow = groupStartRow - 1;
             selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
                 newCursorRow,
-                sheet.sheetRows[newCursorRow].notes.isEmpty
+                sheet.sheetRows[newCursorRow].chords.isEmpty
                     ? -1
-                    : sheet.sheetRows[newCursorRow].notes.length - 1);
+                    : sheet.sheetRows[newCursorRow].chords.length - 1);
           }
           // If not all rows are empty, don't remove anything
         }
@@ -1178,7 +1179,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
       final copiedSheet = Sheet(
         // Don't set id - let the database generate a new one
         sheetRows: sheet.sheetRows.map((row) {
-          final clonedNotes = row.notes
+          final clonedNotes = row.chords
               .map((note) => MusicalNote(
                     pitch: note.pitch,
                     octave: note.octave,
@@ -1209,7 +1210,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
               .toList();
 
           return SheetRows(
-            notes: clonedNotes,
+            chords: clonedNotes,
             rowProperties: RowProperties(
               tempoNumber: row.rowProperties.tempoNumber,
               swing: row.rowProperties.swing,
@@ -1816,13 +1817,13 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                     if (sheet
                                             .sheetRows[selectedNoteProvider
                                                 .selectedRow]
-                                            .notes
+                                            .chords
                                             .isEmpty ||
                                         selectedNoteProvider.selectedIndex >=
                                             sheet
                                                 .sheetRows[selectedNoteProvider
                                                     .selectedRow]
-                                                .notes
+                                                .chords
                                                 .length) {
                                       // Show message if no note is selected
                                       ScaffoldMessenger.of(context)
@@ -1846,7 +1847,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                                     .sheetRows[
                                                         selectedNoteProvider
                                                             .selectedRow]
-                                                    .notes[
+                                                    .chords[
                                                 selectedNoteProvider
                                                     .selectedIndex];
                                             selectedNote.rehearsalMarking =
@@ -2321,14 +2322,14 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                                           .sheetRows[
                                                               selectedNoteProvider
                                                                   .selectedRow]
-                                                          .notes
+                                                          .chords
                                                           .isNotEmpty) {
                                                         setState(() {
                                                           final selectedNote = sheet
                                                                   .sheetRows[
                                                                       selectedNoteProvider
                                                                           .selectedRow]
-                                                                  .notes[
+                                                                  .chords[
                                                               selectedNoteProvider
                                                                   .selectedIndex];
                                                           selectedNote
@@ -2354,12 +2355,12 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                                                     .sheetRows[
                                                                         selectedNoteProvider
                                                                             .selectedRow]
-                                                                    .notes
+                                                                    .chords
                                                                     .isNotEmpty &&
                                                                 sheet
                                                                         .sheetRows[selectedNoteProvider
                                                                             .selectedRow]
-                                                                        .notes
+                                                                        .chords
                                                                         .length >
                                                                     selectedNoteProvider
                                                                         .selectedIndex &&
@@ -2367,7 +2368,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                                                     .sheetRows[
                                                                         selectedNoteProvider
                                                                             .selectedRow]
-                                                                    .notes[selectedNoteProvider
+                                                                    .chords[selectedNoteProvider
                                                                         .selectedIndex]
                                                                     .isBeamed)
                                                             ? Colors.grey[400]
