@@ -27,6 +27,10 @@ void drawNote(
         noteColour);
   } else if (note.type == NoteType.space) {
     return;
+  } else if (note.type == NoteType.fret) {
+    // Draw guitar tab fret notes - only draw childNotes, not the parent
+    drawGuitarTabFrets(canvas, note, lineSpacing, staffTop, noteX, noteColour);
+    return;
   } else {
     drawNoteKey(canvas, paint, note, lineSpacing, staffTop, noteX, notes, index,
         note.noteY, noteSpacing, noteColour);
@@ -547,5 +551,43 @@ void drawLedgerLines(Canvas canvas, Paint paint, double noteY, double noteX,
         paint..strokeWidth = 1.0,
       );
     }
+  }
+}
+
+/// Draw guitar tab fret numbers on the staff
+/// Only draws childNotes, not the parent chord
+void drawGuitarTabFrets(Canvas canvas, MusicalNote parentChord,
+    double lineSpacing, double staffTop, double noteX, Color noteColour) {
+  // If there are no childNotes, nothing to draw
+  if (parentChord.childNotes == null || parentChord.childNotes!.isEmpty) {
+    return;
+  }
+
+  // For guitar tabs with 6 strings, draw fret numbers on each string line
+  // String positions from top to bottom: 0=E, 1=B, 2=G, 3=D, 4=A, 5=E
+  for (var childNote in parentChord.childNotes!) {
+    // Calculate Y position based on string index (octave field stores string index 0-5)
+    double stringY = staffTop + (childNote.octave * lineSpacing);
+
+    // Draw the fret number
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: childNote.unicodeCharacter, // Fret number as string
+        style: TextStyle(
+          fontSize: 12,
+          //fontWeight: FontWeight.bold,
+          color: noteColour,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+
+    textPainter.layout();
+
+    // Center the text on the string line
+    final double xPos = noteX - (textPainter.width / 2);
+    final double yPos = stringY - (textPainter.height / 2);
+
+    textPainter.paint(canvas, Offset(xPos, yPos));
   }
 }

@@ -33,6 +33,12 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
   // Octave pair state - false = Middle+Top pair, true = Bottom+Middle pair
   bool showLowerPair = false;
 
+  // Currently selected string (0-5 for E, B, G, D, A, E from top to bottom)
+  int _selectedStringIndex = 0;
+
+  // String names in order from top to bottom
+  final List<String> _stringNames = ['E', 'B', 'G', 'D', 'A', 'E'];
+
   @override
   void dispose() {
     // Make sure to remove any active overlay when disposing
@@ -41,6 +47,75 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       _overlayEntry = null;
     }
     super.dispose();
+  }
+
+  // Helper: Get current chord being edited
+  MusicalNote? _getCurrentChord(int selectedRow, int selectedNoteIndex) {
+    if (widget.sheetNoteRows.isEmpty) return null;
+    if (selectedRow >= widget.sheetNoteRows.length) return null;
+    if (widget.sheetNoteRows[selectedRow].chords.isEmpty) return null;
+    if (selectedNoteIndex < 0 ||
+        selectedNoteIndex >= widget.sheetNoteRows[selectedRow].chords.length) {
+      return null;
+    }
+    return widget.sheetNoteRows[selectedRow].chords[selectedNoteIndex];
+  }
+
+  // Helper: Get fret number for a specific string in current chord
+  String? _getFretForString(MusicalNote? chord, int stringIndex) {
+    if (chord?.childNotes == null) return null;
+
+    for (var childNote in chord!.childNotes!) {
+      if (childNote.octave == stringIndex) {
+        return childNote.unicodeCharacter;
+      }
+    }
+    return null;
+  }
+
+  // Helper: Update fret for a specific string
+  void _updateFretForString(
+      int selectedRow, int selectedNoteIndex, int stringIndex, int fretNumber) {
+    final chord = _getCurrentChord(selectedRow, selectedNoteIndex);
+
+    if (chord == null) {
+      // No chord exists at this position, cannot update
+      return;
+    }
+
+    // Initialize childNotes if null
+    chord.childNotes ??= [];
+
+    // Find existing childNote for this string or create new one
+    bool found = false;
+    for (int i = 0; i < chord.childNotes!.length; i++) {
+      if (chord.childNotes![i].octave == stringIndex) {
+        // Update existing childNote
+        chord.childNotes![i] = MusicalNote(
+          pitch: _stringNames[stringIndex],
+          octave: stringIndex,
+          type: NoteType.fret,
+          unicodeCharacter: fretNumber.toString(),
+          duration: 0.0,
+        );
+        found = true;
+        break;
+      }
+    }
+
+    if (!found) {
+      // Add new childNote for this string
+      chord.childNotes!.add(MusicalNote(
+        pitch: _stringNames[stringIndex],
+        octave: stringIndex,
+        type: NoteType.fret,
+        unicodeCharacter: fretNumber.toString(),
+        duration: 0.0,
+      ));
+    }
+
+    // Trigger UI update
+    setState(() {});
   }
 
   // Build a technique button (for top two rows)
@@ -81,7 +156,9 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
   }
 
   // Build a string button (E, A, D, G, B, E)
-  Widget _buildStringButton(String note) {
+  Widget _buildStringButton(String note, int stringIndex) {
+    bool isSelected = _selectedStringIndex == stringIndex;
+
     return Container(
       height: 25,
       width: 40,
@@ -98,22 +175,28 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       ),
       child: ElevatedButton(
         onPressed: () {
-          // TODO: Implement string selection functionality
+          setState(() {
+            _selectedStringIndex = stringIndex;
+          });
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.grey[100],
+          backgroundColor: isSelected ? Colors.blue[100] : Colors.grey[100],
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(5),
-            side: const BorderSide(
-                color: Color.fromARGB(255, 218, 218, 218), width: 1),
+            side: BorderSide(
+                color: isSelected
+                    ? Colors.blue
+                    : const Color.fromARGB(255, 218, 218, 218),
+                width: isSelected ? 2 : 1),
           ),
           padding: EdgeInsets.zero,
         ),
         child: Text(
           note,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             color: Colors.black,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
       ),
@@ -121,28 +204,39 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
   }
 
   // Build a fret button (numbers 1-24)
-  Widget _buildFretButton(int fretNumber) {
+  Widget _buildFretButton(
+      int fretNumber, int selectedRow, int selectedNoteIndex) {
+    // Get current chord and check if this fret is assigned to selected string
+    final currentChord = _getCurrentChord(selectedRow, selectedNoteIndex);
+    final currentFret = _getFretForString(currentChord, _selectedStringIndex);
+    bool isAssignedToCurrentString = currentFret == fretNumber.toString();
+
     return Container(
       height: 31,
       width: 31,
       margin: const EdgeInsets.symmetric(horizontal: 3),
       child: ElevatedButton(
         onPressed: () {
-          // TODO: Implement fret selection functionality
+          _updateFretForString(
+              selectedRow, selectedNoteIndex, _selectedStringIndex, fretNumber);
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.grey[100],
+          backgroundColor:
+              isAssignedToCurrentString ? Colors.green[200] : Colors.grey[100],
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(5),
-            side: const BorderSide(color: Colors.black, width: 1),
+            side: BorderSide(
+                color: isAssignedToCurrentString ? Colors.green : Colors.black,
+                width: isAssignedToCurrentString ? 2 : 1),
           ),
           padding: EdgeInsets.zero,
         ),
         child: Text(
           fretNumber.toString(),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
-            //fontWeight: FontWeight.bold,
+            fontWeight:
+                isAssignedToCurrentString ? FontWeight.bold : FontWeight.normal,
             color: Colors.black,
           ),
         ),
@@ -150,17 +244,58 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     );
   }
 
-  Widget _buildNextLastButton(bool isNextNote) {
+  Widget _buildNextLastButton(
+      bool isNextNote, int selectedRow, int selectedNoteIndex) {
     double buttonWidth = MediaQuery.of(context).size.width / 2.8;
+
+    // Validate inputs to prevent crashes
+    bool isValidState = widget.sheetNoteRows.isNotEmpty &&
+        selectedRow >= 0 &&
+        selectedRow < widget.sheetNoteRows.length;
 
     return Container(
       height: 31,
       width: buttonWidth,
       margin: const EdgeInsets.symmetric(horizontal: 3),
       child: ElevatedButton(
-        onPressed: () {
-          // TODO: Implement
-        },
+        onPressed: isValidState
+            ? () {
+                final currentSelectedNoteProvider =
+                    Provider.of<CurrentSelectedNoteProvider>(context,
+                        listen: false);
+
+                if (isNextNote) {
+                  // Next button: Move to next chord position
+                  int nextIndex = selectedNoteIndex + 1;
+
+                  // If next position doesn't exist, create an empty chord
+                  if (nextIndex >=
+                      widget.sheetNoteRows[selectedRow].chords.length) {
+                    // Create empty chord with G as default pitch
+                    MusicalNote emptyChord = MusicalNote(
+                      pitch: 'G',
+                      octave: 4,
+                      type: NoteType.fret,
+                      duration: 0.0,
+                      childNotes: [],
+                    );
+                    widget.onKeyPress(emptyChord);
+                  }
+
+                  // Move to next position (onKeyPress will update the selected index)
+                  currentSelectedNoteProvider
+                      .updateSelectedIndexAndInsertionPoint(
+                          selectedRow, nextIndex);
+                } else {
+                  // Back button: Move to previous chord position
+                  if (selectedNoteIndex > 0) {
+                    currentSelectedNoteProvider
+                        .updateSelectedIndexAndInsertionPoint(
+                            selectedRow, selectedNoteIndex - 1);
+                  }
+                }
+              }
+            : null, // Disable button if state is invalid
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.white,
           foregroundColor: Colors.black,
@@ -195,6 +330,8 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     final selectedNoteIndex = currentSelectedNoteProvider.selectedIndex;
     final selectedRow = currentSelectedNoteProvider.selectedRow;
     final selectedNote = (widget.sheetNoteRows.isNotEmpty &&
+            selectedRow >= 0 &&
+            selectedRow < widget.sheetNoteRows.length &&
             widget.sheetNoteRows[selectedRow].chords.isNotEmpty &&
             widget.sheetNoteRows[selectedRow].chords.length >
                 selectedNoteIndex &&
@@ -250,8 +387,8 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
               ),
               const SizedBox(width: 10),
               Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                _buildNextLastButton(false),
-                _buildNextLastButton(true)
+                _buildNextLastButton(false, selectedRow, selectedNoteIndex),
+                _buildNextLastButton(true, selectedRow, selectedNoteIndex)
               ]),
             ],
           ),
@@ -262,17 +399,17 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildStringButton('E'),
+                  _buildStringButton('E', 0),
                   const SizedBox(height: 7),
-                  _buildStringButton('A'),
+                  _buildStringButton('B', 1),
                   const SizedBox(height: 7),
-                  _buildStringButton('D'),
+                  _buildStringButton('G', 2),
                   const SizedBox(height: 7),
-                  _buildStringButton('G'),
+                  _buildStringButton('D', 3),
                   const SizedBox(height: 7),
-                  _buildStringButton('B'),
+                  _buildStringButton('A', 4),
                   const SizedBox(height: 7),
-                  _buildStringButton('E'),
+                  _buildStringButton('E', 5),
                 ],
               ),
               Column(
@@ -327,14 +464,14 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                     child: Row(
                       //mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        _buildFretButton(1),
-                        _buildFretButton(2),
-                        _buildFretButton(3),
-                        _buildFretButton(4),
-                        _buildFretButton(5),
-                        _buildFretButton(6),
-                        _buildFretButton(7),
-                        _buildFretButton(8),
+                        _buildFretButton(1, selectedRow, selectedNoteIndex),
+                        _buildFretButton(2, selectedRow, selectedNoteIndex),
+                        _buildFretButton(3, selectedRow, selectedNoteIndex),
+                        _buildFretButton(4, selectedRow, selectedNoteIndex),
+                        _buildFretButton(5, selectedRow, selectedNoteIndex),
+                        _buildFretButton(6, selectedRow, selectedNoteIndex),
+                        _buildFretButton(7, selectedRow, selectedNoteIndex),
+                        _buildFretButton(8, selectedRow, selectedNoteIndex),
                       ],
                     ),
                   ),
@@ -345,14 +482,14 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        _buildFretButton(9),
-                        _buildFretButton(10),
-                        _buildFretButton(11),
-                        _buildFretButton(12),
-                        _buildFretButton(13),
-                        _buildFretButton(14),
-                        _buildFretButton(15),
-                        _buildFretButton(16),
+                        _buildFretButton(9, selectedRow, selectedNoteIndex),
+                        _buildFretButton(10, selectedRow, selectedNoteIndex),
+                        _buildFretButton(11, selectedRow, selectedNoteIndex),
+                        _buildFretButton(12, selectedRow, selectedNoteIndex),
+                        _buildFretButton(13, selectedRow, selectedNoteIndex),
+                        _buildFretButton(14, selectedRow, selectedNoteIndex),
+                        _buildFretButton(15, selectedRow, selectedNoteIndex),
+                        _buildFretButton(16, selectedRow, selectedNoteIndex),
                       ],
                     ),
                   ),
@@ -363,14 +500,14 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        _buildFretButton(17),
-                        _buildFretButton(18),
-                        _buildFretButton(19),
-                        _buildFretButton(20),
-                        _buildFretButton(21),
-                        _buildFretButton(22),
-                        _buildFretButton(23),
-                        _buildFretButton(24),
+                        _buildFretButton(17, selectedRow, selectedNoteIndex),
+                        _buildFretButton(18, selectedRow, selectedNoteIndex),
+                        _buildFretButton(19, selectedRow, selectedNoteIndex),
+                        _buildFretButton(20, selectedRow, selectedNoteIndex),
+                        _buildFretButton(21, selectedRow, selectedNoteIndex),
+                        _buildFretButton(22, selectedRow, selectedNoteIndex),
+                        _buildFretButton(23, selectedRow, selectedNoteIndex),
+                        _buildFretButton(24, selectedRow, selectedNoteIndex),
                       ],
                     ),
                   ),

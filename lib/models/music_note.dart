@@ -26,6 +26,7 @@ class MusicalNote {
   String keySignatureName;
   String keySignatureClefType;
   String clefType; // 'Treble', 'Bass', 'Alto', 'Tenor'
+  List<MusicalNote>? childNotes; // For chords - multiple notes at same position
 
   MusicalNote(
       {required this.pitch,
@@ -54,7 +55,8 @@ class MusicalNote {
       this.rehearsalMarking = "",
       this.keySignatureName = "",
       this.keySignatureClefType = "",
-      this.clefType = ""});
+      this.clefType = "",
+      this.childNotes});
 
   MusicalNote copy() {
     return MusicalNote(
@@ -84,7 +86,8 @@ class MusicalNote {
         rehearsalMarking: rehearsalMarking,
         keySignatureName: keySignatureName,
         keySignatureClefType: keySignatureClefType,
-        clefType: clefType);
+        clefType: clefType,
+        childNotes: childNotes?.map((note) => note.copy()).toList());
   }
 
   Map<String, dynamic> toJson() {
@@ -116,6 +119,7 @@ class MusicalNote {
       'keySignatureName': keySignatureName,
       'keySignatureClefType': keySignatureClefType,
       'clefType': clefType,
+      'childNotes': childNotes?.map((note) => note.toJson()).toList(),
     };
   }
 
@@ -148,6 +152,9 @@ class MusicalNote {
       keySignatureName: json['keySignatureName'] ?? '',
       keySignatureClefType: json['keySignatureClefType'] ?? '',
       clefType: json['clefType'] ?? '',
+      childNotes: (json['childNotes'] as List<dynamic>?)
+          ?.map((childJson) => MusicalNote.fromJson(childJson))
+          .toList(),
     );
   }
 }
@@ -166,7 +173,8 @@ enum NoteType {
   bar,
   timeSignature,
   space,
-  keySignature
+  keySignature,
+  fret
 }
 
 extension NoteTypeExtension on NoteType {

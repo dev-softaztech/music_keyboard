@@ -151,6 +151,7 @@ class SheetPreviewPainter extends CustomPainter {
       case NoteType.timeSignature:
       case NoteType.keySignature:
       case NoteType.space:
+      case NoteType.fret:
         return note.unicodeCharacter;
     }
   }
