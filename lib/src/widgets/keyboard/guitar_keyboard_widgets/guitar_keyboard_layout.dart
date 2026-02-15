@@ -4,6 +4,7 @@ import 'package:music_keyboard/models/sheet_rows.dart';
 import 'package:music_keyboard/models/sheet_format.dart';
 import 'package:music_keyboard/src/providers/current_selected_note_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class GuitarKeyboardLayout extends StatefulWidget {
   final bool showNotesKeyboard;
@@ -43,7 +44,8 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
   }
 
   // Build a technique button (for top two rows)
-  Widget _buildTechniqueButton(String label, {bool isUnicode = true}) {
+  Widget _buildTechniqueButton(String label,
+      {bool isUnicode = true, String? svgAssetPath}) {
     return SizedBox(
       width: 32,
       height: 32,
@@ -59,16 +61,21 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
           ),
           padding: EdgeInsets.zero,
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontFamily: isUnicode ? 'Bravura' : null,
-            fontSize: isUnicode ? 30 : 12,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
-          textAlign: TextAlign.center,
-        ),
+        child: svgAssetPath != null
+            ? SvgPicture.asset(svgAssetPath,
+                width: 20,
+                height: 20,
+                colorFilter: ColorFilter.linearToSrgbGamma())
+            : Text(
+                label,
+                style: TextStyle(
+                  fontFamily: isUnicode ? 'Bravura' : null,
+                  fontSize: isUnicode ? 30 : 12,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+                textAlign: TextAlign.center,
+              ),
       ),
     );
   }
@@ -175,9 +182,11 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
               const SizedBox(width: 7),
               _buildTechniqueButton('\uE4BA'),
               const SizedBox(width: 7),
-              _buildTechniqueButton('?'),
+              _buildTechniqueButton('bend',
+                  svgAssetPath: 'assets/svgs/bend.svg'),
               const SizedBox(width: 7),
-              _buildTechniqueButton('?'),
+              _buildTechniqueButton('pre-bend',
+                  svgAssetPath: 'assets/svgs/pre-bend.svg'),
               const SizedBox(width: 7),
               _buildTechniqueButton('\uE610'),
             ],
@@ -195,9 +204,11 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
               const SizedBox(width: 7),
               _buildTechniqueButton('\uEA6E'),
               const SizedBox(width: 7),
-              _buildTechniqueButton('?'),
+              _buildTechniqueButton('bend-release',
+                  svgAssetPath: 'assets/svgs/bend-release.svg'),
               const SizedBox(width: 7),
-              _buildTechniqueButton('?'),
+              _buildTechniqueButton('pre-bend-release',
+                  svgAssetPath: 'assets/svgs/pre-bend-release.svg'),
               const SizedBox(width: 7),
               _buildTechniqueButton('\uE612'),
             ],
