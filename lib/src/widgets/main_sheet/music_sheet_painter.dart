@@ -547,6 +547,103 @@ class MusicSheetPainter extends CustomPainter {
               rowIndex);
         }
 
+        // Draw bends for guitar tabs
+        if (keyboardType == KeyboardType.guitarTab &&
+            note.type == NoteType.fret) {
+          // Check for bend
+          if (note.isBendStart && note.bendEndIndex != null) {
+            var bendEndIndex =
+                note.bendEndIndex! < sheetNoteRows[rowIndex].chords.length - 1
+                    ? note.bendEndIndex!
+                    : sheetNoteRows[rowIndex].chords.length - 1;
+
+            double bendEndX = 85.0;
+            for (int index = 0; index <= bendEndIndex; index++) {
+              bendEndX += currentRowSpacing;
+            }
+
+            // Get string Y position from first child note
+            double stringY = staffTop;
+            if (note.childNotes != null && note.childNotes!.isNotEmpty) {
+              stringY =
+                  staffTop + (note.childNotes!.first.octave * lineSpacing);
+            }
+
+            _drawBend(canvas, paint, x, bendEndX, stringY, staffTop,
+                lineSpacing, noteColour);
+          }
+
+          // Check for pre-bend
+          if (note.isPreBendStart && note.preBendEndIndex != null) {
+            var preBendEndIndex = note.preBendEndIndex! <
+                    sheetNoteRows[rowIndex].chords.length - 1
+                ? note.preBendEndIndex!
+                : sheetNoteRows[rowIndex].chords.length - 1;
+
+            double preBendEndX = 85.0;
+            for (int index = 0; index <= preBendEndIndex; index++) {
+              preBendEndX += currentRowSpacing;
+            }
+
+            // Get string Y position from first child note
+            double stringY = staffTop;
+            if (note.childNotes != null && note.childNotes!.isNotEmpty) {
+              stringY =
+                  staffTop + (note.childNotes!.first.octave * lineSpacing);
+            }
+
+            _drawPreBend(canvas, paint, x, preBendEndX, stringY, staffTop,
+                lineSpacing, noteColour);
+          }
+
+          // Check for bend-release
+          if (note.isBendReleaseStart && note.bendReleaseEndIndex != null) {
+            var bendReleaseEndIndex = note.bendReleaseEndIndex! <
+                    sheetNoteRows[rowIndex].chords.length - 1
+                ? note.bendReleaseEndIndex!
+                : sheetNoteRows[rowIndex].chords.length - 1;
+
+            double bendReleaseEndX = 85.0;
+            for (int index = 0; index <= bendReleaseEndIndex; index++) {
+              bendReleaseEndX += currentRowSpacing;
+            }
+
+            // Get string Y position from first child note
+            double stringY = staffTop;
+            if (note.childNotes != null && note.childNotes!.isNotEmpty) {
+              stringY =
+                  staffTop + (note.childNotes!.first.octave * lineSpacing);
+            }
+
+            _drawBendRelease(canvas, paint, x, bendReleaseEndX, stringY,
+                staffTop, lineSpacing, noteColour);
+          }
+
+          // Check for pre-bend-release
+          if (note.isPreBendReleaseStart &&
+              note.preBendReleaseEndIndex != null) {
+            var preBendReleaseEndIndex = note.preBendReleaseEndIndex! <
+                    sheetNoteRows[rowIndex].chords.length - 1
+                ? note.preBendReleaseEndIndex!
+                : sheetNoteRows[rowIndex].chords.length - 1;
+
+            double preBendReleaseEndX = 85.0;
+            for (int index = 0; index <= preBendReleaseEndIndex; index++) {
+              preBendReleaseEndX += currentRowSpacing;
+            }
+
+            // Get string Y position from first child note
+            double stringY = staffTop;
+            if (note.childNotes != null && note.childNotes!.isNotEmpty) {
+              stringY =
+                  staffTop + (note.childNotes!.first.octave * lineSpacing);
+            }
+
+            _drawPreBendRelease(canvas, paint, x, preBendReleaseEndX, stringY,
+                staffTop, lineSpacing, noteColour);
+          }
+        }
+
         // Calculate spacing for space notes
         double spaceNoteSpacing = 0;
         if (note.type == NoteType.space && i > 0) {
@@ -2234,6 +2331,211 @@ class MusicSheetPainter extends CustomPainter {
         ..style = PaintingStyle.fill;
       canvas.drawCircle(Offset(endX + 10, y), 10, handlePaint);
     }
+  }
+
+  /// Draw bend arrow (single upward arrow with "full" label)
+  void _drawBend(Canvas canvas, Paint paint, double startX, double endX,
+      double stringY, double staffTop, double lineSpacing, Color noteColour) {
+    // Calculate peak position above the staff
+    final double peakY = staffTop - 30;
+    final double arrowSize = 6.0;
+
+    // Draw curved line from start to peak - curve bulges downward under the arrow
+    final Path path = Path();
+    path.moveTo(startX, stringY);
+    path.quadraticBezierTo((startX + endX) / 2, peakY + 40, endX, peakY);
+
+    paint.style = PaintingStyle.stroke;
+    paint.strokeWidth = 1.5;
+    canvas.drawPath(path, paint);
+
+    // Draw arrowhead at peak
+    final Path arrowHead = Path();
+    arrowHead.moveTo(endX, peakY);
+    arrowHead.lineTo(endX - arrowSize, peakY + arrowSize);
+    arrowHead.moveTo(endX, peakY);
+    arrowHead.lineTo(endX + arrowSize, peakY + arrowSize);
+    canvas.drawPath(arrowHead, paint);
+
+    // Draw "full" label at peak
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: 'full',
+        style: TextStyle(
+          color: noteColour,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+    textPainter.paint(canvas, Offset(endX - textPainter.width / 2, peakY - 20));
+  }
+
+  /// Draw pre-bend arrow (single upward arrow with "1/2" label)
+  void _drawPreBend(Canvas canvas, Paint paint, double startX, double endX,
+      double stringY, double staffTop, double lineSpacing, Color noteColour) {
+    // Calculate peak position above the staff
+    final double peakY = staffTop - 30;
+    final double arrowSize = 6.0;
+    startX = startX + 5;
+    endX = endX - 5;
+
+    // Draw curved line from start to peak - curve bulges downward under the arrow
+    final Path path = Path();
+    path.moveTo(startX, stringY);
+    path.quadraticBezierTo((startX + endX) / 2, peakY + 40, endX, peakY);
+
+    paint.style = PaintingStyle.stroke;
+    paint.strokeWidth = 1.5;
+    canvas.drawPath(path, paint);
+
+    // Draw arrowhead at peak
+    final Path arrowHead = Path();
+    arrowHead.moveTo(endX, peakY);
+    arrowHead.lineTo(endX - arrowSize, peakY + arrowSize);
+    arrowHead.moveTo(endX, peakY);
+    arrowHead.lineTo(endX + arrowSize, peakY + arrowSize);
+    canvas.drawPath(arrowHead, paint);
+
+    // Draw "1/2" label at peak
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: '1/2',
+        style: TextStyle(
+          color: noteColour,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+    textPainter.paint(canvas, Offset(endX - textPainter.width / 2, peakY - 20));
+  }
+
+  /// Draw bend-release arrow (up then down with "full" label)
+  void _drawBendRelease(Canvas canvas, Paint paint, double startX, double endX,
+      double stringY, double staffTop, double lineSpacing, Color noteColour) {
+    // Calculate peak position above the staff
+    final double peakY = staffTop - 30;
+    final double peakX = startX + (endX - startX) * 0.5;
+    final double arrowSize = 6.0;
+
+    // Draw curved line from start to peak - curve bulges downward under the arrow
+    final Path upPath = Path();
+    upPath.moveTo(startX, stringY);
+    upPath.quadraticBezierTo(
+        startX + (peakX - startX) * 0.5, peakY + 40, peakX, peakY);
+
+    paint.style = PaintingStyle.stroke;
+    paint.strokeWidth = 1.5;
+    canvas.drawPath(upPath, paint);
+
+    // Draw arrowhead at peak (upward)
+    final Path upArrowHead = Path();
+    upArrowHead.moveTo(peakX, peakY);
+    upArrowHead.lineTo(peakX - arrowSize, peakY + arrowSize);
+    upArrowHead.moveTo(peakX, peakY);
+    upArrowHead.lineTo(peakX + arrowSize, peakY + arrowSize);
+    canvas.drawPath(upArrowHead, paint);
+
+    // Draw curved line from peak back down to end
+    final Path downPath = Path();
+    downPath.moveTo(peakX, peakY);
+    downPath.quadraticBezierTo(
+        peakX + (endX - peakX) * 0.5, peakY + 10, endX, stringY);
+    canvas.drawPath(downPath, paint);
+
+    // Draw arrowhead at end (downward)
+    final Path downArrowHead = Path();
+    downArrowHead.moveTo(endX, stringY);
+    downArrowHead.lineTo(endX - arrowSize, stringY - arrowSize);
+    downArrowHead.moveTo(endX, stringY);
+    downArrowHead.lineTo(endX + arrowSize, stringY - arrowSize);
+    canvas.drawPath(downArrowHead, paint);
+
+    // Draw "full" label at peak
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: 'full',
+        style: TextStyle(
+          color: noteColour,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+    textPainter.paint(
+        canvas, Offset(peakX - textPainter.width / 2, peakY - 20));
+  }
+
+  /// Draw pre-bend-release arrow (up then down with "1/2" label)
+  void _drawPreBendRelease(
+      Canvas canvas,
+      Paint paint,
+      double startX,
+      double endX,
+      double stringY,
+      double staffTop,
+      double lineSpacing,
+      Color noteColour) {
+    // Calculate peak position above the staff
+    final double peakY = staffTop - 30;
+    final double peakX = startX + (endX - startX) * 0.5;
+    final double arrowSize = 6.0;
+
+    // Draw curved line from start to peak - curve bulges downward under the arrow
+    final Path upPath = Path();
+    upPath.moveTo(startX, stringY);
+    upPath.quadraticBezierTo(
+        startX + (peakX - startX) * 0.5, peakY + 40, peakX, peakY);
+
+    paint.style = PaintingStyle.stroke;
+    paint.strokeWidth = 1.5;
+    canvas.drawPath(upPath, paint);
+
+    // Draw arrowhead at peak (upward)
+    final Path upArrowHead = Path();
+    upArrowHead.moveTo(peakX, peakY);
+    upArrowHead.lineTo(peakX - arrowSize, peakY + arrowSize);
+    upArrowHead.moveTo(peakX, peakY);
+    upArrowHead.lineTo(peakX + arrowSize, peakY + arrowSize);
+    canvas.drawPath(upArrowHead, paint);
+
+    // Draw curved line from peak back down to end
+    final Path downPath = Path();
+    downPath.moveTo(peakX, peakY);
+    downPath.quadraticBezierTo(
+        peakX + (endX - peakX) * 0.5, peakY + 10, endX, stringY);
+    canvas.drawPath(downPath, paint);
+
+    // Draw arrowhead at end (downward)
+    final Path downArrowHead = Path();
+    downArrowHead.moveTo(endX, stringY);
+    downArrowHead.lineTo(endX - arrowSize, stringY - arrowSize);
+    downArrowHead.moveTo(endX, stringY);
+    downArrowHead.lineTo(endX + arrowSize, stringY - arrowSize);
+    canvas.drawPath(downArrowHead, paint);
+
+    // Draw "1/2" label at peak
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: '1/2',
+        style: TextStyle(
+          color: noteColour,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+    textPainter.paint(
+        canvas, Offset(peakX - textPainter.width / 2, peakY - 20));
   }
 
   /// Draw rehearsal marking above the staff at the note's position

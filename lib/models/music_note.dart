@@ -8,6 +8,14 @@ class MusicalNote {
   bool isDecrescendoStart;
   int? crescendoEndIndex;
   int? decrescendoEndIndex;
+  bool isBendStart;
+  bool isPreBendStart;
+  bool isBendReleaseStart;
+  bool isPreBendReleaseStart;
+  int? bendEndIndex;
+  int? preBendEndIndex;
+  int? bendReleaseEndIndex;
+  int? preBendReleaseEndIndex;
   final String unicodeCharacter;
   final String accidentalCharacter; // Unicode character for the accidental
   int? slurEndIndex;
@@ -38,6 +46,14 @@ class MusicalNote {
       this.isDecrescendoStart = false,
       this.crescendoEndIndex,
       this.decrescendoEndIndex,
+      this.isBendStart = false,
+      this.isPreBendStart = false,
+      this.isBendReleaseStart = false,
+      this.isPreBendReleaseStart = false,
+      this.bendEndIndex,
+      this.preBendEndIndex,
+      this.bendReleaseEndIndex,
+      this.preBendReleaseEndIndex,
       this.slurEndIndex,
       this.unicodeCharacter = "",
       this.accidentalCharacter = "",
@@ -69,6 +85,14 @@ class MusicalNote {
         isDecrescendoStart: isDecrescendoStart,
         crescendoEndIndex: crescendoEndIndex,
         decrescendoEndIndex: decrescendoEndIndex,
+        isBendStart: isBendStart,
+        isPreBendStart: isPreBendStart,
+        isBendReleaseStart: isBendReleaseStart,
+        isPreBendReleaseStart: isPreBendReleaseStart,
+        bendEndIndex: bendEndIndex,
+        preBendEndIndex: preBendEndIndex,
+        bendReleaseEndIndex: bendReleaseEndIndex,
+        preBendReleaseEndIndex: preBendReleaseEndIndex,
         slurEndIndex: slurEndIndex,
         unicodeCharacter: unicodeCharacter,
         accidentalCharacter: accidentalCharacter,
@@ -101,6 +125,14 @@ class MusicalNote {
       'isDecrescendoStart': isDecrescendoStart,
       'crescendoEndIndex': crescendoEndIndex,
       'decrescendoEndIndex': decrescendoEndIndex,
+      'isBendStart': isBendStart,
+      'isPreBendStart': isPreBendStart,
+      'isBendReleaseStart': isBendReleaseStart,
+      'isPreBendReleaseStart': isPreBendReleaseStart,
+      'bendEndIndex': bendEndIndex,
+      'preBendEndIndex': preBendEndIndex,
+      'bendReleaseEndIndex': bendReleaseEndIndex,
+      'preBendReleaseEndIndex': preBendReleaseEndIndex,
       'unicodeCharacter': unicodeCharacter,
       'accidentalCharacter': accidentalCharacter,
       'slurEndIndex': slurEndIndex,
@@ -134,6 +166,14 @@ class MusicalNote {
       isDecrescendoStart: json['isDecrescendoStart'] ?? false,
       crescendoEndIndex: json['crescendoEndIndex'],
       decrescendoEndIndex: json['decrescendoEndIndex'],
+      isBendStart: json['isBendStart'] ?? false,
+      isPreBendStart: json['isPreBendStart'] ?? false,
+      isBendReleaseStart: json['isBendReleaseStart'] ?? false,
+      isPreBendReleaseStart: json['isPreBendReleaseStart'] ?? false,
+      bendEndIndex: json['bendEndIndex'],
+      preBendEndIndex: json['preBendEndIndex'],
+      bendReleaseEndIndex: json['bendReleaseEndIndex'],
+      preBendReleaseEndIndex: json['preBendReleaseEndIndex'],
       unicodeCharacter: json['unicodeCharacter'] ?? '',
       accidentalCharacter: json['accidentalCharacter'] ?? '',
       slurEndIndex: json['slurEndIndex'],

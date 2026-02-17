@@ -39,6 +39,12 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
   // String names in order from top to bottom
   final List<String> _stringNames = ['E', 'B', 'G', 'D', 'A', 'E'];
 
+  // Bend mode states
+  bool _isBendActive = false;
+  bool _isPreBendActive = false;
+  bool _isBendReleaseActive = false;
+  bool _isPreBendReleaseActive = false;
+
   @override
   void dispose() {
     // Make sure to remove any active overlay when disposing
@@ -120,19 +126,22 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
 
   // Build a technique button (for top two rows)
   Widget _buildTechniqueButton(String identifer, String label,
-      {bool isUnicode = true, String? svgAssetPath}) {
+      {bool isUnicode = true,
+      String? svgAssetPath,
+      VoidCallback? onPressed,
+      bool isActive = false}) {
     return SizedBox(
       width: 32,
       height: 32,
       child: ElevatedButton(
-        onPressed: () {
-          // TODO: Implement technique button functionality
-        },
+        onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.grey[50],
+          backgroundColor: isActive ? Colors.blue[100] : Colors.grey[50],
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(5),
-            side: const BorderSide(color: Colors.black, width: 1),
+            side: BorderSide(
+                color: isActive ? Colors.blue : Colors.black,
+                width: isActive ? 2 : 1),
           ),
           padding: EdgeInsets.zero,
         ),
@@ -153,6 +162,111 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
               ),
       ),
     );
+  }
+
+  // Helper: Handle bend button press
+  void _handleBendButtonPress(
+      String bendType, int selectedRow, int selectedNoteIndex) {
+    final chord = _getCurrentChord(selectedRow, selectedNoteIndex);
+    if (chord == null) return;
+
+    setState(() {
+      switch (bendType) {
+        case 'bend':
+          if (_isBendActive) {
+            // Deactivate bend mode - set end index
+            chord.bendEndIndex = selectedNoteIndex;
+            _isBendActive = false;
+          } else {
+            // Activate bend mode
+            chord.isBendStart = true;
+            chord.bendEndIndex = selectedNoteIndex;
+            _isBendActive = true;
+            // Deactivate other bend modes
+            _isPreBendActive = false;
+            _isBendReleaseActive = false;
+            _isPreBendReleaseActive = false;
+          }
+          break;
+        case 'pre-bend':
+          if (_isPreBendActive) {
+            // Deactivate pre-bend mode
+            chord.preBendEndIndex = selectedNoteIndex;
+            _isPreBendActive = false;
+          } else {
+            // Activate pre-bend mode
+            chord.isPreBendStart = true;
+            chord.preBendEndIndex = selectedNoteIndex;
+            _isPreBendActive = true;
+            // Deactivate other bend modes
+            _isBendActive = false;
+            _isBendReleaseActive = false;
+            _isPreBendReleaseActive = false;
+          }
+          break;
+        case 'bend-release':
+          if (_isBendReleaseActive) {
+            // Deactivate bend-release mode
+            chord.bendReleaseEndIndex = selectedNoteIndex;
+            _isBendReleaseActive = false;
+          } else {
+            // Activate bend-release mode
+            chord.isBendReleaseStart = true;
+            chord.bendReleaseEndIndex = selectedNoteIndex;
+            _isBendReleaseActive = true;
+            // Deactivate other bend modes
+            _isBendActive = false;
+            _isPreBendActive = false;
+            _isPreBendReleaseActive = false;
+          }
+          break;
+        case 'pre-bend-release':
+          if (_isPreBendReleaseActive) {
+            // Deactivate pre-bend-release mode
+            chord.preBendReleaseEndIndex = selectedNoteIndex;
+            _isPreBendReleaseActive = false;
+          } else {
+            // Activate pre-bend-release mode
+            chord.isPreBendReleaseStart = true;
+            chord.preBendReleaseEndIndex = selectedNoteIndex;
+            _isPreBendReleaseActive = true;
+            // Deactivate other bend modes
+            _isBendActive = false;
+            _isPreBendActive = false;
+            _isBendReleaseActive = false;
+          }
+          break;
+      }
+    });
+  }
+
+  // Helper: Update bend end indices when adding notes
+  void _updateBendEndIndices(int selectedRow, int selectedNoteIndex) {
+    if (selectedRow < 0 || selectedRow >= widget.sheetNoteRows.length) return;
+
+    final chords = widget.sheetNoteRows[selectedRow].chords;
+
+    // Find the bend start note and update its end index
+    for (int i = 0; i < chords.length; i++) {
+      final chord = chords[i];
+
+      if (_isBendActive && chord.isBendStart && i <= selectedNoteIndex) {
+        chord.bendEndIndex = selectedNoteIndex;
+      }
+      if (_isPreBendActive && chord.isPreBendStart && i <= selectedNoteIndex) {
+        chord.preBendEndIndex = selectedNoteIndex;
+      }
+      if (_isBendReleaseActive &&
+          chord.isBendReleaseStart &&
+          i <= selectedNoteIndex) {
+        chord.bendReleaseEndIndex = selectedNoteIndex;
+      }
+      if (_isPreBendReleaseActive &&
+          chord.isPreBendReleaseStart &&
+          i <= selectedNoteIndex) {
+        chord.preBendReleaseEndIndex = selectedNoteIndex;
+      }
+    }
   }
 
   // Build a string button (E, A, D, G, B, E)
@@ -429,10 +543,16 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                       _buildTechniqueButton('hammer-left-hand', '\uE4BA'),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('bend', 'bend',
-                          svgAssetPath: 'assets/svgs/bend.svg'),
+                          svgAssetPath: 'assets/svgs/bend.svg',
+                          onPressed: () => _handleBendButtonPress(
+                              'bend', selectedRow, selectedNoteIndex),
+                          isActive: _isBendActive),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('pre-bend', 'pre-bend',
-                          svgAssetPath: 'assets/svgs/pre-bend.svg'),
+                          svgAssetPath: 'assets/svgs/pre-bend.svg',
+                          onPressed: () => _handleBendButtonPress(
+                              'pre-bend', selectedRow, selectedNoteIndex),
+                          isActive: _isPreBendActive),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('pick-downward', '\uE610'),
                     ],
@@ -452,11 +572,19 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                       _buildTechniqueButton('slide-down', '\uEA6E'),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('bend-release', 'bend-release',
-                          svgAssetPath: 'assets/svgs/bend-release.svg'),
+                          svgAssetPath: 'assets/svgs/bend-release.svg',
+                          onPressed: () => _handleBendButtonPress(
+                              'bend-release', selectedRow, selectedNoteIndex),
+                          isActive: _isBendReleaseActive),
                       const SizedBox(width: 7),
                       _buildTechniqueButton(
                           'pre-bend-release', 'pre-bend-release',
-                          svgAssetPath: 'assets/svgs/pre-bend-release.svg'),
+                          svgAssetPath: 'assets/svgs/pre-bend-release.svg',
+                          onPressed: () => _handleBendButtonPress(
+                              'pre-bend-release',
+                              selectedRow,
+                              selectedNoteIndex),
+                          isActive: _isPreBendReleaseActive),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('pick-upward', '\uE612'),
                     ],
