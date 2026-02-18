@@ -570,7 +570,7 @@ class MusicSheetPainter extends CustomPainter {
             }
 
             _drawBend(canvas, paint, x, bendEndX, stringY, staffTop,
-                lineSpacing, noteColour);
+                lineSpacing, noteColour, currentRowSpacing);
           }
 
           // Check for pre-bend
@@ -593,7 +593,7 @@ class MusicSheetPainter extends CustomPainter {
             }
 
             _drawPreBend(canvas, paint, x, preBendEndX, stringY, staffTop,
-                lineSpacing, noteColour);
+                lineSpacing, noteColour, currentRowSpacing);
           }
 
           // Check for bend-release
@@ -616,7 +616,7 @@ class MusicSheetPainter extends CustomPainter {
             }
 
             _drawBendRelease(canvas, paint, x, bendReleaseEndX, stringY,
-                staffTop, lineSpacing, noteColour);
+                staffTop, lineSpacing, noteColour, currentRowSpacing);
           }
 
           // Check for pre-bend-release
@@ -640,7 +640,7 @@ class MusicSheetPainter extends CustomPainter {
             }
 
             _drawPreBendRelease(canvas, paint, x, preBendReleaseEndX, stringY,
-                staffTop, lineSpacing, noteColour);
+                staffTop, lineSpacing, noteColour, currentRowSpacing);
           }
         }
 
@@ -2348,7 +2348,7 @@ class MusicSheetPainter extends CustomPainter {
       arrowHead.lineTo(peakX + arrowSize, peakY + arrowSize);
       arrowHead.close();
     } else {
-      peakY = peakY + 5;
+      peakY = peakY + 0;
       arrowHead.moveTo(peakX, peakY);
       arrowHead.lineTo(peakX - arrowSize, peakY - arrowSize);
       arrowHead.lineTo(peakX + arrowSize, peakY - arrowSize);
@@ -2371,25 +2371,60 @@ class MusicSheetPainter extends CustomPainter {
       );
       textPainter.layout();
       textPainter.paint(
-          canvas, Offset(peakX - textPainter.width / 2, peakY - 20));
+          canvas, Offset(peakX - textPainter.width / 2, peakY - 15));
     }
   }
 
+  /// Helper function to draw upward curved line from start to peak
+  void _drawBendCurveUp(
+      Canvas canvas,
+      Paint paint,
+      double startX,
+      double startY,
+      double endX,
+      double endY,
+      double currentRowSpacing,
+      bool isRelease) {
+    final Path path = Path();
+
+    path.moveTo(startX + 8, startY - 2);
+    path.quadraticBezierTo(startX + 20, endY + 20, endX, endY);
+//(startX + endX) / 2
+    paint.style = PaintingStyle.stroke;
+    paint.strokeWidth = 1.2;
+    canvas.drawPath(path, paint);
+  }
+
+  /// Helper function to draw downward curved line from peak to end
+  void _drawBendCurveDown(Canvas canvas, Paint paint, double startX,
+      double startY, double endX, double endY, double currentRowSpacing) {
+    final Path path = Path();
+    path.moveTo(startX + 5, startY - 4);
+    path.quadraticBezierTo(startX + 20, startY + 20, endX, endY - 5);
+//(startX + endX) / 2
+    paint.style = PaintingStyle.stroke;
+    paint.strokeWidth = 1.2;
+    canvas.drawPath(path, paint);
+  }
+
   /// Draw bend arrow (single upward arrow with "full" label)
-  void _drawBend(Canvas canvas, Paint paint, double startX, double endX,
-      double stringY, double staffTop, double lineSpacing, Color noteColour) {
+  void _drawBend(
+      Canvas canvas,
+      Paint paint,
+      double startX,
+      double endX,
+      double stringY,
+      double staffTop,
+      double lineSpacing,
+      Color noteColour,
+      double currentRowSpacing) {
     // Calculate peak position above the staff
-    final double peakY = staffTop - 30;
+    final double peakY = staffTop - 20;
     final double arrowSize = 6.0;
 
     // Draw curved line from start to peak - curve bulges downward under the arrow
-    final Path path = Path();
-    path.moveTo(startX, stringY);
-    path.quadraticBezierTo((startX + endX) / 2, peakY + 40, endX, peakY);
-
-    paint.style = PaintingStyle.stroke;
-    paint.strokeWidth = 1.5;
-    canvas.drawPath(path, paint);
+    _drawBendCurveUp(
+        canvas, paint, startX, stringY, endX, peakY, currentRowSpacing, false);
 
     // Draw arrowhead and label at peak
     _drawArrowHead(
@@ -2397,22 +2432,25 @@ class MusicSheetPainter extends CustomPainter {
   }
 
   /// Draw pre-bend arrow (single upward arrow with "1/2" label)
-  void _drawPreBend(Canvas canvas, Paint paint, double startX, double endX,
-      double stringY, double staffTop, double lineSpacing, Color noteColour) {
+  void _drawPreBend(
+      Canvas canvas,
+      Paint paint,
+      double startX,
+      double endX,
+      double stringY,
+      double staffTop,
+      double lineSpacing,
+      Color noteColour,
+      double currentRowSpacing) {
     // Calculate peak position above the staff
-    final double peakY = staffTop - 30;
+    final double peakY = staffTop - 20;
     final double arrowSize = 6.0;
     startX = startX + 5;
     endX = endX - 5;
 
     // Draw curved line from start to peak - curve bulges downward under the arrow
-    final Path path = Path();
-    path.moveTo(startX, stringY);
-    path.quadraticBezierTo((startX + endX) / 2, peakY + 40, endX, peakY);
-
-    paint.style = PaintingStyle.stroke;
-    paint.strokeWidth = 1.5;
-    canvas.drawPath(path, paint);
+    _drawBendCurveUp(
+        canvas, paint, startX, stringY, endX, peakY, currentRowSpacing, false);
 
     // Draw arrowhead and label at peak
     _drawArrowHead(
@@ -2420,29 +2458,28 @@ class MusicSheetPainter extends CustomPainter {
   }
 
   /// Draw bend-release arrow (up then down with "full" label)
-  void _drawBendRelease(Canvas canvas, Paint paint, double startX, double endX,
-      double stringY, double staffTop, double lineSpacing, Color noteColour) {
+  void _drawBendRelease(
+      Canvas canvas,
+      Paint paint,
+      double startX,
+      double endX,
+      double stringY,
+      double staffTop,
+      double lineSpacing,
+      Color noteColour,
+      double currentRowSpacing) {
     // Calculate peak position above the staff
-    final double peakY = staffTop - 30;
+    final double peakY = staffTop - 20;
     final double peakX = startX + (endX - startX) * 0.5;
     final double arrowSize = 6.0;
 
     // Draw curved line from start to peak - curve bulges downward under the arrow
-    final Path upPath = Path();
-    upPath.moveTo(startX, stringY);
-    upPath.quadraticBezierTo(
-        startX + (peakX - startX) * 0.5, peakY + 40, peakX, peakY);
-
-    paint.style = PaintingStyle.stroke;
-    paint.strokeWidth = 1.5;
-    canvas.drawPath(upPath, paint);
+    _drawBendCurveUp(
+        canvas, paint, startX, stringY, peakX, peakY, currentRowSpacing, true);
 
     // Draw curved line from peak back down to end
-    final Path downPath = Path();
-    downPath.moveTo(peakX, peakY);
-    downPath.quadraticBezierTo(
-        peakX + (endX - peakX) * 0.5, peakY + 10, endX, stringY);
-    canvas.drawPath(downPath, paint);
+    _drawBendCurveDown(
+        canvas, paint, peakX, peakY, endX, stringY, currentRowSpacing);
 
     // Draw "full" label at peak
     _drawArrowHead(
@@ -2460,28 +2497,20 @@ class MusicSheetPainter extends CustomPainter {
       double stringY,
       double staffTop,
       double lineSpacing,
-      Color noteColour) {
+      Color noteColour,
+      double currentRowSpacing) {
     // Calculate peak position above the staff
-    final double peakY = staffTop - 30;
+    final double peakY = staffTop - 20;
     final double peakX = startX + (endX - startX) * 0.5;
     final double arrowSize = 6.0;
 
     // Draw curved line from start to peak - curve bulges downward under the arrow
-    final Path upPath = Path();
-    upPath.moveTo(startX, stringY);
-    upPath.quadraticBezierTo(
-        startX + (peakX - startX) * 0.5, peakY + 40, peakX, peakY);
-
-    paint.style = PaintingStyle.stroke;
-    paint.strokeWidth = 1.5;
-    canvas.drawPath(upPath, paint);
+    _drawBendCurveUp(
+        canvas, paint, startX, stringY, peakX, peakY, currentRowSpacing, true);
 
     // Draw curved line from peak back down to end
-    final Path downPath = Path();
-    downPath.moveTo(peakX, peakY);
-    downPath.quadraticBezierTo(
-        peakX + (endX - peakX) * 0.5, peakY + 10, endX, stringY);
-    canvas.drawPath(downPath, paint);
+    _drawBendCurveDown(
+        canvas, paint, peakX, peakY, endX, stringY, currentRowSpacing);
 
     // Draw "1/2" label at peak
     _drawArrowHead(
