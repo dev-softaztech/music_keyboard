@@ -2334,7 +2334,10 @@ class MusicSheetPainter extends CustomPainter {
   }
 
   void _drawArrowHead(Canvas canvas, Paint paint, double peakX, double peakY,
-      double arrowSize, String labelText, Color noteColour, bool isUpArrow) {
+      String labelText, Color noteColour, bool isUpArrow) {
+    final double arrowWidth = 3.0;
+    final double arrowHeight = 6.0;
+
     Paint arrowPaint = paint;
     arrowPaint.style = PaintingStyle.fill;
     arrowPaint.color = noteColour;
@@ -2344,14 +2347,14 @@ class MusicSheetPainter extends CustomPainter {
     if (isUpArrow) {
       peakY = peakY - 5;
       arrowHead.moveTo(peakX, peakY);
-      arrowHead.lineTo(peakX - arrowSize, peakY + arrowSize);
-      arrowHead.lineTo(peakX + arrowSize, peakY + arrowSize);
+      arrowHead.lineTo(peakX - arrowWidth, peakY + arrowHeight);
+      arrowHead.lineTo(peakX + arrowWidth, peakY + arrowHeight);
       arrowHead.close();
     } else {
       peakY = peakY + 0;
       arrowHead.moveTo(peakX, peakY);
-      arrowHead.lineTo(peakX - arrowSize, peakY - arrowSize);
-      arrowHead.lineTo(peakX + arrowSize, peakY - arrowSize);
+      arrowHead.lineTo(peakX - arrowWidth, peakY - arrowHeight);
+      arrowHead.lineTo(peakX + arrowWidth, peakY - arrowHeight);
       arrowHead.close();
     }
 
@@ -2363,7 +2366,7 @@ class MusicSheetPainter extends CustomPainter {
           text: labelText,
           style: TextStyle(
             color: noteColour,
-            fontSize: 12,
+            fontSize: 10,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -2386,9 +2389,18 @@ class MusicSheetPainter extends CustomPainter {
       double currentRowSpacing,
       bool isRelease) {
     final Path path = Path();
-
     path.moveTo(startX + 8, startY - 2);
-    path.quadraticBezierTo(startX + 20, endY + 20, endX, endY);
+
+    double bezierEndY = endY;
+    if (isRelease) {
+      startX = startX + (currentRowSpacing * 0.35);
+      bezierEndY = bezierEndY + (currentRowSpacing * 0.35);
+    } else {
+      startX = startX + (currentRowSpacing * 0.8);
+      bezierEndY = bezierEndY + (currentRowSpacing * 0.3);
+    }
+
+    path.quadraticBezierTo(startX, bezierEndY, endX, endY);
 //(startX + endX) / 2
     paint.style = PaintingStyle.stroke;
     paint.strokeWidth = 1.2;
@@ -2400,7 +2412,11 @@ class MusicSheetPainter extends CustomPainter {
       double startY, double endX, double endY, double currentRowSpacing) {
     final Path path = Path();
     path.moveTo(startX + 5, startY - 4);
-    path.quadraticBezierTo(startX + 20, startY + 20, endX, endY - 5);
+
+    startX = startX + (currentRowSpacing * 0.40);
+    double bezierStartY = startY + (currentRowSpacing * 0.40);
+
+    path.quadraticBezierTo(startX, bezierStartY, endX, endY - 5);
 //(startX + endX) / 2
     paint.style = PaintingStyle.stroke;
     paint.strokeWidth = 1.2;
@@ -2420,15 +2436,15 @@ class MusicSheetPainter extends CustomPainter {
       double currentRowSpacing) {
     // Calculate peak position above the staff
     final double peakY = staffTop - 20;
-    final double arrowSize = 6.0;
+
+    endX = startX + (currentRowSpacing * 0.78);
 
     // Draw curved line from start to peak - curve bulges downward under the arrow
     _drawBendCurveUp(
         canvas, paint, startX, stringY, endX, peakY, currentRowSpacing, false);
 
     // Draw arrowhead and label at peak
-    _drawArrowHead(
-        canvas, paint, endX, peakY, arrowSize, 'full', noteColour, true);
+    _drawArrowHead(canvas, paint, endX, peakY, 'full', noteColour, true);
   }
 
   /// Draw pre-bend arrow (single upward arrow with "1/2" label)
@@ -2444,17 +2460,16 @@ class MusicSheetPainter extends CustomPainter {
       double currentRowSpacing) {
     // Calculate peak position above the staff
     final double peakY = staffTop - 20;
-    final double arrowSize = 6.0;
     startX = startX + 5;
-    endX = endX - 5;
+
+    endX = startX + (currentRowSpacing * 0.78);
 
     // Draw curved line from start to peak - curve bulges downward under the arrow
     _drawBendCurveUp(
         canvas, paint, startX, stringY, endX, peakY, currentRowSpacing, false);
 
     // Draw arrowhead and label at peak
-    _drawArrowHead(
-        canvas, paint, endX, peakY, arrowSize, '1/2', noteColour, true);
+    _drawArrowHead(canvas, paint, endX, peakY, '1/2', noteColour, true);
   }
 
   /// Draw bend-release arrow (up then down with "full" label)
@@ -2470,8 +2485,9 @@ class MusicSheetPainter extends CustomPainter {
       double currentRowSpacing) {
     // Calculate peak position above the staff
     final double peakY = staffTop - 20;
-    final double peakX = startX + (endX - startX) * 0.5;
-    final double arrowSize = 6.0;
+
+    double peakX = startX + (currentRowSpacing * 0.4);
+    endX = startX + (currentRowSpacing * 0.78);
 
     // Draw curved line from start to peak - curve bulges downward under the arrow
     _drawBendCurveUp(
@@ -2482,10 +2498,8 @@ class MusicSheetPainter extends CustomPainter {
         canvas, paint, peakX, peakY, endX, stringY, currentRowSpacing);
 
     // Draw "full" label at peak
-    _drawArrowHead(
-        canvas, paint, peakX, peakY, arrowSize, 'full', noteColour, true);
-    _drawArrowHead(
-        canvas, paint, endX, stringY, arrowSize, 'full', noteColour, false);
+    _drawArrowHead(canvas, paint, peakX, peakY, 'full', noteColour, true);
+    _drawArrowHead(canvas, paint, endX, stringY, 'full', noteColour, false);
   }
 
   /// Draw pre-bend-release arrow (up then down with "1/2" label)
@@ -2501,8 +2515,8 @@ class MusicSheetPainter extends CustomPainter {
       double currentRowSpacing) {
     // Calculate peak position above the staff
     final double peakY = staffTop - 20;
-    final double peakX = startX + (endX - startX) * 0.5;
-    final double arrowSize = 6.0;
+    double peakX = startX + (currentRowSpacing * 0.4);
+    endX = startX + (currentRowSpacing * 0.78);
 
     // Draw curved line from start to peak - curve bulges downward under the arrow
     _drawBendCurveUp(
@@ -2513,10 +2527,8 @@ class MusicSheetPainter extends CustomPainter {
         canvas, paint, peakX, peakY, endX, stringY, currentRowSpacing);
 
     // Draw "1/2" label at peak
-    _drawArrowHead(
-        canvas, paint, peakX, peakY, arrowSize, '1/2', noteColour, true);
-    _drawArrowHead(
-        canvas, paint, endX, stringY, arrowSize, '1/2', noteColour, false);
+    _drawArrowHead(canvas, paint, peakX, peakY, '1/2', noteColour, true);
+    _drawArrowHead(canvas, paint, endX, stringY, '1/2', noteColour, false);
   }
 
   /// Draw rehearsal marking above the staff at the note's position
