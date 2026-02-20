@@ -39,7 +39,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
   // String names in order from top to bottom
   final List<String> _stringNames = ['E', 'B', 'G', 'D', 'A', 'E'];
 
-  // Bend mode states
   bool _isBendActive = false;
   bool _isPreBendActive = false;
   bool _isBendReleaseActive = false;
@@ -164,6 +163,58 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     );
   }
 
+  // Helper: Check if current note is within a bend range from a preceding note
+  bool _isWithinBendRange(
+      String bendType, int selectedRow, int selectedNoteIndex) {
+    if (selectedRow < 0 || selectedRow >= widget.sheetNoteRows.length) {
+      return false;
+    }
+
+    final chords = widget.sheetNoteRows[selectedRow].chords;
+
+    // Look for a preceding note with an active bend that includes current index
+    for (int i = 0; i < chords.length && i <= selectedNoteIndex; i++) {
+      final chord = chords[i];
+
+      switch (bendType) {
+        case 'bend':
+          if (chord.isBendStart &&
+              chord.bendEndIndex != null &&
+              i <= selectedNoteIndex &&
+              selectedNoteIndex <= chord.bendEndIndex!) {
+            return true;
+          }
+          break;
+        case 'pre-bend':
+          if (chord.isPreBendStart &&
+              chord.preBendEndIndex != null &&
+              i <= selectedNoteIndex &&
+              selectedNoteIndex <= chord.preBendEndIndex!) {
+            return true;
+          }
+          break;
+        case 'bend-release':
+          if (chord.isBendReleaseStart &&
+              chord.bendReleaseEndIndex != null &&
+              i <= selectedNoteIndex &&
+              selectedNoteIndex <= chord.bendReleaseEndIndex!) {
+            return true;
+          }
+          break;
+        case 'pre-bend-release':
+          if (chord.isPreBendReleaseStart &&
+              chord.preBendReleaseEndIndex != null &&
+              i <= selectedNoteIndex &&
+              selectedNoteIndex <= chord.preBendReleaseEndIndex!) {
+            return true;
+          }
+          break;
+      }
+    }
+
+    return false;
+  }
+
   // Helper: Handle bend button press
   void _handleBendButtonPress(
       String bendType, int selectedRow, int selectedNoteIndex) {
@@ -173,100 +224,51 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     setState(() {
       switch (bendType) {
         case 'bend':
-          if (_isBendActive) {
-            // Deactivate bend mode - set end index
-            chord.bendEndIndex = selectedNoteIndex;
-            _isBendActive = false;
+          if (chord.isBendStart) {
+            // Deactivate bend mode
+            chord.isBendStart = false;
+            chord.bendEndIndex = null;
           } else {
             // Activate bend mode
             chord.isBendStart = true;
             chord.bendEndIndex = selectedNoteIndex;
-            _isBendActive = true;
-            // Deactivate other bend modes
-            _isPreBendActive = false;
-            _isBendReleaseActive = false;
-            _isPreBendReleaseActive = false;
           }
           break;
         case 'pre-bend':
-          if (_isPreBendActive) {
+          if (chord.isPreBendStart) {
             // Deactivate pre-bend mode
-            chord.preBendEndIndex = selectedNoteIndex;
-            _isPreBendActive = false;
+            chord.isPreBendStart = false;
+            chord.preBendEndIndex = null;
           } else {
             // Activate pre-bend mode
             chord.isPreBendStart = true;
             chord.preBendEndIndex = selectedNoteIndex;
-            _isPreBendActive = true;
-            // Deactivate other bend modes
-            _isBendActive = false;
-            _isBendReleaseActive = false;
-            _isPreBendReleaseActive = false;
           }
           break;
         case 'bend-release':
-          if (_isBendReleaseActive) {
+          if (chord.isBendReleaseStart) {
             // Deactivate bend-release mode
-            chord.bendReleaseEndIndex = selectedNoteIndex;
-            _isBendReleaseActive = false;
+            chord.isBendReleaseStart = false;
+            chord.bendReleaseEndIndex = null;
           } else {
             // Activate bend-release mode
             chord.isBendReleaseStart = true;
             chord.bendReleaseEndIndex = selectedNoteIndex;
-            _isBendReleaseActive = true;
-            // Deactivate other bend modes
-            _isBendActive = false;
-            _isPreBendActive = false;
-            _isPreBendReleaseActive = false;
           }
           break;
         case 'pre-bend-release':
-          if (_isPreBendReleaseActive) {
+          if (chord.isPreBendReleaseStart) {
             // Deactivate pre-bend-release mode
-            chord.preBendReleaseEndIndex = selectedNoteIndex;
-            _isPreBendReleaseActive = false;
+            chord.isPreBendReleaseStart = false;
+            chord.preBendReleaseEndIndex = null;
           } else {
             // Activate pre-bend-release mode
             chord.isPreBendReleaseStart = true;
             chord.preBendReleaseEndIndex = selectedNoteIndex;
-            _isPreBendReleaseActive = true;
-            // Deactivate other bend modes
-            _isBendActive = false;
-            _isPreBendActive = false;
-            _isBendReleaseActive = false;
           }
           break;
       }
     });
-  }
-
-  // Helper: Update bend end indices when adding notes
-  void _updateBendEndIndices(int selectedRow, int selectedNoteIndex) {
-    if (selectedRow < 0 || selectedRow >= widget.sheetNoteRows.length) return;
-
-    final chords = widget.sheetNoteRows[selectedRow].chords;
-
-    // Find the bend start note and update its end index
-    for (int i = 0; i < chords.length; i++) {
-      final chord = chords[i];
-
-      if (_isBendActive && chord.isBendStart && i <= selectedNoteIndex) {
-        chord.bendEndIndex = selectedNoteIndex;
-      }
-      if (_isPreBendActive && chord.isPreBendStart && i <= selectedNoteIndex) {
-        chord.preBendEndIndex = selectedNoteIndex;
-      }
-      if (_isBendReleaseActive &&
-          chord.isBendReleaseStart &&
-          i <= selectedNoteIndex) {
-        chord.bendReleaseEndIndex = selectedNoteIndex;
-      }
-      if (_isPreBendReleaseActive &&
-          chord.isPreBendReleaseStart &&
-          i <= selectedNoteIndex) {
-        chord.preBendReleaseEndIndex = selectedNoteIndex;
-      }
-    }
   }
 
   // Build a string button (E, A, D, G, B, E)
@@ -379,22 +381,55 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                         listen: false);
 
                 if (isNextNote) {
-                  // Next button: Move to next chord position
+                  // Find bend start notes and update their end indices
+                  final chords = widget.sheetNoteRows[selectedRow].chords;
+
+                  for (int i = 0; i < chords.length; i++) {
+                    final chord = chords[i];
+
+                    // Update bend end indices for active bends
+                    if (chord.isBendStart &&
+                        chord.bendEndIndex != null &&
+                        i <= selectedNoteIndex &&
+                        selectedNoteIndex <= chord.bendEndIndex!) {
+                      chord.bendEndIndex = selectedNoteIndex + 1;
+                      break;
+                    }
+                    if (chord.isPreBendStart &&
+                        chord.preBendEndIndex != null &&
+                        i <= selectedNoteIndex &&
+                        selectedNoteIndex <= chord.preBendEndIndex!) {
+                      chord.preBendEndIndex = selectedNoteIndex + 1;
+                      break;
+                    }
+                    if (chord.isBendReleaseStart &&
+                        chord.bendReleaseEndIndex != null &&
+                        i <= selectedNoteIndex &&
+                        selectedNoteIndex <= chord.bendReleaseEndIndex!) {
+                      chord.bendReleaseEndIndex = selectedNoteIndex + 1;
+                      break;
+                    }
+                    if (chord.isPreBendReleaseStart &&
+                        chord.preBendReleaseEndIndex != null &&
+                        i <= selectedNoteIndex &&
+                        selectedNoteIndex <= chord.preBendReleaseEndIndex!) {
+                      chord.preBendReleaseEndIndex = selectedNoteIndex + 1;
+                      break;
+                    }
+                  }
+
+                  // Next button: Always add a new note
                   int nextIndex = selectedNoteIndex + 1;
 
-                  // If next position doesn't exist, create an empty chord
-                  if (nextIndex >=
-                      widget.sheetNoteRows[selectedRow].chords.length) {
-                    // Create empty chord with G as default pitch
-                    MusicalNote emptyChord = MusicalNote(
-                      pitch: 'G',
-                      octave: 4,
-                      type: NoteType.fret,
-                      duration: 0.0,
-                      childNotes: [],
-                    );
-                    widget.onKeyPress(emptyChord);
-                  }
+                  // Create empty chord with G as default pitch
+                  MusicalNote emptyChord = MusicalNote(
+                    pitch: 'G',
+                    octave: 4,
+                    type: NoteType.fret,
+                    duration: 0.0,
+                    childNotes: [],
+                  );
+                  widget.onKeyPress(emptyChord);
 
                   // Move to next position (onKeyPress will update the selected index)
                   currentSelectedNoteProvider
@@ -546,13 +581,15 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                           svgAssetPath: 'assets/svgs/bend.svg',
                           onPressed: () => _handleBendButtonPress(
                               'bend', selectedRow, selectedNoteIndex),
-                          isActive: _isBendActive),
+                          isActive: _isWithinBendRange(
+                              'bend', selectedRow, selectedNoteIndex)),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('pre-bend', 'pre-bend',
                           svgAssetPath: 'assets/svgs/pre-bend.svg',
                           onPressed: () => _handleBendButtonPress(
                               'pre-bend', selectedRow, selectedNoteIndex),
-                          isActive: _isPreBendActive),
+                          isActive: _isWithinBendRange(
+                              'pre-bend', selectedRow, selectedNoteIndex)),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('pick-downward', '\uE610'),
                     ],
@@ -575,7 +612,8 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                           svgAssetPath: 'assets/svgs/bend-release.svg',
                           onPressed: () => _handleBendButtonPress(
                               'bend-release', selectedRow, selectedNoteIndex),
-                          isActive: _isBendReleaseActive),
+                          isActive: _isWithinBendRange(
+                              'bend-release', selectedRow, selectedNoteIndex)),
                       const SizedBox(width: 7),
                       _buildTechniqueButton(
                           'pre-bend-release', 'pre-bend-release',
@@ -584,7 +622,8 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                               'pre-bend-release',
                               selectedRow,
                               selectedNoteIndex),
-                          isActive: _isPreBendReleaseActive),
+                          isActive: _isWithinBendRange('pre-bend-release',
+                              selectedRow, selectedNoteIndex)),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('pick-upward', '\uE612'),
                     ],
