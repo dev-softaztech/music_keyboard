@@ -48,6 +48,9 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
   int _previousSelectedRow = -1;
   int _previousSelectedIndex = -1;
 
+  // Flag to indicate if navigation was from Next button (preserve lock state)
+  bool _navigatedViaNextButton = false;
+
   @override
   void dispose() {
     // Make sure to remove any active overlay when disposing
@@ -475,6 +478,11 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                   );
                   widget.onKeyPress(emptyChord);
 
+                  // Set flag to preserve lock state when navigating
+                  setState(() {
+                    _navigatedViaNextButton = true;
+                  });
+
                   // Move to next position (onKeyPress will update the selected index)
                   currentSelectedNoteProvider
                       .updateSelectedIndexAndInsertionPoint(
@@ -539,10 +547,15 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           setState(() {
-            _isBendActive = false;
-            _isPreBendActive = false;
-            _isBendReleaseActive = false;
-            _isPreBendReleaseActive = false;
+            // Only reset lock states if NOT navigated via Next button
+            if (!_navigatedViaNextButton) {
+              _isBendActive = false;
+              _isPreBendActive = false;
+              _isBendReleaseActive = false;
+              _isPreBendReleaseActive = false;
+            }
+            // Reset the flag after checking
+            _navigatedViaNextButton = false;
             _previousSelectedRow = selectedRow;
             _previousSelectedIndex = selectedNoteIndex;
           });
