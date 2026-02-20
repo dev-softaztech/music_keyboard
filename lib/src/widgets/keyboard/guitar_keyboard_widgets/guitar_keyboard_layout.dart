@@ -44,6 +44,10 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
   bool _isBendReleaseActive = false;
   bool _isPreBendReleaseActive = false;
 
+  // Track previous selected note to detect changes
+  int _previousSelectedRow = -1;
+  int _previousSelectedIndex = -1;
+
   @override
   void dispose() {
     // Make sure to remove any active overlay when disposing
@@ -128,14 +132,17 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       {bool isUnicode = true,
       String? svgAssetPath,
       VoidCallback? onPressed,
-      bool isActive = false}) {
+      bool isActive = false,
+      bool isLocked = false}) {
     return SizedBox(
       width: 32,
       height: 32,
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: isActive ? Colors.blue[100] : Colors.grey[50],
+          backgroundColor: isActive
+              ? (isLocked ? Colors.blue[300] : Colors.blue[100])
+              : Colors.grey[50],
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(5),
             side: BorderSide(
@@ -144,23 +151,59 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
           ),
           padding: EdgeInsets.zero,
         ),
-        child: svgAssetPath != null
-            ? SvgPicture.asset(svgAssetPath,
-                width: 20,
-                height: 20,
-                colorFilter: ColorFilter.linearToSrgbGamma())
-            : Text(
-                label,
-                style: TextStyle(
-                  fontFamily: isUnicode ? 'Bravura' : null,
-                  fontSize: isUnicode ? 30 : 12,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
+        child: Stack(
+          children: [
+            Center(
+              child: svgAssetPath != null
+                  ? SvgPicture.asset(svgAssetPath,
+                      width: 20,
+                      height: 20,
+                      colorFilter: ColorFilter.linearToSrgbGamma())
+                  : Text(
+                      label,
+                      style: TextStyle(
+                        fontFamily: isUnicode ? 'Bravura' : null,
+                        fontSize: isUnicode ? 30 : 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+            ),
+            if (isLocked)
+              Positioned(
+                bottom: 1,
+                right: 1,
+                child: Icon(
+                  Icons.lock,
+                  size: 10,
+                  color: Colors.blue[900],
                 ),
-                textAlign: TextAlign.center,
               ),
+          ],
+        ),
       ),
     );
+  }
+
+  // Helper: Check if current chord has bend start property set
+  bool _checkIfCurrentChordHasBend(
+      String bendType, int selectedRow, int selectedNoteIndex) {
+    final chord = _getCurrentChord(selectedRow, selectedNoteIndex);
+    if (chord == null) return false;
+
+    switch (bendType) {
+      case 'bend':
+        return chord.isBendStart;
+      case 'pre-bend':
+        return chord.isPreBendStart;
+      case 'bend-release':
+        return chord.isBendReleaseStart;
+      case 'pre-bend-release':
+        return chord.isPreBendReleaseStart;
+      default:
+        return false;
+    }
   }
 
   // Helper: Check if current note is within a bend range from a preceding note
@@ -224,45 +267,37 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     setState(() {
       switch (bendType) {
         case 'bend':
-          if (chord.isBendStart) {
-            // Deactivate bend mode
-            chord.isBendStart = false;
-            chord.bendEndIndex = null;
-          } else {
-            // Activate bend mode
+          // Toggle lock state
+          _isBendActive = !_isBendActive;
+          // If locking, ensure bend properties are set
+          if (_isBendActive) {
             chord.isBendStart = true;
             chord.bendEndIndex = selectedNoteIndex;
           }
           break;
         case 'pre-bend':
-          if (chord.isPreBendStart) {
-            // Deactivate pre-bend mode
-            chord.isPreBendStart = false;
-            chord.preBendEndIndex = null;
-          } else {
-            // Activate pre-bend mode
+          // Toggle lock state
+          _isPreBendActive = !_isPreBendActive;
+          // If locking, ensure bend properties are set
+          if (_isPreBendActive) {
             chord.isPreBendStart = true;
             chord.preBendEndIndex = selectedNoteIndex;
           }
           break;
         case 'bend-release':
-          if (chord.isBendReleaseStart) {
-            // Deactivate bend-release mode
-            chord.isBendReleaseStart = false;
-            chord.bendReleaseEndIndex = null;
-          } else {
-            // Activate bend-release mode
+          // Toggle lock state
+          _isBendReleaseActive = !_isBendReleaseActive;
+          // If locking, ensure bend properties are set
+          if (_isBendReleaseActive) {
             chord.isBendReleaseStart = true;
             chord.bendReleaseEndIndex = selectedNoteIndex;
           }
           break;
         case 'pre-bend-release':
-          if (chord.isPreBendReleaseStart) {
-            // Deactivate pre-bend-release mode
-            chord.isPreBendReleaseStart = false;
-            chord.preBendReleaseEndIndex = null;
-          } else {
-            // Activate pre-bend-release mode
+          // Toggle lock state
+          _isPreBendReleaseActive = !_isPreBendReleaseActive;
+          // If locking, ensure bend properties are set
+          if (_isPreBendReleaseActive) {
             chord.isPreBendReleaseStart = true;
             chord.preBendReleaseEndIndex = selectedNoteIndex;
           }
@@ -381,40 +416,49 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                         listen: false);
 
                 if (isNextNote) {
-                  // Find bend start notes and update their end indices
-                  final chords = widget.sheetNoteRows[selectedRow].chords;
+                  // Only update bend end indices if in locked mode
+                  if (_isBendActive ||
+                      _isPreBendActive ||
+                      _isBendReleaseActive ||
+                      _isPreBendReleaseActive) {
+                    final chords = widget.sheetNoteRows[selectedRow].chords;
 
-                  for (int i = 0; i < chords.length; i++) {
-                    final chord = chords[i];
+                    for (int i = 0; i < chords.length; i++) {
+                      final chord = chords[i];
 
-                    // Update bend end indices for active bends
-                    if (chord.isBendStart &&
-                        chord.bendEndIndex != null &&
-                        i <= selectedNoteIndex &&
-                        selectedNoteIndex <= chord.bendEndIndex!) {
-                      chord.bendEndIndex = selectedNoteIndex + 1;
-                      break;
-                    }
-                    if (chord.isPreBendStart &&
-                        chord.preBendEndIndex != null &&
-                        i <= selectedNoteIndex &&
-                        selectedNoteIndex <= chord.preBendEndIndex!) {
-                      chord.preBendEndIndex = selectedNoteIndex + 1;
-                      break;
-                    }
-                    if (chord.isBendReleaseStart &&
-                        chord.bendReleaseEndIndex != null &&
-                        i <= selectedNoteIndex &&
-                        selectedNoteIndex <= chord.bendReleaseEndIndex!) {
-                      chord.bendReleaseEndIndex = selectedNoteIndex + 1;
-                      break;
-                    }
-                    if (chord.isPreBendReleaseStart &&
-                        chord.preBendReleaseEndIndex != null &&
-                        i <= selectedNoteIndex &&
-                        selectedNoteIndex <= chord.preBendReleaseEndIndex!) {
-                      chord.preBendReleaseEndIndex = selectedNoteIndex + 1;
-                      break;
+                      // Update bend end indices only for locked bends
+                      if (_isBendActive &&
+                          chord.isBendStart &&
+                          chord.bendEndIndex != null &&
+                          i <= selectedNoteIndex &&
+                          selectedNoteIndex <= chord.bendEndIndex!) {
+                        chord.bendEndIndex = selectedNoteIndex + 1;
+                        break;
+                      }
+                      if (_isPreBendActive &&
+                          chord.isPreBendStart &&
+                          chord.preBendEndIndex != null &&
+                          i <= selectedNoteIndex &&
+                          selectedNoteIndex <= chord.preBendEndIndex!) {
+                        chord.preBendEndIndex = selectedNoteIndex + 1;
+                        break;
+                      }
+                      if (_isBendReleaseActive &&
+                          chord.isBendReleaseStart &&
+                          chord.bendReleaseEndIndex != null &&
+                          i <= selectedNoteIndex &&
+                          selectedNoteIndex <= chord.bendReleaseEndIndex!) {
+                        chord.bendReleaseEndIndex = selectedNoteIndex + 1;
+                        break;
+                      }
+                      if (_isPreBendReleaseActive &&
+                          chord.isPreBendReleaseStart &&
+                          chord.preBendReleaseEndIndex != null &&
+                          i <= selectedNoteIndex &&
+                          selectedNoteIndex <= chord.preBendReleaseEndIndex!) {
+                        chord.preBendReleaseEndIndex = selectedNoteIndex + 1;
+                        break;
+                      }
                     }
                   }
 
@@ -487,6 +531,24 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
             selectedNoteIndex != -1)
         ? widget.sheetNoteRows[selectedRow].chords[selectedNoteIndex]
         : null;
+
+    // Reset state variables when selected note changes (never auto-lock)
+    if (_previousSelectedRow != selectedRow ||
+        _previousSelectedIndex != selectedNoteIndex) {
+      // Use post-frame callback to avoid calling setState during build
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _isBendActive = false;
+            _isPreBendActive = false;
+            _isBendReleaseActive = false;
+            _isPreBendReleaseActive = false;
+            _previousSelectedRow = selectedRow;
+            _previousSelectedIndex = selectedNoteIndex;
+          });
+        }
+      });
+    }
 
     return Container(
       height: 270,
@@ -581,15 +643,19 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                           svgAssetPath: 'assets/svgs/bend.svg',
                           onPressed: () => _handleBendButtonPress(
                               'bend', selectedRow, selectedNoteIndex),
-                          isActive: _isWithinBendRange(
-                              'bend', selectedRow, selectedNoteIndex)),
+                          isActive: _isBendActive ||
+                              _checkIfCurrentChordHasBend(
+                                  'bend', selectedRow, selectedNoteIndex),
+                          isLocked: _isBendActive),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('pre-bend', 'pre-bend',
                           svgAssetPath: 'assets/svgs/pre-bend.svg',
                           onPressed: () => _handleBendButtonPress(
                               'pre-bend', selectedRow, selectedNoteIndex),
-                          isActive: _isWithinBendRange(
-                              'pre-bend', selectedRow, selectedNoteIndex)),
+                          isActive: _isPreBendActive ||
+                              _checkIfCurrentChordHasBend(
+                                  'pre-bend', selectedRow, selectedNoteIndex),
+                          isLocked: _isPreBendActive),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('pick-downward', '\uE610'),
                     ],
@@ -612,8 +678,10 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                           svgAssetPath: 'assets/svgs/bend-release.svg',
                           onPressed: () => _handleBendButtonPress(
                               'bend-release', selectedRow, selectedNoteIndex),
-                          isActive: _isWithinBendRange(
-                              'bend-release', selectedRow, selectedNoteIndex)),
+                          isActive: _isBendReleaseActive ||
+                              _checkIfCurrentChordHasBend('bend-release',
+                                  selectedRow, selectedNoteIndex),
+                          isLocked: _isBendReleaseActive),
                       const SizedBox(width: 7),
                       _buildTechniqueButton(
                           'pre-bend-release', 'pre-bend-release',
@@ -622,8 +690,10 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                               'pre-bend-release',
                               selectedRow,
                               selectedNoteIndex),
-                          isActive: _isWithinBendRange('pre-bend-release',
-                              selectedRow, selectedNoteIndex)),
+                          isActive: _isPreBendReleaseActive ||
+                              _checkIfCurrentChordHasBend('pre-bend-release',
+                                  selectedRow, selectedNoteIndex),
+                          isLocked: _isPreBendReleaseActive),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('pick-upward', '\uE612'),
                     ],
