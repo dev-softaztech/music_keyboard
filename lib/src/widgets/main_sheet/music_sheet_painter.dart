@@ -558,8 +558,12 @@ class MusicSheetPainter extends CustomPainter {
                     : sheetNoteRows[rowIndex].chords.length - 1;
 
             double bendEndX = 85.0;
-            for (int index = 1; index <= bendEndIndex; index++) {
-              bendEndX += currentRowSpacing;
+            for (int index = 0; index <= bendEndIndex; index++) {
+              if (index != bendEndIndex) {
+                bendEndX += currentRowSpacing;
+              } else {
+                bendEndX += (currentRowSpacing * 0.78);
+              }
             }
 
             // Get string Y position from first child note
@@ -581,8 +585,12 @@ class MusicSheetPainter extends CustomPainter {
                 : sheetNoteRows[rowIndex].chords.length - 1;
 
             double preBendEndX = 85.0;
-            for (int index = 1; index <= preBendEndIndex; index++) {
-              preBendEndX += currentRowSpacing;
+            for (int index = 0; index <= preBendEndIndex; index++) {
+              if (index != preBendEndIndex) {
+                preBendEndX += currentRowSpacing;
+              } else {
+                preBendEndX += (currentRowSpacing * 0.78);
+              }
             }
 
             // Get string Y position from first child note
@@ -604,8 +612,12 @@ class MusicSheetPainter extends CustomPainter {
                 : sheetNoteRows[rowIndex].chords.length - 1;
 
             double bendReleaseEndX = 85.0;
-            for (int index = 1; index <= bendReleaseEndIndex; index++) {
-              bendReleaseEndX += currentRowSpacing;
+            for (int index = 0; index <= bendReleaseEndIndex; index++) {
+              if (index != bendReleaseEndIndex) {
+                bendReleaseEndX += currentRowSpacing;
+              } else {
+                bendReleaseEndX += (currentRowSpacing * 0.78);
+              }
             }
 
             // Get string Y position from first child note
@@ -628,8 +640,12 @@ class MusicSheetPainter extends CustomPainter {
                 : sheetNoteRows[rowIndex].chords.length - 1;
 
             double preBendReleaseEndX = 85.0;
-            for (int index = 1; index <= preBendReleaseEndIndex; index++) {
-              preBendReleaseEndX += currentRowSpacing;
+            for (int index = 0; index <= preBendReleaseEndIndex; index++) {
+              if (index != preBendReleaseEndIndex) {
+                preBendReleaseEndX += currentRowSpacing;
+              } else {
+                preBendReleaseEndX += (currentRowSpacing * 0.78);
+              }
             }
 
             // Get string Y position from first child note
@@ -2434,16 +2450,11 @@ class MusicSheetPainter extends CustomPainter {
       double lineSpacing,
       Color noteColour,
       double currentRowSpacing) {
-    // Calculate peak position above the staff
     final double peakY = staffTop - 20;
 
-    endX = startX + (currentRowSpacing * 0.78);
-
-    // Draw curved line from start to peak - curve bulges downward under the arrow
     _drawBendCurveUp(
         canvas, paint, startX, stringY, endX, peakY, currentRowSpacing, false);
 
-    // Draw arrowhead and label at peak
     _drawArrowHead(canvas, paint, endX, peakY, 'full', noteColour, true);
   }
 
@@ -2458,17 +2469,12 @@ class MusicSheetPainter extends CustomPainter {
       double lineSpacing,
       Color noteColour,
       double currentRowSpacing) {
-    // Calculate peak position above the staff
     final double peakY = staffTop - 20;
     startX = startX + 5;
 
-    endX = startX + (currentRowSpacing * 0.78);
-
-    // Draw curved line from start to peak - curve bulges downward under the arrow
     _drawBendCurveUp(
         canvas, paint, startX, stringY, endX, peakY, currentRowSpacing, false);
 
-    // Draw arrowhead and label at peak
     _drawArrowHead(canvas, paint, endX, peakY, '1/2', noteColour, true);
   }
 
@@ -2487,17 +2493,13 @@ class MusicSheetPainter extends CustomPainter {
     final double peakY = staffTop - 20;
 
     double peakX = startX + (currentRowSpacing * 0.4);
-    endX = startX + (currentRowSpacing * 0.78);
 
-    // Draw curved line from start to peak - curve bulges downward under the arrow
     _drawBendCurveUp(
         canvas, paint, startX, stringY, peakX, peakY, currentRowSpacing, true);
 
-    // Draw curved line from peak back down to end
     _drawBendCurveDown(
         canvas, paint, peakX, peakY, endX, stringY, currentRowSpacing);
 
-    // Draw "full" label at peak
     _drawArrowHead(canvas, paint, peakX, peakY, 'full', noteColour, true);
     _drawArrowHead(canvas, paint, endX, stringY, 'full', noteColour, false);
   }
@@ -2516,7 +2518,6 @@ class MusicSheetPainter extends CustomPainter {
     // Calculate peak position above the staff
     final double peakY = staffTop - 20;
     double peakX = startX + (currentRowSpacing * 0.4);
-    endX = startX + (currentRowSpacing * 0.78);
 
     // Draw curved line from start to peak - curve bulges downward under the arrow
     _drawBendCurveUp(
