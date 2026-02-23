@@ -316,7 +316,7 @@ class MusicSheetPainter extends CustomPainter {
       // Second pass: draw all notes
       x = 85.0; // Reset x position for drawing
       for (int i = 0; i < sheetNoteRows[rowIndex].chords.length; i++) {
-        MusicalNote note = sheetNoteRows[rowIndex].chords[i];
+        MusicalNote chord = sheetNoteRows[rowIndex].chords[i];
 
         bool isSelected = rowIndex == selectedRow && i == selectedIndex;
         bool inHighlight = selectionRow == rowIndex &&
@@ -339,14 +339,14 @@ class MusicSheetPainter extends CustomPainter {
           noteColour = Colors.black;
         }
 
-        if (note.type == NoteType.keySignature) {
+        if (chord.type == NoteType.keySignature) {
           _drawKeySignature(
-              canvas, paint, note, lineSpacing, staffTop, x, noteColour);
+              canvas, paint, chord, lineSpacing, staffTop, x, noteColour);
         } else {
           drawNote(
               canvas,
               paint,
-              note,
+              chord,
               lineSpacing,
               staffTop,
               x,
@@ -357,22 +357,22 @@ class MusicSheetPainter extends CustomPainter {
               keyboardType);
         }
 
-        if (note.isTriplet) {
+        if (chord.isTriplet) {
           _drawTriplet(canvas, paint, x, staffTop, lineSpacing,
               sheetNoteRows[rowIndex].chords, i, currentRowSpacing);
         }
 
-        if (note.dynamicCharacter.isNotEmpty) {
-          _drawDynamicCharacter(canvas, note, noteColour, x, staffTop,
+        if (chord.dynamicCharacter.isNotEmpty) {
+          _drawDynamicCharacter(canvas, chord, noteColour, x, staffTop,
               lineSpacing, sheetNoteRows[rowIndex].chords, i);
         }
 
-        if (note.accentCharacter.isNotEmpty) {
-          _drawAccentCharacter(canvas, note, noteColour, x, staffTop,
+        if (chord.accentCharacter.isNotEmpty) {
+          _drawAccentCharacter(canvas, chord, noteColour, x, staffTop,
               lineSpacing, sheetNoteRows[rowIndex].chords, i);
         }
 
-        if (note.rehearsalMarking.isNotEmpty) {
+        if (chord.rehearsalMarking.isNotEmpty) {
           double textY = staffTop - 30;
 
           for (int x = i; x < i + 3; x++) {
@@ -383,10 +383,10 @@ class MusicSheetPainter extends CustomPainter {
           }
 
           _drawRehearsalMarking(
-              canvas, note, noteColour, x, staffTop, lineSpacing, textY);
+              canvas, chord, noteColour, x, staffTop, lineSpacing, textY);
         }
 
-        if (note.type == NoteType.bar) {
+        if (chord.type == NoteType.bar) {
           double textY = staffTop - 35;
           int noteLookupIndex = i;
 
@@ -407,34 +407,34 @@ class MusicSheetPainter extends CustomPainter {
           }
 
           // Draw bar-level tempo markings above bar notes
-          if (note.tempoNumber > 0) {
-            _drawBarTempo(canvas, note, x, textY);
+          if (chord.tempoNumber > 0) {
+            _drawBarTempo(canvas, chord, x, textY);
           }
 
           // Draw bar-level swing markings below bar tempo if set
-          if (note.swing) {
-            _drawBarSwing(canvas, note, x, textY);
+          if (chord.swing) {
+            _drawBarSwing(canvas, chord, x, textY);
           }
         }
 
         var staffCenter = staffTop + (lineSpacing * 2);
 
-        if (note.isTiedToNext &&
+        if (chord.isTiedToNext &&
             i < sheetNoteRows[rowIndex].chords.length - 1) {
           double y = calculateNoteYMainSheet(
-              note.pitch, note.octave, lineSpacing, staffTop);
+              chord.pitch, chord.octave, lineSpacing, staffTop);
           drawTie(canvas, paint, x, staffCenter, x + currentRowSpacing, y);
         }
 
-        if (note.slurEndIndex != null) {
+        if (chord.slurEndIndex != null) {
           var slurEndIndex =
-              note.slurEndIndex! < sheetNoteRows[rowIndex].chords.length - 1
-                  ? note.slurEndIndex!
+              chord.slurEndIndex! < sheetNoteRows[rowIndex].chords.length - 1
+                  ? chord.slurEndIndex!
                   : sheetNoteRows[rowIndex].chords.length - 1;
 
           double startX = x;
           double startY = calculateNoteYMainSheet(
-              note.pitch, note.octave, lineSpacing, staffTop);
+              chord.pitch, chord.octave, lineSpacing, staffTop);
 
           // Calculate endX by accounting for space note spacing
           double endX = 85.0;
@@ -478,10 +478,10 @@ class MusicSheetPainter extends CustomPainter {
               0); // spaceNotesCount no longer needed
         }
 
-        if (note.isCrescendoStart && note.crescendoEndIndex != null) {
-          var crescendoEndIndex = note.crescendoEndIndex! <
+        if (chord.isCrescendoStart && chord.crescendoEndIndex != null) {
+          var crescendoEndIndex = chord.crescendoEndIndex! <
                   sheetNoteRows[rowIndex].chords.length - 1
-              ? note.crescendoEndIndex!
+              ? chord.crescendoEndIndex!
               : sheetNoteRows[rowIndex].chords.length - 1;
 
           // Calculate endX by accounting for space note spacing
@@ -508,10 +508,10 @@ class MusicSheetPainter extends CustomPainter {
               i, crescendoEndIndex, sheetNoteRows[rowIndex].chords, rowIndex);
         }
 
-        if (note.isDecrescendoStart && note.decrescendoEndIndex != null) {
-          var decrescendoEndIndex = note.decrescendoEndIndex! <
+        if (chord.isDecrescendoStart && chord.decrescendoEndIndex != null) {
+          var decrescendoEndIndex = chord.decrescendoEndIndex! <
                   sheetNoteRows[rowIndex].chords.length - 1
-              ? note.decrescendoEndIndex!
+              ? chord.decrescendoEndIndex!
               : sheetNoteRows[rowIndex].chords.length - 1;
 
           // Calculate endX by accounting for space note spacing
@@ -549,12 +549,12 @@ class MusicSheetPainter extends CustomPainter {
 
         // Draw bends for guitar tabs
         if (keyboardType == KeyboardType.guitarTab &&
-            note.type == NoteType.fret) {
+            chord.type == NoteType.fret) {
           // Check for bend
-          if (note.isBendStart && note.bendEndIndex != null) {
+          if (chord.isBendStart && chord.bendEndIndex != null) {
             var bendEndIndex =
-                note.bendEndIndex! < sheetNoteRows[rowIndex].chords.length - 1
-                    ? note.bendEndIndex!
+                chord.bendEndIndex! < sheetNoteRows[rowIndex].chords.length - 1
+                    ? chord.bendEndIndex!
                     : sheetNoteRows[rowIndex].chords.length - 1;
 
             double bendEndX = 85.0;
@@ -568,9 +568,9 @@ class MusicSheetPainter extends CustomPainter {
 
             // Get string Y position from first child note
             double stringY = staffTop;
-            if (note.childNotes != null && note.childNotes!.isNotEmpty) {
+            if (chord.childNotes != null && chord.childNotes!.isNotEmpty) {
               stringY =
-                  staffTop + (note.childNotes!.first.octave * lineSpacing);
+                  staffTop + (chord.childNotes!.first.octave * lineSpacing);
             }
 
             _drawBend(canvas, paint, x, bendEndX, stringY, staffTop,
@@ -578,10 +578,10 @@ class MusicSheetPainter extends CustomPainter {
           }
 
           // Check for pre-bend
-          if (note.isPreBendStart && note.preBendEndIndex != null) {
-            var preBendEndIndex = note.preBendEndIndex! <
+          if (chord.isPreBendStart && chord.preBendEndIndex != null) {
+            var preBendEndIndex = chord.preBendEndIndex! <
                     sheetNoteRows[rowIndex].chords.length - 1
-                ? note.preBendEndIndex!
+                ? chord.preBendEndIndex!
                 : sheetNoteRows[rowIndex].chords.length - 1;
 
             double preBendEndX = 85.0;
@@ -595,9 +595,9 @@ class MusicSheetPainter extends CustomPainter {
 
             // Get string Y position from first child note
             double stringY = staffTop;
-            if (note.childNotes != null && note.childNotes!.isNotEmpty) {
+            if (chord.childNotes != null && chord.childNotes!.isNotEmpty) {
               stringY =
-                  staffTop + (note.childNotes!.first.octave * lineSpacing);
+                  staffTop + (chord.childNotes!.first.octave * lineSpacing);
             }
 
             _drawPreBend(canvas, paint, x, preBendEndX, stringY, staffTop,
@@ -605,10 +605,10 @@ class MusicSheetPainter extends CustomPainter {
           }
 
           // Check for bend-release
-          if (note.isBendReleaseStart && note.bendReleaseEndIndex != null) {
-            var bendReleaseEndIndex = note.bendReleaseEndIndex! <
+          if (chord.isBendReleaseStart && chord.bendReleaseEndIndex != null) {
+            var bendReleaseEndIndex = chord.bendReleaseEndIndex! <
                     sheetNoteRows[rowIndex].chords.length - 1
-                ? note.bendReleaseEndIndex!
+                ? chord.bendReleaseEndIndex!
                 : sheetNoteRows[rowIndex].chords.length - 1;
 
             double bendReleaseEndX = 85.0;
@@ -622,9 +622,9 @@ class MusicSheetPainter extends CustomPainter {
 
             // Get string Y position from first child note
             double stringY = staffTop;
-            if (note.childNotes != null && note.childNotes!.isNotEmpty) {
+            if (chord.childNotes != null && chord.childNotes!.isNotEmpty) {
               stringY =
-                  staffTop + (note.childNotes!.first.octave * lineSpacing);
+                  staffTop + (chord.childNotes!.first.octave * lineSpacing);
             }
 
             _drawBendRelease(canvas, paint, x, bendReleaseEndX, stringY,
@@ -632,11 +632,11 @@ class MusicSheetPainter extends CustomPainter {
           }
 
           // Check for pre-bend-release
-          if (note.isPreBendReleaseStart &&
-              note.preBendReleaseEndIndex != null) {
-            var preBendReleaseEndIndex = note.preBendReleaseEndIndex! <
+          if (chord.isPreBendReleaseStart &&
+              chord.preBendReleaseEndIndex != null) {
+            var preBendReleaseEndIndex = chord.preBendReleaseEndIndex! <
                     sheetNoteRows[rowIndex].chords.length - 1
-                ? note.preBendReleaseEndIndex!
+                ? chord.preBendReleaseEndIndex!
                 : sheetNoteRows[rowIndex].chords.length - 1;
 
             double preBendReleaseEndX = 85.0;
@@ -650,9 +650,9 @@ class MusicSheetPainter extends CustomPainter {
 
             // Get string Y position from first child note
             double stringY = staffTop;
-            if (note.childNotes != null && note.childNotes!.isNotEmpty) {
+            if (chord.childNotes != null && chord.childNotes!.isNotEmpty) {
               stringY =
-                  staffTop + (note.childNotes!.first.octave * lineSpacing);
+                  staffTop + (chord.childNotes!.first.octave * lineSpacing);
             }
 
             _drawPreBendRelease(canvas, paint, x, preBendReleaseEndX, stringY,
@@ -662,7 +662,7 @@ class MusicSheetPainter extends CustomPainter {
 
         // Calculate spacing for space notes
         double spaceNoteSpacing = 0;
-        if (note.type == NoteType.space && i > 0) {
+        if (chord.type == NoteType.space && i > 0) {
           // Check if previous note is also a space note
           bool prevIsSpace =
               sheetNoteRows[rowIndex].chords[i - 1].type == NoteType.space;
@@ -670,11 +670,11 @@ class MusicSheetPainter extends CustomPainter {
           spaceNoteSpacing = prevIsSpace ? currentRowSpacing : 0;
         }
 
-        x += note.type == NoteType.clef || note.type == NoteType.timeSignature
-            ? getNoteWidth(note)
-            : note.type == NoteType.keySignature
-                ? getNoteWidth(note) + 10
-                : note.type == NoteType.space
+        x += chord.type == NoteType.clef || chord.type == NoteType.timeSignature
+            ? getNoteWidth(chord)
+            : chord.type == NoteType.keySignature
+                ? getNoteWidth(chord) + 10
+                : chord.type == NoteType.space
                     ? spaceNoteSpacing
                     : currentRowSpacing;
       }
