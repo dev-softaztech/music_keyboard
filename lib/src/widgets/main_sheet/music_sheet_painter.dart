@@ -552,15 +552,17 @@ class MusicSheetPainter extends CustomPainter {
             chord.type == NoteType.fret) {
           // Check for bend
           if (chord.isBendStart && chord.bendEndIndex != null) {
-            var bendEndIndex =
-                chord.bendEndIndex! < sheetNoteRows[rowIndex].chords.length - 1
+            var bendEndIndex = chord.bendEndIndex! == (i - 1)
+                ? i
+                : chord.bendEndIndex! <
+                        sheetNoteRows[rowIndex].chords.length - 1
                     ? chord.bendEndIndex!
                     : sheetNoteRows[rowIndex].chords.length - 1;
 
             var indexDistanceCount = bendEndIndex - i;
 
             double bendEndX = x + ((indexDistanceCount) * currentRowSpacing);
-            bendEndX += (currentRowSpacing * 0.78);
+            bendEndX += (currentRowSpacing * 0.85);
 
             // Get string Y position from first child note
             double stringY = staffTop;
@@ -575,15 +577,17 @@ class MusicSheetPainter extends CustomPainter {
 
           // Check for pre-bend
           if (chord.isPreBendStart && chord.preBendEndIndex != null) {
-            var preBendEndIndex = chord.preBendEndIndex! <
-                    sheetNoteRows[rowIndex].chords.length - 1
-                ? chord.preBendEndIndex!
-                : sheetNoteRows[rowIndex].chords.length - 1;
+            var preBendEndIndex = chord.preBendEndIndex! == (i - 1)
+                ? i
+                : chord.preBendEndIndex! <
+                        sheetNoteRows[rowIndex].chords.length - 1
+                    ? chord.preBendEndIndex!
+                    : sheetNoteRows[rowIndex].chords.length - 1;
 
             var indexDistanceCount = preBendEndIndex - i;
 
             double preBendEndX = x + ((indexDistanceCount) * currentRowSpacing);
-            preBendEndX += (currentRowSpacing * 0.78);
+            preBendEndX += (currentRowSpacing * 0.85);
 
             // Get string Y position from first child note
             double stringY = staffTop;
@@ -598,16 +602,18 @@ class MusicSheetPainter extends CustomPainter {
 
           // Check for bend-release
           if (chord.isBendReleaseStart && chord.bendReleaseEndIndex != null) {
-            var bendReleaseEndIndex = chord.bendReleaseEndIndex! <
-                    sheetNoteRows[rowIndex].chords.length - 1
-                ? chord.bendReleaseEndIndex!
-                : sheetNoteRows[rowIndex].chords.length - 1;
+            var bendReleaseEndIndex = chord.bendReleaseEndIndex! == (i - 1)
+                ? i
+                : chord.bendReleaseEndIndex! <
+                        sheetNoteRows[rowIndex].chords.length - 1
+                    ? chord.bendReleaseEndIndex!
+                    : sheetNoteRows[rowIndex].chords.length - 1;
 
             var indexDistanceCount = bendReleaseEndIndex - i;
 
             double bendReleaseEndX =
                 x + ((indexDistanceCount) * currentRowSpacing);
-            bendReleaseEndX += (currentRowSpacing * 0.78);
+            bendReleaseEndX += (currentRowSpacing * 0.85);
 
             // Get string Y position from first child note
             double stringY = staffTop;
@@ -623,16 +629,19 @@ class MusicSheetPainter extends CustomPainter {
           // Check for pre-bend-release
           if (chord.isPreBendReleaseStart &&
               chord.preBendReleaseEndIndex != null) {
-            var preBendReleaseEndIndex = chord.preBendReleaseEndIndex! <
-                    sheetNoteRows[rowIndex].chords.length - 1
-                ? chord.preBendReleaseEndIndex!
-                : sheetNoteRows[rowIndex].chords.length - 1;
+            var preBendReleaseEndIndex =
+                chord.preBendReleaseEndIndex! == (i - 1)
+                    ? i
+                    : chord.preBendReleaseEndIndex! <
+                            sheetNoteRows[rowIndex].chords.length - 1
+                        ? chord.preBendReleaseEndIndex!
+                        : sheetNoteRows[rowIndex].chords.length - 1;
 
             var indexDistanceCount = preBendReleaseEndIndex - i;
 
             double preBendReleaseEndX =
                 x + ((indexDistanceCount) * currentRowSpacing);
-            preBendReleaseEndX += (currentRowSpacing * 0.78);
+            preBendReleaseEndX += (currentRowSpacing * 0.85);
 
             // Get string Y position from first child note
             double stringY = staffTop;

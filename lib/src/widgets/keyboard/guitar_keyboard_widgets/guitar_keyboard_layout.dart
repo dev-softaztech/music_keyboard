@@ -275,7 +275,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
           // If locking, ensure bend properties are set
           if (_isBendActive) {
             chord.isBendStart = true;
-            chord.bendEndIndex = selectedNoteIndex;
+            chord.bendEndIndex = selectedNoteIndex - 1;
           }
           break;
         case 'pre-bend':
@@ -284,7 +284,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
           // If locking, ensure bend properties are set
           if (_isPreBendActive) {
             chord.isPreBendStart = true;
-            chord.preBendEndIndex = selectedNoteIndex;
+            chord.preBendEndIndex = selectedNoteIndex - 1;
           }
           break;
         case 'bend-release':
@@ -293,7 +293,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
           // If locking, ensure bend properties are set
           if (_isBendReleaseActive) {
             chord.isBendReleaseStart = true;
-            chord.bendReleaseEndIndex = selectedNoteIndex;
+            chord.bendReleaseEndIndex = selectedNoteIndex - 1;
           }
           break;
         case 'pre-bend-release':
@@ -302,7 +302,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
           // If locking, ensure bend properties are set
           if (_isPreBendReleaseActive) {
             chord.isPreBendReleaseStart = true;
-            chord.preBendReleaseEndIndex = selectedNoteIndex;
+            chord.preBendReleaseEndIndex = selectedNoteIndex - 1;
           }
           break;
       }
@@ -433,33 +433,43 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                       if (_isBendActive &&
                           chord.isBendStart &&
                           chord.bendEndIndex != null &&
-                          i <= selectedNoteIndex &&
-                          selectedNoteIndex <= chord.bendEndIndex!) {
-                        chord.bendEndIndex = selectedNoteIndex + 1;
+                          ((i <= selectedNoteIndex &&
+                                  selectedNoteIndex - 1 <=
+                                      chord.bendEndIndex!) ||
+                              (chord.bendEndIndex == i - 1))) {
+                        chord.bendEndIndex = chord.bendEndIndex! + 1;
                         break;
                       }
                       if (_isPreBendActive &&
                           chord.isPreBendStart &&
                           chord.preBendEndIndex != null &&
-                          i <= selectedNoteIndex &&
-                          selectedNoteIndex <= chord.preBendEndIndex!) {
-                        chord.preBendEndIndex = selectedNoteIndex + 1;
+                          ((i <= selectedNoteIndex &&
+                                  selectedNoteIndex - 1 <=
+                                      chord.preBendEndIndex!) ||
+                              (chord.preBendEndIndex == i - 1))) {
+                        chord.preBendEndIndex = chord.preBendEndIndex! + 1;
                         break;
                       }
                       if (_isBendReleaseActive &&
                           chord.isBendReleaseStart &&
                           chord.bendReleaseEndIndex != null &&
-                          i <= selectedNoteIndex &&
-                          selectedNoteIndex <= chord.bendReleaseEndIndex!) {
-                        chord.bendReleaseEndIndex = selectedNoteIndex + 1;
+                          ((i <= selectedNoteIndex &&
+                                  selectedNoteIndex - 1 <=
+                                      chord.bendReleaseEndIndex!) ||
+                              (chord.bendReleaseEndIndex == i - 1))) {
+                        chord.bendReleaseEndIndex =
+                            chord.bendReleaseEndIndex! + 1;
                         break;
                       }
                       if (_isPreBendReleaseActive &&
                           chord.isPreBendReleaseStart &&
                           chord.preBendReleaseEndIndex != null &&
-                          i <= selectedNoteIndex &&
-                          selectedNoteIndex <= chord.preBendReleaseEndIndex!) {
-                        chord.preBendReleaseEndIndex = selectedNoteIndex + 1;
+                          ((i <= selectedNoteIndex &&
+                                  selectedNoteIndex - 1 <=
+                                      chord.preBendReleaseEndIndex!) ||
+                              (chord.preBendReleaseEndIndex == i - 1))) {
+                        chord.preBendReleaseEndIndex =
+                            chord.preBendReleaseEndIndex! + 1;
                         break;
                       }
                     }
