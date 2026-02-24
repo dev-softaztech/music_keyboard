@@ -426,7 +426,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                       _isPreBendReleaseActive) {
                     final chords = widget.sheetNoteRows[selectedRow].chords;
 
-                    for (int i = 0; i < chords.length; i++) {
+                    for (int i = selectedNoteIndex; i >= 0; i--) {
                       final chord = chords[i];
 
                       // Update bend end indices only for locked bends
