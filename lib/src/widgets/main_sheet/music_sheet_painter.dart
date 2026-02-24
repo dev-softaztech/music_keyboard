@@ -557,14 +557,10 @@ class MusicSheetPainter extends CustomPainter {
                     ? chord.bendEndIndex!
                     : sheetNoteRows[rowIndex].chords.length - 1;
 
-            double bendEndX = 85.0;
-            for (int index = 0; index <= bendEndIndex; index++) {
-              if (index != bendEndIndex) {
-                bendEndX += currentRowSpacing;
-              } else {
-                bendEndX += (currentRowSpacing * 0.78);
-              }
-            }
+            var indexDistanceCount = bendEndIndex - i;
+
+            double bendEndX = x + ((indexDistanceCount) * currentRowSpacing);
+            bendEndX += (currentRowSpacing * 0.78);
 
             // Get string Y position from first child note
             double stringY = staffTop;
@@ -584,14 +580,10 @@ class MusicSheetPainter extends CustomPainter {
                 ? chord.preBendEndIndex!
                 : sheetNoteRows[rowIndex].chords.length - 1;
 
-            double preBendEndX = 85.0;
-            for (int index = 0; index <= preBendEndIndex; index++) {
-              if (index != preBendEndIndex) {
-                preBendEndX += currentRowSpacing;
-              } else {
-                preBendEndX += (currentRowSpacing * 0.78);
-              }
-            }
+            var indexDistanceCount = preBendEndIndex - i;
+
+            double preBendEndX = x + ((indexDistanceCount) * currentRowSpacing);
+            preBendEndX += (currentRowSpacing * 0.78);
 
             // Get string Y position from first child note
             double stringY = staffTop;
@@ -611,14 +603,11 @@ class MusicSheetPainter extends CustomPainter {
                 ? chord.bendReleaseEndIndex!
                 : sheetNoteRows[rowIndex].chords.length - 1;
 
-            double bendReleaseEndX = 85.0;
-            for (int index = 0; index <= bendReleaseEndIndex; index++) {
-              if (index != bendReleaseEndIndex) {
-                bendReleaseEndX += currentRowSpacing;
-              } else {
-                bendReleaseEndX += (currentRowSpacing * 0.78);
-              }
-            }
+            var indexDistanceCount = bendReleaseEndIndex - i;
+
+            double bendReleaseEndX =
+                x + ((indexDistanceCount) * currentRowSpacing);
+            bendReleaseEndX += (currentRowSpacing * 0.78);
 
             // Get string Y position from first child note
             double stringY = staffTop;
@@ -639,14 +628,11 @@ class MusicSheetPainter extends CustomPainter {
                 ? chord.preBendReleaseEndIndex!
                 : sheetNoteRows[rowIndex].chords.length - 1;
 
-            double preBendReleaseEndX = 85.0;
-            for (int index = 0; index <= preBendReleaseEndIndex; index++) {
-              if (index != preBendReleaseEndIndex) {
-                preBendReleaseEndX += currentRowSpacing;
-              } else {
-                preBendReleaseEndX += (currentRowSpacing * 0.78);
-              }
-            }
+            var indexDistanceCount = preBendReleaseEndIndex - i;
+
+            double preBendReleaseEndX =
+                x + ((indexDistanceCount) * currentRowSpacing);
+            preBendReleaseEndX += (currentRowSpacing * 0.78);
 
             // Get string Y position from first child note
             double stringY = staffTop;
