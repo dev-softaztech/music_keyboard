@@ -43,6 +43,9 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
   bool _isPreBendActive = false;
   bool _isBendReleaseActive = false;
   bool _isPreBendReleaseActive = false;
+  bool _isMuteActive = false;
+  bool _isPinchHarmonicActive = false;
+  bool _isHarmonicActive = false;
 
   // Track previous selected note to detect changes
   int _previousSelectedRow = -1;
@@ -330,6 +333,80 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     });
   }
 
+  // Helper: Handle technique button press (mute, pinch-harmonic, harmonic)
+  void _handleTechniqueButtonPress(
+      String techniqueType, int selectedRow, int selectedNoteIndex) {
+    final chord = _getCurrentChord(selectedRow, selectedNoteIndex);
+    if (chord == null) return;
+
+    setState(() {
+      // Clear all technique properties
+      chord.isMuteStart = false;
+      chord.isPinchHarmonicStart = false;
+      chord.isHarmonicStart = false;
+      chord.muteEndIndex = null;
+      chord.pinchHarmonicEndIndex = null;
+      chord.harmonicEndIndex = null;
+
+      switch (techniqueType) {
+        case 'mute':
+          _isMuteActive = !_isMuteActive;
+
+          if (_isMuteActive) {
+            chord.isMuteStart = true;
+            chord.muteEndIndex = selectedNoteIndex - 1;
+          }
+
+          // Deactivate other technique states (mutually exclusive)
+          _isPinchHarmonicActive = false;
+          _isHarmonicActive = false;
+          break;
+        case 'pinch-harmonic':
+          _isPinchHarmonicActive = !_isPinchHarmonicActive;
+
+          if (_isPinchHarmonicActive) {
+            chord.isPinchHarmonicStart = true;
+            chord.pinchHarmonicEndIndex = selectedNoteIndex - 1;
+          }
+
+          // Deactivate other technique states (mutually exclusive)
+          _isMuteActive = false;
+          _isHarmonicActive = false;
+          break;
+        case 'harmonic':
+          _isHarmonicActive = !_isHarmonicActive;
+
+          if (_isHarmonicActive) {
+            chord.isHarmonicStart = true;
+            chord.harmonicEndIndex = selectedNoteIndex - 1;
+          }
+
+          // Deactivate other technique states (mutually exclusive)
+          _isMuteActive = false;
+          _isPinchHarmonicActive = false;
+          break;
+      }
+    });
+  }
+
+  // Helper: Check if current chord has technique start property set
+  bool _checkIfCurrentChordHasTechnique(
+      String techniqueType, int selectedRow, int selectedNoteIndex) {
+    final chord = _getCurrentChord(selectedRow, selectedNoteIndex);
+    if (chord == null) return false;
+
+    switch (techniqueType) {
+      case 'mute':
+        return chord.isMuteStart;
+      case 'pinch-harmonic':
+        return chord.isPinchHarmonicStart;
+      case 'harmonic':
+        return chord.isHarmonicStart;
+      default:
+        return false;
+    }
+  }
+
   // Build a string button (E, A, D, G, B, E)
   Widget _buildStringButton(String note, int stringIndex) {
     bool isSelected = _selectedStringIndex == stringIndex;
@@ -440,13 +517,13 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                         listen: false);
 
                 if (isNextNote) {
-                  // Only update bend end indices if in locked mode
+                  final chords = widget.sheetNoteRows[selectedRow].chords;
+
+                  // Update bend end indices if in locked mode
                   if (_isBendActive ||
                       _isPreBendActive ||
                       _isBendReleaseActive ||
                       _isPreBendReleaseActive) {
-                    final chords = widget.sheetNoteRows[selectedRow].chords;
-
                     for (int i = selectedNoteIndex; i >= 0; i--) {
                       final chord = chords[i];
 
@@ -491,6 +568,48 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                               (chord.preBendReleaseEndIndex == i - 1))) {
                         chord.preBendReleaseEndIndex =
                             chord.preBendReleaseEndIndex! + 1;
+                        break;
+                      }
+                    }
+                  }
+
+                  // Update technique end indices if in locked mode
+                  if (_isMuteActive ||
+                      _isPinchHarmonicActive ||
+                      _isHarmonicActive) {
+                    for (int i = selectedNoteIndex; i >= 0; i--) {
+                      final chord = chords[i];
+
+                      // Update technique end indices only for locked techniques
+                      if (_isMuteActive &&
+                          chord.isMuteStart &&
+                          chord.muteEndIndex != null &&
+                          ((i <= selectedNoteIndex &&
+                                  selectedNoteIndex - 1 <=
+                                      chord.muteEndIndex!) ||
+                              (chord.muteEndIndex == i - 1))) {
+                        chord.muteEndIndex = chord.muteEndIndex! + 1;
+                        break;
+                      }
+                      if (_isPinchHarmonicActive &&
+                          chord.isPinchHarmonicStart &&
+                          chord.pinchHarmonicEndIndex != null &&
+                          ((i <= selectedNoteIndex &&
+                                  selectedNoteIndex - 1 <=
+                                      chord.pinchHarmonicEndIndex!) ||
+                              (chord.pinchHarmonicEndIndex == i - 1))) {
+                        chord.pinchHarmonicEndIndex =
+                            chord.pinchHarmonicEndIndex! + 1;
+                        break;
+                      }
+                      if (_isHarmonicActive &&
+                          chord.isHarmonicStart &&
+                          chord.harmonicEndIndex != null &&
+                          ((i <= selectedNoteIndex &&
+                                  selectedNoteIndex - 1 <=
+                                      chord.harmonicEndIndex!) ||
+                              (chord.harmonicEndIndex == i - 1))) {
+                        chord.harmonicEndIndex = chord.harmonicEndIndex! + 1;
                         break;
                       }
                     }
@@ -584,6 +703,9 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
               _isPreBendActive = false;
               _isBendReleaseActive = false;
               _isPreBendReleaseActive = false;
+              _isMuteActive = false;
+              _isPinchHarmonicActive = false;
+              _isHarmonicActive = false;
             }
             // Reset the flag after checking
             _navigatedViaNextButton = false;
@@ -681,10 +803,23 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildTechniqueButton('mute', 'P.M.', isUnicode: false),
+                      _buildTechniqueButton('mute', 'P.M.',
+                          isUnicode: false,
+                          onPressed: () => _handleTechniqueButtonPress(
+                              'mute', selectedRow, selectedNoteIndex),
+                          isActive: _isMuteActive ||
+                              _checkIfCurrentChordHasTechnique(
+                                  'mute', selectedRow, selectedNoteIndex),
+                          isLocked: _isMuteActive),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('pinch-harmonic', 'P.H.',
-                          isUnicode: false),
+                          isUnicode: false,
+                          onPressed: () => _handleTechniqueButtonPress(
+                              'pinch-harmonic', selectedRow, selectedNoteIndex),
+                          isActive: _isPinchHarmonicActive ||
+                              _checkIfCurrentChordHasTechnique('pinch-harmonic',
+                                  selectedRow, selectedNoteIndex),
+                          isLocked: _isPinchHarmonicActive),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('vibrato', '\uE589'),
                       const SizedBox(width: 7),
@@ -719,7 +854,13 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                       _buildTechniqueButton('tap-right-hand', '\uE682 '),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('harmonic', 'Ham.',
-                          isUnicode: false),
+                          isUnicode: false,
+                          onPressed: () => _handleTechniqueButtonPress(
+                              'harmonic', selectedRow, selectedNoteIndex),
+                          isActive: _isHarmonicActive ||
+                              _checkIfCurrentChordHasTechnique(
+                                  'harmonic', selectedRow, selectedNoteIndex),
+                          isLocked: _isHarmonicActive),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('slide-up', '\uEA6D'),
                       const SizedBox(width: 7),

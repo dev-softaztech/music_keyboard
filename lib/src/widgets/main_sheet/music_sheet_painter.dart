@@ -653,6 +653,72 @@ class MusicSheetPainter extends CustomPainter {
             _drawPreBendRelease(canvas, paint, x, preBendReleaseEndX, stringY,
                 staffTop, lineSpacing, noteColour, currentRowSpacing);
           }
+
+          // Check if chord has any bend to determine positioning
+          bool hasBend = chord.isBendStart ||
+              chord.isPreBendStart ||
+              chord.isBendReleaseStart ||
+              chord.isPreBendReleaseStart;
+
+          // Check for mute technique
+          if (chord.isMuteStart && chord.muteEndIndex != null) {
+            bool isSingleChordSpan = chord.muteEndIndex! == (i - 1);
+            var muteEndIndex = isSingleChordSpan
+                ? i
+                : chord.muteEndIndex! <
+                        sheetNoteRows[rowIndex].chords.length - 1
+                    ? chord.muteEndIndex!
+                    : sheetNoteRows[rowIndex].chords.length - 1;
+
+            var indexDistanceCount = muteEndIndex - i;
+
+            double muteEndX = x + ((indexDistanceCount) * currentRowSpacing);
+            muteEndX += (currentRowSpacing * 0.85);
+
+            _drawMute(canvas, paint, x, muteEndX, staffTop, lineSpacing,
+                noteColour, hasBend, isSingleChordSpan);
+          }
+
+          // Check for pinch harmonic technique
+          if (chord.isPinchHarmonicStart &&
+              chord.pinchHarmonicEndIndex != null) {
+            bool isSingleChordSpan = chord.pinchHarmonicEndIndex! == (i - 1);
+            var pinchHarmonicEndIndex = isSingleChordSpan
+                ? i
+                : chord.pinchHarmonicEndIndex! <
+                        sheetNoteRows[rowIndex].chords.length - 1
+                    ? chord.pinchHarmonicEndIndex!
+                    : sheetNoteRows[rowIndex].chords.length - 1;
+
+            var indexDistanceCount = pinchHarmonicEndIndex - i;
+
+            double pinchHarmonicEndX =
+                x + ((indexDistanceCount) * currentRowSpacing);
+            pinchHarmonicEndX += (currentRowSpacing * 0.85);
+
+            _drawPinchHarmonic(canvas, paint, x, pinchHarmonicEndX, staffTop,
+                lineSpacing, noteColour, hasBend, isSingleChordSpan);
+          }
+
+          // Check for harmonic technique
+          if (chord.isHarmonicStart && chord.harmonicEndIndex != null) {
+            bool isSingleChordSpan = chord.harmonicEndIndex! == (i - 1);
+            var harmonicEndIndex = isSingleChordSpan
+                ? i
+                : chord.harmonicEndIndex! <
+                        sheetNoteRows[rowIndex].chords.length - 1
+                    ? chord.harmonicEndIndex!
+                    : sheetNoteRows[rowIndex].chords.length - 1;
+
+            var indexDistanceCount = harmonicEndIndex - i;
+
+            double harmonicEndX =
+                x + ((indexDistanceCount) * currentRowSpacing);
+            harmonicEndX += (currentRowSpacing * 0.85);
+
+            _drawHarmonic(canvas, paint, x, harmonicEndX, staffTop, lineSpacing,
+                noteColour, hasBend, isSingleChordSpan);
+          }
         }
 
         // Calculate spacing for space notes
@@ -2525,6 +2591,141 @@ class MusicSheetPainter extends CustomPainter {
     // Draw "1/2" label at peak
     _drawArrowHead(canvas, paint, peakX, peakY, '1/2', noteColour, true);
     _drawArrowHead(canvas, paint, endX, stringY, '1/2', noteColour, false);
+  }
+
+  void _drawDottedLine(Canvas canvas, Paint paint, TextPainter textPainter,
+      double startX, double endX, double labelY, Color noteColour) {
+    final double lineStartX = startX + textPainter.width + 2;
+    final double lineY = labelY + (textPainter.height / 2);
+
+    paint.style = PaintingStyle.stroke;
+    paint.strokeWidth = 1.5;
+    paint.color = noteColour;
+
+    // Draw dotted line
+    final double dashWidth = 5;
+    final double dashSpace = 3;
+    double currentX = lineStartX;
+
+    while (currentX < endX) {
+      canvas.drawLine(
+        Offset(currentX, lineY),
+        Offset(currentX + dashWidth, lineY),
+        paint,
+      );
+      currentX += dashWidth + dashSpace;
+    }
+
+    canvas.drawLine(
+      Offset(currentX - dashSpace, lineY - 7.5),
+      Offset(currentX - dashSpace, lineY + 7.5),
+      paint,
+    );
+  }
+
+  /// Draw mute technique (P.M. label with dotted line)
+  void _drawMute(
+      Canvas canvas,
+      Paint paint,
+      double startX,
+      double endX,
+      double staffTop,
+      double lineSpacing,
+      Color noteColour,
+      bool hasBend,
+      bool isSingleChordSpan) {
+    // Position label above staff, higher if there's also a bend
+    final double labelY = hasBend ? staffTop - 60 : staffTop - 30;
+
+    // Draw the "P.M." label
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: 'P.M.',
+        style: TextStyle(
+          color: noteColour,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+    textPainter.paint(canvas, Offset(startX, labelY));
+
+    if (!isSingleChordSpan) {
+      _drawDottedLine(
+          canvas, paint, textPainter, startX, endX, labelY, noteColour);
+    }
+  }
+
+  /// Draw pinch harmonic technique (P.H. label with dotted line)
+  void _drawPinchHarmonic(
+      Canvas canvas,
+      Paint paint,
+      double startX,
+      double endX,
+      double staffTop,
+      double lineSpacing,
+      Color noteColour,
+      bool hasBend,
+      bool isSingleChordSpan) {
+    // Position label above staff, higher if there's also a bend
+    final double labelY = hasBend ? staffTop - 60 : staffTop - 30;
+
+    // Draw the "P.H." label
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: 'P.H.',
+        style: TextStyle(
+          color: noteColour,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+    textPainter.paint(canvas, Offset(startX, labelY));
+
+    if (!isSingleChordSpan) {
+      _drawDottedLine(
+          canvas, paint, textPainter, startX, endX, labelY, noteColour);
+    }
+  }
+
+  /// Draw harmonic technique (Ham. label with dotted line)
+  void _drawHarmonic(
+      Canvas canvas,
+      Paint paint,
+      double startX,
+      double endX,
+      double staffTop,
+      double lineSpacing,
+      Color noteColour,
+      bool hasBend,
+      bool isSingleChordSpan) {
+    // Position label above staff, higher if there's also a bend
+    final double labelY = hasBend ? staffTop - 60 : staffTop - 30;
+
+    // Draw the "Ham." label
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: 'Ham.',
+        style: TextStyle(
+          color: noteColour,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+    textPainter.paint(canvas, Offset(startX, labelY));
+
+    if (!isSingleChordSpan) {
+      _drawDottedLine(
+          canvas, paint, textPainter, startX, endX, labelY, noteColour);
+    }
   }
 
   /// Draw rehearsal marking above the staff at the note's position

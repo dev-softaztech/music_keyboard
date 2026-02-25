@@ -16,6 +16,12 @@ class MusicalNote {
   int? preBendEndIndex;
   int? bendReleaseEndIndex;
   int? preBendReleaseEndIndex;
+  bool isMuteStart;
+  bool isPinchHarmonicStart;
+  bool isHarmonicStart;
+  int? muteEndIndex;
+  int? pinchHarmonicEndIndex;
+  int? harmonicEndIndex;
   final String unicodeCharacter;
   final String accidentalCharacter; // Unicode character for the accidental
   int? slurEndIndex;
@@ -54,6 +60,12 @@ class MusicalNote {
       this.preBendEndIndex,
       this.bendReleaseEndIndex,
       this.preBendReleaseEndIndex,
+      this.isMuteStart = false,
+      this.isPinchHarmonicStart = false,
+      this.isHarmonicStart = false,
+      this.muteEndIndex,
+      this.pinchHarmonicEndIndex,
+      this.harmonicEndIndex,
       this.slurEndIndex,
       this.unicodeCharacter = "",
       this.accidentalCharacter = "",
@@ -93,6 +105,12 @@ class MusicalNote {
         preBendEndIndex: preBendEndIndex,
         bendReleaseEndIndex: bendReleaseEndIndex,
         preBendReleaseEndIndex: preBendReleaseEndIndex,
+        isMuteStart: isMuteStart,
+        isPinchHarmonicStart: isPinchHarmonicStart,
+        isHarmonicStart: isHarmonicStart,
+        muteEndIndex: muteEndIndex,
+        pinchHarmonicEndIndex: pinchHarmonicEndIndex,
+        harmonicEndIndex: harmonicEndIndex,
         slurEndIndex: slurEndIndex,
         unicodeCharacter: unicodeCharacter,
         accidentalCharacter: accidentalCharacter,
@@ -133,6 +151,12 @@ class MusicalNote {
       'preBendEndIndex': preBendEndIndex,
       'bendReleaseEndIndex': bendReleaseEndIndex,
       'preBendReleaseEndIndex': preBendReleaseEndIndex,
+      'isMuteStart': isMuteStart,
+      'isPinchHarmonicStart': isPinchHarmonicStart,
+      'isHarmonicStart': isHarmonicStart,
+      'muteEndIndex': muteEndIndex,
+      'pinchHarmonicEndIndex': pinchHarmonicEndIndex,
+      'harmonicEndIndex': harmonicEndIndex,
       'unicodeCharacter': unicodeCharacter,
       'accidentalCharacter': accidentalCharacter,
       'slurEndIndex': slurEndIndex,
@@ -174,6 +198,12 @@ class MusicalNote {
       preBendEndIndex: json['preBendEndIndex'],
       bendReleaseEndIndex: json['bendReleaseEndIndex'],
       preBendReleaseEndIndex: json['preBendReleaseEndIndex'],
+      isMuteStart: json['isMuteStart'] ?? false,
+      isPinchHarmonicStart: json['isPinchHarmonicStart'] ?? false,
+      isHarmonicStart: json['isHarmonicStart'] ?? false,
+      muteEndIndex: json['muteEndIndex'],
+      pinchHarmonicEndIndex: json['pinchHarmonicEndIndex'],
+      harmonicEndIndex: json['harmonicEndIndex'],
       unicodeCharacter: json['unicodeCharacter'] ?? '',
       accidentalCharacter: json['accidentalCharacter'] ?? '',
       slurEndIndex: json['slurEndIndex'],
