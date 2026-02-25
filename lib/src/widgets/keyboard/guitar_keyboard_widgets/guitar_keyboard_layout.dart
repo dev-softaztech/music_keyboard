@@ -619,7 +619,14 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                 ),
                 child: ElevatedButton(
                   onPressed: () {
-                    // TODO: Implement string selection functionality
+                    widget.onKeyPress(MusicalNote(
+                      pitch: "D",
+                      octave: 5,
+                      type: NoteType.clef,
+                      isBeamed: false,
+                      unicodeCharacter: "\uF40C",
+                      clefType: "Tab",
+                    ));
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.grey[100],
