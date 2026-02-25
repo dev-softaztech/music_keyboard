@@ -1146,7 +1146,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
             noteToRemove, notes, removedNoteIndex, false);
       }
 
-      updateRowSpacing(selectedRow - 1, selectedNoteProvider, notes);
+      updateRowSpacing(selectedRow, selectedNoteProvider, notes);
 
       // Mark as changed for auto-save
       _markAsChanged();
