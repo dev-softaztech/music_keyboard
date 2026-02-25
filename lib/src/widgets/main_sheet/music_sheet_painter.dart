@@ -2424,11 +2424,11 @@ class MusicSheetPainter extends CustomPainter {
     final Path path = Path();
     path.moveTo(startX + 5, startY - 4);
 
-    startX = startX + (currentRowSpacing * 0.40);
-    double bezierStartY = startY + (currentRowSpacing * 0.40);
+    startX = startX + (currentRowSpacing * 0.35);
+    double bezierStartY = startY + (currentRowSpacing * -0.2);
 
-    path.quadraticBezierTo(startX, bezierStartY, endX, endY - 5);
-//(startX + endX) / 2
+    path.quadraticBezierTo(startX, bezierStartY, endX, endY - 6);
+
     paint.style = PaintingStyle.stroke;
     paint.strokeWidth = 1.2;
     canvas.drawPath(path, paint);
