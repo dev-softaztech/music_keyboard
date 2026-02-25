@@ -268,42 +268,63 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     if (chord == null) return;
 
     setState(() {
+      chord.isBendStart = false;
+      chord.isPreBendStart = false;
+      chord.isBendReleaseStart = false;
+      chord.isPreBendReleaseStart = false;
+      chord.bendEndIndex = null;
+      chord.preBendEndIndex = null;
+      chord.bendReleaseEndIndex = null;
+      chord.preBendReleaseEndIndex = null;
+
       switch (bendType) {
         case 'bend':
-          // Toggle lock state
           _isBendActive = !_isBendActive;
-          // If locking, ensure bend properties are set
+
           if (_isBendActive) {
             chord.isBendStart = true;
             chord.bendEndIndex = selectedNoteIndex - 1;
           }
+
+          _isPreBendActive = false;
+          _isBendReleaseActive = false;
+          _isPreBendReleaseActive = false;
           break;
         case 'pre-bend':
-          // Toggle lock state
           _isPreBendActive = !_isPreBendActive;
-          // If locking, ensure bend properties are set
+
           if (_isPreBendActive) {
             chord.isPreBendStart = true;
             chord.preBendEndIndex = selectedNoteIndex - 1;
           }
+
+          _isBendActive = false;
+          _isBendReleaseActive = false;
+          _isPreBendReleaseActive = false;
           break;
         case 'bend-release':
-          // Toggle lock state
           _isBendReleaseActive = !_isBendReleaseActive;
           // If locking, ensure bend properties are set
           if (_isBendReleaseActive) {
             chord.isBendReleaseStart = true;
             chord.bendReleaseEndIndex = selectedNoteIndex - 1;
           }
+
+          _isBendActive = false;
+          _isPreBendActive = false;
+          _isPreBendReleaseActive = false;
           break;
         case 'pre-bend-release':
-          // Toggle lock state
           _isPreBendReleaseActive = !_isPreBendReleaseActive;
           // If locking, ensure bend properties are set
           if (_isPreBendReleaseActive) {
             chord.isPreBendReleaseStart = true;
             chord.preBendReleaseEndIndex = selectedNoteIndex - 1;
           }
+
+          _isBendActive = false;
+          _isPreBendActive = false;
+          _isBendReleaseActive = false;
           break;
       }
     });
