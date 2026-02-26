@@ -105,6 +105,13 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     bool found = false;
     for (int i = 0; i < chord.childNotes!.length; i++) {
       if (chord.childNotes![i].octave == stringIndex) {
+        found = true;
+
+        if (fretNumber.toString() == chord.childNotes![i].unicodeCharacter) {
+          chord.childNotes!.removeAt(i);
+          break;
+        }
+
         // Update existing childNote
         chord.childNotes![i] = MusicalNote(
           pitch: _stringNames[stringIndex],
@@ -113,7 +120,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
           unicodeCharacter: fretNumber.toString(),
           duration: 0.0,
         );
-        found = true;
         break;
       }
     }
