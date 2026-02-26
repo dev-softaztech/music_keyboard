@@ -101,6 +101,8 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     // Initialize childNotes if null
     chord.childNotes ??= [];
 
+    bool fretWasAdded = false;
+
     // Find existing childNote for this string or create new one
     bool found = false;
     for (int i = 0; i < chord.childNotes!.length; i++) {
@@ -112,7 +114,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
           break;
         }
 
-        // Update existing childNote
         chord.childNotes![i] = MusicalNote(
           pitch: _stringNames[stringIndex],
           octave: stringIndex,
@@ -120,12 +121,12 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
           unicodeCharacter: fretNumber.toString(),
           duration: 0.0,
         );
+        fretWasAdded = true;
         break;
       }
     }
 
     if (!found) {
-      // Add new childNote for this string
       chord.childNotes!.add(MusicalNote(
         pitch: _stringNames[stringIndex],
         octave: stringIndex,
@@ -133,10 +134,17 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
         unicodeCharacter: fretNumber.toString(),
         duration: 0.0,
       ));
+      fretWasAdded = true;
     }
 
-    // Trigger UI update
-    setState(() {});
+    if (fretWasAdded) {
+      setState(() {
+        // Switch to next string (0->1->2->3->4->5->0)
+        _selectedStringIndex = (_selectedStringIndex + 1) % 6;
+      });
+    } else {
+      setState(() {});
+    }
   }
 
   // Build a technique button (for top two rows)
