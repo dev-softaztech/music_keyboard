@@ -47,6 +47,15 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
   bool _isPinchHarmonicActive = false;
   bool _isHarmonicActive = false;
 
+  // Lock state tracking for three-tap behavior
+  bool _isBendLocked = false;
+  bool _isPreBendLocked = false;
+  bool _isBendReleaseLocked = false;
+  bool _isPreBendReleaseLocked = false;
+  bool _isMuteLocked = false;
+  bool _isPinchHarmonicLocked = false;
+  bool _isHarmonicLocked = false;
+
   // Track previous selected note to detect changes
   int _previousSelectedRow = -1;
   int _previousSelectedIndex = -1;
@@ -90,7 +99,8 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
 
   // Helper: Update fret for a specific string
   MusicalNote _updateFretForString(
-      int selectedRow, int selectedNoteIndex, int stringIndex, int fretNumber) {
+      int selectedRow, int selectedNoteIndex, int stringIndex, int fretNumber,
+      {bool goToNextString = true}) {
     final chord = _getCurrentChord(selectedRow, selectedNoteIndex);
 
     if (chord == null) {
@@ -147,7 +157,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       fretWasAdded = true;
     }
 
-    if (fretWasAdded) {
+    if (fretWasAdded && goToNextString) {
       setState(() {
         // Switch to next string (0->1->2->3->4->5->0)
         _selectedStringIndex = (_selectedStringIndex + 1) % 6;
@@ -269,68 +279,132 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
 
     // If no childNote exists for this string, we can't add a bend without a fret
     childNote ??= _updateFretForString(
-        selectedRow, selectedNoteIndex, _selectedStringIndex, 0);
+        selectedRow, selectedNoteIndex, _selectedStringIndex, 0,
+        goToNextString: false);
 
     setState(() {
-      // Clear all bend properties for this childNote
-      childNote!.isBendStart = false;
-      childNote.isPreBendStart = false;
-      childNote.isBendReleaseStart = false;
-      childNote.isPreBendReleaseStart = false;
-      childNote.bendEndIndex = null;
-      childNote.preBendEndIndex = null;
-      childNote.bendReleaseEndIndex = null;
-      childNote.preBendReleaseEndIndex = null;
+      // Determine current state for this bend type
+      bool isCurrentlyActive = false;
+      bool isCurrentlyLocked = false;
 
       switch (bendType) {
         case 'bend':
-          _isBendActive = !_isBendActive;
-
-          if (_isBendActive) {
-            childNote.isBendStart = true;
-            childNote.bendEndIndex = selectedNoteIndex - 1;
-          }
-
-          _isPreBendActive = false;
-          _isBendReleaseActive = false;
-          _isPreBendReleaseActive = false;
+          isCurrentlyActive = _isBendActive;
+          isCurrentlyLocked = _isBendLocked;
           break;
         case 'pre-bend':
-          _isPreBendActive = !_isPreBendActive;
-
-          if (_isPreBendActive) {
-            childNote.isPreBendStart = true;
-            childNote.preBendEndIndex = selectedNoteIndex - 1;
-          }
-
-          _isBendActive = false;
-          _isBendReleaseActive = false;
-          _isPreBendReleaseActive = false;
+          isCurrentlyActive = _isPreBendActive;
+          isCurrentlyLocked = _isPreBendLocked;
           break;
         case 'bend-release':
-          _isBendReleaseActive = !_isBendReleaseActive;
-          // If locking, ensure bend properties are set
-          if (_isBendReleaseActive) {
-            childNote.isBendReleaseStart = true;
-            childNote.bendReleaseEndIndex = selectedNoteIndex - 1;
-          }
-
-          _isBendActive = false;
-          _isPreBendActive = false;
-          _isPreBendReleaseActive = false;
+          isCurrentlyActive = _isBendReleaseActive;
+          isCurrentlyLocked = _isBendReleaseLocked;
           break;
         case 'pre-bend-release':
-          _isPreBendReleaseActive = !_isPreBendReleaseActive;
-          // If locking, ensure bend properties are set
-          if (_isPreBendReleaseActive) {
-            childNote.isPreBendReleaseStart = true;
-            childNote.preBendReleaseEndIndex = selectedNoteIndex - 1;
-          }
-
-          _isBendActive = false;
-          _isPreBendActive = false;
-          _isBendReleaseActive = false;
+          isCurrentlyActive = _isPreBendReleaseActive;
+          isCurrentlyLocked = _isPreBendReleaseLocked;
           break;
+      }
+
+      // Three-tap behavior logic
+      if (!isCurrentlyActive) {
+        // First tap: set note to active and enter lock state
+        switch (bendType) {
+          case 'bend':
+            _isBendActive = true;
+            _isBendLocked = true;
+            childNote!.isBendStart = true;
+            childNote.bendEndIndex = selectedNoteIndex - 1;
+            break;
+          case 'pre-bend':
+            _isPreBendActive = true;
+            _isPreBendLocked = true;
+            childNote!.isPreBendStart = true;
+            childNote.preBendEndIndex = selectedNoteIndex - 1;
+            break;
+          case 'bend-release':
+            _isBendReleaseActive = true;
+            _isBendReleaseLocked = true;
+            childNote!.isBendReleaseStart = true;
+            childNote.bendReleaseEndIndex = selectedNoteIndex - 1;
+            break;
+          case 'pre-bend-release':
+            _isPreBendReleaseActive = true;
+            _isPreBendReleaseLocked = true;
+            childNote!.isPreBendReleaseStart = true;
+            childNote.preBendReleaseEndIndex = selectedNoteIndex - 1;
+            break;
+        }
+      } else if (isCurrentlyActive && isCurrentlyLocked) {
+        // Second tap: switch to active state without lock state
+        switch (bendType) {
+          case 'bend':
+            _isBendLocked = false;
+            break;
+          case 'pre-bend':
+            _isPreBendLocked = false;
+            break;
+          case 'bend-release':
+            _isBendReleaseLocked = false;
+            break;
+          case 'pre-bend-release':
+            _isPreBendReleaseLocked = false;
+            break;
+        }
+      } else {
+        // Third tap: switch active state off and remove bend from note
+        switch (bendType) {
+          case 'bend':
+            _isBendActive = false;
+            _isBendLocked = false;
+            childNote!.isBendStart = false;
+            childNote.bendEndIndex = null;
+            break;
+          case 'pre-bend':
+            _isPreBendActive = false;
+            _isPreBendLocked = false;
+            childNote!.isPreBendStart = false;
+            childNote.preBendEndIndex = null;
+            break;
+          case 'bend-release':
+            _isBendReleaseActive = false;
+            _isBendReleaseLocked = false;
+            childNote!.isBendReleaseStart = false;
+            childNote.bendReleaseEndIndex = null;
+            break;
+          case 'pre-bend-release':
+            _isPreBendReleaseActive = false;
+            _isPreBendReleaseLocked = false;
+            childNote!.isPreBendReleaseStart = false;
+            childNote.preBendReleaseEndIndex = null;
+            break;
+        }
+      }
+
+      // Clear other bend states (mutually exclusive)
+      if (bendType != 'bend') {
+        _isBendActive = false;
+        _isBendLocked = false;
+        childNote!.isBendStart = false;
+        childNote.bendEndIndex = null;
+      }
+      if (bendType != 'pre-bend') {
+        _isPreBendActive = false;
+        _isPreBendLocked = false;
+        childNote!.isPreBendStart = false;
+        childNote.preBendEndIndex = null;
+      }
+      if (bendType != 'bend-release') {
+        _isBendReleaseActive = false;
+        _isBendReleaseLocked = false;
+        childNote!.isBendReleaseStart = false;
+        childNote.bendReleaseEndIndex = null;
+      }
+      if (bendType != 'pre-bend-release') {
+        _isPreBendReleaseActive = false;
+        _isPreBendReleaseLocked = false;
+        childNote!.isPreBendReleaseStart = false;
+        childNote.preBendReleaseEndIndex = null;
       }
     });
   }
@@ -342,51 +416,103 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     if (chord == null) return;
 
     setState(() {
-      // Clear all technique properties
-      chord.isMuteStart = false;
-      chord.isPinchHarmonicStart = false;
-      chord.isHarmonicStart = false;
-      chord.muteEndIndex = null;
-      chord.pinchHarmonicEndIndex = null;
-      chord.harmonicEndIndex = null;
+      // Determine current state for this technique type
+      bool isCurrentlyActive = false;
+      bool isCurrentlyLocked = false;
 
       switch (techniqueType) {
         case 'mute':
-          _isMuteActive = !_isMuteActive;
-
-          if (_isMuteActive) {
-            chord.isMuteStart = true;
-            chord.muteEndIndex = selectedNoteIndex - 1;
-          }
-
-          // Deactivate other technique states (mutually exclusive)
-          _isPinchHarmonicActive = false;
-          _isHarmonicActive = false;
+          isCurrentlyActive = _isMuteActive;
+          isCurrentlyLocked = _isMuteLocked;
           break;
         case 'pinch-harmonic':
-          _isPinchHarmonicActive = !_isPinchHarmonicActive;
-
-          if (_isPinchHarmonicActive) {
-            chord.isPinchHarmonicStart = true;
-            chord.pinchHarmonicEndIndex = selectedNoteIndex - 1;
-          }
-
-          // Deactivate other technique states (mutually exclusive)
-          _isMuteActive = false;
-          _isHarmonicActive = false;
+          isCurrentlyActive = _isPinchHarmonicActive;
+          isCurrentlyLocked = _isPinchHarmonicLocked;
           break;
         case 'harmonic':
-          _isHarmonicActive = !_isHarmonicActive;
+          isCurrentlyActive = _isHarmonicActive;
+          isCurrentlyLocked = _isHarmonicLocked;
+          break;
+      }
 
-          if (_isHarmonicActive) {
+      // Three-tap behavior logic
+      if (!isCurrentlyActive) {
+        // First tap: set note to active and enter lock state
+        switch (techniqueType) {
+          case 'mute':
+            _isMuteActive = true;
+            _isMuteLocked = true;
+            chord.isMuteStart = true;
+            chord.muteEndIndex = selectedNoteIndex - 1;
+            break;
+          case 'pinch-harmonic':
+            _isPinchHarmonicActive = true;
+            _isPinchHarmonicLocked = true;
+            chord.isPinchHarmonicStart = true;
+            chord.pinchHarmonicEndIndex = selectedNoteIndex - 1;
+            break;
+          case 'harmonic':
+            _isHarmonicActive = true;
+            _isHarmonicLocked = true;
             chord.isHarmonicStart = true;
             chord.harmonicEndIndex = selectedNoteIndex - 1;
-          }
+            break;
+        }
+      } else if (isCurrentlyActive && isCurrentlyLocked) {
+        // Second tap: switch to active state without lock state
+        switch (techniqueType) {
+          case 'mute':
+            _isMuteLocked = false;
+            break;
+          case 'pinch-harmonic':
+            _isPinchHarmonicLocked = false;
+            break;
+          case 'harmonic':
+            _isHarmonicLocked = false;
+            break;
+        }
+      } else {
+        // Third tap: switch active state off and remove technique from note
+        switch (techniqueType) {
+          case 'mute':
+            _isMuteActive = false;
+            _isMuteLocked = false;
+            chord.isMuteStart = false;
+            chord.muteEndIndex = null;
+            break;
+          case 'pinch-harmonic':
+            _isPinchHarmonicActive = false;
+            _isPinchHarmonicLocked = false;
+            chord.isPinchHarmonicStart = false;
+            chord.pinchHarmonicEndIndex = null;
+            break;
+          case 'harmonic':
+            _isHarmonicActive = false;
+            _isHarmonicLocked = false;
+            chord.isHarmonicStart = false;
+            chord.harmonicEndIndex = null;
+            break;
+        }
+      }
 
-          // Deactivate other technique states (mutually exclusive)
-          _isMuteActive = false;
-          _isPinchHarmonicActive = false;
-          break;
+      // Clear other technique states (mutually exclusive)
+      if (techniqueType != 'mute') {
+        _isMuteActive = false;
+        _isMuteLocked = false;
+        chord.isMuteStart = false;
+        chord.muteEndIndex = null;
+      }
+      if (techniqueType != 'pinch-harmonic') {
+        _isPinchHarmonicActive = false;
+        _isPinchHarmonicLocked = false;
+        chord.isPinchHarmonicStart = false;
+        chord.pinchHarmonicEndIndex = null;
+      }
+      if (techniqueType != 'harmonic') {
+        _isHarmonicActive = false;
+        _isHarmonicLocked = false;
+        chord.isHarmonicStart = false;
+        chord.harmonicEndIndex = null;
       }
     });
   }
@@ -827,7 +953,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                           isActive: _isMuteActive ||
                               _checkIfCurrentChordHasTechnique(
                                   'mute', selectedRow, selectedNoteIndex),
-                          isLocked: _isMuteActive),
+                          isLocked: _isMuteLocked),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('pinch-harmonic', 'P.H.',
                           isUnicode: false,
@@ -836,7 +962,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                           isActive: _isPinchHarmonicActive ||
                               _checkIfCurrentChordHasTechnique('pinch-harmonic',
                                   selectedRow, selectedNoteIndex),
-                          isLocked: _isPinchHarmonicActive),
+                          isLocked: _isPinchHarmonicLocked),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('vibrato', '\uE589'),
                       const SizedBox(width: 7),
@@ -849,7 +975,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                           isActive: _isBendActive ||
                               _checkIfCurrentChordHasBend(
                                   'bend', selectedRow, selectedNoteIndex),
-                          isLocked: _isBendActive),
+                          isLocked: _isBendLocked),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('pre-bend', 'pre-bend',
                           svgAssetPath: 'assets/svgs/pre-bend.svg',
@@ -858,7 +984,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                           isActive: _isPreBendActive ||
                               _checkIfCurrentChordHasBend(
                                   'pre-bend', selectedRow, selectedNoteIndex),
-                          isLocked: _isPreBendActive),
+                          isLocked: _isPreBendLocked),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('pick-downward', '\uE610'),
                     ],
@@ -877,7 +1003,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                           isActive: _isHarmonicActive ||
                               _checkIfCurrentChordHasTechnique(
                                   'harmonic', selectedRow, selectedNoteIndex),
-                          isLocked: _isHarmonicActive),
+                          isLocked: _isHarmonicLocked),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('slide-up', '\uEA6D'),
                       const SizedBox(width: 7),
@@ -890,7 +1016,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                           isActive: _isBendReleaseActive ||
                               _checkIfCurrentChordHasBend('bend-release',
                                   selectedRow, selectedNoteIndex),
-                          isLocked: _isBendReleaseActive),
+                          isLocked: _isBendReleaseLocked),
                       const SizedBox(width: 7),
                       _buildTechniqueButton(
                           'pre-bend-release', 'pre-bend-release',
@@ -902,7 +1028,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                           isActive: _isPreBendReleaseActive ||
                               _checkIfCurrentChordHasBend('pre-bend-release',
                                   selectedRow, selectedNoteIndex),
-                          isLocked: _isPreBendReleaseActive),
+                          isLocked: _isPreBendReleaseLocked),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('pick-upward', '\uE612'),
                     ],
