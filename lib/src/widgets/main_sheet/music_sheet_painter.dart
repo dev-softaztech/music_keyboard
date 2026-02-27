@@ -555,6 +555,15 @@ class MusicSheetPainter extends CustomPainter {
               releaseBendCurves = [];
           double? highestReleaseString;
 
+          for (var childNote in chord.childNotes!) {
+            double stringY = staffTop + (childNote.octave * lineSpacing);
+
+            if (highestReleaseString == null ||
+                stringY < highestReleaseString) {
+              highestReleaseString = stringY;
+            }
+          }
+
           // Iterate through each childNote to draw bends
           for (var childNote in chord.childNotes!) {
             // Check for bend
@@ -625,14 +634,17 @@ class MusicSheetPainter extends CustomPainter {
               releaseBendCurves
                   .add((startX: x, peakX: peakX, stringY: stringY));
 
-              // Track highest string (lowest Y value)
-              if (highestReleaseString == null ||
-                  stringY < highestReleaseString) {
-                highestReleaseString = stringY;
-              }
-
-              _drawBendRelease(canvas, paint, x, bendReleaseEndX, stringY,
-                  staffTop, lineSpacing, noteColour, currentRowSpacing);
+              _drawBendRelease(
+                  canvas,
+                  paint,
+                  x,
+                  bendReleaseEndX,
+                  stringY,
+                  staffTop,
+                  lineSpacing,
+                  noteColour,
+                  currentRowSpacing,
+                  highestReleaseString);
             }
 
             // Check for pre-bend-release
@@ -655,8 +667,17 @@ class MusicSheetPainter extends CustomPainter {
               // Get string Y position from this childNote
               double stringY = staffTop + (childNote.octave * lineSpacing);
 
-              _drawPreBendRelease(canvas, paint, x, preBendReleaseEndX, stringY,
-                  staffTop, lineSpacing, noteColour, currentRowSpacing);
+              _drawPreBendRelease(
+                  canvas,
+                  paint,
+                  x,
+                  preBendReleaseEndX,
+                  stringY,
+                  staffTop,
+                  lineSpacing,
+                  noteColour,
+                  currentRowSpacing,
+                  highestReleaseString);
             }
           }
 
@@ -2493,14 +2514,14 @@ class MusicSheetPainter extends CustomPainter {
 
   /// Helper function to draw downward curved line from peak to end
   void _drawBendCurveDown(Canvas canvas, Paint paint, double startX,
-      double startY, double endX, double endY, double currentRowSpacing) {
+      double startY, double endX, double? endY, double currentRowSpacing) {
     final Path path = Path();
     path.moveTo(startX + 5, startY - 4);
 
     startX = startX + (currentRowSpacing * 0.35);
     double bezierStartY = startY + (currentRowSpacing * -0.2);
 
-    path.quadraticBezierTo(startX, bezierStartY, endX, endY - 6);
+    path.quadraticBezierTo(startX, bezierStartY, endX, endY! - 6);
 
     paint.style = PaintingStyle.stroke;
     paint.strokeWidth = 1.2;
@@ -2556,7 +2577,8 @@ class MusicSheetPainter extends CustomPainter {
       double staffTop,
       double lineSpacing,
       Color noteColour,
-      double currentRowSpacing) {
+      double currentRowSpacing,
+      double? curveDownY) {
     // Calculate peak position above the staff
     final double peakY = staffTop - 20;
 
@@ -2566,10 +2588,10 @@ class MusicSheetPainter extends CustomPainter {
         canvas, paint, startX, stringY, peakX, peakY, currentRowSpacing, true);
 
     _drawBendCurveDown(
-        canvas, paint, peakX, peakY, endX, stringY, currentRowSpacing);
+        canvas, paint, peakX, peakY, endX, curveDownY, currentRowSpacing);
 
     _drawArrowHead(canvas, paint, peakX, peakY, 'full', noteColour, true);
-    _drawArrowHead(canvas, paint, endX, stringY, 'full', noteColour, false);
+    _drawArrowHead(canvas, paint, endX, curveDownY!, 'full', noteColour, false);
   }
 
   /// Draw pre-bend-release arrow (up then down with "1/2" label)
@@ -2582,7 +2604,8 @@ class MusicSheetPainter extends CustomPainter {
       double staffTop,
       double lineSpacing,
       Color noteColour,
-      double currentRowSpacing) {
+      double currentRowSpacing,
+      double? curveDownY) {
     // Calculate peak position above the staff
     final double peakY = staffTop - 20;
     double peakX = startX + (currentRowSpacing * 0.4);
@@ -2593,11 +2616,11 @@ class MusicSheetPainter extends CustomPainter {
 
     // Draw curved line from peak back down to end
     _drawBendCurveDown(
-        canvas, paint, peakX, peakY, endX, stringY, currentRowSpacing);
+        canvas, paint, peakX, peakY, endX, curveDownY, currentRowSpacing);
 
     // Draw "1/2" label at peak
     _drawArrowHead(canvas, paint, peakX, peakY, '1/2', noteColour, true);
-    _drawArrowHead(canvas, paint, endX, stringY, '1/2', noteColour, false);
+    _drawArrowHead(canvas, paint, endX, curveDownY!, '1/2', noteColour, false);
   }
 
   void _drawDottedLine(Canvas canvas, Paint paint, TextPainter textPainter,

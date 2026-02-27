@@ -538,7 +538,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
 
                       // Check each childNote for bends
                       for (var childNote in chord.childNotes!) {
-                        bool updated = false;
+                        //bool updated = false;
 
                         // Update bend end indices only for locked bends on childNotes
                         if (_isBendActive &&
@@ -549,7 +549,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                                         childNote.bendEndIndex!) ||
                                 (childNote.bendEndIndex == i - 1))) {
                           childNote.bendEndIndex = childNote.bendEndIndex! + 1;
-                          updated = true;
+                          //updated = true;
                         }
                         if (_isPreBendActive &&
                             childNote.isPreBendStart &&
@@ -560,7 +560,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                                 (childNote.preBendEndIndex == i - 1))) {
                           childNote.preBendEndIndex =
                               childNote.preBendEndIndex! + 1;
-                          updated = true;
+                          //updated = true;
                         }
                         if (_isBendReleaseActive &&
                             childNote.isBendReleaseStart &&
@@ -571,7 +571,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                                 (childNote.bendReleaseEndIndex == i - 1))) {
                           childNote.bendReleaseEndIndex =
                               childNote.bendReleaseEndIndex! + 1;
-                          updated = true;
+                          //updated = true;
                         }
                         if (_isPreBendReleaseActive &&
                             childNote.isPreBendReleaseStart &&
@@ -582,10 +582,10 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                                 (childNote.preBendReleaseEndIndex == i - 1))) {
                           childNote.preBendReleaseEndIndex =
                               childNote.preBendReleaseEndIndex! + 1;
-                          updated = true;
+                          //updated = true;
                         }
 
-                        if (updated) break;
+                        //if (updated) break;
                       }
                     }
                   }
