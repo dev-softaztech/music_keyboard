@@ -370,6 +370,9 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       // Three-tap behavior logic
       if (!isCurrentlyActive) {
         // First tap: set note to active and enter lock state
+        // Before setting the new bend type, update all existing childNotes to have the same bend type
+        _updateAllChildNotesToSameBendType(chord, bendType, selectedNoteIndex);
+
         switch (bendType) {
           case 'bend':
             _isBendActive = true;
@@ -468,6 +471,95 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
         childNote.preBendReleaseEndIndex = null;
       }
     });
+  }
+
+  // Helper: Update all childNotes to have the same bend type
+  void _updateAllChildNotesToSameBendType(
+      MusicalNote chord, String newBendType, int selectedNoteIndex) {
+    if (chord.childNotes == null) return;
+
+    for (var childNote in chord.childNotes!) {
+      // Convert any existing bend type to the new bend type
+      if (childNote.isBendStart && newBendType != 'bend') {
+        // Convert bend to new type
+        childNote.isBendStart = false;
+        childNote.bendEndIndex = null;
+
+        switch (newBendType) {
+          case 'pre-bend':
+            childNote.isPreBendStart = true;
+            childNote.preBendEndIndex = selectedNoteIndex - 1;
+            break;
+          case 'bend-release':
+            childNote.isBendReleaseStart = true;
+            childNote.bendReleaseEndIndex = selectedNoteIndex - 1;
+            break;
+          case 'pre-bend-release':
+            childNote.isPreBendReleaseStart = true;
+            childNote.preBendReleaseEndIndex = selectedNoteIndex - 1;
+            break;
+        }
+      } else if (childNote.isPreBendStart && newBendType != 'pre-bend') {
+        // Convert pre-bend to new type
+        childNote.isPreBendStart = false;
+        childNote.preBendEndIndex = null;
+
+        switch (newBendType) {
+          case 'bend':
+            childNote.isBendStart = true;
+            childNote.bendEndIndex = selectedNoteIndex - 1;
+            break;
+          case 'bend-release':
+            childNote.isBendReleaseStart = true;
+            childNote.bendReleaseEndIndex = selectedNoteIndex - 1;
+            break;
+          case 'pre-bend-release':
+            childNote.isPreBendReleaseStart = true;
+            childNote.preBendReleaseEndIndex = selectedNoteIndex - 1;
+            break;
+        }
+      } else if (childNote.isBendReleaseStart &&
+          newBendType != 'bend-release') {
+        // Convert bend-release to new type
+        childNote.isBendReleaseStart = false;
+        childNote.bendReleaseEndIndex = null;
+
+        switch (newBendType) {
+          case 'bend':
+            childNote.isBendStart = true;
+            childNote.bendEndIndex = selectedNoteIndex - 1;
+            break;
+          case 'pre-bend':
+            childNote.isPreBendStart = true;
+            childNote.preBendEndIndex = selectedNoteIndex - 1;
+            break;
+          case 'pre-bend-release':
+            childNote.isPreBendReleaseStart = true;
+            childNote.preBendReleaseEndIndex = selectedNoteIndex - 1;
+            break;
+        }
+      } else if (childNote.isPreBendReleaseStart &&
+          newBendType != 'pre-bend-release') {
+        // Convert pre-bend-release to new type
+        childNote.isPreBendReleaseStart = false;
+        childNote.preBendReleaseEndIndex = null;
+
+        switch (newBendType) {
+          case 'bend':
+            childNote.isBendStart = true;
+            childNote.bendEndIndex = selectedNoteIndex - 1;
+            break;
+          case 'pre-bend':
+            childNote.isPreBendStart = true;
+            childNote.preBendEndIndex = selectedNoteIndex - 1;
+            break;
+          case 'bend-release':
+            childNote.isBendReleaseStart = true;
+            childNote.bendReleaseEndIndex = selectedNoteIndex - 1;
+            break;
+        }
+      }
+    }
   }
 
   // Helper: Handle technique button press (mute, pinch-harmonic, harmonic)
