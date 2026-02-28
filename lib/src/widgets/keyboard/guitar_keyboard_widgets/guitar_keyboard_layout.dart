@@ -371,32 +371,40 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       if (!isCurrentlyActive) {
         // First tap: set note to active and enter lock state
         // Before setting the new bend type, update all existing childNotes to have the same bend type
-        _updateAllChildNotesToSameBendType(chord, bendType, selectedNoteIndex);
+        // Get the endIndex from existing childNotes before updating them
+        int? existingEndIndex = _getExistingBendEndIndex(chord);
+        if (existingEndIndex != null) {
+          _updateAllChildNotesToSameBendType(chord, bendType, existingEndIndex);
+        }
 
         switch (bendType) {
           case 'bend':
             _isBendActive = true;
             _isBendLocked = true;
             childNote!.isBendStart = true;
-            childNote.bendEndIndex = selectedNoteIndex - 1;
+            childNote.bendEndIndex =
+                existingEndIndex ?? (selectedNoteIndex - 1);
             break;
           case 'pre-bend':
             _isPreBendActive = true;
             _isPreBendLocked = true;
             childNote!.isPreBendStart = true;
-            childNote.preBendEndIndex = selectedNoteIndex - 1;
+            childNote.preBendEndIndex =
+                existingEndIndex ?? (selectedNoteIndex - 1);
             break;
           case 'bend-release':
             _isBendReleaseActive = true;
             _isBendReleaseLocked = true;
             childNote!.isBendReleaseStart = true;
-            childNote.bendReleaseEndIndex = selectedNoteIndex - 1;
+            childNote.bendReleaseEndIndex =
+                existingEndIndex ?? (selectedNoteIndex - 1);
             break;
           case 'pre-bend-release':
             _isPreBendReleaseActive = true;
             _isPreBendReleaseLocked = true;
             childNote!.isPreBendReleaseStart = true;
-            childNote.preBendReleaseEndIndex = selectedNoteIndex - 1;
+            childNote.preBendReleaseEndIndex =
+                existingEndIndex ?? (selectedNoteIndex - 1);
             break;
         }
       } else if (isCurrentlyActive && isCurrentlyLocked) {
@@ -473,9 +481,32 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     });
   }
 
+  // Helper: Get the endIndex from existing childNotes with bends
+  int? _getExistingBendEndIndex(MusicalNote chord) {
+    if (chord.childNotes == null) return null;
+
+    for (var childNote in chord.childNotes!) {
+      if (childNote.isBendStart && childNote.bendEndIndex != null) {
+        return childNote.bendEndIndex;
+      }
+      if (childNote.isPreBendStart && childNote.preBendEndIndex != null) {
+        return childNote.preBendEndIndex;
+      }
+      if (childNote.isBendReleaseStart &&
+          childNote.bendReleaseEndIndex != null) {
+        return childNote.bendReleaseEndIndex;
+      }
+      if (childNote.isPreBendReleaseStart &&
+          childNote.preBendReleaseEndIndex != null) {
+        return childNote.preBendReleaseEndIndex;
+      }
+    }
+    return null;
+  }
+
   // Helper: Update all childNotes to have the same bend type
   void _updateAllChildNotesToSameBendType(
-      MusicalNote chord, String newBendType, int selectedNoteIndex) {
+      MusicalNote chord, String newBendType, int existingEndIndex) {
     if (chord.childNotes == null) return;
 
     for (var childNote in chord.childNotes!) {
@@ -488,15 +519,15 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
         switch (newBendType) {
           case 'pre-bend':
             childNote.isPreBendStart = true;
-            childNote.preBendEndIndex = selectedNoteIndex - 1;
+            childNote.preBendEndIndex = existingEndIndex;
             break;
           case 'bend-release':
             childNote.isBendReleaseStart = true;
-            childNote.bendReleaseEndIndex = selectedNoteIndex - 1;
+            childNote.bendReleaseEndIndex = existingEndIndex;
             break;
           case 'pre-bend-release':
             childNote.isPreBendReleaseStart = true;
-            childNote.preBendReleaseEndIndex = selectedNoteIndex - 1;
+            childNote.preBendReleaseEndIndex = existingEndIndex;
             break;
         }
       } else if (childNote.isPreBendStart && newBendType != 'pre-bend') {
@@ -507,15 +538,15 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
         switch (newBendType) {
           case 'bend':
             childNote.isBendStart = true;
-            childNote.bendEndIndex = selectedNoteIndex - 1;
+            childNote.bendEndIndex = existingEndIndex;
             break;
           case 'bend-release':
             childNote.isBendReleaseStart = true;
-            childNote.bendReleaseEndIndex = selectedNoteIndex - 1;
+            childNote.bendReleaseEndIndex = existingEndIndex;
             break;
           case 'pre-bend-release':
             childNote.isPreBendReleaseStart = true;
-            childNote.preBendReleaseEndIndex = selectedNoteIndex - 1;
+            childNote.preBendReleaseEndIndex = existingEndIndex;
             break;
         }
       } else if (childNote.isBendReleaseStart &&
@@ -527,15 +558,15 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
         switch (newBendType) {
           case 'bend':
             childNote.isBendStart = true;
-            childNote.bendEndIndex = selectedNoteIndex - 1;
+            childNote.bendEndIndex = existingEndIndex;
             break;
           case 'pre-bend':
             childNote.isPreBendStart = true;
-            childNote.preBendEndIndex = selectedNoteIndex - 1;
+            childNote.preBendEndIndex = existingEndIndex;
             break;
           case 'pre-bend-release':
             childNote.isPreBendReleaseStart = true;
-            childNote.preBendReleaseEndIndex = selectedNoteIndex - 1;
+            childNote.preBendReleaseEndIndex = existingEndIndex;
             break;
         }
       } else if (childNote.isPreBendReleaseStart &&
@@ -547,15 +578,15 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
         switch (newBendType) {
           case 'bend':
             childNote.isBendStart = true;
-            childNote.bendEndIndex = selectedNoteIndex - 1;
+            childNote.bendEndIndex = existingEndIndex;
             break;
           case 'pre-bend':
             childNote.isPreBendStart = true;
-            childNote.preBendEndIndex = selectedNoteIndex - 1;
+            childNote.preBendEndIndex = existingEndIndex;
             break;
           case 'bend-release':
             childNote.isBendReleaseStart = true;
-            childNote.bendReleaseEndIndex = selectedNoteIndex - 1;
+            childNote.bendReleaseEndIndex = existingEndIndex;
             break;
         }
       }
