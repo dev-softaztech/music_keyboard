@@ -247,6 +247,13 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       _isPreBendLocked = false;
       _isBendReleaseLocked = false;
       _isPreBendReleaseLocked = false;
+      // Clear technique states as well
+      _isMuteActive = false;
+      _isPinchHarmonicActive = false;
+      _isHarmonicActive = false;
+      _isMuteLocked = false;
+      _isPinchHarmonicLocked = false;
+      _isHarmonicLocked = false;
       return;
     }
 
@@ -269,6 +276,13 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       _isPreBendLocked = false;
       _isBendReleaseLocked = false;
       _isPreBendReleaseLocked = false;
+      // Clear technique states as well
+      _isMuteActive = false;
+      _isPinchHarmonicActive = false;
+      _isHarmonicActive = false;
+      _isMuteLocked = false;
+      _isPinchHarmonicLocked = false;
+      _isHarmonicLocked = false;
       return;
     }
 
@@ -287,6 +301,18 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
         childNote.bendReleaseEndIndex! >= 0;
     _isPreBendReleaseLocked = childNote.preBendReleaseEndIndex != null &&
         childNote.preBendReleaseEndIndex! >= 0;
+
+    // Update technique states based on the current chord
+    _isMuteActive = chord.isMuteStart;
+    _isPinchHarmonicActive = chord.isPinchHarmonicStart;
+    _isHarmonicActive = chord.isHarmonicStart;
+
+    // Set technique lock states based on end indices (if they exist and are valid)
+    _isMuteLocked = chord.muteEndIndex != null && chord.muteEndIndex! >= 0;
+    _isPinchHarmonicLocked = chord.pinchHarmonicEndIndex != null &&
+        chord.pinchHarmonicEndIndex! >= 0;
+    _isHarmonicLocked =
+        chord.harmonicEndIndex != null && chord.harmonicEndIndex! >= 0;
   }
 
   // Helper: Check if current chord has bend start property set for the selected string
@@ -741,11 +767,12 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
         onPressed: () {
           setState(() {
             _selectedStringIndex = stringIndex;
-            // Clear bend button locked/active states when switching strings
-            _isBendActive = false;
-            _isPreBendActive = false;
-            _isBendReleaseActive = false;
-            _isPreBendReleaseActive = false;
+            // Update bend button states to reflect the new current string
+            _updateBendButtonStatesForCurrentString(
+                Provider.of<CurrentSelectedNoteProvider>(context, listen: false)
+                    .selectedRow,
+                Provider.of<CurrentSelectedNoteProvider>(context, listen: false)
+                    .selectedIndex);
           });
         },
         style: ElevatedButton.styleFrom(
