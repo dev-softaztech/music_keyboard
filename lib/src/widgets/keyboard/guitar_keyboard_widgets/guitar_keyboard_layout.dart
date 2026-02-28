@@ -158,10 +158,15 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     }
 
     if (fretWasAdded && goToNextString) {
-      setState(() {
+      setState(() {});
+      //Currently commented out as I think it is uncessary logic, can demo at next session.
+      /*setState(() {
         // Switch to next string (0->1->2->3->4->5->0)
         _selectedStringIndex = (_selectedStringIndex + 1) % 6;
-      });
+
+        // Update bend button states to reflect the new current string
+        _updateBendButtonStatesForCurrentString(selectedRow, selectedNoteIndex);
+      });*/
     } else {
       setState(() {});
     }
@@ -226,6 +231,62 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
         ),
       ),
     );
+  }
+
+  // Helper: Update bend button states to reflect the current string's state
+  void _updateBendButtonStatesForCurrentString(
+      int selectedRow, int selectedNoteIndex) {
+    final chord = _getCurrentChord(selectedRow, selectedNoteIndex);
+    if (chord == null || chord.childNotes == null) {
+      // No chord or childNotes, clear all bend states
+      _isBendActive = false;
+      _isPreBendActive = false;
+      _isBendReleaseActive = false;
+      _isPreBendReleaseActive = false;
+      _isBendLocked = false;
+      _isPreBendLocked = false;
+      _isBendReleaseLocked = false;
+      _isPreBendReleaseLocked = false;
+      return;
+    }
+
+    // Find the childNote for the currently selected string
+    MusicalNote? childNote;
+    for (var child in chord.childNotes!) {
+      if (child.octave == _selectedStringIndex) {
+        childNote = child;
+        break;
+      }
+    }
+
+    if (childNote == null) {
+      // No childNote for this string, clear all bend states
+      _isBendActive = false;
+      _isPreBendActive = false;
+      _isBendReleaseActive = false;
+      _isPreBendReleaseActive = false;
+      _isBendLocked = false;
+      _isPreBendLocked = false;
+      _isBendReleaseLocked = false;
+      _isPreBendReleaseLocked = false;
+      return;
+    }
+
+    // Update bend states based on the current childNote
+    _isBendActive = childNote.isBendStart;
+    _isPreBendActive = childNote.isPreBendStart;
+    _isBendReleaseActive = childNote.isBendReleaseStart;
+    _isPreBendReleaseActive = childNote.isPreBendReleaseStart;
+
+    // Set lock states based on bend end indices (if they exist and are valid)
+    _isBendLocked =
+        childNote.bendEndIndex != null && childNote.bendEndIndex! >= 0;
+    _isPreBendLocked =
+        childNote.preBendEndIndex != null && childNote.preBendEndIndex! >= 0;
+    _isBendReleaseLocked = childNote.bendReleaseEndIndex != null &&
+        childNote.bendReleaseEndIndex! >= 0;
+    _isPreBendReleaseLocked = childNote.preBendReleaseEndIndex != null &&
+        childNote.preBendReleaseEndIndex! >= 0;
   }
 
   // Helper: Check if current chord has bend start property set for the selected string
