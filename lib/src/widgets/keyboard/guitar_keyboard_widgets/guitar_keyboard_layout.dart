@@ -691,7 +691,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
         }
       }
 
-      // Clear other technique states (mutually exclusive)
       if (techniqueType != 'mute') {
         _isMuteActive = false;
         _isMuteLocked = false;
@@ -709,10 +708,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
         _isHarmonicLocked = false;
         chord.isHarmonicStart = false;
         chord.harmonicEndIndex = null;
-      }
-      if (techniqueType != 'tap-right-hand') {
-        _isTapRightHandActive = false;
-        chord.tapRightHandCharacter = '';
       }
     });
   }
