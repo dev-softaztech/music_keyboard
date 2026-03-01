@@ -2874,8 +2874,9 @@ class MusicSheetPainter extends CustomPainter {
       double lineSpacing,
       List<MusicalNote> notes,
       int noteIndex) {
-    // Position the tap-right-hand symbol above the note
-    double symbolY = staffTop - 20;
+    double bendOrHarmonicOffset = _hasBendOrHarmonicOnChord(chord);
+
+    double symbolY = staffTop - 25 - bendOrHarmonicOffset;
 
     // Adjust position based on note height to avoid overlap
     if (noteIndex < notes.length) {
@@ -2905,6 +2906,39 @@ class MusicSheetPainter extends CustomPainter {
     double yPos = symbolY - 20;
 
     textPainter.paint(canvas, Offset(xPos, yPos));
+  }
+
+  double _hasBendOrHarmonicOnChord(MusicalNote chord) {
+    bool hasBend = chord.isBendStart ||
+        chord.isPreBendStart ||
+        chord.isBendReleaseStart ||
+        chord.isPreBendReleaseStart;
+
+    bool hasHarmonic = chord.isMuteStart ||
+        chord.isPinchHarmonicStart ||
+        chord.isHarmonicStart;
+
+    if (chord.childNotes != null) {
+      for (var childNote in chord.childNotes!) {
+        hasBend = hasBend ||
+            childNote.isBendStart ||
+            childNote.isPreBendStart ||
+            childNote.isBendReleaseStart ||
+            childNote.isPreBendReleaseStart;
+
+        hasHarmonic = hasHarmonic ||
+            childNote.isMuteStart ||
+            childNote.isPinchHarmonicStart ||
+            childNote.isHarmonicStart;
+      }
+    }
+
+    var returnOffset = 0.0;
+
+    if (hasBend) returnOffset += 30;
+    if (hasHarmonic) returnOffset += 25;
+
+    return returnOffset;
   }
 
   void _drawTriplet(
