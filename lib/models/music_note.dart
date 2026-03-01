@@ -40,6 +40,8 @@ class MusicalNote {
   String keySignatureName;
   String keySignatureClefType;
   String clefType; // 'Treble', 'Bass', 'Alto', 'Tenor'
+  String
+      tapRightHandCharacter; // Unicode character for tap-right-hand technique
   List<MusicalNote>? childNotes; // For chords - multiple notes at same position
 
   MusicalNote(
@@ -84,6 +86,7 @@ class MusicalNote {
       this.keySignatureName = "",
       this.keySignatureClefType = "",
       this.clefType = "",
+      this.tapRightHandCharacter = "",
       this.childNotes});
 
   MusicalNote copy() {
@@ -129,6 +132,7 @@ class MusicalNote {
         keySignatureName: keySignatureName,
         keySignatureClefType: keySignatureClefType,
         clefType: clefType,
+        tapRightHandCharacter: tapRightHandCharacter,
         childNotes: childNotes?.map((note) => note.copy()).toList());
   }
 

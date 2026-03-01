@@ -46,6 +46,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
   bool _isMuteActive = false;
   bool _isPinchHarmonicActive = false;
   bool _isHarmonicActive = false;
+  bool _isTapRightHandActive = false;
 
   // Lock state tracking for three-tap behavior
   bool _isBendLocked = false;
@@ -55,6 +56,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
   bool _isMuteLocked = false;
   bool _isPinchHarmonicLocked = false;
   bool _isHarmonicLocked = false;
+  bool _isTapRightHandLocked = false;
 
   // Track previous selected note to detect changes
   int _previousSelectedRow = -1;
@@ -591,7 +593,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     }
   }
 
-  // Helper: Handle technique button press (mute, pinch-harmonic, harmonic)
+  // Helper: Handle technique button press (mute, pinch-harmonic, harmonic, tap-right-hand)
   void _handleTechniqueButtonPress(
       String techniqueType, int selectedRow, int selectedNoteIndex) {
     final chord = _getCurrentChord(selectedRow, selectedNoteIndex);
@@ -614,6 +616,10 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
         case 'harmonic':
           isCurrentlyActive = _isHarmonicActive;
           isCurrentlyLocked = _isHarmonicLocked;
+          break;
+        case 'tap-right-hand':
+          isCurrentlyActive = _isTapRightHandActive;
+          isCurrentlyLocked = _isTapRightHandLocked;
           break;
       }
 
@@ -639,6 +645,12 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
             chord.isHarmonicStart = true;
             chord.harmonicEndIndex = selectedNoteIndex - 1;
             break;
+          case 'tap-right-hand':
+            _isTapRightHandActive = true;
+            _isTapRightHandLocked = true;
+            chord.tapRightHandCharacter =
+                '\uEA8B'; // Unicode for tap-right-hand
+            break;
         }
       } else if (isCurrentlyActive && isCurrentlyLocked) {
         // Second tap: switch to active state without lock state
@@ -651,6 +663,9 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
             break;
           case 'harmonic':
             _isHarmonicLocked = false;
+            break;
+          case 'tap-right-hand':
+            _isTapRightHandLocked = false;
             break;
         }
       } else {
@@ -674,6 +689,11 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
             chord.isHarmonicStart = false;
             chord.harmonicEndIndex = null;
             break;
+          case 'tap-right-hand':
+            _isTapRightHandActive = false;
+            _isTapRightHandLocked = false;
+            chord.tapRightHandCharacter = '';
+            break;
         }
       }
 
@@ -695,6 +715,11 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
         _isHarmonicLocked = false;
         chord.isHarmonicStart = false;
         chord.harmonicEndIndex = null;
+      }
+      if (techniqueType != 'tap-right-hand') {
+        _isTapRightHandActive = false;
+        _isTapRightHandLocked = false;
+        chord.tapRightHandCharacter = '';
       }
     });
   }
@@ -1178,7 +1203,12 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       _buildTechniqueButton('tap-right-hand', '\uEA8B',
-                          fontSize: 16, offset: Offset(0, 7)),
+                          fontSize: 16,
+                          offset: Offset(0, 7),
+                          onPressed: () => _handleTechniqueButtonPress(
+                              'tap-right-hand', selectedRow, selectedNoteIndex),
+                          isActive: _isTapRightHandActive,
+                          isLocked: _isTapRightHandLocked),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('harmonic', 'Ham.',
                           fontSize: 12,

@@ -391,6 +391,11 @@ class MusicSheetPainter extends CustomPainter {
               canvas, chord, noteColour, x, staffTop, lineSpacing, textY);
         }
 
+        if (chord.tapRightHandCharacter.isNotEmpty) {
+          _drawTapRightHand(canvas, chord, noteColour, x, staffTop, lineSpacing,
+              sheetNoteRows[rowIndex].chords, i);
+        }
+
         if (chord.type == NoteType.bar) {
           double textY = staffTop - 35;
           int noteLookupIndex = i;
@@ -2858,6 +2863,48 @@ class MusicSheetPainter extends CustomPainter {
 
       symbolPainter.paint(canvas, Offset(symbolX, symbolY));
     }
+  }
+
+  void _drawTapRightHand(
+      Canvas canvas,
+      MusicalNote chord,
+      Color noteColour,
+      double x,
+      double staffTop,
+      double lineSpacing,
+      List<MusicalNote> notes,
+      int noteIndex) {
+    // Position the tap-right-hand symbol above the note
+    double symbolY = staffTop - 20;
+
+    // Adjust position based on note height to avoid overlap
+    if (noteIndex < notes.length) {
+      double noteY = notes[noteIndex].noteY;
+      if (noteY < symbolY + 20) {
+        symbolY = noteY - 40;
+      }
+    }
+
+    final textStyle = TextStyle(
+      color: noteColour,
+      fontSize: 16,
+      fontFamily: 'Bravura',
+    );
+    final textSpan = TextSpan(
+      text: chord.tapRightHandCharacter,
+      style: textStyle,
+    );
+    final textPainter = TextPainter(
+      text: textSpan,
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+
+    // Center the symbol horizontally over the note
+    double xPos = x - (textPainter.width / 2);
+    double yPos = symbolY - 20;
+
+    textPainter.paint(canvas, Offset(xPos, yPos));
   }
 
   void _drawTriplet(
