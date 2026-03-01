@@ -176,11 +176,13 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
 
   // Build a technique button (for top two rows)
   Widget _buildTechniqueButton(String identifer, String label,
-      {bool isUnicode = true,
+      {double fontSize = 0,
+      bool isUnicode = true,
       String? svgAssetPath,
       VoidCallback? onPressed,
       bool isActive = false,
-      bool isLocked = false}) {
+      bool isLocked = false,
+      Offset offset = Offset.zero}) {
     return SizedBox(
       width: 32,
       height: 32,
@@ -201,6 +203,8 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
         child: Stack(
           children: [
             Center(
+                child: Transform.translate(
+              offset: offset,
               child: svgAssetPath != null
                   ? SvgPicture.asset(svgAssetPath,
                       width: 20,
@@ -210,13 +214,13 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                       label,
                       style: TextStyle(
                         fontFamily: isUnicode ? 'Bravura' : null,
-                        fontSize: isUnicode ? 30 : 12,
+                        fontSize: fontSize,
                         fontWeight: FontWeight.bold,
                         color: Colors.black,
                       ),
                       textAlign: TextAlign.center,
                     ),
-            ),
+            )),
             if (isLocked)
               Positioned(
                 bottom: 1,
@@ -1121,6 +1125,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       _buildTechniqueButton('mute', 'P.M.',
+                          fontSize: 12,
                           isUnicode: false,
                           onPressed: () => _handleTechniqueButtonPress(
                               'mute', selectedRow, selectedNoteIndex),
@@ -1130,6 +1135,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                           isLocked: _isMuteLocked),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('pinch-harmonic', 'P.H.',
+                          fontSize: 12,
                           isUnicode: false,
                           onPressed: () => _handleTechniqueButtonPress(
                               'pinch-harmonic', selectedRow, selectedNoteIndex),
@@ -1138,9 +1144,11 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                                   selectedRow, selectedNoteIndex),
                           isLocked: _isPinchHarmonicLocked),
                       const SizedBox(width: 7),
-                      _buildTechniqueButton('vibrato', '\uE589'),
+                      _buildTechniqueButton('vibrato', '\uE589',
+                          fontSize: 32, offset: Offset(0, -3)),
                       const SizedBox(width: 7),
-                      _buildTechniqueButton('hammer-left-hand', '\uE4BA'),
+                      _buildTechniqueButton('hammer-left-hand', '\uE4BA',
+                          fontSize: 38, offset: Offset(0, -8)),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('bend', 'bend',
                           svgAssetPath: 'assets/svgs/bend.svg',
@@ -1160,7 +1168,8 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                                   'pre-bend', selectedRow, selectedNoteIndex),
                           isLocked: _isPreBendLocked),
                       const SizedBox(width: 7),
-                      _buildTechniqueButton('pick-downward', '\uE610'),
+                      _buildTechniqueButton('pick-downward', '\uE610',
+                          fontSize: 30),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -1168,9 +1177,11 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildTechniqueButton('tap-right-hand', '\uE682 '),
+                      _buildTechniqueButton('tap-right-hand', '\uEA8B',
+                          fontSize: 16, offset: Offset(0, 7)),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('harmonic', 'Ham.',
+                          fontSize: 12,
                           isUnicode: false,
                           onPressed: () => _handleTechniqueButtonPress(
                               'harmonic', selectedRow, selectedNoteIndex),
@@ -1179,9 +1190,11 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                                   'harmonic', selectedRow, selectedNoteIndex),
                           isLocked: _isHarmonicLocked),
                       const SizedBox(width: 7),
-                      _buildTechniqueButton('slide-up', '\uEA6D'),
+                      _buildTechniqueButton('slide-up', '\uEA6D',
+                          fontSize: 40, offset: Offset(0, -7)),
                       const SizedBox(width: 7),
-                      _buildTechniqueButton('slide-down', '\uEA6E'),
+                      _buildTechniqueButton('slide-down', '\uEA6E',
+                          fontSize: 40, offset: Offset(0, -7)),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('bend-release', 'bend-release',
                           svgAssetPath: 'assets/svgs/bend-release.svg',
@@ -1204,7 +1217,8 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                                   selectedRow, selectedNoteIndex),
                           isLocked: _isPreBendReleaseLocked),
                       const SizedBox(width: 7),
-                      _buildTechniqueButton('pick-upward', '\uE612'),
+                      _buildTechniqueButton('pick-upward', '\uE612',
+                          fontSize: 30),
                     ],
                   ),
                   const SizedBox(height: 10),

@@ -1031,9 +1031,6 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         // Move cursor to the appropriate row in the new group
         selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
             targetRowIndex, 0);
-
-        print(
-            "Added $rowsToAdd new row(s). Total rows: ${sheet.sheetRows.length}");
       }
     });
   }
