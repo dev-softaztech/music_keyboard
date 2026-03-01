@@ -233,12 +233,10 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     );
   }
 
-  // Helper: Update bend button states to reflect the current string's state
-  void _updateBendButtonStatesForCurrentString(
+  void _updateBendOnlyStatesForCurrentString(
       int selectedRow, int selectedNoteIndex) {
     final chord = _getCurrentChord(selectedRow, selectedNoteIndex);
     if (chord == null || chord.childNotes == null) {
-      // No chord or childNotes, clear all bend states
       _isBendActive = false;
       _isPreBendActive = false;
       _isBendReleaseActive = false;
@@ -247,15 +245,9 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       _isPreBendLocked = false;
       _isBendReleaseLocked = false;
       _isPreBendReleaseLocked = false;
-      // Clear technique states as well
-      _isMuteActive = false;
-      _isPinchHarmonicActive = false;
-      _isHarmonicActive = false;
-
       return;
     }
 
-    // Find the childNote for the currently selected string
     MusicalNote? childNote;
     for (var child in chord.childNotes!) {
       if (child.octave == _selectedStringIndex) {
@@ -265,7 +257,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     }
 
     if (childNote == null) {
-      // No childNote for this string, clear all bend states
       _isBendActive = false;
       _isPreBendActive = false;
       _isBendReleaseActive = false;
@@ -274,20 +265,14 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       _isPreBendLocked = false;
       _isBendReleaseLocked = false;
       _isPreBendReleaseLocked = false;
-      // Clear technique states as well
-      _isMuteActive = false;
-      _isPinchHarmonicActive = false;
-      _isHarmonicActive = false;
       return;
     }
 
-    // Update bend states based on the current childNote
     _isBendActive = childNote.isBendStart;
     _isPreBendActive = childNote.isPreBendStart;
     _isBendReleaseActive = childNote.isBendReleaseStart;
     _isPreBendReleaseActive = childNote.isPreBendReleaseStart;
 
-    // Set lock states based on bend end indices (if they exist and are valid)
     _isBendLocked =
         childNote.bendEndIndex != null && childNote.bendEndIndex! >= 0;
     _isPreBendLocked =
@@ -296,18 +281,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
         childNote.bendReleaseEndIndex! >= 0;
     _isPreBendReleaseLocked = childNote.preBendReleaseEndIndex != null &&
         childNote.preBendReleaseEndIndex! >= 0;
-
-    // Update technique states based on the current chord
-    _isMuteActive = chord.isMuteStart;
-    _isPinchHarmonicActive = chord.isPinchHarmonicStart;
-    _isHarmonicActive = chord.isHarmonicStart;
-
-    // Set technique lock states based on end indices (if they exist and are valid)
-    _isMuteLocked = chord.muteEndIndex != null && chord.muteEndIndex! >= 0;
-    _isPinchHarmonicLocked = chord.pinchHarmonicEndIndex != null &&
-        chord.pinchHarmonicEndIndex! >= 0;
-    _isHarmonicLocked =
-        chord.harmonicEndIndex != null && chord.harmonicEndIndex! >= 0;
   }
 
   // Helper: Check if current chord has bend start property set for the selected string
@@ -762,8 +735,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
         onPressed: () {
           setState(() {
             _selectedStringIndex = stringIndex;
-            // Update bend button states to reflect the new current string
-            _updateBendButtonStatesForCurrentString(
+            _updateBendOnlyStatesForCurrentString(
                 Provider.of<CurrentSelectedNoteProvider>(context, listen: false)
                     .selectedRow,
                 Provider.of<CurrentSelectedNoteProvider>(context, listen: false)
