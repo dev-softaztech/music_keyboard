@@ -829,135 +829,131 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
 
                 if (isNextNote) {
                   final chords = widget.sheetNoteRows[selectedRow].chords;
+                  final bool isLastNoteInRow =
+                      selectedNoteIndex >= chords.length - 1;
 
-                  // Update bend end indices if in locked mode
-                  // Now we iterate through childNotes with bends
-                  if (_isBendActive ||
-                      _isPreBendActive ||
-                      _isBendReleaseActive ||
-                      _isPreBendReleaseActive) {
-                    for (int i = selectedNoteIndex; i >= 0; i--) {
-                      final chord = chords[i];
-                      if (chord.childNotes == null) continue;
+                  if (isLastNoteInRow) {
+                    if (_isBendActive ||
+                        _isPreBendActive ||
+                        _isBendReleaseActive ||
+                        _isPreBendReleaseActive) {
+                      for (int i = selectedNoteIndex; i >= 0; i--) {
+                        final chord = chords[i];
+                        if (chord.childNotes == null) continue;
 
-                      // Check each childNote for bends
-                      for (var childNote in chord.childNotes!) {
-                        //bool updated = false;
-
-                        // Update bend end indices only for locked bends on childNotes
-                        if (_isBendActive &&
-                            childNote.isBendStart &&
-                            childNote.bendEndIndex != null &&
-                            ((i <= selectedNoteIndex &&
-                                    selectedNoteIndex - 1 <=
-                                        childNote.bendEndIndex!) ||
-                                (childNote.bendEndIndex == i - 1))) {
-                          childNote.bendEndIndex = childNote.bendEndIndex! + 1;
-                          //updated = true;
+                        for (var childNote in chord.childNotes!) {
+                          if (_isBendActive &&
+                              childNote.isBendStart &&
+                              childNote.bendEndIndex != null &&
+                              ((i <= selectedNoteIndex &&
+                                      selectedNoteIndex - 1 <=
+                                          childNote.bendEndIndex!) ||
+                                  (childNote.bendEndIndex == i - 1))) {
+                            childNote.bendEndIndex =
+                                childNote.bendEndIndex! + 1;
+                          }
+                          if (_isPreBendActive &&
+                              childNote.isPreBendStart &&
+                              childNote.preBendEndIndex != null &&
+                              ((i <= selectedNoteIndex &&
+                                      selectedNoteIndex - 1 <=
+                                          childNote.preBendEndIndex!) ||
+                                  (childNote.preBendEndIndex == i - 1))) {
+                            childNote.preBendEndIndex =
+                                childNote.preBendEndIndex! + 1;
+                          }
+                          if (_isBendReleaseActive &&
+                              childNote.isBendReleaseStart &&
+                              childNote.bendReleaseEndIndex != null &&
+                              ((i <= selectedNoteIndex &&
+                                      selectedNoteIndex - 1 <=
+                                          childNote.bendReleaseEndIndex!) ||
+                                  (childNote.bendReleaseEndIndex == i - 1))) {
+                            childNote.bendReleaseEndIndex =
+                                childNote.bendReleaseEndIndex! + 1;
+                          }
+                          if (_isPreBendReleaseActive &&
+                              childNote.isPreBendReleaseStart &&
+                              childNote.preBendReleaseEndIndex != null &&
+                              ((i <= selectedNoteIndex &&
+                                      selectedNoteIndex - 1 <=
+                                          childNote.preBendReleaseEndIndex!) ||
+                                  (childNote.preBendReleaseEndIndex ==
+                                      i - 1))) {
+                            childNote.preBendReleaseEndIndex =
+                                childNote.preBendReleaseEndIndex! + 1;
+                          }
                         }
-                        if (_isPreBendActive &&
-                            childNote.isPreBendStart &&
-                            childNote.preBendEndIndex != null &&
-                            ((i <= selectedNoteIndex &&
-                                    selectedNoteIndex - 1 <=
-                                        childNote.preBendEndIndex!) ||
-                                (childNote.preBendEndIndex == i - 1))) {
-                          childNote.preBendEndIndex =
-                              childNote.preBendEndIndex! + 1;
-                          //updated = true;
-                        }
-                        if (_isBendReleaseActive &&
-                            childNote.isBendReleaseStart &&
-                            childNote.bendReleaseEndIndex != null &&
-                            ((i <= selectedNoteIndex &&
-                                    selectedNoteIndex - 1 <=
-                                        childNote.bendReleaseEndIndex!) ||
-                                (childNote.bendReleaseEndIndex == i - 1))) {
-                          childNote.bendReleaseEndIndex =
-                              childNote.bendReleaseEndIndex! + 1;
-                          //updated = true;
-                        }
-                        if (_isPreBendReleaseActive &&
-                            childNote.isPreBendReleaseStart &&
-                            childNote.preBendReleaseEndIndex != null &&
-                            ((i <= selectedNoteIndex &&
-                                    selectedNoteIndex - 1 <=
-                                        childNote.preBendReleaseEndIndex!) ||
-                                (childNote.preBendReleaseEndIndex == i - 1))) {
-                          childNote.preBendReleaseEndIndex =
-                              childNote.preBendReleaseEndIndex! + 1;
-                          //updated = true;
-                        }
-
-                        //if (updated) break;
                       }
                     }
-                  }
 
-                  // Update technique end indices if in locked mode
-                  if (_isMuteLocked ||
-                      _isPinchHarmonicLocked ||
-                      _isHarmonicLocked) {
-                    for (int i = selectedNoteIndex; i >= 0; i--) {
-                      final chord = chords[i];
+                    // Update technique end indices if in locked mode
+                    if (_isMuteLocked ||
+                        _isPinchHarmonicLocked ||
+                        _isHarmonicLocked) {
+                      for (int i = selectedNoteIndex; i >= 0; i--) {
+                        final chord = chords[i];
 
-                      // Update technique end indices only for locked techniques
-                      if (_isMuteLocked &&
-                          chord.isMuteStart &&
-                          chord.muteEndIndex != null &&
-                          ((i <= selectedNoteIndex &&
-                                  selectedNoteIndex - 1 <=
-                                      chord.muteEndIndex!) ||
-                              (chord.muteEndIndex == i - 1))) {
-                        chord.muteEndIndex = chord.muteEndIndex! + 1;
-                        break;
-                      }
-                      if (_isPinchHarmonicLocked &&
-                          chord.isPinchHarmonicStart &&
-                          chord.pinchHarmonicEndIndex != null &&
-                          ((i <= selectedNoteIndex &&
-                                  selectedNoteIndex - 1 <=
-                                      chord.pinchHarmonicEndIndex!) ||
-                              (chord.pinchHarmonicEndIndex == i - 1))) {
-                        chord.pinchHarmonicEndIndex =
-                            chord.pinchHarmonicEndIndex! + 1;
-                        break;
-                      }
-                      if (_isHarmonicLocked &&
-                          chord.isHarmonicStart &&
-                          chord.harmonicEndIndex != null &&
-                          ((i <= selectedNoteIndex &&
-                                  selectedNoteIndex - 1 <=
-                                      chord.harmonicEndIndex!) ||
-                              (chord.harmonicEndIndex == i - 1))) {
-                        chord.harmonicEndIndex = chord.harmonicEndIndex! + 1;
-                        break;
+                        if (_isMuteLocked &&
+                            chord.isMuteStart &&
+                            chord.muteEndIndex != null &&
+                            ((i <= selectedNoteIndex &&
+                                    selectedNoteIndex - 1 <=
+                                        chord.muteEndIndex!) ||
+                                (chord.muteEndIndex == i - 1))) {
+                          chord.muteEndIndex = chord.muteEndIndex! + 1;
+                          break;
+                        }
+                        if (_isPinchHarmonicLocked &&
+                            chord.isPinchHarmonicStart &&
+                            chord.pinchHarmonicEndIndex != null &&
+                            ((i <= selectedNoteIndex &&
+                                    selectedNoteIndex - 1 <=
+                                        chord.pinchHarmonicEndIndex!) ||
+                                (chord.pinchHarmonicEndIndex == i - 1))) {
+                          chord.pinchHarmonicEndIndex =
+                              chord.pinchHarmonicEndIndex! + 1;
+                          break;
+                        }
+                        if (_isHarmonicLocked &&
+                            chord.isHarmonicStart &&
+                            chord.harmonicEndIndex != null &&
+                            ((i <= selectedNoteIndex &&
+                                    selectedNoteIndex - 1 <=
+                                        chord.harmonicEndIndex!) ||
+                                (chord.harmonicEndIndex == i - 1))) {
+                          chord.harmonicEndIndex = chord.harmonicEndIndex! + 1;
+                          break;
+                        }
                       }
                     }
+
+                    int nextIndex = selectedNoteIndex + 1;
+
+                    MusicalNote emptyChord = MusicalNote(
+                      pitch: 'G',
+                      octave: 4,
+                      type: NoteType.fret,
+                      duration: 0.0,
+                      childNotes: [],
+                    );
+                    widget.onKeyPress(emptyChord);
+
+                    // Set flag to preserve lock state when navigating
+                    setState(() {
+                      _navigatedViaNextButton = true;
+                    });
+
+                    // Move to next position (onKeyPress will update the selected index)
+                    currentSelectedNoteProvider
+                        .updateSelectedIndexAndInsertionPoint(
+                            selectedRow, nextIndex);
+                  } else {
+                    // Not at the end of the row: just navigate to the next note
+                    currentSelectedNoteProvider
+                        .updateSelectedIndexAndInsertionPoint(
+                            selectedRow, selectedNoteIndex + 1);
                   }
-
-                  // Next button: Always add a new note
-                  int nextIndex = selectedNoteIndex + 1;
-
-                  // Create empty chord with G as default pitch
-                  MusicalNote emptyChord = MusicalNote(
-                    pitch: 'G',
-                    octave: 4,
-                    type: NoteType.fret,
-                    duration: 0.0,
-                    childNotes: [],
-                  );
-                  widget.onKeyPress(emptyChord);
-
-                  // Set flag to preserve lock state when navigating
-                  setState(() {
-                    _navigatedViaNextButton = true;
-                  });
-
-                  // Move to next position (onKeyPress will update the selected index)
-                  currentSelectedNoteProvider
-                      .updateSelectedIndexAndInsertionPoint(
-                          selectedRow, nextIndex);
                 } else {
                   // Back button: Move to previous chord position
                   if (selectedNoteIndex > 0) {
