@@ -66,7 +66,7 @@ extension SheetFormatExtension on SheetFormat {
           case KeyboardType.drumTab:
             return ['\uf472']; // Treble clef
           case KeyboardType.guitarTab:
-            return ['\uF40C']; // Tab clef
+            return []; // Tab clef
         }
       case SheetFormat.twoRows:
         switch (keyboardType) {

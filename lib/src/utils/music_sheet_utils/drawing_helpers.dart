@@ -554,6 +554,29 @@ void drawLedgerLines(Canvas canvas, Paint paint, double noteY, double noteX,
   }
 }
 
+/// Always draw the guitar tab clef symbol (\uF40C) at the start of a row
+void drawGuitarTabRowClef(Canvas canvas, double lineSpacing, double staffTop,
+    double noteX, Color noteColour) {
+  final textPainter = TextPainter(
+    text: TextSpan(
+      text: '\uF40C',
+      style: TextStyle(
+        fontFamily: 'Bravura',
+        fontSize: 35,
+        color: noteColour,
+      ),
+    ),
+    textDirection: TextDirection.ltr,
+  );
+
+  textPainter.layout();
+  final offsetX = noteX - textPainter.width / 2;
+  double offsetY = staffTop - (lineSpacing * 4) - 1;
+  offsetY = offsetY - 4;
+
+  textPainter.paint(canvas, Offset(offsetX, offsetY + 0.5));
+}
+
 /// Draw guitar tab fret numbers on the staff
 /// Only draws childNotes, not the parent chord
 void drawGuitarTabFrets(Canvas canvas, MusicalNote parentChord,

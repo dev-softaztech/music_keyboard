@@ -177,6 +177,11 @@ class MusicSheetPainter extends CustomPainter {
           additionalMarginOffset;
       drawStaffLines(canvas, paint, staffTop, lineSpacing, sheetHeight, size);
 
+      // Always draw the guitar tab clef symbol at the start of each row
+      if (keyboardType == KeyboardType.guitarTab) {
+        drawGuitarTabRowClef(canvas, lineSpacing, staffTop, 70, Colors.black);
+      }
+
       // Draw bar number above the start of this row
       _drawBarNumber(canvas, rowIndex, staffTop);
 
