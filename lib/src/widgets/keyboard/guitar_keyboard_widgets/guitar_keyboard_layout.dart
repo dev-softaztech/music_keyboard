@@ -251,9 +251,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       _isMuteActive = false;
       _isPinchHarmonicActive = false;
       _isHarmonicActive = false;
-      _isMuteLocked = false;
-      _isPinchHarmonicLocked = false;
-      _isHarmonicLocked = false;
+
       return;
     }
 
@@ -280,9 +278,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       _isMuteActive = false;
       _isPinchHarmonicActive = false;
       _isHarmonicActive = false;
-      _isMuteLocked = false;
-      _isPinchHarmonicLocked = false;
-      _isHarmonicLocked = false;
       return;
     }
 
@@ -928,14 +923,14 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                   }
 
                   // Update technique end indices if in locked mode
-                  if (_isMuteActive ||
-                      _isPinchHarmonicActive ||
-                      _isHarmonicActive) {
+                  if (_isMuteLocked ||
+                      _isPinchHarmonicLocked ||
+                      _isHarmonicLocked) {
                     for (int i = selectedNoteIndex; i >= 0; i--) {
                       final chord = chords[i];
 
                       // Update technique end indices only for locked techniques
-                      if (_isMuteActive &&
+                      if (_isMuteLocked &&
                           chord.isMuteStart &&
                           chord.muteEndIndex != null &&
                           ((i <= selectedNoteIndex &&
@@ -945,7 +940,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                         chord.muteEndIndex = chord.muteEndIndex! + 1;
                         break;
                       }
-                      if (_isPinchHarmonicActive &&
+                      if (_isPinchHarmonicLocked &&
                           chord.isPinchHarmonicStart &&
                           chord.pinchHarmonicEndIndex != null &&
                           ((i <= selectedNoteIndex &&
@@ -956,7 +951,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                             chord.pinchHarmonicEndIndex! + 1;
                         break;
                       }
-                      if (_isHarmonicActive &&
+                      if (_isHarmonicLocked &&
                           chord.isHarmonicStart &&
                           chord.harmonicEndIndex != null &&
                           ((i <= selectedNoteIndex &&
