@@ -56,7 +56,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
   bool _isMuteLocked = false;
   bool _isPinchHarmonicLocked = false;
   bool _isHarmonicLocked = false;
-  bool _isTapRightHandLocked = false;
 
   // Track previous selected note to detect changes
   int _previousSelectedRow = -1;
@@ -619,7 +618,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
           break;
         case 'tap-right-hand':
           isCurrentlyActive = _isTapRightHandActive;
-          isCurrentlyLocked = _isTapRightHandLocked;
+          isCurrentlyLocked = false;
           break;
       }
 
@@ -646,9 +645,8 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
             chord.harmonicEndIndex = selectedNoteIndex - 1;
             break;
           case 'tap-right-hand':
-            _isTapRightHandActive = true;
-            _isTapRightHandLocked = true;
-            chord.tapRightHandCharacter =
+            _isTapRightHandActive = !_isTapRightHandActive;
+            chord.tapRightHandCharacter = chord.tapRightHandCharacter =
                 '\uEA8B'; // Unicode for tap-right-hand
             break;
         }
@@ -663,9 +661,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
             break;
           case 'harmonic':
             _isHarmonicLocked = false;
-            break;
-          case 'tap-right-hand':
-            _isTapRightHandLocked = false;
             break;
         }
       } else {
@@ -691,7 +686,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
             break;
           case 'tap-right-hand':
             _isTapRightHandActive = false;
-            _isTapRightHandLocked = false;
             chord.tapRightHandCharacter = '';
             break;
         }
@@ -718,7 +712,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       }
       if (techniqueType != 'tap-right-hand') {
         _isTapRightHandActive = false;
-        _isTapRightHandLocked = false;
         chord.tapRightHandCharacter = '';
       }
     });
@@ -1208,7 +1201,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                           onPressed: () => _handleTechniqueButtonPress(
                               'tap-right-hand', selectedRow, selectedNoteIndex),
                           isActive: _isTapRightHandActive,
-                          isLocked: _isTapRightHandLocked),
+                          isLocked: false),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('harmonic', 'Ham.',
                           fontSize: 12,
