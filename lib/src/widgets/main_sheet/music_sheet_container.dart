@@ -888,7 +888,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
     var rowSpacingList = context.read<ListOfSpacingForEachRow>().rowSpacingList;
     var currentRowSpacing = rowSpacingList[selectedRow];
 
-    return calculateInsertionIndex(tapX, notes, currentRowSpacing);
+    return calculateInsertionIndex(tapX, notes, currentRowSpacing,
+        startingX: widget.keyboardType.startingNoteX);
   }
 
   double _getStaffTop(int rowIndex) {

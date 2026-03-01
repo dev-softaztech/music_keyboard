@@ -16,12 +16,13 @@ double getNoteWidth(MusicalNote note) {
 
 /// Calculate the selected note based on tap position
 int calculateInsertionIndex(
-    double tapPositionX, List<MusicalNote> notes, double rowSpacing) {
+    double tapPositionX, List<MusicalNote> notes, double rowSpacing,
+    {double startingX = 85.0}) {
   if (notes.isEmpty) {
     return 0;
   }
 
-  double currentX = 85.0; // Starting X position
+  double currentX = startingX; // Starting X position
   double halfRowSpacing = rowSpacing / 2;
 
   for (int i = 0; i < notes.length; i++) {
@@ -79,8 +80,9 @@ int calculateInsertionIndex(
 
 /// Calculate the X position for a given index in the row
 double calculateXPositionForIndex(int index, List<MusicalNote> notes,
-    double rowSpacing, bool isNoteStartXForHighlight) {
-  double x = 85.0;
+    double rowSpacing, bool isNoteStartXForHighlight,
+    {double startingX = 85.0}) {
+  double x = startingX;
 
   if (index == -1) {
     return 70;

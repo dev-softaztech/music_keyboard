@@ -206,7 +206,7 @@ class MusicSheetPainter extends CustomPainter {
       // Draw swing below the tempo if set
       _drawSwing(canvas, rowIndex, staffTop, tempoTextY);
 
-      double x = 85.0;
+      double x = keyboardType.startingNoteX;
       double currentRowSpacing = rowSpacingList[rowIndex];
 
       // Set duration values for notes in this row
@@ -235,7 +235,7 @@ class MusicSheetPainter extends CustomPainter {
             bool isOverfilled
           })> bars = [];
       int barStartIndex = 0;
-      double barStartX = 85.0;
+      double barStartX = keyboardType.startingNoteX;
       double currentBarDuration = 0.0;
       MusicalNote? currentBarTimeSignature = timeSignature;
 
@@ -303,8 +303,8 @@ class MusicSheetPainter extends CustomPainter {
 
       // Add the final bar if there are notes after the last bar line
       if (barStartIndex < sheetNoteRows[rowIndex].chords.length) {
-        double endX =
-            85.0 + (sheetNoteRows[rowIndex].chords.length * currentRowSpacing);
+        double endX = keyboardType.startingNoteX +
+            (sheetNoteRows[rowIndex].chords.length * currentRowSpacing);
         bool isOverfilled = currentBarTimeSignature != null &&
             BarLineCalculator.hasBarTooManyNotes(
                 currentBarDuration, currentBarTimeSignature);
@@ -319,7 +319,7 @@ class MusicSheetPainter extends CustomPainter {
       }
 
       // Second pass: draw all notes
-      x = 85.0; // Reset x position for drawing
+      x = keyboardType.startingNoteX; // Reset x position for drawing
       for (int i = 0; i < sheetNoteRows[rowIndex].chords.length; i++) {
         MusicalNote chord = sheetNoteRows[rowIndex].chords[i];
 
@@ -442,7 +442,7 @@ class MusicSheetPainter extends CustomPainter {
               chord.pitch, chord.octave, lineSpacing, staffTop);
 
           // Calculate endX by accounting for space note spacing
-          double endX = 85.0;
+          double endX = keyboardType.startingNoteX;
           for (int index = 0; index <= slurEndIndex; index++) {
             final currentNote = sheetNoteRows[rowIndex].chords[index];
 
@@ -490,7 +490,7 @@ class MusicSheetPainter extends CustomPainter {
               : sheetNoteRows[rowIndex].chords.length - 1;
 
           // Calculate endX by accounting for space note spacing
-          double crescendoEndX = 85.0;
+          double crescendoEndX = keyboardType.startingNoteX;
           for (int index = 0; index <= crescendoEndIndex; index++) {
             final currentNote = sheetNoteRows[rowIndex].chords[index];
 
@@ -520,7 +520,7 @@ class MusicSheetPainter extends CustomPainter {
               : sheetNoteRows[rowIndex].chords.length - 1;
 
           // Calculate endX by accounting for space note spacing
-          double decrescendoEndX = 85.0;
+          double decrescendoEndX = keyboardType.startingNoteX;
           for (int index = 0; index <= decrescendoEndIndex; index++) {
             final currentNote = sheetNoteRows[rowIndex].chords[index];
 
@@ -1069,7 +1069,7 @@ class MusicSheetPainter extends CustomPainter {
 
           if (note.type == NoteType.bar) {
             // Calculate X position for this bar
-            double x = 85.0;
+            double x = keyboardType.startingNoteX;
             for (int i = 0; i < noteIndex; i++) {
               if (i < sheetNoteRows[rowIndex].chords.length) {
                 MusicalNote prevNote = sheetNoteRows[rowIndex].chords[i];
@@ -1103,7 +1103,8 @@ class MusicSheetPainter extends CustomPainter {
       // Only draw connecting line if ALL rows in the group have a bar at this index
       if (rowsWithBarsAtIndex.length == (groupEndRow - groupStartRow + 1)) {
         // All rows have a bar at this index, use the X position from the first row
-        double barX = rowsWithBarsAtIndex[groupStartRow] ?? 85.0;
+        double barX =
+            rowsWithBarsAtIndex[groupStartRow] ?? keyboardType.startingNoteX;
 
         canvas.drawLine(
           Offset(barX, topStaffTop),
@@ -1461,9 +1462,10 @@ class MusicSheetPainter extends CustomPainter {
     }
     // Calculate cursor X position using the new note width calculator
     double cursorX = notes.isEmpty
-        ? 85.0
+        ? keyboardType.startingNoteX
         : calculateXPositionForIndex(
-            insertionIndex - 1, notes, rowSpacing, false);
+            insertionIndex - 1, notes, rowSpacing, false,
+            startingX: keyboardType.startingNoteX);
 
     double cursorY = staffTop + (lineSpacing * 2);
 
@@ -2076,9 +2078,11 @@ class MusicSheetPainter extends CustomPainter {
         selectionStart! > selectionEnd! ? selectionStart! : selectionEnd!;
 
     final double startX = calculateXPositionForIndex(
-        start, rowNotes, rowSpacingList[rowIndex], true);
+        start, rowNotes, rowSpacingList[rowIndex], true,
+        startingX: keyboardType.startingNoteX);
     final double endX = calculateXPositionForIndex(
-        end, rowNotes, rowSpacingList[rowIndex], false);
+        end, rowNotes, rowSpacingList[rowIndex], false,
+        startingX: keyboardType.startingNoteX);
 
     double min_y = double.infinity;
     double max_y = double.negativeInfinity;
@@ -2216,7 +2220,7 @@ class MusicSheetPainter extends CustomPainter {
   }
 
   double endXForIndex(int index, double currentRowSpacing) {
-    return 85.0 + (index * currentRowSpacing);
+    return keyboardType.startingNoteX + (index * currentRowSpacing);
   }
 
   void _drawDynamicCharacter(

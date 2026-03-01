@@ -47,4 +47,16 @@ extension KeyboardTypeExtension on KeyboardType {
         return 6;
     }
   }
+
+  /// Returns the starting x position for notes on a row for this keyboard type
+  double get startingNoteX {
+    switch (this) {
+      case KeyboardType.sheet:
+        return 85.0;
+      case KeyboardType.drumTab:
+        return 85.0;
+      case KeyboardType.guitarTab:
+        return 110.0;
+    }
+  }
 }
