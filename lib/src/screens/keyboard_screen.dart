@@ -549,6 +549,17 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         ));
       }
 
+      // For guitar tab sheets, add the default fret chord
+      if (sheet.keyboardType == KeyboardType.guitarTab) {
+        newRow.chords.add(MusicalNote(
+          pitch: 'G',
+          octave: 4,
+          type: NoteType.fret,
+          duration: 0.0,
+          childNotes: [],
+        ));
+      }
+
       sheet.sheetRows.insert(insertionPoint + i, newRow);
       rowSpacingList.insert(insertionPoint + i, defaultNoteSpacing);
     }
@@ -978,6 +989,17 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
               isBeamed: false,
               unicodeCharacter: clefs[i],
               clefType: clefs[i],
+            ));
+          }
+
+          // For guitar tab sheets, add the default fret chord
+          if (sheet.keyboardType == KeyboardType.guitarTab) {
+            newRow.chords.add(MusicalNote(
+              pitch: 'G',
+              octave: 4,
+              type: NoteType.fret,
+              duration: 0.0,
+              childNotes: [],
             ));
           }
 

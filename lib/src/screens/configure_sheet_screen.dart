@@ -461,6 +461,17 @@ class _ConfigureSheetScreenState extends State<ConfigureSheetScreen> {
           ));
         }
 
+        // For guitar tab sheets, add the default fret chord
+        if (_selectedKeyboardType == KeyboardType.guitarTab) {
+          row.chords.add(MusicalNote(
+            pitch: 'G',
+            octave: 4,
+            type: NoteType.fret,
+            duration: 0.0,
+            childNotes: [],
+          ));
+        }
+
         initialRows.add(row);
       }
 
