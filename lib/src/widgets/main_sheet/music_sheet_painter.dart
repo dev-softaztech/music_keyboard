@@ -713,8 +713,13 @@ class MusicSheetPainter extends CustomPainter {
             double muteEndX = x + ((indexDistanceCount) * currentRowSpacing);
             muteEndX += (currentRowSpacing * 0.85);
 
+            // Check if any chord whose bend range overlaps [i, muteEndIndex]
+            bool hasBendForMute = hasBend ||
+                _hasBendOverlappingRange(
+                    sheetNoteRows[rowIndex].chords, i, muteEndIndex);
+
             _drawMute(canvas, paint, x, muteEndX, staffTop, lineSpacing,
-                noteColour, hasBend, isSingleChordSpan);
+                noteColour, hasBendForMute, isSingleChordSpan);
           }
 
           // Check for pinch harmonic technique
@@ -734,8 +739,21 @@ class MusicSheetPainter extends CustomPainter {
                 x + ((indexDistanceCount) * currentRowSpacing);
             pinchHarmonicEndX += (currentRowSpacing * 0.85);
 
-            _drawPinchHarmonic(canvas, paint, x, pinchHarmonicEndX, staffTop,
-                lineSpacing, noteColour, hasBend, isSingleChordSpan);
+            // Check if any chord whose bend range overlaps [i, pinchHarmonicEndIndex]
+            bool hasBendForPinchHarmonic = hasBend ||
+                _hasBendOverlappingRange(
+                    sheetNoteRows[rowIndex].chords, i, pinchHarmonicEndIndex);
+
+            _drawPinchHarmonic(
+                canvas,
+                paint,
+                x,
+                pinchHarmonicEndX,
+                staffTop,
+                lineSpacing,
+                noteColour,
+                hasBendForPinchHarmonic,
+                isSingleChordSpan);
           }
 
           // Check for harmonic technique
@@ -754,8 +772,13 @@ class MusicSheetPainter extends CustomPainter {
                 x + ((indexDistanceCount) * currentRowSpacing);
             harmonicEndX += (currentRowSpacing * 0.85);
 
+            // Check if any chord whose bend range overlaps [i, harmonicEndIndex]
+            bool hasBendForHarmonic = hasBend ||
+                _hasBendOverlappingRange(
+                    sheetNoteRows[rowIndex].chords, i, harmonicEndIndex);
+
             _drawHarmonic(canvas, paint, x, harmonicEndX, staffTop, lineSpacing,
-                noteColour, hasBend, isSingleChordSpan);
+                noteColour, hasBendForHarmonic, isSingleChordSpan);
           }
 
           // Check for vibrato technique
@@ -773,8 +796,22 @@ class MusicSheetPainter extends CustomPainter {
             double vibratoEndX = x + ((indexDistanceCount) * currentRowSpacing);
             vibratoEndX += (currentRowSpacing * 0.85);
 
-            _drawVibrato(canvas, paint, x, vibratoEndX, staffTop, lineSpacing,
-                noteColour, hasBend, isSingleChordSpan, currentRowSpacing);
+            // Check if any chord whose bend range overlaps [i, vibratoEndIndex]
+            bool hasBendForVibrato = hasBend ||
+                _hasBendOverlappingRange(
+                    sheetNoteRows[rowIndex].chords, i, vibratoEndIndex);
+
+            _drawVibrato(
+                canvas,
+                paint,
+                x,
+                vibratoEndX,
+                staffTop,
+                lineSpacing,
+                noteColour,
+                hasBendForVibrato,
+                isSingleChordSpan,
+                currentRowSpacing);
           }
         }
 
@@ -2967,6 +3004,50 @@ class MusicSheetPainter extends CustomPainter {
     double yPos = symbolY - 20;
 
     textPainter.paint(canvas, Offset(xPos, yPos));
+  }
+
+  /// Checks whether any chord in [chords] has a bend (on any childNote) whose
+  /// normalized index range [j, normalizedBendEnd] overlaps with [startIndex, endIndex].
+  /// Two ranges [a, b] and [c, d] overlap when a <= d && c <= b.
+  bool _hasBendOverlappingRange(
+      List<MusicalNote> chords, int startIndex, int endIndex) {
+    for (int j = 0; j < chords.length; j++) {
+      final chord = chords[j];
+      if (chord.childNotes == null) continue;
+
+      for (var childNote in chord.childNotes!) {
+        int? rawBendEnd;
+
+        if (childNote.isBendStart && childNote.bendEndIndex != null) {
+          rawBendEnd = childNote.bendEndIndex;
+        } else if (childNote.isPreBendStart &&
+            childNote.preBendEndIndex != null) {
+          rawBendEnd = childNote.preBendEndIndex;
+        } else if (childNote.isBendReleaseStart &&
+            childNote.bendReleaseEndIndex != null) {
+          rawBendEnd = childNote.bendReleaseEndIndex;
+        } else if (childNote.isPreBendReleaseStart &&
+            childNote.preBendReleaseEndIndex != null) {
+          rawBendEnd = childNote.preBendReleaseEndIndex;
+        }
+
+        if (rawBendEnd != null) {
+          // Normalize the bend end index the same way the painter does
+          final int normalizedBendEnd = rawBendEnd == (j - 1)
+              ? j
+              : rawBendEnd < chords.length - 1
+                  ? rawBendEnd
+                  : chords.length - 1;
+
+          // Check if bend range [j, normalizedBendEnd] overlaps technique range
+          // [startIndex, endIndex]
+          if (j <= endIndex && normalizedBendEnd >= startIndex) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
   }
 
   double _hasBendOrHarmonicOnChord(MusicalNote chord) {
