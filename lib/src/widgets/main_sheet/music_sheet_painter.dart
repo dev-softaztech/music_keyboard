@@ -2810,7 +2810,7 @@ class MusicSheetPainter extends CustomPainter {
 
     final double symbolWidth = 10.0;
 
-    symbolCount = (distance / symbolWidth).ceil();
+    symbolCount = (distance / symbolWidth).floor();
     symbolCount = math.max(1, symbolCount);
 
     for (int i = 0; i < symbolCount; i++) {

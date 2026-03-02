@@ -737,6 +737,8 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
         return chord.isPinchHarmonicStart;
       case 'harmonic':
         return chord.isHarmonicStart;
+      case 'vibrato':
+        return chord.isVibratoStart;
       default:
         return false;
     }
@@ -1187,7 +1189,9 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                           offset: Offset(0, 3),
                           onPressed: () => _handleTechniqueButtonPress(
                               'vibrato', selectedRow, selectedNoteIndex),
-                          isActive: _isVibratoActive,
+                          isActive: _isVibratoActive ||
+                              _checkIfCurrentChordHasTechnique(
+                                  'vibrato', selectedRow, selectedNoteIndex),
                           isLocked: _isVibratoLocked),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('hammer-left-hand', '\uE4BA',
