@@ -46,6 +46,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
   bool _isMuteActive = false;
   bool _isPinchHarmonicActive = false;
   bool _isHarmonicActive = false;
+  bool _isVibratoActive = false;
   bool _isTapRightHandActive = false;
 
   // Lock state tracking for three-tap behavior
@@ -56,6 +57,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
   bool _isMuteLocked = false;
   bool _isPinchHarmonicLocked = false;
   bool _isHarmonicLocked = false;
+  bool _isVibratoLocked = false;
 
   // Track previous selected note to detect changes
   int _previousSelectedRow = -1;
@@ -620,6 +622,10 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
           isCurrentlyActive = _isTapRightHandActive;
           isCurrentlyLocked = false;
           break;
+        case 'vibrato':
+          isCurrentlyActive = _isVibratoActive;
+          isCurrentlyLocked = _isVibratoLocked;
+          break;
       }
 
       // Three-tap behavior logic
@@ -648,6 +654,12 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
             _isTapRightHandActive = !_isTapRightHandActive;
             chord.tapRightHandCharacter = chord.tapRightHandCharacter =
                 '\uEA8B'; // Unicode for tap-right-hand
+            break;
+          case 'vibrato':
+            _isVibratoActive = true;
+            _isVibratoLocked = true;
+            chord.isVibratoStart = true;
+            chord.vibratoEndIndex = selectedNoteIndex - 1;
             break;
         }
       } else if (isCurrentlyActive && isCurrentlyLocked) {
@@ -907,7 +919,8 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                     // Update technique end indices if in locked mode
                     if (_isMuteLocked ||
                         _isPinchHarmonicLocked ||
-                        _isHarmonicLocked) {
+                        _isHarmonicLocked ||
+                        _isVibratoLocked) {
                       for (int i = selectedNoteIndex; i >= 0; i--) {
                         final chord = chords[i];
 
@@ -940,6 +953,16 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                                         chord.harmonicEndIndex!) ||
                                 (chord.harmonicEndIndex == i - 1))) {
                           chord.harmonicEndIndex = chord.harmonicEndIndex! + 1;
+                          break;
+                        }
+                        if (_isVibratoLocked &&
+                            chord.isVibratoStart &&
+                            chord.vibratoEndIndex != null &&
+                            ((i <= selectedNoteIndex &&
+                                    selectedNoteIndex - 1 <=
+                                        chord.vibratoEndIndex!) ||
+                                (chord.vibratoEndIndex == i - 1))) {
+                          chord.vibratoEndIndex = chord.vibratoEndIndex! + 1;
                           break;
                         }
                       }
@@ -1040,6 +1063,8 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
               _isMuteActive = false;
               _isPinchHarmonicActive = false;
               _isHarmonicActive = false;
+              _isVibratoActive = false;
+              _isVibratoLocked = false;
             }
             // Reset the flag after checking
             _navigatedViaNextButton = false;
@@ -1158,7 +1183,12 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                           isLocked: _isPinchHarmonicLocked),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('vibrato', '\uE56E',
-                          fontSize: 20, offset: Offset(0, 3)),
+                          fontSize: 20,
+                          offset: Offset(0, 3),
+                          onPressed: () => _handleTechniqueButtonPress(
+                              'vibrato', selectedRow, selectedNoteIndex),
+                          isActive: _isVibratoActive,
+                          isLocked: _isVibratoLocked),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('hammer-left-hand', '\uE4BA',
                           fontSize: 38, offset: Offset(0, -8)),

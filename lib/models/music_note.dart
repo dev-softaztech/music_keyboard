@@ -19,9 +19,11 @@ class MusicalNote {
   bool isMuteStart;
   bool isPinchHarmonicStart;
   bool isHarmonicStart;
+  bool isVibratoStart;
   int? muteEndIndex;
   int? pinchHarmonicEndIndex;
   int? harmonicEndIndex;
+  int? vibratoEndIndex;
   final String unicodeCharacter;
   final String accidentalCharacter; // Unicode character for the accidental
   int? slurEndIndex;
@@ -65,9 +67,11 @@ class MusicalNote {
       this.isMuteStart = false,
       this.isPinchHarmonicStart = false,
       this.isHarmonicStart = false,
+      this.isVibratoStart = false,
       this.muteEndIndex,
       this.pinchHarmonicEndIndex,
       this.harmonicEndIndex,
+      this.vibratoEndIndex,
       this.slurEndIndex,
       this.unicodeCharacter = "",
       this.accidentalCharacter = "",
@@ -111,9 +115,11 @@ class MusicalNote {
         isMuteStart: isMuteStart,
         isPinchHarmonicStart: isPinchHarmonicStart,
         isHarmonicStart: isHarmonicStart,
+        isVibratoStart: isVibratoStart,
         muteEndIndex: muteEndIndex,
         pinchHarmonicEndIndex: pinchHarmonicEndIndex,
         harmonicEndIndex: harmonicEndIndex,
+        vibratoEndIndex: vibratoEndIndex,
         slurEndIndex: slurEndIndex,
         unicodeCharacter: unicodeCharacter,
         accidentalCharacter: accidentalCharacter,
@@ -158,9 +164,11 @@ class MusicalNote {
       'isMuteStart': isMuteStart,
       'isPinchHarmonicStart': isPinchHarmonicStart,
       'isHarmonicStart': isHarmonicStart,
+      'isVibratoStart': isVibratoStart,
       'muteEndIndex': muteEndIndex,
       'pinchHarmonicEndIndex': pinchHarmonicEndIndex,
       'harmonicEndIndex': harmonicEndIndex,
+      'vibratoEndIndex': vibratoEndIndex,
       'unicodeCharacter': unicodeCharacter,
       'accidentalCharacter': accidentalCharacter,
       'slurEndIndex': slurEndIndex,
@@ -208,6 +216,7 @@ class MusicalNote {
       muteEndIndex: json['muteEndIndex'],
       pinchHarmonicEndIndex: json['pinchHarmonicEndIndex'],
       harmonicEndIndex: json['harmonicEndIndex'],
+      vibratoEndIndex: json['vibratoEndIndex'],
       unicodeCharacter: json['unicodeCharacter'] ?? '',
       accidentalCharacter: json['accidentalCharacter'] ?? '',
       slurEndIndex: json['slurEndIndex'],

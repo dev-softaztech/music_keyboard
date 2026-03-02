@@ -757,6 +757,25 @@ class MusicSheetPainter extends CustomPainter {
             _drawHarmonic(canvas, paint, x, harmonicEndX, staffTop, lineSpacing,
                 noteColour, hasBend, isSingleChordSpan);
           }
+
+          // Check for vibrato technique
+          if (chord.isVibratoStart && chord.vibratoEndIndex != null) {
+            bool isSingleChordSpan = chord.vibratoEndIndex! == (i - 1);
+            var vibratoEndIndex = isSingleChordSpan
+                ? i
+                : chord.vibratoEndIndex! <
+                        sheetNoteRows[rowIndex].chords.length - 1
+                    ? chord.vibratoEndIndex!
+                    : sheetNoteRows[rowIndex].chords.length - 1;
+
+            var indexDistanceCount = vibratoEndIndex - i;
+
+            double vibratoEndX = x + ((indexDistanceCount) * currentRowSpacing);
+            vibratoEndX += (currentRowSpacing * 0.85);
+
+            _drawVibrato(canvas, paint, x, vibratoEndX, staffTop, lineSpacing,
+                noteColour, hasBend, isSingleChordSpan, currentRowSpacing);
+          }
         }
 
         // Calculate spacing for space notes
@@ -2769,6 +2788,48 @@ class MusicSheetPainter extends CustomPainter {
     if (!isSingleChordSpan) {
       _drawDottedLine(
           canvas, paint, textPainter, startX, endX, labelY, noteColour);
+    }
+  }
+
+  /// Draw vibrato technique (vibrato unicode character with multiple instances)
+  void _drawVibrato(
+      Canvas canvas,
+      Paint paint,
+      double startX,
+      double endX,
+      double staffTop,
+      double lineSpacing,
+      Color noteColour,
+      bool hasBend,
+      bool isSingleChordSpan,
+      double rowSpacing) {
+    final double labelY = hasBend ? staffTop - 70 : staffTop - 40;
+
+    double distance = endX - startX;
+    int symbolCount = 1;
+
+    final double symbolWidth = 10.0;
+
+    symbolCount = (distance / symbolWidth).ceil();
+    symbolCount = math.max(1, symbolCount);
+
+    for (int i = 0; i < symbolCount; i++) {
+      double symbolX = startX + (i * symbolWidth);
+
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: '\uE56E',
+          style: TextStyle(
+            fontFamily: 'Bravura',
+            fontSize: 20,
+            color: noteColour,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      textPainter.layout();
+      double xPos = symbolX;
+      textPainter.paint(canvas, Offset(xPos, labelY - 10));
     }
   }
 
