@@ -107,6 +107,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   int? _pdfRenderEndRow;
   bool _pdfShowTitleAndComposer = true;
 
+  // Guitar keyboard space handler – registered by GuitarKeyboardLayout
+  VoidCallback? _guitarSpaceHandler;
+
   // Database helper for clipboard operations
   late SheetDatabaseHelper _dbHelper;
 
@@ -1551,6 +1554,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
             });
           },
           onKeyPress: handleKeyPress,
+          onRegisterSpaceHandler: (handler) {
+            _guitarSpaceHandler = handler;
+          },
         );
     }
   }
@@ -2437,13 +2443,23 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                                 onPressed: () {
                                                   if (sheet.keyboardType ==
                                                       KeyboardType.guitarTab) {
-                                                    handleKeyPress(MusicalNote(
-                                                      pitch: 'G',
-                                                      octave: 4,
-                                                      type: NoteType.fret,
-                                                      duration: 0.0,
-                                                      childNotes: [],
-                                                    ));
+                                                    // Use the guitar keyboard's space handler so that
+                                                    // endIndices for active techniques (harmonic, bend,
+                                                    // vibrato, etc.) are updated before the new fret
+                                                    // chord is inserted, matching the Next button logic.
+                                                    if (_guitarSpaceHandler !=
+                                                        null) {
+                                                      _guitarSpaceHandler!();
+                                                    } else {
+                                                      handleKeyPress(
+                                                          MusicalNote(
+                                                        pitch: 'G',
+                                                        octave: 4,
+                                                        type: NoteType.fret,
+                                                        duration: 0.0,
+                                                        childNotes: [],
+                                                      ));
+                                                    }
                                                   } else {
                                                     handleKeyPress(MusicalNote(
                                                         pitch: "D",
