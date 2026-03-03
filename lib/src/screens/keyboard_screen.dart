@@ -1164,6 +1164,57 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
           }
         }
 
+        // Handle guitar technique endIndex adjustments for backspace
+        // If the current selected chords index in the row is within an endIndex on another chord,
+        // then the endIndex should be reduced by 1 to ensure it remains valid
+        if (sheet.keyboardType == KeyboardType.guitarTab) {
+          final int currentSelectedIndex = selectedNoteProvider.selectedIndex;
+
+          for (var note in notes) {
+            // Check chord-level techniques
+            if (note.harmonicEndIndex != null &&
+                currentSelectedIndex <= note.harmonicEndIndex!) {
+              note.harmonicEndIndex = note.harmonicEndIndex! - 1;
+            }
+            if (note.vibratoEndIndex != null &&
+                currentSelectedIndex <= note.vibratoEndIndex!) {
+              note.vibratoEndIndex = note.vibratoEndIndex! - 1;
+            }
+            if (note.muteEndIndex != null &&
+                currentSelectedIndex <= note.muteEndIndex!) {
+              note.muteEndIndex = note.muteEndIndex! - 1;
+            }
+            if (note.pinchHarmonicEndIndex != null &&
+                currentSelectedIndex <= note.pinchHarmonicEndIndex!) {
+              note.pinchHarmonicEndIndex = note.pinchHarmonicEndIndex! - 1;
+            }
+
+            // Check per-string bend techniques (stored on childNotes)
+            if (note.childNotes != null) {
+              for (var childNote in note.childNotes!) {
+                if (childNote.bendEndIndex != null &&
+                    currentSelectedIndex <= childNote.bendEndIndex!) {
+                  childNote.bendEndIndex = childNote.bendEndIndex! - 1;
+                }
+                if (childNote.preBendEndIndex != null &&
+                    currentSelectedIndex <= childNote.preBendEndIndex!) {
+                  childNote.preBendEndIndex = childNote.preBendEndIndex! - 1;
+                }
+                if (childNote.bendReleaseEndIndex != null &&
+                    currentSelectedIndex <= childNote.bendReleaseEndIndex!) {
+                  childNote.bendReleaseEndIndex =
+                      childNote.bendReleaseEndIndex! - 1;
+                }
+                if (childNote.preBendReleaseEndIndex != null &&
+                    currentSelectedIndex <= childNote.preBendReleaseEndIndex!) {
+                  childNote.preBendReleaseEndIndex =
+                      childNote.preBendReleaseEndIndex! - 1;
+                }
+              }
+            }
+          }
+        }
+
         selectedNoteProvider.adjustSlurIndicesForSpaceNote(
             noteToRemove, notes, removedNoteIndex, false);
       }
