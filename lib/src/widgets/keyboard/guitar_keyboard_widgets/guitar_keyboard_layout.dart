@@ -923,49 +923,62 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                         _isPinchHarmonicLocked ||
                         _isHarmonicLocked ||
                         _isVibratoLocked) {
+                      // Find the chord that has the active technique with lock
+                      MusicalNote? activeChord;
+                      String? activeTechniqueType;
+
                       for (int i = selectedNoteIndex; i >= 0; i--) {
                         final chord = chords[i];
 
                         if (_isMuteLocked &&
                             chord.isMuteStart &&
-                            chord.muteEndIndex != null &&
-                            ((i <= selectedNoteIndex &&
-                                    selectedNoteIndex - 1 <=
-                                        chord.muteEndIndex!) ||
-                                (chord.muteEndIndex == i - 1))) {
-                          chord.muteEndIndex = chord.muteEndIndex! + 1;
+                            chord.muteEndIndex != null) {
+                          activeChord = chord;
+                          activeTechniqueType = 'mute';
                           break;
                         }
                         if (_isPinchHarmonicLocked &&
                             chord.isPinchHarmonicStart &&
-                            chord.pinchHarmonicEndIndex != null &&
-                            ((i <= selectedNoteIndex &&
-                                    selectedNoteIndex - 1 <=
-                                        chord.pinchHarmonicEndIndex!) ||
-                                (chord.pinchHarmonicEndIndex == i - 1))) {
-                          chord.pinchHarmonicEndIndex =
-                              chord.pinchHarmonicEndIndex! + 1;
+                            chord.pinchHarmonicEndIndex != null) {
+                          activeChord = chord;
+                          activeTechniqueType = 'pinch-harmonic';
                           break;
                         }
                         if (_isHarmonicLocked &&
                             chord.isHarmonicStart &&
-                            chord.harmonicEndIndex != null &&
-                            ((i <= selectedNoteIndex &&
-                                    selectedNoteIndex - 1 <=
-                                        chord.harmonicEndIndex!) ||
-                                (chord.harmonicEndIndex == i - 1))) {
-                          chord.harmonicEndIndex = chord.harmonicEndIndex! + 1;
+                            chord.harmonicEndIndex != null) {
+                          activeChord = chord;
+                          activeTechniqueType = 'harmonic';
                           break;
                         }
                         if (_isVibratoLocked &&
                             chord.isVibratoStart &&
-                            chord.vibratoEndIndex != null &&
-                            ((i <= selectedNoteIndex &&
-                                    selectedNoteIndex - 1 <=
-                                        chord.vibratoEndIndex!) ||
-                                (chord.vibratoEndIndex == i - 1))) {
-                          chord.vibratoEndIndex = chord.vibratoEndIndex! + 1;
+                            chord.vibratoEndIndex != null) {
+                          activeChord = chord;
+                          activeTechniqueType = 'vibrato';
                           break;
+                        }
+                      }
+
+                      // Update the endIndex for the active technique
+                      if (activeChord != null && activeTechniqueType != null) {
+                        switch (activeTechniqueType) {
+                          case 'mute':
+                            activeChord.muteEndIndex =
+                                activeChord.muteEndIndex! + 1;
+                            break;
+                          case 'pinch-harmonic':
+                            activeChord.pinchHarmonicEndIndex =
+                                activeChord.pinchHarmonicEndIndex! + 1;
+                            break;
+                          case 'harmonic':
+                            activeChord.harmonicEndIndex =
+                                activeChord.harmonicEndIndex! + 1;
+                            break;
+                          case 'vibrato':
+                            activeChord.vibratoEndIndex =
+                                activeChord.vibratoEndIndex! + 1;
+                            break;
                         }
                       }
                     }
