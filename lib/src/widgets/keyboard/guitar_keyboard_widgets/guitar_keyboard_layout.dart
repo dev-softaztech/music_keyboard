@@ -50,6 +50,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
   bool _isHarmonicActive = false;
   bool _isVibratoActive = false;
   bool _isTapRightHandActive = false;
+  bool _isHammerLeftHandActive = false;
 
   // Lock state tracking for three-tap behavior
   bool _isBendLocked = false;
@@ -60,6 +61,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
   bool _isPinchHarmonicLocked = false;
   bool _isHarmonicLocked = false;
   bool _isVibratoLocked = false;
+  bool _isHammerLeftHandLocked = false;
 
   // Track previous selected note to detect changes
   int _previousSelectedRow = -1;
@@ -643,6 +645,66 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     }
   }
 
+  // Helper: Check if current childNote for selected string has hammer-left-hand start
+  bool _checkIfCurrentChildNoteHasHammerLeftHand(
+      int selectedRow, int selectedNoteIndex) {
+    final chord = _getCurrentChord(selectedRow, selectedNoteIndex);
+    if (chord == null || chord.childNotes == null) return false;
+
+    for (var child in chord.childNotes!) {
+      if (child.octave == _selectedStringIndex) {
+        return child.isHammerLeftHandStart;
+      }
+    }
+    return false;
+  }
+
+  // Helper: Handle hammer-left-hand button press for the selected string
+  void _handleHammerLeftHandButtonPress(
+      int selectedRow, int selectedNoteIndex) {
+    final chord = _getCurrentChord(selectedRow, selectedNoteIndex);
+    if (chord == null) return;
+
+    // Initialize childNotes if null
+    chord.childNotes ??= [];
+
+    // Find or create the childNote for the currently selected string
+    MusicalNote? childNote;
+    for (var child in chord.childNotes!) {
+      if (child.octave == _selectedStringIndex) {
+        childNote = child;
+        break;
+      }
+    }
+
+    // If no childNote exists for this string, create one with fret 0
+    childNote ??= _updateFretForString(
+        selectedRow, selectedNoteIndex, _selectedStringIndex, 0,
+        goToNextString: false);
+
+    setState(() {
+      bool isCurrentlyActive = _isHammerLeftHandActive;
+      bool isCurrentlyLocked = _isHammerLeftHandLocked;
+
+      if (!isCurrentlyActive) {
+        // First tap: set active and locked, endIndex = selectedNoteIndex
+        _isHammerLeftHandActive = true;
+        _isHammerLeftHandLocked = true;
+        childNote!.isHammerLeftHandStart = true;
+        childNote.hammerLeftHandEndIndex = selectedNoteIndex;
+      } else if (isCurrentlyActive && isCurrentlyLocked) {
+        // Second tap: active without lock
+        _isHammerLeftHandLocked = false;
+      } else {
+        // Third tap: turn off and remove from note
+        _isHammerLeftHandActive = false;
+        _isHammerLeftHandLocked = false;
+        childNote!.isHammerLeftHandStart = false;
+        childNote.hammerLeftHandEndIndex = null;
+      }
+    });
+  }
+
   // Helper: Handle technique button press (mute, pinch-harmonic, harmonic, tap-right-hand)
   void _handleTechniqueButtonPress(
       String techniqueType, int selectedRow, int selectedNoteIndex) {
@@ -967,6 +1029,26 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                       }
                     }
 
+                    // Update hammer-left-hand end indices if in locked mode
+                    if (_isHammerLeftHandLocked) {
+                      for (int i = selectedNoteIndex; i >= 0; i--) {
+                        final chord = chords[i];
+                        if (chord.childNotes == null) continue;
+
+                        for (var childNote in chord.childNotes!) {
+                          if (childNote.isHammerLeftHandStart &&
+                              childNote.hammerLeftHandEndIndex != null &&
+                              ((i <= selectedNoteIndex &&
+                                      selectedNoteIndex <=
+                                          childNote.hammerLeftHandEndIndex!) ||
+                                  (childNote.hammerLeftHandEndIndex == i))) {
+                            childNote.hammerLeftHandEndIndex =
+                                childNote.hammerLeftHandEndIndex! + 1;
+                          }
+                        }
+                      }
+                    }
+
                     // Update technique end indices if in locked mode
                     if (_isMuteLocked ||
                         _isPinchHarmonicLocked ||
@@ -1129,6 +1211,8 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
               _isHarmonicActive = false;
               _isVibratoActive = false;
               _isVibratoLocked = false;
+              _isHammerLeftHandActive = false;
+              _isHammerLeftHandLocked = false;
             }
             // Reset the flag after checking
             _navigatedViaNextButton = false;
@@ -1257,7 +1341,14 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                           isLocked: _isVibratoLocked),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('hammer-left-hand', '\uE4BA',
-                          fontSize: 38, offset: Offset(0, -8)),
+                          fontSize: 38,
+                          offset: Offset(0, -8),
+                          onPressed: () => _handleHammerLeftHandButtonPress(
+                              selectedRow, selectedNoteIndex),
+                          isActive: _isHammerLeftHandActive ||
+                              _checkIfCurrentChildNoteHasHammerLeftHand(
+                                  selectedRow, selectedNoteIndex),
+                          isLocked: _isHammerLeftHandLocked),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('bend', 'bend',
                           svgAssetPath: 'assets/svgs/bend.svg',

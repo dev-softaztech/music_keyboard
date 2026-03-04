@@ -12,10 +12,12 @@ class MusicalNote {
   bool isPreBendStart;
   bool isBendReleaseStart;
   bool isPreBendReleaseStart;
+  bool isHammerLeftHandStart;
   int? bendEndIndex;
   int? preBendEndIndex;
   int? bendReleaseEndIndex;
   int? preBendReleaseEndIndex;
+  int? hammerLeftHandEndIndex;
   bool isMuteStart;
   bool isPinchHarmonicStart;
   bool isHarmonicStart;
@@ -60,10 +62,12 @@ class MusicalNote {
       this.isPreBendStart = false,
       this.isBendReleaseStart = false,
       this.isPreBendReleaseStart = false,
+      this.isHammerLeftHandStart = false,
       this.bendEndIndex,
       this.preBendEndIndex,
       this.bendReleaseEndIndex,
       this.preBendReleaseEndIndex,
+      this.hammerLeftHandEndIndex,
       this.isMuteStart = false,
       this.isPinchHarmonicStart = false,
       this.isHarmonicStart = false,
@@ -108,10 +112,12 @@ class MusicalNote {
         isPreBendStart: isPreBendStart,
         isBendReleaseStart: isBendReleaseStart,
         isPreBendReleaseStart: isPreBendReleaseStart,
+        isHammerLeftHandStart: isHammerLeftHandStart,
         bendEndIndex: bendEndIndex,
         preBendEndIndex: preBendEndIndex,
         bendReleaseEndIndex: bendReleaseEndIndex,
         preBendReleaseEndIndex: preBendReleaseEndIndex,
+        hammerLeftHandEndIndex: hammerLeftHandEndIndex,
         isMuteStart: isMuteStart,
         isPinchHarmonicStart: isPinchHarmonicStart,
         isHarmonicStart: isHarmonicStart,
@@ -157,10 +163,12 @@ class MusicalNote {
       'isPreBendStart': isPreBendStart,
       'isBendReleaseStart': isBendReleaseStart,
       'isPreBendReleaseStart': isPreBendReleaseStart,
+      'isHammerLeftHandStart': isHammerLeftHandStart,
       'bendEndIndex': bendEndIndex,
       'preBendEndIndex': preBendEndIndex,
       'bendReleaseEndIndex': bendReleaseEndIndex,
       'preBendReleaseEndIndex': preBendReleaseEndIndex,
+      'hammerLeftHandEndIndex': hammerLeftHandEndIndex,
       'isMuteStart': isMuteStart,
       'isPinchHarmonicStart': isPinchHarmonicStart,
       'isHarmonicStart': isHarmonicStart,
@@ -206,10 +214,12 @@ class MusicalNote {
       isPreBendStart: json['isPreBendStart'] ?? false,
       isBendReleaseStart: json['isBendReleaseStart'] ?? false,
       isPreBendReleaseStart: json['isPreBendReleaseStart'] ?? false,
+      isHammerLeftHandStart: json['isHammerLeftHandStart'] ?? false,
       bendEndIndex: json['bendEndIndex'],
       preBendEndIndex: json['preBendEndIndex'],
       bendReleaseEndIndex: json['bendReleaseEndIndex'],
       preBendReleaseEndIndex: json['preBendReleaseEndIndex'],
+      hammerLeftHandEndIndex: json['hammerLeftHandEndIndex'],
       isMuteStart: json['isMuteStart'] ?? false,
       isPinchHarmonicStart: json['isPinchHarmonicStart'] ?? false,
       isHarmonicStart: json['isHarmonicStart'] ?? false,

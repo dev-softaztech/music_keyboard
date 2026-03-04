@@ -689,6 +689,27 @@ class MusicSheetPainter extends CustomPainter {
                   currentRowSpacing,
                   highestReleaseString);
             }
+
+            // Check for hammer-left-hand
+            if (childNote.isHammerLeftHandStart &&
+                childNote.hammerLeftHandEndIndex != null) {
+              var hammerLeftHandEndIndex = childNote.hammerLeftHandEndIndex! <
+                      sheetNoteRows[rowIndex].chords.length - 1
+                  ? childNote.hammerLeftHandEndIndex!
+                  : sheetNoteRows[rowIndex].chords.length - 1;
+
+              var indexDistanceCount = hammerLeftHandEndIndex - i;
+
+              double hammerLeftHandEndX =
+                  x + ((indexDistanceCount) * currentRowSpacing);
+              hammerLeftHandEndX += (currentRowSpacing * 0.85);
+
+              // Get string Y position from this childNote (start and end Y are the same)
+              double stringY = staffTop + (childNote.octave * lineSpacing);
+
+              _drawHammerLeftHand(
+                  canvas, paint, x, hammerLeftHandEndX, stringY, noteColour);
+            }
           }
 
           // Check if chord has any bend to determine positioning
@@ -2691,6 +2712,24 @@ class MusicSheetPainter extends CustomPainter {
     // Draw "1/2" label at peak
     _drawArrowHead(canvas, paint, peakX, peakY, '1/2', noteColour, true);
     _drawArrowHead(canvas, paint, endX, curveDownY!, '1/2', noteColour, false);
+  }
+
+  /// Draw hammer-left-hand: a quadratic bezier curve along the same string Y
+  void _drawHammerLeftHand(Canvas canvas, Paint paint, double startX,
+      double endX, double stringY, Color noteColour) {
+    final Path path = Path();
+    final double controlX = (startX + endX) / 2;
+    // Arc slightly above the string line
+    stringY = stringY - 5;
+    final double controlY = stringY - 20;
+
+    path.moveTo(startX + 8, stringY);
+    path.quadraticBezierTo(controlX, controlY, endX, stringY);
+
+    paint.style = PaintingStyle.stroke;
+    paint.strokeWidth = 1.2;
+    paint.color = noteColour;
+    canvas.drawPath(path, paint);
   }
 
   void _drawDottedLine(Canvas canvas, Paint paint, TextPainter textPainter,
