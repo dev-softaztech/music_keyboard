@@ -48,22 +48,19 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
       }
     }
 
-    // Adjust guitar technique endIndex values when inserting new chords
-    // All endIndex values coming after the current note's index should be incremented
-    // so they keep their index distance from the chord
     for (var n in notes) {
       // Check chord-level techniques
-      if (n.harmonicEndIndex != null && n.harmonicEndIndex! >= selectedIndex) {
+      if (n.harmonicEndIndex != null && n.harmonicEndIndex! > selectedIndex) {
         n.harmonicEndIndex = n.harmonicEndIndex! + 1;
       }
-      if (n.vibratoEndIndex != null && n.vibratoEndIndex! >= selectedIndex) {
+      if (n.vibratoEndIndex != null && n.vibratoEndIndex! > selectedIndex) {
         n.vibratoEndIndex = n.vibratoEndIndex! + 1;
       }
-      if (n.muteEndIndex != null && n.muteEndIndex! >= selectedIndex) {
+      if (n.muteEndIndex != null && n.muteEndIndex! > selectedIndex) {
         n.muteEndIndex = n.muteEndIndex! + 1;
       }
       if (n.pinchHarmonicEndIndex != null &&
-          n.pinchHarmonicEndIndex! >= selectedIndex) {
+          n.pinchHarmonicEndIndex! > selectedIndex) {
         n.pinchHarmonicEndIndex = n.pinchHarmonicEndIndex! + 1;
       }
 
@@ -71,19 +68,19 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
       if (n.childNotes != null) {
         for (var childNote in n.childNotes!) {
           if (childNote.bendEndIndex != null &&
-              childNote.bendEndIndex! >= selectedIndex) {
+              childNote.bendEndIndex! > selectedIndex) {
             childNote.bendEndIndex = childNote.bendEndIndex! + 1;
           }
           if (childNote.preBendEndIndex != null &&
-              childNote.preBendEndIndex! >= selectedIndex) {
+              childNote.preBendEndIndex! > selectedIndex) {
             childNote.preBendEndIndex = childNote.preBendEndIndex! + 1;
           }
           if (childNote.bendReleaseEndIndex != null &&
-              childNote.bendReleaseEndIndex! >= selectedIndex) {
+              childNote.bendReleaseEndIndex! > selectedIndex) {
             childNote.bendReleaseEndIndex = childNote.bendReleaseEndIndex! + 1;
           }
           if (childNote.preBendReleaseEndIndex != null &&
-              childNote.preBendReleaseEndIndex! >= selectedIndex) {
+              childNote.preBendReleaseEndIndex! > selectedIndex) {
             childNote.preBendReleaseEndIndex =
                 childNote.preBendReleaseEndIndex! + 1;
           }
