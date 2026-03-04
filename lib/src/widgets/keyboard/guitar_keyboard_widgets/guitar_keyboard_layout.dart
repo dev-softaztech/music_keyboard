@@ -87,13 +87,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     super.dispose();
   }
 
-  /// Handles SPACE button press with purely data-driven endIndex updates.
-  ///
-  /// Scans every chord in the row and increments the endIndex of any technique
-  /// whose range includes the current insertion point, regardless of whether
-  /// the technique buttons are in an active or locked state.
-  ///
-  /// Condition: chordStart <= selectedNoteIndex AND selectedNoteIndex-1 <= endIndex
   void _handleSpacePress() {
     if (!mounted) return;
 
@@ -115,65 +108,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
         childNotes: [],
       ));
       return;
-    }
-
-    final chords = widget.sheetNoteRows[selectedRow].chords;
-
-    // Iterate every chord from the start of the row up to the selected chord.
-    // For any technique with a start flag and endIndex, increment the endIndex
-    // if the insertion falls within (or at the boundary of) the technique range.
-    // No active/locked state flags are checked - this is purely data-driven.
-    for (int i = 0; i <= selectedNoteIndex && i < chords.length; i++) {
-      final chord = chords[i];
-
-      // Chord-level techniques
-      if (chord.isHarmonicStart &&
-          chord.harmonicEndIndex != null &&
-          selectedNoteIndex - 1 <= chord.harmonicEndIndex!) {
-        chord.harmonicEndIndex = chord.harmonicEndIndex! + 1;
-      }
-      if (chord.isVibratoStart &&
-          chord.vibratoEndIndex != null &&
-          selectedNoteIndex - 1 <= chord.vibratoEndIndex!) {
-        chord.vibratoEndIndex = chord.vibratoEndIndex! + 1;
-      }
-      if (chord.isMuteStart &&
-          chord.muteEndIndex != null &&
-          selectedNoteIndex - 1 <= chord.muteEndIndex!) {
-        chord.muteEndIndex = chord.muteEndIndex! + 1;
-      }
-      if (chord.isPinchHarmonicStart &&
-          chord.pinchHarmonicEndIndex != null &&
-          selectedNoteIndex - 1 <= chord.pinchHarmonicEndIndex!) {
-        chord.pinchHarmonicEndIndex = chord.pinchHarmonicEndIndex! + 1;
-      }
-
-      // Per-string bend techniques (stored on childNotes)
-      if (chord.childNotes != null) {
-        for (var childNote in chord.childNotes!) {
-          if (childNote.isBendStart &&
-              childNote.bendEndIndex != null &&
-              selectedNoteIndex - 1 <= childNote.bendEndIndex!) {
-            childNote.bendEndIndex = childNote.bendEndIndex! + 1;
-          }
-          if (childNote.isPreBendStart &&
-              childNote.preBendEndIndex != null &&
-              selectedNoteIndex - 1 <= childNote.preBendEndIndex!) {
-            childNote.preBendEndIndex = childNote.preBendEndIndex! + 1;
-          }
-          if (childNote.isBendReleaseStart &&
-              childNote.bendReleaseEndIndex != null &&
-              selectedNoteIndex - 1 <= childNote.bendReleaseEndIndex!) {
-            childNote.bendReleaseEndIndex = childNote.bendReleaseEndIndex! + 1;
-          }
-          if (childNote.isPreBendReleaseStart &&
-              childNote.preBendReleaseEndIndex != null &&
-              selectedNoteIndex - 1 <= childNote.preBendReleaseEndIndex!) {
-            childNote.preBendReleaseEndIndex =
-                childNote.preBendReleaseEndIndex! + 1;
-          }
-        }
-      }
     }
 
     // Preserve active/locked technique button states across the insertion
