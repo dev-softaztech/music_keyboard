@@ -51,6 +51,8 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
   bool _isVibratoActive = false;
   bool _isTapRightHandActive = false;
   bool _isHammerLeftHandActive = false;
+  bool _isSlideUpActive = false;
+  bool _isSlideDownActive = false;
 
   // Lock state tracking for three-tap behavior
   bool _isBendLocked = false;
@@ -855,6 +857,65 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     }
   }
 
+  // Helper: Check if the childNote for the selected string has a slide
+  bool _checkIfCurrentChildNoteHasSlide(
+      String slideType, int selectedRow, int selectedNoteIndex) {
+    final chord = _getCurrentChord(selectedRow, selectedNoteIndex);
+    if (chord == null || chord.childNotes == null) return false;
+
+    for (var child in chord.childNotes!) {
+      if (child.octave == _selectedStringIndex) {
+        if (slideType == 'slide-up') return child.hasSlideUp;
+        if (slideType == 'slide-down') return child.hasSlideDown;
+      }
+    }
+    return false;
+  }
+
+  // Helper: Handle slide button press for the selected string (toggle, no lock state)
+  void _handleSlideButtonPress(
+      String slideType, int selectedRow, int selectedNoteIndex) {
+    final chord = _getCurrentChord(selectedRow, selectedNoteIndex);
+    if (chord == null) return;
+
+    // Initialize childNotes if null
+    chord.childNotes ??= [];
+
+    // Find or create the childNote for the currently selected string
+    MusicalNote? childNote;
+    for (var child in chord.childNotes!) {
+      if (child.octave == _selectedStringIndex) {
+        childNote = child;
+        break;
+      }
+    }
+
+    // If no childNote exists for this string, create one with fret 0
+    childNote ??= _updateFretForString(
+        selectedRow, selectedNoteIndex, _selectedStringIndex, 0,
+        goToNextString: false);
+
+    setState(() {
+      if (slideType == 'slide-up') {
+        childNote!.hasSlideUp = !childNote.hasSlideUp;
+        // Slide up and slide down are mutually exclusive
+        if (childNote.hasSlideUp) {
+          childNote.hasSlideDown = false;
+        }
+        _isSlideUpActive = childNote.hasSlideUp;
+        _isSlideDownActive = false;
+      } else if (slideType == 'slide-down') {
+        childNote!.hasSlideDown = !childNote.hasSlideDown;
+        // Slide up and slide down are mutually exclusive
+        if (childNote.hasSlideDown) {
+          childNote.hasSlideUp = false;
+        }
+        _isSlideDownActive = childNote.hasSlideDown;
+        _isSlideUpActive = false;
+      }
+    });
+  }
+
   // Build a string button (E, A, D, G, B, E)
   Widget _buildStringButton(String note, int stringIndex) {
     bool isSelected = _selectedStringIndex == stringIndex;
@@ -1213,6 +1274,8 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
               _isVibratoLocked = false;
               _isHammerLeftHandActive = false;
               _isHammerLeftHandLocked = false;
+              _isSlideUpActive = false;
+              _isSlideDownActive = false;
             }
             // Reset the flag after checking
             _navigatedViaNextButton = false;
@@ -1396,10 +1459,22 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                           isLocked: _isHarmonicLocked),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('slide-up', '\uEA6D',
-                          fontSize: 40, offset: Offset(0, -7)),
+                          fontSize: 40,
+                          offset: Offset(0, -7),
+                          onPressed: () => _handleSlideButtonPress(
+                              'slide-up', selectedRow, selectedNoteIndex),
+                          isActive: _isSlideUpActive ||
+                              _checkIfCurrentChildNoteHasSlide(
+                                  'slide-up', selectedRow, selectedNoteIndex)),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('slide-down', '\uEA6E',
-                          fontSize: 40, offset: Offset(0, -7)),
+                          fontSize: 40,
+                          offset: Offset(0, -7),
+                          onPressed: () => _handleSlideButtonPress(
+                              'slide-down', selectedRow, selectedNoteIndex),
+                          isActive: _isSlideDownActive ||
+                              _checkIfCurrentChildNoteHasSlide('slide-down',
+                                  selectedRow, selectedNoteIndex)),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('bend-release', 'bend-release',
                           svgAssetPath: 'assets/svgs/bend-release.svg',

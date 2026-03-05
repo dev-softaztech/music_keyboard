@@ -710,6 +710,20 @@ class MusicSheetPainter extends CustomPainter {
               _drawHammerLeftHand(
                   canvas, paint, x, hammerLeftHandEndX, stringY, noteColour);
             }
+
+            // Check for slide-up
+            if (childNote.hasSlideUp) {
+              double stringY = staffTop + (childNote.octave * lineSpacing);
+              _drawSlideUp(
+                  canvas, paint, x, stringY, noteColour, currentRowSpacing);
+            }
+
+            // Check for slide-down
+            if (childNote.hasSlideDown) {
+              double stringY = staffTop + (childNote.octave * lineSpacing);
+              _drawSlideDown(
+                  canvas, paint, x, stringY, noteColour, currentRowSpacing);
+            }
           }
 
           // Check if chord has any bend to determine positioning
@@ -2730,6 +2744,46 @@ class MusicSheetPainter extends CustomPainter {
     paint.strokeWidth = 1.2;
     paint.color = noteColour;
     canvas.drawPath(path, paint);
+  }
+
+  /// Draw slide-up: diagonal line going from lower-left to upper-right on the string,
+  /// sitting between the current note and the next note position.
+  void _drawSlideUp(Canvas canvas, Paint paint, double x, double stringY,
+      Color noteColour, double rowSpacing) {
+    const double startOffset = 10.0;
+    const double endOffset = 10.0;
+    const double diagonalHeight = 5.0;
+
+    final double startX = x + startOffset;
+    final double endX = x + rowSpacing - endOffset;
+    final double startY = stringY + diagonalHeight;
+    final double endY = stringY - diagonalHeight;
+
+    paint.style = PaintingStyle.stroke;
+    paint.strokeWidth = 1.5;
+    paint.color = noteColour;
+
+    canvas.drawLine(Offset(startX, startY), Offset(endX, endY), paint);
+  }
+
+  /// Draw slide-down: diagonal line going from upper-left to lower-right on the string,
+  /// sitting between the current note and the next note position.
+  void _drawSlideDown(Canvas canvas, Paint paint, double x, double stringY,
+      Color noteColour, double rowSpacing) {
+    const double startOffset = 10.0;
+    const double endOffset = 10.0;
+    const double diagonalHeight = 5.0;
+
+    final double startX = x + startOffset;
+    final double endX = x + rowSpacing - endOffset;
+    final double startY = stringY - diagonalHeight;
+    final double endY = stringY + diagonalHeight;
+
+    paint.style = PaintingStyle.stroke;
+    paint.strokeWidth = 1.5;
+    paint.color = noteColour;
+
+    canvas.drawLine(Offset(startX, startY), Offset(endX, endY), paint);
   }
 
   void _drawDottedLine(Canvas canvas, Paint paint, TextPainter textPainter,

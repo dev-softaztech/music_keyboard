@@ -13,6 +13,8 @@ class MusicalNote {
   bool isBendReleaseStart;
   bool isPreBendReleaseStart;
   bool isHammerLeftHandStart;
+  bool hasSlideUp;
+  bool hasSlideDown;
   int? bendEndIndex;
   int? preBendEndIndex;
   int? bendReleaseEndIndex;
@@ -63,6 +65,8 @@ class MusicalNote {
       this.isBendReleaseStart = false,
       this.isPreBendReleaseStart = false,
       this.isHammerLeftHandStart = false,
+      this.hasSlideUp = false,
+      this.hasSlideDown = false,
       this.bendEndIndex,
       this.preBendEndIndex,
       this.bendReleaseEndIndex,
@@ -113,6 +117,8 @@ class MusicalNote {
         isBendReleaseStart: isBendReleaseStart,
         isPreBendReleaseStart: isPreBendReleaseStart,
         isHammerLeftHandStart: isHammerLeftHandStart,
+        hasSlideUp: hasSlideUp,
+        hasSlideDown: hasSlideDown,
         bendEndIndex: bendEndIndex,
         preBendEndIndex: preBendEndIndex,
         bendReleaseEndIndex: bendReleaseEndIndex,
@@ -164,6 +170,8 @@ class MusicalNote {
       'isBendReleaseStart': isBendReleaseStart,
       'isPreBendReleaseStart': isPreBendReleaseStart,
       'isHammerLeftHandStart': isHammerLeftHandStart,
+      'hasSlideUp': hasSlideUp,
+      'hasSlideDown': hasSlideDown,
       'bendEndIndex': bendEndIndex,
       'preBendEndIndex': preBendEndIndex,
       'bendReleaseEndIndex': bendReleaseEndIndex,
@@ -215,6 +223,8 @@ class MusicalNote {
       isBendReleaseStart: json['isBendReleaseStart'] ?? false,
       isPreBendReleaseStart: json['isPreBendReleaseStart'] ?? false,
       isHammerLeftHandStart: json['isHammerLeftHandStart'] ?? false,
+      hasSlideUp: json['hasSlideUp'] ?? false,
+      hasSlideDown: json['hasSlideDown'] ?? false,
       bendEndIndex: json['bendEndIndex'],
       preBendEndIndex: json['preBendEndIndex'],
       bendReleaseEndIndex: json['bendReleaseEndIndex'],
