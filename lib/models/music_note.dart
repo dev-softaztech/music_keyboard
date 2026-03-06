@@ -48,6 +48,8 @@ class MusicalNote {
   String clefType; // 'Treble', 'Bass', 'Alto', 'Tenor'
   String
       tapRightHandCharacter; // Unicode character for tap-right-hand technique
+  bool hasPickDownward;
+  bool hasPickUpward;
   List<MusicalNote>? childNotes; // For chords - multiple notes at same position
 
   MusicalNote(
@@ -99,6 +101,8 @@ class MusicalNote {
       this.keySignatureClefType = "",
       this.clefType = "",
       this.tapRightHandCharacter = "",
+      this.hasPickUpward = false,
+      this.hasPickDownward = false,
       this.childNotes});
 
   MusicalNote copy() {
@@ -151,6 +155,8 @@ class MusicalNote {
         keySignatureClefType: keySignatureClefType,
         clefType: clefType,
         tapRightHandCharacter: tapRightHandCharacter,
+        hasPickDownward: hasPickDownward,
+        hasPickUpward: hasPickUpward,
         childNotes: childNotes?.map((note) => note.copy()).toList());
   }
 
@@ -203,6 +209,9 @@ class MusicalNote {
       'keySignatureName': keySignatureName,
       'keySignatureClefType': keySignatureClefType,
       'clefType': clefType,
+      'tapRightHandCharacter': tapRightHandCharacter,
+      'hasPickDownward': hasPickDownward,
+      'hasPickUpward': hasPickUpward,
       'childNotes': childNotes?.map((note) => note.toJson()).toList(),
     };
   }
@@ -255,6 +264,9 @@ class MusicalNote {
       keySignatureName: json['keySignatureName'] ?? '',
       keySignatureClefType: json['keySignatureClefType'] ?? '',
       clefType: json['clefType'] ?? '',
+      tapRightHandCharacter: json['tapRightHandCharacter'] ?? '',
+      hasPickDownward: json['hasPickDownward'] ?? false,
+      hasPickUpward: json['hasPickUpward'] ?? false,
       childNotes: (json['childNotes'] as List<dynamic>?)
           ?.map((childJson) => MusicalNote.fromJson(childJson))
           .toList(),

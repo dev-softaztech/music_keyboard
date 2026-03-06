@@ -50,6 +50,8 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
   bool _isHarmonicActive = false;
   bool _isVibratoActive = false;
   bool _isTapRightHandActive = false;
+  bool _isPickUpwardActive = false;
+  bool _isPickDownwardActive = false;
   bool _isHammerLeftHandActive = false;
   bool _isSlideUpActive = false;
   bool _isSlideDownActive = false;
@@ -735,6 +737,14 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
           isCurrentlyActive = _isTapRightHandActive;
           isCurrentlyLocked = false;
           break;
+        case 'pick-downward':
+          isCurrentlyActive = _isPickDownwardActive;
+          isCurrentlyLocked = false;
+          break;
+        case 'pick-upward':
+          isCurrentlyActive = _isPickUpwardActive;
+          isCurrentlyLocked = false;
+          break;
         case 'vibrato':
           isCurrentlyActive = _isVibratoActive;
           isCurrentlyLocked = _isVibratoLocked;
@@ -767,6 +777,14 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
             _isTapRightHandActive = !_isTapRightHandActive;
             chord.tapRightHandCharacter = chord.tapRightHandCharacter =
                 '\uEA8B'; // Unicode for tap-right-hand
+            break;
+          case 'pick-downward':
+            _isPickDownwardActive = !_isPickDownwardActive;
+            chord.hasPickDownward = true;
+            break;
+          case 'pick-upward':
+            _isPickUpwardActive = !_isPickUpwardActive;
+            chord.hasPickUpward = true;
             break;
           case 'vibrato':
             _isVibratoActive = true;
@@ -812,6 +830,14 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
           case 'tap-right-hand':
             _isTapRightHandActive = false;
             chord.tapRightHandCharacter = '';
+            break;
+          case 'pick-downward':
+            _isPickDownwardActive = false;
+            chord.hasPickDownward = false;
+            break;
+          case 'pick-upward':
+            _isPickUpwardActive = false;
+            chord.hasPickUpward = false;
             break;
         }
       }
@@ -1432,7 +1458,11 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                           isLocked: _isPreBendLocked),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('pick-downward', '\uE610',
-                          fontSize: 30),
+                          fontSize: 30,
+                          onPressed: () => _handleTechniqueButtonPress(
+                              'pick-downward', selectedRow, selectedNoteIndex),
+                          isActive: _isPickDownwardActive,
+                          isLocked: false),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -1498,7 +1528,12 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                           isLocked: _isPreBendReleaseLocked),
                       const SizedBox(width: 7),
                       _buildTechniqueButton('pick-upward', '\uE612',
-                          fontSize: 30),
+                          fontSize: 30,
+                          offset: Offset(0, 2),
+                          onPressed: () => _handleTechniqueButtonPress(
+                              'pick-upward', selectedRow, selectedNoteIndex),
+                          isActive: _isPickUpwardActive,
+                          isLocked: false),
                     ],
                   ),
                   const SizedBox(height: 10),

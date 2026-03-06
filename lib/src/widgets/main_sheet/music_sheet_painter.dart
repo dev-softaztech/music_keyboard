@@ -396,6 +396,16 @@ class MusicSheetPainter extends CustomPainter {
               sheetNoteRows[rowIndex].chords, i);
         }
 
+        if (chord.hasPickDownward) {
+          _drawPickDownward(canvas, chord, noteColour, x, staffTop, lineSpacing,
+              sheetNoteRows[rowIndex].chords, i);
+        }
+
+        if (chord.hasPickUpward) {
+          _drawPickUpward(canvas, chord, noteColour, x, staffTop, lineSpacing,
+              sheetNoteRows[rowIndex].chords, i);
+        }
+
         if (chord.type == NoteType.bar) {
           double textY = staffTop - 35;
           int noteLookupIndex = i;
@@ -3099,6 +3109,92 @@ class MusicSheetPainter extends CustomPainter {
     textPainter.paint(canvas, Offset(xPos, yPos));
   }
 
+  void _drawPickDownward(
+      Canvas canvas,
+      MusicalNote chord,
+      Color noteColour,
+      double x,
+      double staffTop,
+      double lineSpacing,
+      List<MusicalNote> notes,
+      int noteIndex) {
+    double bendOrHarmonicOffset = _hasBendOrHarmonicOnChord(chord);
+
+    double symbolY = staffTop - 25 - bendOrHarmonicOffset;
+
+    // Adjust position based on note height to avoid overlap
+    if (noteIndex < notes.length) {
+      double noteY = notes[noteIndex].noteY;
+      if (noteY < symbolY + 20) {
+        symbolY = noteY - 40;
+      }
+    }
+
+    final textStyle = TextStyle(
+      color: noteColour,
+      fontSize: 24,
+      fontFamily: 'Bravura',
+    );
+    final textSpan = TextSpan(
+      text: '\uE610',
+      style: textStyle,
+    );
+    final textPainter = TextPainter(
+      text: textSpan,
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+
+    // Center the symbol horizontally over the note
+    double xPos = x - (textPainter.width / 2);
+    double yPos = symbolY - 35;
+
+    textPainter.paint(canvas, Offset(xPos, yPos));
+  }
+
+  void _drawPickUpward(
+      Canvas canvas,
+      MusicalNote chord,
+      Color noteColour,
+      double x,
+      double staffTop,
+      double lineSpacing,
+      List<MusicalNote> notes,
+      int noteIndex) {
+    double bendOrHarmonicOffset = _hasBendOrHarmonicOnChord(chord);
+
+    double symbolY = staffTop - 25 - bendOrHarmonicOffset;
+
+    // Adjust position based on note height to avoid overlap
+    if (noteIndex < notes.length) {
+      double noteY = notes[noteIndex].noteY;
+      if (noteY < symbolY + 20) {
+        symbolY = noteY - 40;
+      }
+    }
+
+    final textStyle = TextStyle(
+      color: noteColour,
+      fontSize: 24,
+      fontFamily: 'Bravura',
+    );
+    final textSpan = TextSpan(
+      text: '\uE612',
+      style: textStyle,
+    );
+    final textPainter = TextPainter(
+      text: textSpan,
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+
+    // Center the symbol horizontally over the note
+    double xPos = x - (textPainter.width / 2);
+    double yPos = symbolY - 35;
+
+    textPainter.paint(canvas, Offset(xPos, yPos));
+  }
+
   /// Checks whether any chord in [chords] has a bend (on any childNote) whose
   /// normalized index range [j, normalizedBendEnd] overlaps with [startIndex, endIndex].
   /// Two ranges [a, b] and [c, d] overlap when a <= d && c <= b.
@@ -3153,6 +3249,8 @@ class MusicSheetPainter extends CustomPainter {
         chord.isPinchHarmonicStart ||
         chord.isHarmonicStart;
 
+    bool hasVibrato = chord.isVibratoStart;
+
     if (chord.childNotes != null) {
       for (var childNote in chord.childNotes!) {
         hasBend = hasBend ||
@@ -3172,6 +3270,7 @@ class MusicSheetPainter extends CustomPainter {
 
     if (hasBend) returnOffset += 30;
     if (hasHarmonic) returnOffset += 25;
+    if (hasVibrato) returnOffset += 15;
 
     return returnOffset;
   }
