@@ -781,10 +781,20 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
           case 'pick-downward':
             _isPickDownwardActive = !_isPickDownwardActive;
             chord.hasPickDownward = _isPickDownwardActive;
+            // If pick-downward is now active, ensure pick-upward is inactive
+            if (_isPickDownwardActive) {
+              _isPickUpwardActive = false;
+              chord.hasPickUpward = false;
+            }
             break;
           case 'pick-upward':
             _isPickUpwardActive = !_isPickUpwardActive;
             chord.hasPickUpward = _isPickUpwardActive;
+            // If pick-upward is now active, ensure pick-downward is inactive
+            if (_isPickUpwardActive) {
+              _isPickDownwardActive = false;
+              chord.hasPickDownward = false;
+            }
             break;
           case 'vibrato':
             _isVibratoActive = true;
