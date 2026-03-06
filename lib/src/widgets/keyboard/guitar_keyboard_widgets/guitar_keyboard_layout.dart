@@ -241,9 +241,10 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       bool isActive = false,
       bool isLocked = false,
       Offset offset = Offset.zero}) {
+    double buttonWidth = MediaQuery.of(context).size.width * 0.092;
+
     return SizedBox(
-      width: 32,
-      height: 32,
+      width: buttonWidth,
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
@@ -957,8 +958,8 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     bool isSelected = _selectedStringIndex == stringIndex;
 
     return Container(
-      height: 25,
-      width: 40,
+      height: 21,
+      width: 50,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8), // Match your button's shape
         boxShadow: [
@@ -996,7 +997,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
         child: Text(
           note,
           style: TextStyle(
-            fontSize: 16,
+            fontSize: 14,
             color: Colors.black,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
@@ -1048,7 +1049,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
 
   Widget _buildNextLastButton(
       bool isNextNote, int selectedRow, int selectedNoteIndex) {
-    double buttonWidth = MediaQuery.of(context).size.width / 2.8;
+    //double buttonWidth = MediaQuery.of(context).size.width / 2.8;
 
     // Validate inputs to prevent crashes
     bool isValidState = widget.sheetNoteRows.isNotEmpty &&
@@ -1056,8 +1057,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
         selectedRow < widget.sheetNoteRows.length;
 
     return Container(
-      height: 31,
-      width: buttonWidth,
+      height: 80,
       margin: const EdgeInsets.symmetric(horizontal: 3),
       child: ElevatedButton(
         onPressed: isValidState
@@ -1254,20 +1254,19 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
           padding: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
+            side: BorderSide(color: Colors.black, width: 2),
           ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: isNextNote
               ? [
-                  const Text('Next', style: TextStyle(fontSize: 14)),
                   const SizedBox(width: 4),
-                  const Icon(Icons.arrow_forward, size: 18),
+                  const Icon(Icons.arrow_forward, size: 22),
                 ]
               : [
-                  const Icon(Icons.arrow_back, size: 18),
+                  const Icon(Icons.arrow_back, size: 22),
                   const SizedBox(width: 4),
-                  const Text('Back', style: TextStyle(fontSize: 14)),
                 ],
         ),
       ),
@@ -1328,67 +1327,200 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       });
     }
 
+    double screenWidth = MediaQuery.of(context).size.width;
+    double techniqueSpacing = screenWidth * 0.015;
+
     return Container(
       height: 270,
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(1),
       child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                height: 30,
-                width: 25,
-                decoration: BoxDecoration(
-                  borderRadius:
-                      BorderRadius.circular(8), // Match your button's shape
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey,
-                      blurRadius: 5,
-                      spreadRadius: 0,
-                      offset: Offset.zero, // This centers the shadow
+              SizedBox(width: techniqueSpacing),
+              Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                SizedBox(
+                  width: screenWidth * 0.10,
+                  child: _buildNextLastButton(
+                      false, selectedRow, selectedNoteIndex),
+                ),
+                SizedBox(width: techniqueSpacing),
+                Column(
+                  children: [
+                    SizedBox(
+                      height: 37,
+                      width: screenWidth * 0.75,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _buildTechniqueButton('mute', 'P.M.',
+                              fontSize: 12,
+                              isUnicode: false,
+                              onPressed: () => _handleTechniqueButtonPress(
+                                  'mute', selectedRow, selectedNoteIndex),
+                              isActive: _isMuteActive ||
+                                  _checkIfCurrentChordHasTechnique(
+                                      'mute', selectedRow, selectedNoteIndex),
+                              isLocked: _isMuteLocked),
+                          SizedBox(width: techniqueSpacing),
+                          _buildTechniqueButton('pinch-harmonic', 'P.H.',
+                              fontSize: 12,
+                              isUnicode: false,
+                              onPressed: () => _handleTechniqueButtonPress(
+                                  'pinch-harmonic',
+                                  selectedRow,
+                                  selectedNoteIndex),
+                              isActive: _isPinchHarmonicActive ||
+                                  _checkIfCurrentChordHasTechnique(
+                                      'pinch-harmonic',
+                                      selectedRow,
+                                      selectedNoteIndex),
+                              isLocked: _isPinchHarmonicLocked),
+                          SizedBox(width: techniqueSpacing),
+                          _buildTechniqueButton('vibrato', '\uE56E',
+                              fontSize: 20,
+                              offset: Offset(0, 3),
+                              onPressed: () => _handleTechniqueButtonPress(
+                                  'vibrato', selectedRow, selectedNoteIndex),
+                              isActive: _isVibratoActive ||
+                                  _checkIfCurrentChordHasTechnique('vibrato',
+                                      selectedRow, selectedNoteIndex),
+                              isLocked: _isVibratoLocked),
+                          SizedBox(width: techniqueSpacing),
+                          _buildTechniqueButton('hammer-left-hand', '\uE4BA',
+                              fontSize: 38,
+                              offset: Offset(0, -8),
+                              onPressed: () => _handleHammerLeftHandButtonPress(
+                                  selectedRow, selectedNoteIndex),
+                              isActive: _isHammerLeftHandActive ||
+                                  _checkIfCurrentChildNoteHasHammerLeftHand(
+                                      selectedRow, selectedNoteIndex),
+                              isLocked: _isHammerLeftHandLocked),
+                          SizedBox(width: techniqueSpacing),
+                          _buildTechniqueButton('bend', 'bend',
+                              svgAssetPath: 'assets/svgs/bend.svg',
+                              onPressed: () => _handleBendButtonPress(
+                                  'bend', selectedRow, selectedNoteIndex),
+                              isActive: _isBendActive ||
+                                  _checkIfCurrentChordHasBend(
+                                      'bend', selectedRow, selectedNoteIndex),
+                              isLocked: _isBendLocked),
+                          SizedBox(width: techniqueSpacing),
+                          _buildTechniqueButton('pre-bend', 'pre-bend',
+                              svgAssetPath: 'assets/svgs/pre-bend.svg',
+                              onPressed: () => _handleBendButtonPress(
+                                  'pre-bend', selectedRow, selectedNoteIndex),
+                              isActive: _isPreBendActive ||
+                                  _checkIfCurrentChordHasBend('pre-bend',
+                                      selectedRow, selectedNoteIndex),
+                              isLocked: _isPreBendLocked),
+                          SizedBox(width: techniqueSpacing),
+                          _buildTechniqueButton('pick-downward', '\uE610',
+                              fontSize: 30,
+                              onPressed: () => _handleTechniqueButtonPress(
+                                  'pick-downward',
+                                  selectedRow,
+                                  selectedNoteIndex),
+                              isActive: _isPickDownwardActive,
+                              isLocked: false),
+                        ],
+                      ),
                     ),
+                    const SizedBox(height: 7),
+                    SizedBox(
+                      height: 37,
+                      width: screenWidth * 0.75,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _buildTechniqueButton('tap-right-hand', '\uEA8B',
+                              fontSize: 16,
+                              offset: Offset(0, 7),
+                              onPressed: () => _handleTechniqueButtonPress(
+                                  'tap-right-hand',
+                                  selectedRow,
+                                  selectedNoteIndex),
+                              isActive: _isTapRightHandActive,
+                              isLocked: false),
+                          SizedBox(width: techniqueSpacing),
+                          _buildTechniqueButton('harmonic', 'Ham.',
+                              fontSize: 12,
+                              isUnicode: false,
+                              onPressed: () => _handleTechniqueButtonPress(
+                                  'harmonic', selectedRow, selectedNoteIndex),
+                              isActive: _isHarmonicActive ||
+                                  _checkIfCurrentChordHasTechnique('harmonic',
+                                      selectedRow, selectedNoteIndex),
+                              isLocked: _isHarmonicLocked),
+                          SizedBox(width: techniqueSpacing),
+                          _buildTechniqueButton('slide-up', '\uEA6D',
+                              fontSize: 40,
+                              offset: Offset(0, -7),
+                              onPressed: () => _handleSlideButtonPress(
+                                  'slide-up', selectedRow, selectedNoteIndex),
+                              isActive: _isSlideUpActive ||
+                                  _checkIfCurrentChildNoteHasSlide('slide-up',
+                                      selectedRow, selectedNoteIndex)),
+                          SizedBox(width: techniqueSpacing),
+                          _buildTechniqueButton('slide-down', '\uEA6E',
+                              fontSize: 40,
+                              offset: Offset(0, -7),
+                              onPressed: () => _handleSlideButtonPress(
+                                  'slide-down', selectedRow, selectedNoteIndex),
+                              isActive: _isSlideDownActive ||
+                                  _checkIfCurrentChildNoteHasSlide('slide-down',
+                                      selectedRow, selectedNoteIndex)),
+                          SizedBox(width: techniqueSpacing),
+                          _buildTechniqueButton('bend-release', 'bend-release',
+                              svgAssetPath: 'assets/svgs/bend-release.svg',
+                              onPressed: () => _handleBendButtonPress(
+                                  'bend-release',
+                                  selectedRow,
+                                  selectedNoteIndex),
+                              isActive: _isBendReleaseActive ||
+                                  _checkIfCurrentChordHasBend('bend-release',
+                                      selectedRow, selectedNoteIndex),
+                              isLocked: _isBendReleaseLocked),
+                          SizedBox(width: techniqueSpacing),
+                          _buildTechniqueButton(
+                              'pre-bend-release', 'pre-bend-release',
+                              svgAssetPath: 'assets/svgs/pre-bend-release.svg',
+                              onPressed: () => _handleBendButtonPress(
+                                  'pre-bend-release',
+                                  selectedRow,
+                                  selectedNoteIndex),
+                              isActive: _isPreBendReleaseActive ||
+                                  _checkIfCurrentChordHasBend(
+                                      'pre-bend-release',
+                                      selectedRow,
+                                      selectedNoteIndex),
+                              isLocked: _isPreBendReleaseLocked),
+                          SizedBox(width: techniqueSpacing),
+                          _buildTechniqueButton('pick-upward', '\uE612',
+                              fontSize: 30,
+                              offset: Offset(0, 2),
+                              onPressed: () => _handleTechniqueButtonPress(
+                                  'pick-upward',
+                                  selectedRow,
+                                  selectedNoteIndex),
+                              isActive: _isPickUpwardActive,
+                              isLocked: false),
+                        ],
+                      ),
+                    )
                   ],
                 ),
-                child: ElevatedButton(
-                  onPressed: () {
-                    widget.onKeyPress(MusicalNote(
-                      pitch: "D",
-                      octave: 5,
-                      type: NoteType.clef,
-                      isBeamed: false,
-                      unicodeCharacter: "\uF40C",
-                      clefType: "Tab",
-                    ));
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey[100],
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(5),
-                      side: const BorderSide(
-                          color: Color.fromARGB(255, 218, 218, 218), width: 1),
-                    ),
-                    padding: EdgeInsets.zero,
-                  ),
-                  child: Text(
-                    '\uF40A',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.black,
-                      fontFamily: 'Bravura',
-                    ),
-                  ),
+                SizedBox(width: techniqueSpacing),
+                SizedBox(
+                  width: screenWidth * 0.10,
+                  child: _buildNextLastButton(
+                      true, selectedRow, selectedNoteIndex),
                 ),
-              ),
-              const SizedBox(width: 10),
-              Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                _buildNextLastButton(false, selectedRow, selectedNoteIndex),
-                _buildNextLastButton(true, selectedRow, selectedNoteIndex)
               ]),
             ],
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -1412,146 +1544,10 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                 children: [
                   const SizedBox(height: 5),
                   // First technique row with 7 buttons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildTechniqueButton('mute', 'P.M.',
-                          fontSize: 12,
-                          isUnicode: false,
-                          onPressed: () => _handleTechniqueButtonPress(
-                              'mute', selectedRow, selectedNoteIndex),
-                          isActive: _isMuteActive ||
-                              _checkIfCurrentChordHasTechnique(
-                                  'mute', selectedRow, selectedNoteIndex),
-                          isLocked: _isMuteLocked),
-                      const SizedBox(width: 7),
-                      _buildTechniqueButton('pinch-harmonic', 'P.H.',
-                          fontSize: 12,
-                          isUnicode: false,
-                          onPressed: () => _handleTechniqueButtonPress(
-                              'pinch-harmonic', selectedRow, selectedNoteIndex),
-                          isActive: _isPinchHarmonicActive ||
-                              _checkIfCurrentChordHasTechnique('pinch-harmonic',
-                                  selectedRow, selectedNoteIndex),
-                          isLocked: _isPinchHarmonicLocked),
-                      const SizedBox(width: 7),
-                      _buildTechniqueButton('vibrato', '\uE56E',
-                          fontSize: 20,
-                          offset: Offset(0, 3),
-                          onPressed: () => _handleTechniqueButtonPress(
-                              'vibrato', selectedRow, selectedNoteIndex),
-                          isActive: _isVibratoActive ||
-                              _checkIfCurrentChordHasTechnique(
-                                  'vibrato', selectedRow, selectedNoteIndex),
-                          isLocked: _isVibratoLocked),
-                      const SizedBox(width: 7),
-                      _buildTechniqueButton('hammer-left-hand', '\uE4BA',
-                          fontSize: 38,
-                          offset: Offset(0, -8),
-                          onPressed: () => _handleHammerLeftHandButtonPress(
-                              selectedRow, selectedNoteIndex),
-                          isActive: _isHammerLeftHandActive ||
-                              _checkIfCurrentChildNoteHasHammerLeftHand(
-                                  selectedRow, selectedNoteIndex),
-                          isLocked: _isHammerLeftHandLocked),
-                      const SizedBox(width: 7),
-                      _buildTechniqueButton('bend', 'bend',
-                          svgAssetPath: 'assets/svgs/bend.svg',
-                          onPressed: () => _handleBendButtonPress(
-                              'bend', selectedRow, selectedNoteIndex),
-                          isActive: _isBendActive ||
-                              _checkIfCurrentChordHasBend(
-                                  'bend', selectedRow, selectedNoteIndex),
-                          isLocked: _isBendLocked),
-                      const SizedBox(width: 7),
-                      _buildTechniqueButton('pre-bend', 'pre-bend',
-                          svgAssetPath: 'assets/svgs/pre-bend.svg',
-                          onPressed: () => _handleBendButtonPress(
-                              'pre-bend', selectedRow, selectedNoteIndex),
-                          isActive: _isPreBendActive ||
-                              _checkIfCurrentChordHasBend(
-                                  'pre-bend', selectedRow, selectedNoteIndex),
-                          isLocked: _isPreBendLocked),
-                      const SizedBox(width: 7),
-                      _buildTechniqueButton('pick-downward', '\uE610',
-                          fontSize: 30,
-                          onPressed: () => _handleTechniqueButtonPress(
-                              'pick-downward', selectedRow, selectedNoteIndex),
-                          isActive: _isPickDownwardActive,
-                          isLocked: false),
-                    ],
-                  ),
+
                   const SizedBox(height: 8),
                   // Second technique row with 7 buttons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildTechniqueButton('tap-right-hand', '\uEA8B',
-                          fontSize: 16,
-                          offset: Offset(0, 7),
-                          onPressed: () => _handleTechniqueButtonPress(
-                              'tap-right-hand', selectedRow, selectedNoteIndex),
-                          isActive: _isTapRightHandActive,
-                          isLocked: false),
-                      const SizedBox(width: 7),
-                      _buildTechniqueButton('harmonic', 'Ham.',
-                          fontSize: 12,
-                          isUnicode: false,
-                          onPressed: () => _handleTechniqueButtonPress(
-                              'harmonic', selectedRow, selectedNoteIndex),
-                          isActive: _isHarmonicActive ||
-                              _checkIfCurrentChordHasTechnique(
-                                  'harmonic', selectedRow, selectedNoteIndex),
-                          isLocked: _isHarmonicLocked),
-                      const SizedBox(width: 7),
-                      _buildTechniqueButton('slide-up', '\uEA6D',
-                          fontSize: 40,
-                          offset: Offset(0, -7),
-                          onPressed: () => _handleSlideButtonPress(
-                              'slide-up', selectedRow, selectedNoteIndex),
-                          isActive: _isSlideUpActive ||
-                              _checkIfCurrentChildNoteHasSlide(
-                                  'slide-up', selectedRow, selectedNoteIndex)),
-                      const SizedBox(width: 7),
-                      _buildTechniqueButton('slide-down', '\uEA6E',
-                          fontSize: 40,
-                          offset: Offset(0, -7),
-                          onPressed: () => _handleSlideButtonPress(
-                              'slide-down', selectedRow, selectedNoteIndex),
-                          isActive: _isSlideDownActive ||
-                              _checkIfCurrentChildNoteHasSlide('slide-down',
-                                  selectedRow, selectedNoteIndex)),
-                      const SizedBox(width: 7),
-                      _buildTechniqueButton('bend-release', 'bend-release',
-                          svgAssetPath: 'assets/svgs/bend-release.svg',
-                          onPressed: () => _handleBendButtonPress(
-                              'bend-release', selectedRow, selectedNoteIndex),
-                          isActive: _isBendReleaseActive ||
-                              _checkIfCurrentChordHasBend('bend-release',
-                                  selectedRow, selectedNoteIndex),
-                          isLocked: _isBendReleaseLocked),
-                      const SizedBox(width: 7),
-                      _buildTechniqueButton(
-                          'pre-bend-release', 'pre-bend-release',
-                          svgAssetPath: 'assets/svgs/pre-bend-release.svg',
-                          onPressed: () => _handleBendButtonPress(
-                              'pre-bend-release',
-                              selectedRow,
-                              selectedNoteIndex),
-                          isActive: _isPreBendReleaseActive ||
-                              _checkIfCurrentChordHasBend('pre-bend-release',
-                                  selectedRow, selectedNoteIndex),
-                          isLocked: _isPreBendReleaseLocked),
-                      const SizedBox(width: 7),
-                      _buildTechniqueButton('pick-upward', '\uE612',
-                          fontSize: 30,
-                          offset: Offset(0, 2),
-                          onPressed: () => _handleTechniqueButtonPress(
-                              'pick-upward', selectedRow, selectedNoteIndex),
-                          isActive: _isPickUpwardActive,
-                          isLocked: false),
-                    ],
-                  ),
+
                   const SizedBox(height: 10),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10),
