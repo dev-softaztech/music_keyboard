@@ -780,11 +780,11 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
             break;
           case 'pick-downward':
             _isPickDownwardActive = !_isPickDownwardActive;
-            chord.hasPickDownward = true;
+            chord.hasPickDownward = _isPickDownwardActive;
             break;
           case 'pick-upward':
             _isPickUpwardActive = !_isPickUpwardActive;
-            chord.hasPickUpward = true;
+            chord.hasPickUpward = _isPickUpwardActive;
             break;
           case 'vibrato':
             _isVibratoActive = true;
@@ -1287,7 +1287,13 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           setState(() {
-            // Only reset lock states if NOT navigated via Next button
+            // Check the current chord's pick-upward and pick-downward states
+            final currentChord =
+                _getCurrentChord(selectedRow, selectedNoteIndex);
+            _isPickUpwardActive = currentChord?.hasPickUpward ?? false;
+            _isPickDownwardActive = currentChord?.hasPickDownward ?? false;
+
+            // Only reset other lock states if NOT navigated via Next button
             if (!_navigatedViaNextButton) {
               _isBendActive = false;
               _isPreBendActive = false;
