@@ -2244,7 +2244,9 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                       }
                     }, false, !_showSlurRemoveButton)
                   ],
-                  if (_showHighlightButtons && _showBeamAddButton) ...[
+                  if (_showHighlightButtons &&
+                      _showBeamAddButton &&
+                      widget.keyboardType != KeyboardType.guitarTab) ...[
                     const SizedBox(height: 5),
                     _buildStyledButton('BEAM', () {
                       if (_dragRow != null &&
@@ -2262,7 +2264,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                       }
                     }, false, true)
                   ],
-                  if (_showBeamRemoveButton) ...[
+                  if (_showBeamRemoveButton &&
+                      widget.keyboardType != KeyboardType.guitarTab) ...[
                     const SizedBox(height: 5),
                     _buildStyledButton('BEAM', () {
                       _removeBeam();
