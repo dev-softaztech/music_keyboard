@@ -956,10 +956,11 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
   // Build a string button (E, A, D, G, B, E)
   Widget _buildStringButton(String note, int stringIndex) {
     bool isSelected = _selectedStringIndex == stringIndex;
+    double buttonWidth = MediaQuery.of(context).size.width * 0.14;
 
     return Container(
-      height: 21,
-      width: 50,
+      height: 20,
+      width: buttonWidth,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8), // Match your button's shape
         boxShadow: [
@@ -1013,11 +1014,13 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     final currentChord = _getCurrentChord(selectedRow, selectedNoteIndex);
     final currentFret = _getFretForString(currentChord, _selectedStringIndex);
     bool isAssignedToCurrentString = currentFret == fretNumber.toString();
+    double buttonWidth = MediaQuery.of(context).size.width * 0.08;
+    double marginWidth = MediaQuery.of(context).size.width * 0.01;
 
     return Container(
-      height: 31,
-      width: 31,
-      margin: const EdgeInsets.symmetric(horizontal: 3),
+      height: 45,
+      width: buttonWidth,
+      margin: EdgeInsets.symmetric(horizontal: marginWidth),
       child: ElevatedButton(
         onPressed: () {
           _updateFretForString(
@@ -1339,7 +1342,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               SizedBox(width: techniqueSpacing),
-              Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                 SizedBox(
                   width: screenWidth * 0.10,
                   child: _buildNextLastButton(
@@ -1521,90 +1524,99 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
             ],
           ),
           SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildStringButton('E', 0),
-                  const SizedBox(height: 7),
-                  _buildStringButton('B', 1),
-                  const SizedBox(height: 7),
-                  _buildStringButton('G', 2),
-                  const SizedBox(height: 7),
-                  _buildStringButton('D', 3),
-                  const SizedBox(height: 7),
-                  _buildStringButton('A', 4),
-                  const SizedBox(height: 7),
-                  _buildStringButton('E', 5),
-                ],
-              ),
-              Column(
-                children: [
-                  const SizedBox(height: 5),
-                  // First technique row with 7 buttons
-
-                  const SizedBox(height: 8),
-                  // Second technique row with 7 buttons
-
-                  const SizedBox(height: 10),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: Row(
-                      //mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        _buildFretButton(1, selectedRow, selectedNoteIndex),
-                        _buildFretButton(2, selectedRow, selectedNoteIndex),
-                        _buildFretButton(3, selectedRow, selectedNoteIndex),
-                        _buildFretButton(4, selectedRow, selectedNoteIndex),
-                        _buildFretButton(5, selectedRow, selectedNoteIndex),
-                        _buildFretButton(6, selectedRow, selectedNoteIndex),
-                        _buildFretButton(7, selectedRow, selectedNoteIndex),
-                        _buildFretButton(8, selectedRow, selectedNoteIndex),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  // Fret numbers row 2 (9-16)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: Row(
+          SizedBox(
+              height: 166,
+              width: screenWidth,
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.015),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        _buildFretButton(9, selectedRow, selectedNoteIndex),
-                        _buildFretButton(10, selectedRow, selectedNoteIndex),
-                        _buildFretButton(11, selectedRow, selectedNoteIndex),
-                        _buildFretButton(12, selectedRow, selectedNoteIndex),
-                        _buildFretButton(13, selectedRow, selectedNoteIndex),
-                        _buildFretButton(14, selectedRow, selectedNoteIndex),
-                        _buildFretButton(15, selectedRow, selectedNoteIndex),
-                        _buildFretButton(16, selectedRow, selectedNoteIndex),
+                        _buildStringButton('E', 0),
+                        const SizedBox(height: 7),
+                        _buildStringButton('B', 1),
+                        const SizedBox(height: 7),
+                        _buildStringButton('G', 2),
+                        const SizedBox(height: 7),
+                        _buildStringButton('D', 3),
+                        const SizedBox(height: 7),
+                        _buildStringButton('A', 4),
+                        const SizedBox(height: 7),
+                        _buildStringButton('E', 5),
                       ],
                     ),
-                  ),
-                  const SizedBox(height: 5),
-                  // Fret numbers row 3 (17-24)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    SizedBox(width: techniqueSpacing),
+                    Column(
                       children: [
-                        _buildFretButton(17, selectedRow, selectedNoteIndex),
-                        _buildFretButton(18, selectedRow, selectedNoteIndex),
-                        _buildFretButton(19, selectedRow, selectedNoteIndex),
-                        _buildFretButton(20, selectedRow, selectedNoteIndex),
-                        _buildFretButton(21, selectedRow, selectedNoteIndex),
-                        _buildFretButton(22, selectedRow, selectedNoteIndex),
-                        _buildFretButton(23, selectedRow, selectedNoteIndex),
-                        _buildFretButton(24, selectedRow, selectedNoteIndex),
+                        const SizedBox(height: 6),
+                        Row(
+                          //mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            _buildFretButton(1, selectedRow, selectedNoteIndex),
+                            _buildFretButton(2, selectedRow, selectedNoteIndex),
+                            _buildFretButton(3, selectedRow, selectedNoteIndex),
+                            _buildFretButton(4, selectedRow, selectedNoteIndex),
+                            _buildFretButton(5, selectedRow, selectedNoteIndex),
+                            _buildFretButton(6, selectedRow, selectedNoteIndex),
+                            _buildFretButton(7, selectedRow, selectedNoteIndex),
+                            _buildFretButton(8, selectedRow, selectedNoteIndex),
+                          ],
+                        ),
+
+                        const SizedBox(height: 10),
+                        // Fret numbers row 2 (9-16)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _buildFretButton(9, selectedRow, selectedNoteIndex),
+                            _buildFretButton(
+                                10, selectedRow, selectedNoteIndex),
+                            _buildFretButton(
+                                11, selectedRow, selectedNoteIndex),
+                            _buildFretButton(
+                                12, selectedRow, selectedNoteIndex),
+                            _buildFretButton(
+                                13, selectedRow, selectedNoteIndex),
+                            _buildFretButton(
+                                14, selectedRow, selectedNoteIndex),
+                            _buildFretButton(
+                                15, selectedRow, selectedNoteIndex),
+                            _buildFretButton(
+                                16, selectedRow, selectedNoteIndex),
+                          ],
+                        ),
+
+                        const SizedBox(height: 10),
+                        // Fret numbers row 3 (17-24)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _buildFretButton(
+                                17, selectedRow, selectedNoteIndex),
+                            _buildFretButton(
+                                18, selectedRow, selectedNoteIndex),
+                            _buildFretButton(
+                                19, selectedRow, selectedNoteIndex),
+                            _buildFretButton(
+                                20, selectedRow, selectedNoteIndex),
+                            _buildFretButton(
+                                21, selectedRow, selectedNoteIndex),
+                            _buildFretButton(
+                                22, selectedRow, selectedNoteIndex),
+                            _buildFretButton(
+                                23, selectedRow, selectedNoteIndex),
+                            _buildFretButton(
+                                24, selectedRow, selectedNoteIndex),
+                          ],
+                        ),
                       ],
                     ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+                  ],
+                ),
+              ))
         ],
       ),
     );
