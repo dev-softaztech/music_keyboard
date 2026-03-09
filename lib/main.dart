@@ -7,6 +7,7 @@ import 'package:music_keyboard/src/providers/row_spacing_provider.dart';
 import 'package:music_keyboard/src/providers/select_rows_mode_provider.dart';
 import 'package:music_keyboard/src/providers/selected_accidental_provider.dart';
 import 'package:music_keyboard/src/providers/selected_number_provider.dart';
+import 'package:music_keyboard/src/providers/selected_string_provider.dart';
 import 'package:music_keyboard/src/providers/selected_unicode_provider.dart';
 import 'package:music_keyboard/src/providers/undo_manager.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -62,6 +63,7 @@ void main() async {
       ChangeNotifierProvider(create: (_) => RowSpacingProvider()),
       ChangeNotifierProvider(create: (_) => SheetUndoManager()),
       ChangeNotifierProvider(create: (_) => SelectRowsModeProvider()),
+      ChangeNotifierProvider(create: (_) => SelectedStringProvider()),
     ], child: MyApp(settingsController: settingsController)),
   );
 }

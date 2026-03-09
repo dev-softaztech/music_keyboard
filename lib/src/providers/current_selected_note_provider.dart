@@ -3,7 +3,9 @@ import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/models/sheet_rows.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/bar_line_calculator.dart';
 import 'package:music_keyboard/src/providers/undo_manager.dart';
+import 'package:music_keyboard/src/utils/music_sheet_utils/guitar_tab_helpers.dart';
 import 'package:provider/provider.dart';
+import 'package:music_keyboard/src/providers/selected_string_provider.dart';
 
 class CurrentSelectedNoteProvider extends ChangeNotifier {
   int selectedRow = 0;
@@ -546,7 +548,162 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
       endIndex = temp;
     }
 
-    // Remove any overlapping dynamics
+    removeAllBendsInRange(sheetNoteRows, row, startIndex, endIndex);
+
+    MusicalNote firstNote = sheetNoteRows[row].chords[startIndex];
+
+    firstNote.childNotes ??= [];
+
+    // Get the selected string index from the provider
+    final selectedStringProvider =
+        Provider.of<SelectedStringProvider>(context, listen: false);
+    final selectedStringIndex = selectedStringProvider.selectedStringIndex;
+
+    // Find or create the childNote for the currently selected string
+    MusicalNote? childNote;
+    for (var child in firstNote.childNotes!) {
+      if (child.octave == selectedStringIndex) {
+        childNote = child;
+        break;
+      }
+    }
+
+    // If no childNote exists for this string, we can't add a bend without a fret
+    childNote ??= GuitarTabHelpers.updateFretForString(
+        sheetNoteRows, selectedRow, startIndex, selectedStringIndex, 0,
+        goToNextString: false);
+
+    childNote.isBendStart = true;
+    childNote.bendEndIndex = endIndex;
+
+    notifyListeners();
+  }
+
+  void preBendNotes(int row, int startIndex, int endIndex,
+      List<SheetRows> sheetNoteRows, BuildContext context) {
+    context.read<SheetUndoManager>().saveState(sheetNoteRows);
+
+    if (startIndex > endIndex) {
+      int temp = startIndex;
+      startIndex = endIndex;
+      endIndex = temp;
+    }
+
+    removeAllBendsInRange(sheetNoteRows, row, startIndex, endIndex);
+
+    MusicalNote firstNote = sheetNoteRows[row].chords[startIndex];
+
+    firstNote.childNotes ??= [];
+
+    // Get the selected string index from the provider
+    final selectedStringProvider =
+        Provider.of<SelectedStringProvider>(context, listen: false);
+    final selectedStringIndex = selectedStringProvider.selectedStringIndex;
+
+    // Find or create the childNote for the currently selected string
+    MusicalNote? childNote;
+    for (var child in firstNote.childNotes!) {
+      if (child.octave == selectedStringIndex) {
+        childNote = child;
+        break;
+      }
+    }
+
+    // If no childNote exists for this string, we can't add a bend without a fret
+    childNote ??= GuitarTabHelpers.updateFretForString(
+        sheetNoteRows, selectedRow, startIndex, selectedStringIndex, 0,
+        goToNextString: false);
+
+    childNote.isPreBendStart = true;
+    childNote.preBendEndIndex = endIndex;
+
+    notifyListeners();
+  }
+
+  void bendReleaseNotes(int row, int startIndex, int endIndex,
+      List<SheetRows> sheetNoteRows, BuildContext context) {
+    context.read<SheetUndoManager>().saveState(sheetNoteRows);
+
+    if (startIndex > endIndex) {
+      int temp = startIndex;
+      startIndex = endIndex;
+      endIndex = temp;
+    }
+
+    removeAllBendsInRange(sheetNoteRows, row, startIndex, endIndex);
+
+    MusicalNote firstNote = sheetNoteRows[row].chords[startIndex];
+
+    firstNote.childNotes ??= [];
+
+    // Get the selected string index from the provider
+    final selectedStringProvider =
+        Provider.of<SelectedStringProvider>(context, listen: false);
+    final selectedStringIndex = selectedStringProvider.selectedStringIndex;
+
+    // Find or create the childNote for the currently selected string
+    MusicalNote? childNote;
+    for (var child in firstNote.childNotes!) {
+      if (child.octave == selectedStringIndex) {
+        childNote = child;
+        break;
+      }
+    }
+
+    // If no childNote exists for this string, we can't add a bend without a fret
+    childNote ??= GuitarTabHelpers.updateFretForString(
+        sheetNoteRows, selectedRow, startIndex, selectedStringIndex, 0,
+        goToNextString: false);
+
+    childNote.isBendReleaseStart = true;
+    childNote.bendReleaseEndIndex = endIndex;
+
+    notifyListeners();
+  }
+
+  void preBendReleaseNotes(int row, int startIndex, int endIndex,
+      List<SheetRows> sheetNoteRows, BuildContext context) {
+    context.read<SheetUndoManager>().saveState(sheetNoteRows);
+
+    if (startIndex > endIndex) {
+      int temp = startIndex;
+      startIndex = endIndex;
+      endIndex = temp;
+    }
+
+    removeAllBendsInRange(sheetNoteRows, row, startIndex, endIndex);
+
+    MusicalNote firstNote = sheetNoteRows[row].chords[startIndex];
+
+    firstNote.childNotes ??= [];
+
+    // Get the selected string index from the provider
+    final selectedStringProvider =
+        Provider.of<SelectedStringProvider>(context, listen: false);
+    final selectedStringIndex = selectedStringProvider.selectedStringIndex;
+
+    // Find or create the childNote for the currently selected string
+    MusicalNote? childNote;
+    for (var child in firstNote.childNotes!) {
+      if (child.octave == selectedStringIndex) {
+        childNote = child;
+        break;
+      }
+    }
+
+    // If no childNote exists for this string, we can't add a bend without a fret
+    childNote ??= GuitarTabHelpers.updateFretForString(
+        sheetNoteRows, selectedRow, startIndex, selectedStringIndex, 0,
+        goToNextString: false);
+
+    childNote.isPreBendReleaseStart = true;
+    childNote.preBendReleaseEndIndex = endIndex;
+
+    notifyListeners();
+  }
+
+  void removeAllBendsInRange(
+      List<SheetRows> sheetNoteRows, int row, int startIndex, int endIndex) {
     for (int i = 0; i < sheetNoteRows[row].chords.length; i++) {
       final chord = sheetNoteRows[row].chords[i];
       final childNotes = chord.childNotes;
@@ -589,11 +746,5 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
         }
       }
     }
-
-    MusicalNote firstNote = sheetNoteRows[row].chords[startIndex];
-    firstNote.isHarmonicStart = true;
-    firstNote.harmonicEndIndex = endIndex;
-
-    notifyListeners();
   }
 }

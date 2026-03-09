@@ -3076,7 +3076,6 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                       _showTempoPopup();
                     }, false, true),
                   ],
-//CONTINUE HERE
                   //Guitar tab buttons
                   //P.M
                   if (_showHighlightButtons ||
@@ -3090,10 +3089,12 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                         if (_dragRow != null &&
                             _dragStart != null &&
                             _dragEnd != null) {
-                          context
-                              .read<CurrentSelectedNoteProvider>()
-                              .decrescendoNotes(_dragRow!, _dragStart!,
-                                  _dragEnd!, widget.sheetNoteRows, context);
+                          context.read<CurrentSelectedNoteProvider>().muteNotes(
+                              _dragRow!,
+                              _dragStart!,
+                              _dragEnd!,
+                              widget.sheetNoteRows,
+                              context);
 
                           _showMuteRemoveButton = true;
                           _showPinchHarmonicRemoveButton = false;
@@ -3104,73 +3105,75 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                   ],
                   //P.H
                   if (_showHighlightButtons ||
-                      _showCrescendoRemoveButton &&
+                      _showPinchHarmonicRemoveButton &&
                           widget.keyboardType == KeyboardType.guitarTab) ...[
                     const SizedBox(height: 5),
-                    _buildStyledButton('\uE53E', () {
-                      if (_showCrescendoRemoveButton) {
-                        _removeCrescendo();
+                    _buildStyledButton('P.H.', () {
+                      if (_showPinchHarmonicRemoveButton) {
+                        _removePinchHarmonic();
                       } else {
                         if (_dragRow != null &&
                             _dragStart != null &&
                             _dragEnd != null) {
                           context
                               .read<CurrentSelectedNoteProvider>()
-                              .crescendoNotes(_dragRow!, _dragStart!, _dragEnd!,
-                                  widget.sheetNoteRows, context);
+                              .pinchHarmonicNotes(_dragRow!, _dragStart!,
+                                  _dragEnd!, widget.sheetNoteRows, context);
 
-                          _showCrescendoRemoveButton = true;
-                          _showDecrescendoRemoveButton = false;
+                          _showPinchHarmonicRemoveButton = true;
+                          _showMuteRemoveButton = false;
+                          _showHarmonicRemoveButton = false;
                         }
                       }
-                    }, true, !_showCrescendoRemoveButton)
+                    }, true, !_showPinchHarmonicRemoveButton)
                   ],
                   //Ham.
                   if (_showHighlightButtons ||
-                      _showCrescendoRemoveButton &&
+                      _showMuteRemoveButton &&
                           widget.keyboardType == KeyboardType.guitarTab) ...[
                     const SizedBox(height: 5),
-                    _buildStyledButton('\uE53E', () {
-                      if (_showCrescendoRemoveButton) {
-                        _removeCrescendo();
+                    _buildStyledButton('Ham.', () {
+                      if (_showHarmonicRemoveButton) {
+                        _removeHarmonic();
                       } else {
                         if (_dragRow != null &&
                             _dragStart != null &&
                             _dragEnd != null) {
                           context
                               .read<CurrentSelectedNoteProvider>()
-                              .crescendoNotes(_dragRow!, _dragStart!, _dragEnd!,
+                              .harmonicNotes(_dragRow!, _dragStart!, _dragEnd!,
                                   widget.sheetNoteRows, context);
 
-                          _showCrescendoRemoveButton = true;
-                          _showDecrescendoRemoveButton = false;
+                          _showHarmonicRemoveButton = true;
+                          _showMuteRemoveButton = false;
+                          _showPinchHarmonicRemoveButton = false;
                         }
                       }
-                    }, true, !_showCrescendoRemoveButton)
+                    }, true, !_showHarmonicRemoveButton)
                   ],
                   //Vibrato
                   if (_showHighlightButtons ||
-                      _showCrescendoRemoveButton &&
+                      _showVibratoRemoveButton &&
                           widget.keyboardType == KeyboardType.guitarTab) ...[
                     const SizedBox(height: 5),
-                    _buildStyledButton('\uE53E', () {
-                      if (_showCrescendoRemoveButton) {
-                        _removeCrescendo();
+                    _buildStyledButton('\uE56E', () {
+                      if (_showVibratoRemoveButton) {
+                        _removeVibrato();
                       } else {
                         if (_dragRow != null &&
                             _dragStart != null &&
                             _dragEnd != null) {
                           context
                               .read<CurrentSelectedNoteProvider>()
-                              .crescendoNotes(_dragRow!, _dragStart!, _dragEnd!,
+                              .vibratoNotes(_dragRow!, _dragStart!, _dragEnd!,
                                   widget.sheetNoteRows, context);
 
-                          _showCrescendoRemoveButton = true;
-                          _showDecrescendoRemoveButton = false;
+                          _showVibratoRemoveButton = true;
                         }
                       }
-                    }, true, !_showCrescendoRemoveButton)
+                    }, true, !_showVibratoRemoveButton)
                   ],
+                  //Continue here
                   //bend
                   //pre-bend
                   //bend-release

@@ -3,6 +3,7 @@ import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/models/sheet_rows.dart';
 import 'package:music_keyboard/models/sheet_format.dart';
 import 'package:music_keyboard/src/providers/current_selected_note_provider.dart';
+import 'package:music_keyboard/src/providers/selected_string_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/guitar_tab_helpers.dart';
@@ -35,12 +36,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
 
   // Octave pair state - false = Middle+Top pair, true = Bottom+Middle pair
   bool showLowerPair = false;
-
-  // Currently selected string (0-5 for E, B, G, D, A, E from top to bottom)
-  int _selectedStringIndex = 0;
-
-  // String names in order from top to bottom
-  final List<String> _stringNames = ['E', 'B', 'G', 'D', 'A', 'E'];
 
   bool _isBendActive = false;
   bool _isPreBendActive = false;
@@ -249,9 +244,13 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       return;
     }
 
+    final selectedStringProvider =
+        Provider.of<SelectedStringProvider>(context, listen: false);
+    final selectedStringIndex = selectedStringProvider.selectedStringIndex;
+
     MusicalNote? childNote;
     for (var child in chord.childNotes!) {
-      if (child.octave == _selectedStringIndex) {
+      if (child.octave == selectedStringIndex) {
         childNote = child;
         break;
       }
@@ -290,10 +289,14 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     final chord = _getCurrentChord(selectedRow, selectedNoteIndex);
     if (chord == null || chord.childNotes == null) return false;
 
+    final selectedStringProvider =
+        Provider.of<SelectedStringProvider>(context, listen: false);
+    final selectedStringIndex = selectedStringProvider.selectedStringIndex;
+
     // Find the childNote for the currently selected string
     MusicalNote? childNote;
     for (var child in chord.childNotes!) {
-      if (child.octave == _selectedStringIndex) {
+      if (child.octave == selectedStringIndex) {
         childNote = child;
         break;
       }
@@ -324,10 +327,14 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     // Initialize childNotes if null
     chord.childNotes ??= [];
 
+    final selectedStringProvider =
+        Provider.of<SelectedStringProvider>(context, listen: false);
+    final selectedStringIndex = selectedStringProvider.selectedStringIndex;
+
     // Find or create the childNote for the currently selected string
     MusicalNote? childNote;
     for (var child in chord.childNotes!) {
-      if (child.octave == _selectedStringIndex) {
+      if (child.octave == selectedStringIndex) {
         childNote = child;
         break;
       }
@@ -335,7 +342,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
 
     // If no childNote exists for this string, we can't add a bend without a fret
     childNote ??= _updateFretForString(
-        selectedRow, selectedNoteIndex, _selectedStringIndex, 0,
+        selectedRow, selectedNoteIndex, selectedStringIndex, 0,
         goToNextString: false);
 
     setState(() {
@@ -594,8 +601,12 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     final chord = _getCurrentChord(selectedRow, selectedNoteIndex);
     if (chord == null || chord.childNotes == null) return false;
 
+    final selectedStringProvider =
+        Provider.of<SelectedStringProvider>(context, listen: false);
+    final selectedStringIndex = selectedStringProvider.selectedStringIndex;
+
     for (var child in chord.childNotes!) {
-      if (child.octave == _selectedStringIndex) {
+      if (child.octave == selectedStringIndex) {
         return child.isHammerLeftHandStart;
       }
     }
@@ -611,10 +622,14 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     // Initialize childNotes if null
     chord.childNotes ??= [];
 
+    final selectedStringProvider =
+        Provider.of<SelectedStringProvider>(context, listen: false);
+    final selectedStringIndex = selectedStringProvider.selectedStringIndex;
+
     // Find or create the childNote for the currently selected string
     MusicalNote? childNote;
     for (var child in chord.childNotes!) {
-      if (child.octave == _selectedStringIndex) {
+      if (child.octave == selectedStringIndex) {
         childNote = child;
         break;
       }
@@ -622,7 +637,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
 
     // If no childNote exists for this string, create one with fret 0
     childNote ??= _updateFretForString(
-        selectedRow, selectedNoteIndex, _selectedStringIndex, 0,
+        selectedRow, selectedNoteIndex, selectedStringIndex, 0,
         goToNextString: false);
 
     setState(() {
@@ -838,8 +853,12 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     final chord = _getCurrentChord(selectedRow, selectedNoteIndex);
     if (chord == null || chord.childNotes == null) return false;
 
+    final selectedStringProvider =
+        Provider.of<SelectedStringProvider>(context, listen: false);
+    final selectedStringIndex = selectedStringProvider.selectedStringIndex;
+
     for (var child in chord.childNotes!) {
-      if (child.octave == _selectedStringIndex) {
+      if (child.octave == selectedStringIndex) {
         if (slideType == 'slide-up') return child.hasSlideUp;
         if (slideType == 'slide-down') return child.hasSlideDown;
       }
@@ -856,10 +875,14 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     // Initialize childNotes if null
     chord.childNotes ??= [];
 
+    final selectedStringProvider =
+        Provider.of<SelectedStringProvider>(context, listen: false);
+    final selectedStringIndex = selectedStringProvider.selectedStringIndex;
+
     // Find or create the childNote for the currently selected string
     MusicalNote? childNote;
     for (var child in chord.childNotes!) {
-      if (child.octave == _selectedStringIndex) {
+      if (child.octave == selectedStringIndex) {
         childNote = child;
         break;
       }
@@ -867,7 +890,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
 
     // If no childNote exists for this string, create one with fret 0
     childNote ??= _updateFretForString(
-        selectedRow, selectedNoteIndex, _selectedStringIndex, 0,
+        selectedRow, selectedNoteIndex, selectedStringIndex, 0,
         goToNextString: false);
 
     setState(() {
@@ -893,7 +916,10 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
 
   // Build a string button (E, A, D, G, B, E)
   Widget _buildStringButton(String note, int stringIndex) {
-    bool isSelected = _selectedStringIndex == stringIndex;
+    final selectedStringProvider =
+        Provider.of<SelectedStringProvider>(context, listen: false);
+    final selectedStringIndex = selectedStringProvider.selectedStringIndex;
+    bool isSelected = selectedStringIndex == stringIndex;
     double buttonWidth = MediaQuery.of(context).size.width * 0.14;
 
     return Container(
@@ -913,7 +939,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       child: ElevatedButton(
         onPressed: () {
           setState(() {
-            _selectedStringIndex = stringIndex;
+            selectedStringProvider.setSelectedStringIndex(stringIndex);
             _updateBendOnlyStatesForCurrentString(
                 Provider.of<CurrentSelectedNoteProvider>(context, listen: false)
                     .selectedRow,
@@ -950,7 +976,10 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       int fretNumber, int selectedRow, int selectedNoteIndex) {
     // Get current chord and check if this fret is assigned to selected string
     final currentChord = _getCurrentChord(selectedRow, selectedNoteIndex);
-    final currentFret = _getFretForString(currentChord, _selectedStringIndex);
+    final selectedStringProvider =
+        Provider.of<SelectedStringProvider>(context, listen: false);
+    final selectedStringIndex = selectedStringProvider.selectedStringIndex;
+    final currentFret = _getFretForString(currentChord, selectedStringIndex);
     bool isAssignedToCurrentString = currentFret == fretNumber.toString();
     double buttonWidth = MediaQuery.of(context).size.width * 0.08;
     double marginWidth = MediaQuery.of(context).size.width * 0.01;
@@ -962,7 +991,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       child: ElevatedButton(
         onPressed: () {
           _updateFretForString(
-              selectedRow, selectedNoteIndex, _selectedStringIndex, fretNumber);
+              selectedRow, selectedNoteIndex, selectedStringIndex, fretNumber);
         },
         style: ElevatedButton.styleFrom(
           backgroundColor:
