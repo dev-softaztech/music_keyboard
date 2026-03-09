@@ -85,6 +85,14 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
   bool _showTieRemoveState = false;
   bool _showTempoEditButton = false;
   bool _showFlipNoteButton = false;
+  bool _showMuteRemoveButton = false;
+  bool _showPinchHarmonicRemoveButton = false;
+  bool _showHarmonicRemoveButton = false;
+  bool _showVibratoRemoveButton = false;
+  bool _showBendRemoveButton = false;
+  bool _showPreBendRemoveButton = false;
+  bool _showBendReleaseRemoveButton = false;
+  bool _showPreBendReleaseRemoveButton = false;
   int? _dragStart;
   int? _dragEnd;
   int? _dragRow;
@@ -298,6 +306,15 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
       _editingDynamicRow = null;
       _isEditingDynamic = false;
       _isDragging = false;
+
+      _showMuteRemoveButton = false;
+      _showPinchHarmonicRemoveButton = false;
+      _showHarmonicRemoveButton = false;
+      _showVibratoRemoveButton = false;
+      _showBendRemoveButton = false;
+      _showPreBendRemoveButton = false;
+      _showBendReleaseRemoveButton = false;
+      _showPreBendReleaseRemoveButton = false;
     });
   }
 
@@ -616,6 +633,15 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
       _showCrescendoRemoveButton = false;
       _editingDynamicIndex = null;
       _editingDynamicRow = null;
+
+      _showMuteRemoveButton = false;
+      _showPinchHarmonicRemoveButton = false;
+      _showHarmonicRemoveButton = false;
+      _showVibratoRemoveButton = false;
+      _showBendRemoveButton = false;
+      _showPreBendRemoveButton = false;
+      _showBendReleaseRemoveButton = false;
+      _showPreBendReleaseRemoveButton = false;
     });
 
     var showDynamicRemoveButton = _shouldShowDynamicRemove();
@@ -629,6 +655,15 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
     var showTempoEditButton = _shouldShowTempoEdit();
     var showFlipNoteButton = _shouldShowFlipNote();
 
+    var showMuteRemoveButton = _shouldShowMuteRemove();
+    var showPinchHarmonicRemoveButton = _shouldShowPinchHarmonicRemove();
+    var showHarmonicRemoveButton = _shouldShowHarmonicRemove();
+    var showVibratoRemoveButton = _shouldShowVibratoRemove();
+    var showBendRemoveButton = _shouldShowBendRemove();
+    var showPreBendRemoveButton = _shouldShowPreBendRemove();
+    var showBendReleaseRemoveButton = _shouldShowBendReleaseRemove();
+    var showPreBendReleaseRemoveButton = _shouldShowPreBendReleaseRemove();
+
     setState(() {
       _showDynamicRemoveButton = showDynamicRemoveButton;
       _showBeamAddButton = showBeamAddButton;
@@ -640,6 +675,15 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
       _showTieRemoveState = showTieRemoveState;
       _showTempoEditButton = showTempoEditButton;
       _showFlipNoteButton = showFlipNoteButton;
+
+      _showMuteRemoveButton = showMuteRemoveButton;
+      _showPinchHarmonicRemoveButton = showPinchHarmonicRemoveButton;
+      _showHarmonicRemoveButton = showHarmonicRemoveButton;
+      _showVibratoRemoveButton = showVibratoRemoveButton;
+      _showBendRemoveButton = showBendRemoveButton;
+      _showPreBendRemoveButton = showPreBendRemoveButton;
+      _showBendReleaseRemoveButton = showBendReleaseRemoveButton;
+      _showPreBendReleaseRemoveButton = showPreBendReleaseRemoveButton;
     });
   }
 
@@ -1279,6 +1323,360 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
     return false;
   }
 
+  //Guitar tab
+  bool _shouldShowMuteRemove() {
+    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+
+    if (_dragStart != null && _dragEnd != null && _dragRow != null) {
+      // Check if active highlighted range contains a crescendo
+      final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
+      final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
+
+      for (int i = 0; i < widget.sheetNoteRows[_dragRow!].chords.length; i++) {
+        final chord = widget.sheetNoteRows[_dragRow!].chords[i];
+        if (chord.isMuteStart && chord.muteEndIndex != null) {
+          // Check if crescendo overlaps with highlight range
+          if ((i >= start && i <= end) ||
+              (chord.muteEndIndex! >= start && chord.muteEndIndex! <= end)) {
+            return true;
+          }
+        }
+      }
+    } else {
+      // Check if current selected note is in range of existing crescendo
+      final row = selectedNoteProvider.selectedRow;
+      final index = selectedNoteProvider.selectedIndex;
+
+      if (index >= 0) {
+        for (int i = 0; i < widget.sheetNoteRows[row].chords.length; i++) {
+          final chord = widget.sheetNoteRows[row].chords[i];
+          if (chord.isMuteStart && chord.muteEndIndex != null) {
+            if (i <= index && chord.muteEndIndex! >= index) {
+              return true;
+            }
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  bool _shouldShowPinchHarmonicRemove() {
+    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+
+    if (_dragStart != null && _dragEnd != null && _dragRow != null) {
+      // Check if active highlighted range contains a crescendo
+      final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
+      final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
+
+      for (int i = 0; i < widget.sheetNoteRows[_dragRow!].chords.length; i++) {
+        final chord = widget.sheetNoteRows[_dragRow!].chords[i];
+        if (chord.isPinchHarmonicStart && chord.pinchHarmonicEndIndex != null) {
+          // Check if crescendo overlaps with highlight range
+          if ((i >= start && i <= end) ||
+              (chord.pinchHarmonicEndIndex! >= start &&
+                  chord.pinchHarmonicEndIndex! <= end)) {
+            return true;
+          }
+        }
+      }
+    } else {
+      // Check if current selected note is in range of existing crescendo
+      final row = selectedNoteProvider.selectedRow;
+      final index = selectedNoteProvider.selectedIndex;
+
+      if (index >= 0) {
+        for (int i = 0; i < widget.sheetNoteRows[row].chords.length; i++) {
+          final chord = widget.sheetNoteRows[row].chords[i];
+          if (chord.isPinchHarmonicStart &&
+              chord.pinchHarmonicEndIndex != null) {
+            if (i <= index && chord.pinchHarmonicEndIndex! >= index) {
+              return true;
+            }
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  bool _shouldShowHarmonicRemove() {
+    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+
+    if (_dragStart != null && _dragEnd != null && _dragRow != null) {
+      // Check if active highlighted range contains a crescendo
+      final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
+      final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
+
+      for (int i = 0; i < widget.sheetNoteRows[_dragRow!].chords.length; i++) {
+        final chord = widget.sheetNoteRows[_dragRow!].chords[i];
+        if (chord.isHarmonicStart && chord.harmonicEndIndex != null) {
+          // Check if crescendo overlaps with highlight range
+          if ((i >= start && i <= end) ||
+              (chord.harmonicEndIndex! >= start &&
+                  chord.harmonicEndIndex! <= end)) {
+            return true;
+          }
+        }
+      }
+    } else {
+      // Check if current selected note is in range of existing crescendo
+      final row = selectedNoteProvider.selectedRow;
+      final index = selectedNoteProvider.selectedIndex;
+
+      if (index >= 0) {
+        for (int i = 0; i < widget.sheetNoteRows[row].chords.length; i++) {
+          final chord = widget.sheetNoteRows[row].chords[i];
+          if (chord.isHarmonicStart && chord.harmonicEndIndex != null) {
+            if (i <= index && chord.harmonicEndIndex! >= index) {
+              return true;
+            }
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  bool _shouldShowVibratoRemove() {
+    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+
+    if (_dragStart != null && _dragEnd != null && _dragRow != null) {
+      // Check if active highlighted range contains a crescendo
+      final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
+      final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
+
+      for (int i = 0; i < widget.sheetNoteRows[_dragRow!].chords.length; i++) {
+        final chord = widget.sheetNoteRows[_dragRow!].chords[i];
+        if (chord.isVibratoStart && chord.vibratoEndIndex != null) {
+          // Check if crescendo overlaps with highlight range
+          if ((i >= start && i <= end) ||
+              (chord.vibratoEndIndex! >= start &&
+                  chord.vibratoEndIndex! <= end)) {
+            return true;
+          }
+        }
+      }
+    } else {
+      // Check if current selected note is in range of existing crescendo
+      final row = selectedNoteProvider.selectedRow;
+      final index = selectedNoteProvider.selectedIndex;
+
+      if (index >= 0) {
+        for (int i = 0; i < widget.sheetNoteRows[row].chords.length; i++) {
+          final chord = widget.sheetNoteRows[row].chords[i];
+          if (chord.isVibratoStart && chord.vibratoEndIndex != null) {
+            if (i <= index && chord.vibratoEndIndex! >= index) {
+              return true;
+            }
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  bool _shouldShowBendRemove() {
+    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+
+    if (_dragStart != null && _dragEnd != null && _dragRow != null) {
+      // Check if active highlighted range contains a crescendo
+      final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
+      final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
+
+      for (int i = 0; i < widget.sheetNoteRows[_dragRow!].chords.length; i++) {
+        final chord = widget.sheetNoteRows[_dragRow!].chords[i];
+        final childNotes = chord.childNotes;
+        if (childNotes != null) {
+          for (int i = 0; i < childNotes.length; i++) {
+            var note = childNotes[i];
+            if (note.isBendStart && note.bendEndIndex != null) {
+              // Check if crescendo overlaps with highlight range
+              if ((i >= start && i <= end) ||
+                  (note.bendEndIndex! >= start && note.bendEndIndex! <= end)) {
+                return true;
+              }
+            }
+          }
+        }
+      }
+    } else {
+      // Check if current selected note is in range of existing crescendo
+      final row = selectedNoteProvider.selectedRow;
+      final index = selectedNoteProvider.selectedIndex;
+
+      if (index >= 0) {
+        for (int i = 0; i < widget.sheetNoteRows[row].chords.length; i++) {
+          final chord = widget.sheetNoteRows[row].chords[i];
+          final childNotes = chord.childNotes;
+          if (childNotes != null) {
+            for (int i = 0; i < childNotes.length; i++) {
+              var note = childNotes[i];
+              if (note.isBendStart && note.bendEndIndex != null) {
+                if (i <= index && note.bendEndIndex! >= index) {
+                  return true;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  bool _shouldShowPreBendRemove() {
+    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+
+    if (_dragStart != null && _dragEnd != null && _dragRow != null) {
+      // Check if active highlighted range contains a crescendo
+      final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
+      final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
+
+      for (int i = 0; i < widget.sheetNoteRows[_dragRow!].chords.length; i++) {
+        final chord = widget.sheetNoteRows[_dragRow!].chords[i];
+        final childNotes = chord.childNotes;
+        if (childNotes != null) {
+          for (int i = 0; i < childNotes.length; i++) {
+            var note = childNotes[i];
+            if (note.isPreBendStart && note.preBendEndIndex != null) {
+              // Check if crescendo overlaps with highlight range
+              if ((i >= start && i <= end) ||
+                  (note.preBendEndIndex! >= start &&
+                      note.preBendEndIndex! <= end)) {
+                return true;
+              }
+            }
+          }
+        }
+      }
+    } else {
+      // Check if current selected note is in range of existing crescendo
+      final row = selectedNoteProvider.selectedRow;
+      final index = selectedNoteProvider.selectedIndex;
+
+      if (index >= 0) {
+        for (int i = 0; i < widget.sheetNoteRows[row].chords.length; i++) {
+          final chord = widget.sheetNoteRows[row].chords[i];
+          final childNotes = chord.childNotes;
+          if (childNotes != null) {
+            for (int i = 0; i < childNotes.length; i++) {
+              var note = childNotes[i];
+              if (note.isPreBendStart && note.preBendEndIndex != null) {
+                if (i <= index && note.preBendEndIndex! >= index) {
+                  return true;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  bool _shouldShowBendReleaseRemove() {
+    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+
+    if (_dragStart != null && _dragEnd != null && _dragRow != null) {
+      // Check if active highlighted range contains a crescendo
+      final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
+      final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
+
+      for (int i = 0; i < widget.sheetNoteRows[_dragRow!].chords.length; i++) {
+        final chord = widget.sheetNoteRows[_dragRow!].chords[i];
+        final childNotes = chord.childNotes;
+        if (childNotes != null) {
+          for (int i = 0; i < childNotes.length; i++) {
+            var note = childNotes[i];
+            if (note.isBendReleaseStart && note.bendReleaseEndIndex != null) {
+              // Check if crescendo overlaps with highlight range
+              if ((i >= start && i <= end) ||
+                  (note.bendReleaseEndIndex! >= start &&
+                      note.bendReleaseEndIndex! <= end)) {
+                return true;
+              }
+            }
+          }
+        }
+      }
+    } else {
+      // Check if current selected note is in range of existing crescendo
+      final row = selectedNoteProvider.selectedRow;
+      final index = selectedNoteProvider.selectedIndex;
+
+      if (index >= 0) {
+        for (int i = 0; i < widget.sheetNoteRows[row].chords.length; i++) {
+          final chord = widget.sheetNoteRows[row].chords[i];
+          final childNotes = chord.childNotes;
+          if (childNotes != null) {
+            for (int i = 0; i < childNotes.length; i++) {
+              var note = childNotes[i];
+              if (note.isBendReleaseStart && note.bendReleaseEndIndex != null) {
+                if (i <= index && note.bendReleaseEndIndex! >= index) {
+                  return true;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  bool _shouldShowPreBendReleaseRemove() {
+    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+
+    if (_dragStart != null && _dragEnd != null && _dragRow != null) {
+      // Check if active highlighted range contains a crescendo
+      final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
+      final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
+
+      for (int i = 0; i < widget.sheetNoteRows[_dragRow!].chords.length; i++) {
+        final chord = widget.sheetNoteRows[_dragRow!].chords[i];
+        final childNotes = chord.childNotes;
+        if (childNotes != null) {
+          for (int i = 0; i < childNotes.length; i++) {
+            var note = childNotes[i];
+            if (note.isPreBendReleaseStart &&
+                note.preBendReleaseEndIndex != null) {
+              // Check if crescendo overlaps with highlight range
+              if ((i >= start && i <= end) ||
+                  (note.preBendReleaseEndIndex! >= start &&
+                      note.preBendReleaseEndIndex! <= end)) {
+                return true;
+              }
+            }
+          }
+        }
+      }
+    } else {
+      // Check if current selected note is in range of existing crescendo
+      final row = selectedNoteProvider.selectedRow;
+      final index = selectedNoteProvider.selectedIndex;
+
+      if (index >= 0) {
+        for (int i = 0; i < widget.sheetNoteRows[row].chords.length; i++) {
+          final chord = widget.sheetNoteRows[row].chords[i];
+          final childNotes = chord.childNotes;
+          if (childNotes != null) {
+            for (int i = 0; i < childNotes.length; i++) {
+              var note = childNotes[i];
+              if (note.isPreBendReleaseStart &&
+                  note.preBendReleaseEndIndex != null) {
+                if (i <= index && note.preBendReleaseEndIndex! >= index) {
+                  return true;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    return false;
+  }
+
   String _getDynamicCharacter() {
     final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
     final row = selectedNoteProvider.selectedRow;
@@ -1571,6 +1969,369 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
         },
       );
     }
+  }
+
+  //Guitar tab
+  void _removeMute() {
+    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+    context.read<SheetUndoManager>().saveState(widget.sheetNoteRows);
+
+    if (_dragStart != null && _dragEnd != null && _dragRow != null) {
+      final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
+      final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
+
+      for (int i = 0; i < widget.sheetNoteRows[_dragRow!].chords.length; i++) {
+        final note = widget.sheetNoteRows[_dragRow!].chords[i];
+        if (note.isMuteStart && note.muteEndIndex != null) {
+          if ((i >= start && i <= end) ||
+              (note.muteEndIndex! >= start && note.muteEndIndex! <= end)) {
+            note.isMuteStart = false;
+            note.muteEndIndex = null;
+          }
+        }
+      }
+    } else {
+      final row = selectedNoteProvider.selectedRow;
+      final index = selectedNoteProvider.selectedIndex;
+
+      if (index >= 0) {
+        for (int i = 0; i < widget.sheetNoteRows[row].chords.length; i++) {
+          final note = widget.sheetNoteRows[row].chords[i];
+          if (note.isMuteStart && note.muteEndIndex != null) {
+            if (i <= index && note.muteEndIndex! >= index) {
+              note.isMuteStart = false;
+              note.muteEndIndex = null;
+            }
+          }
+        }
+      }
+    }
+
+    _showMuteRemoveButton = false;
+  }
+
+  void _removePinchHarmonic() {
+    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+    context.read<SheetUndoManager>().saveState(widget.sheetNoteRows);
+
+    if (_dragStart != null && _dragEnd != null && _dragRow != null) {
+      final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
+      final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
+
+      for (int i = 0; i < widget.sheetNoteRows[_dragRow!].chords.length; i++) {
+        final note = widget.sheetNoteRows[_dragRow!].chords[i];
+        if (note.isPinchHarmonicStart && note.pinchHarmonicEndIndex != null) {
+          if ((i >= start && i <= end) ||
+              (note.pinchHarmonicEndIndex! >= start &&
+                  note.pinchHarmonicEndIndex! <= end)) {
+            note.isPinchHarmonicStart = false;
+            note.pinchHarmonicEndIndex = null;
+          }
+        }
+      }
+    } else {
+      final row = selectedNoteProvider.selectedRow;
+      final index = selectedNoteProvider.selectedIndex;
+
+      if (index >= 0) {
+        for (int i = 0; i < widget.sheetNoteRows[row].chords.length; i++) {
+          final note = widget.sheetNoteRows[row].chords[i];
+          if (note.isPinchHarmonicStart && note.pinchHarmonicEndIndex != null) {
+            if (i <= index && note.pinchHarmonicEndIndex! >= index) {
+              note.isPinchHarmonicStart = false;
+              note.pinchHarmonicEndIndex = null;
+            }
+          }
+        }
+      }
+    }
+
+    _showPinchHarmonicRemoveButton = false;
+  }
+
+  void _removeHarmonic() {
+    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+    context.read<SheetUndoManager>().saveState(widget.sheetNoteRows);
+
+    if (_dragStart != null && _dragEnd != null && _dragRow != null) {
+      final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
+      final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
+
+      for (int i = 0; i < widget.sheetNoteRows[_dragRow!].chords.length; i++) {
+        final note = widget.sheetNoteRows[_dragRow!].chords[i];
+        if (note.isHarmonicStart && note.harmonicEndIndex != null) {
+          if ((i >= start && i <= end) ||
+              (note.harmonicEndIndex! >= start &&
+                  note.harmonicEndIndex! <= end)) {
+            note.isHarmonicStart = false;
+            note.harmonicEndIndex = null;
+          }
+        }
+      }
+    } else {
+      final row = selectedNoteProvider.selectedRow;
+      final index = selectedNoteProvider.selectedIndex;
+
+      if (index >= 0) {
+        for (int i = 0; i < widget.sheetNoteRows[row].chords.length; i++) {
+          final note = widget.sheetNoteRows[row].chords[i];
+          if (note.isHarmonicStart && note.harmonicEndIndex != null) {
+            if (i <= index && note.harmonicEndIndex! >= index) {
+              note.isHarmonicStart = false;
+              note.harmonicEndIndex = null;
+            }
+          }
+        }
+      }
+    }
+
+    _showHarmonicRemoveButton = false;
+  }
+
+  void _removeVibrato() {
+    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+    context.read<SheetUndoManager>().saveState(widget.sheetNoteRows);
+
+    if (_dragStart != null && _dragEnd != null && _dragRow != null) {
+      // Remove crescendos in highlighted range
+      final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
+      final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
+
+      for (int i = 0; i < widget.sheetNoteRows[_dragRow!].chords.length; i++) {
+        final note = widget.sheetNoteRows[_dragRow!].chords[i];
+        if (note.isVibratoStart && note.vibratoEndIndex != null) {
+          if ((i >= start && i <= end) ||
+              (note.vibratoEndIndex! >= start &&
+                  note.vibratoEndIndex! <= end)) {
+            note.isVibratoStart = false;
+            note.vibratoEndIndex = null;
+          }
+        }
+      }
+    } else {
+      // Remove crescendo affecting current selected note
+      final row = selectedNoteProvider.selectedRow;
+      final index = selectedNoteProvider.selectedIndex;
+
+      if (index >= 0) {
+        for (int i = 0; i < widget.sheetNoteRows[row].chords.length; i++) {
+          final note = widget.sheetNoteRows[row].chords[i];
+          if (note.isVibratoStart && note.vibratoEndIndex != null) {
+            if (i <= index && note.vibratoEndIndex! >= index) {
+              note.isVibratoStart = false;
+              note.vibratoEndIndex = null;
+            }
+          }
+        }
+      }
+    }
+
+    _showVibratoRemoveButton = false;
+  }
+
+  void _removeBend() {
+    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+    context.read<SheetUndoManager>().saveState(widget.sheetNoteRows);
+
+    if (_dragStart != null && _dragEnd != null && _dragRow != null) {
+      final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
+      final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
+
+      for (int i = 0; i < widget.sheetNoteRows[_dragRow!].chords.length; i++) {
+        final chord = widget.sheetNoteRows[_dragRow!].chords[i];
+        final childNotes = chord.childNotes;
+        if (childNotes != null) {
+          for (int i = 0; i < childNotes.length; i++) {
+            var note = childNotes[i];
+            if (note.isBendStart && note.bendEndIndex != null) {
+              if ((i >= start && i <= end) ||
+                  (note.bendEndIndex! >= start && note.bendEndIndex! <= end)) {
+                note.isBendStart = false;
+                note.bendEndIndex = null;
+              }
+            }
+          }
+        }
+      }
+    } else {
+      final row = selectedNoteProvider.selectedRow;
+      final index = selectedNoteProvider.selectedIndex;
+
+      if (index >= 0) {
+        for (int i = 0; i < widget.sheetNoteRows[row].chords.length; i++) {
+          final chord = widget.sheetNoteRows[row].chords[i];
+          final childNotes = chord.childNotes;
+          if (childNotes != null) {
+            for (int i = 0; i < childNotes.length; i++) {
+              var note = childNotes[i];
+              if (note.isBendStart && note.bendEndIndex != null) {
+                if (i <= index && note.bendEndIndex! >= index) {
+                  note.isBendStart = false;
+                  note.bendEndIndex = null;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    _showBendRemoveButton = false;
+  }
+
+  void _removePreBend() {
+    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+    context.read<SheetUndoManager>().saveState(widget.sheetNoteRows);
+
+    if (_dragStart != null && _dragEnd != null && _dragRow != null) {
+      final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
+      final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
+
+      for (int i = 0; i < widget.sheetNoteRows[_dragRow!].chords.length; i++) {
+        final chord = widget.sheetNoteRows[_dragRow!].chords[i];
+        final childNotes = chord.childNotes;
+        if (childNotes != null) {
+          for (int i = 0; i < childNotes.length; i++) {
+            var note = childNotes[i];
+            if (note.isPreBendStart && note.preBendEndIndex != null) {
+              if ((i >= start && i <= end) ||
+                  (note.preBendEndIndex! >= start &&
+                      note.preBendEndIndex! <= end)) {
+                note.isPreBendStart = false;
+                note.preBendEndIndex = null;
+              }
+            }
+          }
+        }
+      }
+    } else {
+      final row = selectedNoteProvider.selectedRow;
+      final index = selectedNoteProvider.selectedIndex;
+
+      if (index >= 0) {
+        for (int i = 0; i < widget.sheetNoteRows[row].chords.length; i++) {
+          final chord = widget.sheetNoteRows[row].chords[i];
+          final childNotes = chord.childNotes;
+          if (childNotes != null) {
+            for (int i = 0; i < childNotes.length; i++) {
+              var note = childNotes[i];
+              if (note.isPreBendStart && note.preBendEndIndex != null) {
+                if (i <= index && note.preBendEndIndex! >= index) {
+                  note.isPreBendStart = false;
+                  note.preBendEndIndex = null;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    _showPreBendRemoveButton = false;
+  }
+
+  void _removeBendRelease() {
+    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+    context.read<SheetUndoManager>().saveState(widget.sheetNoteRows);
+
+    if (_dragStart != null && _dragEnd != null && _dragRow != null) {
+      final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
+      final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
+
+      for (int i = 0; i < widget.sheetNoteRows[_dragRow!].chords.length; i++) {
+        final chord = widget.sheetNoteRows[_dragRow!].chords[i];
+        final childNotes = chord.childNotes;
+        if (childNotes != null) {
+          for (int i = 0; i < childNotes.length; i++) {
+            var note = childNotes[i];
+            if (note.isBendReleaseStart && note.bendReleaseEndIndex != null) {
+              if ((i >= start && i <= end) ||
+                  (note.bendReleaseEndIndex! >= start &&
+                      note.bendReleaseEndIndex! <= end)) {
+                note.isBendReleaseStart = false;
+                note.bendReleaseEndIndex = null;
+              }
+            }
+          }
+        }
+      }
+    } else {
+      final row = selectedNoteProvider.selectedRow;
+      final index = selectedNoteProvider.selectedIndex;
+
+      if (index >= 0) {
+        for (int i = 0; i < widget.sheetNoteRows[row].chords.length; i++) {
+          final chord = widget.sheetNoteRows[row].chords[i];
+          final childNotes = chord.childNotes;
+          if (childNotes != null) {
+            for (int i = 0; i < childNotes.length; i++) {
+              var note = childNotes[i];
+              if (note.isBendReleaseStart && note.bendReleaseEndIndex != null) {
+                if (i <= index && note.bendReleaseEndIndex! >= index) {
+                  note.isBendReleaseStart = false;
+                  note.bendReleaseEndIndex = null;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    _showBendReleaseRemoveButton = false;
+  }
+
+  void _removePreBendRelease() {
+    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+    context.read<SheetUndoManager>().saveState(widget.sheetNoteRows);
+
+    if (_dragStart != null && _dragEnd != null && _dragRow != null) {
+      final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
+      final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
+
+      for (int i = 0; i < widget.sheetNoteRows[_dragRow!].chords.length; i++) {
+        final chord = widget.sheetNoteRows[_dragRow!].chords[i];
+        final childNotes = chord.childNotes;
+        if (childNotes != null) {
+          for (int i = 0; i < childNotes.length; i++) {
+            var note = childNotes[i];
+            if (note.isPreBendReleaseStart &&
+                note.preBendReleaseEndIndex != null) {
+              if ((i >= start && i <= end) ||
+                  (note.preBendReleaseEndIndex! >= start &&
+                      note.preBendReleaseEndIndex! <= end)) {
+                note.isPreBendReleaseStart = false;
+                note.preBendReleaseEndIndex = null;
+              }
+            }
+          }
+        }
+      }
+    } else {
+      final row = selectedNoteProvider.selectedRow;
+      final index = selectedNoteProvider.selectedIndex;
+
+      if (index >= 0) {
+        for (int i = 0; i < widget.sheetNoteRows[row].chords.length; i++) {
+          final chord = widget.sheetNoteRows[row].chords[i];
+          final childNotes = chord.childNotes;
+          if (childNotes != null) {
+            for (int i = 0; i < childNotes.length; i++) {
+              var note = childNotes[i];
+              if (note.isPreBendReleaseStart &&
+                  note.preBendReleaseEndIndex != null) {
+                if (i <= index && note.preBendReleaseEndIndex! >= index) {
+                  note.isPreBendReleaseStart = false;
+                  note.preBendReleaseEndIndex = null;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    _showPreBendReleaseRemoveButton = false;
   }
 
   @override
@@ -1902,7 +2663,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                     selectedNoteProvider.selectedIndex >= 0 &&
                     selectedNoteProvider.selectedIndex <
                         widget.sheetNoteRows[selectedNoteProvider.selectedRow]
-                            .chords.length) ...[
+                            .chords.length &&
+                    widget.keyboardType != KeyboardType.guitarTab) ...[
                   _buildNoteFlipButton('Flip Note', () {
                     setState(() {
                       if (_dragStart != null &&
@@ -2177,14 +2939,16 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  if (_showDynamicRemoveButton) ...[
+                  if (_showDynamicRemoveButton &&
+                      widget.keyboardType != KeyboardType.guitarTab) ...[
                     const SizedBox(height: 5),
                     _buildStyledButton(_getDynamicCharacter(), () {
                       _removeDynamicCharacter();
                     }, true, false),
                   ],
                   if (_showHighlightButtons ||
-                      _showDecrescendoRemoveButton) ...[
+                      _showDecrescendoRemoveButton &&
+                          widget.keyboardType != KeyboardType.guitarTab) ...[
                     const SizedBox(height: 5),
                     _buildStyledButton('\uE53F', () {
                       if (_showDecrescendoRemoveButton) {
@@ -2204,7 +2968,9 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                       }
                     }, true, !_showDecrescendoRemoveButton)
                   ],
-                  if (_showHighlightButtons || _showCrescendoRemoveButton) ...[
+                  if (_showHighlightButtons ||
+                      _showCrescendoRemoveButton &&
+                          widget.keyboardType != KeyboardType.guitarTab) ...[
                     const SizedBox(height: 5),
                     _buildStyledButton('\uE53E', () {
                       if (_showCrescendoRemoveButton) {
@@ -2224,7 +2990,9 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                       }
                     }, true, !_showCrescendoRemoveButton)
                   ],
-                  if (_showHighlightButtons || _showSlurRemoveButton) ...[
+                  if (_showHighlightButtons ||
+                      _showSlurRemoveButton &&
+                          widget.keyboardType != KeyboardType.guitarTab) ...[
                     const SizedBox(height: 5),
                     _buildStyledButton('SLUR', () {
                       if (_showSlurRemoveButton) {
@@ -2271,7 +3039,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                       _removeBeam();
                     }, false, false),
                   ],
-                  if (_showTieButton) ...[
+                  if (_showTieButton &&
+                      widget.keyboardType != KeyboardType.guitarTab) ...[
                     const SizedBox(height: 5),
                     _buildStyledButton('TIE', () {
                       if (_showTieRemoveState) {
@@ -2307,6 +3076,105 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                       _showTempoPopup();
                     }, false, true),
                   ],
+//CONTINUE HERE
+                  //Guitar tab buttons
+                  //P.M
+                  if (_showHighlightButtons ||
+                      _showMuteRemoveButton &&
+                          widget.keyboardType == KeyboardType.guitarTab) ...[
+                    const SizedBox(height: 5),
+                    _buildStyledButton('P.M.', () {
+                      if (_showMuteRemoveButton) {
+                        _removeMute();
+                      } else {
+                        if (_dragRow != null &&
+                            _dragStart != null &&
+                            _dragEnd != null) {
+                          context
+                              .read<CurrentSelectedNoteProvider>()
+                              .decrescendoNotes(_dragRow!, _dragStart!,
+                                  _dragEnd!, widget.sheetNoteRows, context);
+
+                          _showMuteRemoveButton = true;
+                          _showPinchHarmonicRemoveButton = false;
+                          _showHarmonicRemoveButton = false;
+                        }
+                      }
+                    }, true, !_showMuteRemoveButton)
+                  ],
+                  //P.H
+                  if (_showHighlightButtons ||
+                      _showCrescendoRemoveButton &&
+                          widget.keyboardType == KeyboardType.guitarTab) ...[
+                    const SizedBox(height: 5),
+                    _buildStyledButton('\uE53E', () {
+                      if (_showCrescendoRemoveButton) {
+                        _removeCrescendo();
+                      } else {
+                        if (_dragRow != null &&
+                            _dragStart != null &&
+                            _dragEnd != null) {
+                          context
+                              .read<CurrentSelectedNoteProvider>()
+                              .crescendoNotes(_dragRow!, _dragStart!, _dragEnd!,
+                                  widget.sheetNoteRows, context);
+
+                          _showCrescendoRemoveButton = true;
+                          _showDecrescendoRemoveButton = false;
+                        }
+                      }
+                    }, true, !_showCrescendoRemoveButton)
+                  ],
+                  //Ham.
+                  if (_showHighlightButtons ||
+                      _showCrescendoRemoveButton &&
+                          widget.keyboardType == KeyboardType.guitarTab) ...[
+                    const SizedBox(height: 5),
+                    _buildStyledButton('\uE53E', () {
+                      if (_showCrescendoRemoveButton) {
+                        _removeCrescendo();
+                      } else {
+                        if (_dragRow != null &&
+                            _dragStart != null &&
+                            _dragEnd != null) {
+                          context
+                              .read<CurrentSelectedNoteProvider>()
+                              .crescendoNotes(_dragRow!, _dragStart!, _dragEnd!,
+                                  widget.sheetNoteRows, context);
+
+                          _showCrescendoRemoveButton = true;
+                          _showDecrescendoRemoveButton = false;
+                        }
+                      }
+                    }, true, !_showCrescendoRemoveButton)
+                  ],
+                  //Vibrato
+                  if (_showHighlightButtons ||
+                      _showCrescendoRemoveButton &&
+                          widget.keyboardType == KeyboardType.guitarTab) ...[
+                    const SizedBox(height: 5),
+                    _buildStyledButton('\uE53E', () {
+                      if (_showCrescendoRemoveButton) {
+                        _removeCrescendo();
+                      } else {
+                        if (_dragRow != null &&
+                            _dragStart != null &&
+                            _dragEnd != null) {
+                          context
+                              .read<CurrentSelectedNoteProvider>()
+                              .crescendoNotes(_dragRow!, _dragStart!, _dragEnd!,
+                                  widget.sheetNoteRows, context);
+
+                          _showCrescendoRemoveButton = true;
+                          _showDecrescendoRemoveButton = false;
+                        }
+                      }
+                    }, true, !_showCrescendoRemoveButton)
+                  ],
+                  //bend
+                  //pre-bend
+                  //bend-release
+                  //pre-bend-release
                 ],
               ),
             ),

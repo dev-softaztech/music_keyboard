@@ -366,4 +366,234 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
 
     notifyListeners();
   }
+
+//Guitar tab
+  void muteNotes(int row, int startIndex, int endIndex,
+      List<SheetRows> sheetNoteRows, BuildContext context) {
+    context.read<SheetUndoManager>().saveState(sheetNoteRows);
+
+    if (startIndex > endIndex) {
+      int temp = startIndex;
+      startIndex = endIndex;
+      endIndex = temp;
+    }
+
+    // Remove any overlapping dynamics
+    for (int i = 0; i < sheetNoteRows[row].chords.length; i++) {
+      final note = sheetNoteRows[row].chords[i];
+      if (note.isPinchHarmonicStart && note.pinchHarmonicEndIndex != null) {
+        if ((i >= startIndex && i <= endIndex) ||
+            (note.pinchHarmonicEndIndex! >= startIndex &&
+                note.pinchHarmonicEndIndex! <= endIndex)) {
+          note.isPinchHarmonicStart = false;
+          note.pinchHarmonicEndIndex = null;
+        }
+      }
+      if (note.isHarmonicStart && note.harmonicEndIndex != null) {
+        if ((i >= startIndex && i <= endIndex) ||
+            (note.harmonicEndIndex! >= startIndex &&
+                note.harmonicEndIndex! <= endIndex)) {
+          note.isHarmonicStart = false;
+          note.harmonicEndIndex = null;
+        }
+      }
+      if (note.isMuteStart && note.muteEndIndex != null) {
+        if ((i >= startIndex && i <= endIndex) ||
+            (note.muteEndIndex! >= startIndex &&
+                note.muteEndIndex! <= endIndex)) {
+          note.isMuteStart = false;
+          note.muteEndIndex = null;
+        }
+      }
+    }
+
+    MusicalNote firstNote = sheetNoteRows[row].chords[startIndex];
+    firstNote.isMuteStart = true;
+    firstNote.muteEndIndex = endIndex;
+
+    notifyListeners();
+  }
+
+  void pinchHarmonicNotes(int row, int startIndex, int endIndex,
+      List<SheetRows> sheetNoteRows, BuildContext context) {
+    context.read<SheetUndoManager>().saveState(sheetNoteRows);
+
+    if (startIndex > endIndex) {
+      int temp = startIndex;
+      startIndex = endIndex;
+      endIndex = temp;
+    }
+
+    // Remove any overlapping dynamics
+    for (int i = 0; i < sheetNoteRows[row].chords.length; i++) {
+      final note = sheetNoteRows[row].chords[i];
+      if (note.isMuteStart && note.muteEndIndex != null) {
+        if ((i >= startIndex && i <= endIndex) ||
+            (note.muteEndIndex! >= startIndex &&
+                note.muteEndIndex! <= endIndex)) {
+          note.isMuteStart = false;
+          note.muteEndIndex = null;
+        }
+      }
+      if (note.isHarmonicStart && note.harmonicEndIndex != null) {
+        if ((i >= startIndex && i <= endIndex) ||
+            (note.harmonicEndIndex! >= startIndex &&
+                note.harmonicEndIndex! <= endIndex)) {
+          note.isHarmonicStart = false;
+          note.harmonicEndIndex = null;
+        }
+      }
+      if (note.isPinchHarmonicStart && note.pinchHarmonicEndIndex != null) {
+        if ((i >= startIndex && i <= endIndex) ||
+            (note.pinchHarmonicEndIndex! >= startIndex &&
+                note.pinchHarmonicEndIndex! <= endIndex)) {
+          note.isPinchHarmonicStart = false;
+          note.pinchHarmonicEndIndex = null;
+        }
+      }
+    }
+
+    MusicalNote firstNote = sheetNoteRows[row].chords[startIndex];
+    firstNote.isPinchHarmonicStart = true;
+    firstNote.pinchHarmonicEndIndex = endIndex;
+
+    notifyListeners();
+  }
+
+  void harmonicNotes(int row, int startIndex, int endIndex,
+      List<SheetRows> sheetNoteRows, BuildContext context) {
+    context.read<SheetUndoManager>().saveState(sheetNoteRows);
+
+    if (startIndex > endIndex) {
+      int temp = startIndex;
+      startIndex = endIndex;
+      endIndex = temp;
+    }
+
+    // Remove any overlapping dynamics
+    for (int i = 0; i < sheetNoteRows[row].chords.length; i++) {
+      final note = sheetNoteRows[row].chords[i];
+      if (note.isPinchHarmonicStart && note.pinchHarmonicEndIndex != null) {
+        if ((i >= startIndex && i <= endIndex) ||
+            (note.pinchHarmonicEndIndex! >= startIndex &&
+                note.pinchHarmonicEndIndex! <= endIndex)) {
+          note.isPinchHarmonicStart = false;
+          note.pinchHarmonicEndIndex = null;
+        }
+      }
+      if (note.isMuteStart && note.muteEndIndex != null) {
+        if ((i >= startIndex && i <= endIndex) ||
+            (note.muteEndIndex! >= startIndex &&
+                note.muteEndIndex! <= endIndex)) {
+          note.isMuteStart = false;
+          note.muteEndIndex = null;
+        }
+      }
+      if (note.isHarmonicStart && note.harmonicEndIndex != null) {
+        if ((i >= startIndex && i <= endIndex) ||
+            (note.harmonicEndIndex! >= startIndex &&
+                note.harmonicEndIndex! <= endIndex)) {
+          note.isHarmonicStart = false;
+          note.harmonicEndIndex = null;
+        }
+      }
+    }
+
+    MusicalNote firstNote = sheetNoteRows[row].chords[startIndex];
+    firstNote.isHarmonicStart = true;
+    firstNote.harmonicEndIndex = endIndex;
+
+    notifyListeners();
+  }
+
+  void vibratoNotes(int row, int startIndex, int endIndex,
+      List<SheetRows> sheetNoteRows, BuildContext context) {
+    context.read<SheetUndoManager>().saveState(sheetNoteRows);
+
+    if (startIndex > endIndex) {
+      int temp = startIndex;
+      startIndex = endIndex;
+      endIndex = temp;
+    }
+
+    // Remove any overlapping dynamics
+    for (int i = 0; i < sheetNoteRows[row].chords.length; i++) {
+      final note = sheetNoteRows[row].chords[i];
+      if (note.isVibratoStart && note.vibratoEndIndex != null) {
+        if ((i >= startIndex && i <= endIndex) ||
+            (note.vibratoEndIndex! >= startIndex &&
+                note.vibratoEndIndex! <= endIndex)) {
+          note.isVibratoStart = false;
+          note.vibratoEndIndex = null;
+        }
+      }
+    }
+
+    MusicalNote firstNote = sheetNoteRows[row].chords[startIndex];
+    firstNote.isVibratoStart = true;
+    firstNote.vibratoEndIndex = endIndex;
+
+    notifyListeners();
+  }
+
+  void bendNotes(int row, int startIndex, int endIndex,
+      List<SheetRows> sheetNoteRows, BuildContext context) {
+    context.read<SheetUndoManager>().saveState(sheetNoteRows);
+
+    if (startIndex > endIndex) {
+      int temp = startIndex;
+      startIndex = endIndex;
+      endIndex = temp;
+    }
+
+    // Remove any overlapping dynamics
+    for (int i = 0; i < sheetNoteRows[row].chords.length; i++) {
+      final chord = sheetNoteRows[row].chords[i];
+      final childNotes = chord.childNotes;
+      if (childNotes != null) {
+        for (int i = 0; i < childNotes.length; i++) {
+          var note = childNotes[i];
+          if (note.isBendStart && note.bendEndIndex != null) {
+            if ((i >= startIndex && i <= endIndex) ||
+                (note.bendEndIndex! >= startIndex &&
+                    note.bendEndIndex! <= endIndex)) {
+              note.isBendStart = false;
+              note.bendEndIndex = null;
+            }
+          }
+          if (note.isPreBendStart && note.preBendEndIndex != null) {
+            if ((i >= startIndex && i <= endIndex) ||
+                (note.preBendEndIndex! >= startIndex &&
+                    note.preBendEndIndex! <= endIndex)) {
+              note.isPreBendStart = false;
+              note.preBendEndIndex = null;
+            }
+          }
+          if (note.isBendReleaseStart && note.bendReleaseEndIndex != null) {
+            if ((i >= startIndex && i <= endIndex) ||
+                (note.bendReleaseEndIndex! >= startIndex &&
+                    note.bendReleaseEndIndex! <= endIndex)) {
+              note.isBendReleaseStart = false;
+              note.bendReleaseEndIndex = null;
+            }
+          }
+          if (note.isPreBendReleaseStart &&
+              note.preBendReleaseEndIndex != null) {
+            if ((i >= startIndex && i <= endIndex) ||
+                (note.preBendReleaseEndIndex! >= startIndex &&
+                    note.preBendReleaseEndIndex! <= endIndex)) {
+              note.isPreBendReleaseStart = false;
+              note.preBendReleaseEndIndex = null;
+            }
+          }
+        }
+      }
+    }
+
+    MusicalNote firstNote = sheetNoteRows[row].chords[startIndex];
+    firstNote.isHarmonicStart = true;
+    firstNote.harmonicEndIndex = endIndex;
+
+    notifyListeners();
+  }
 }
