@@ -5,6 +5,7 @@ import 'package:music_keyboard/models/sheet_format.dart';
 import 'package:music_keyboard/src/providers/current_selected_note_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:music_keyboard/src/utils/music_sheet_utils/guitar_tab_helpers.dart';
 
 class GuitarKeyboardLayout extends StatefulWidget {
   final bool showNotesKeyboard;
@@ -159,77 +160,14 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
   MusicalNote _updateFretForString(
       int selectedRow, int selectedNoteIndex, int stringIndex, int fretNumber,
       {bool goToNextString = true}) {
-    final chord = _getCurrentChord(selectedRow, selectedNoteIndex);
-
-    if (chord == null) {
-      // No chord exists at this position, cannot update
-      return MusicalNote(pitch: "", octave: 0, type: NoteType.space);
-    }
-
-    // Initialize childNotes if null
-    chord.childNotes ??= [];
-
-    bool fretWasAdded = false;
-
-    // Find existing childNote for this string or create new one
-    bool found = false;
-    for (int i = 0; i < chord.childNotes!.length; i++) {
-      if (chord.childNotes![i].octave == stringIndex) {
-        found = true;
-
-        if (fretNumber.toString() == chord.childNotes![i].unicodeCharacter) {
-          chord.childNotes!.removeAt(i);
-          break;
-        }
-
-        chord.childNotes![i] = MusicalNote(
-          pitch: _stringNames[stringIndex],
-          octave: stringIndex,
-          type: NoteType.fret,
-          unicodeCharacter: fretNumber.toString(),
-          duration: 0.0,
-          isBendStart: chord.childNotes![i].isBendStart,
-          isPreBendStart: chord.childNotes![i].isPreBendStart,
-          isBendReleaseStart: chord.childNotes![i].isBendReleaseStart,
-          isPreBendReleaseStart: chord.childNotes![i].isPreBendReleaseStart,
-          bendEndIndex: chord.childNotes![i].bendEndIndex,
-          preBendEndIndex: chord.childNotes![i].preBendEndIndex,
-          bendReleaseEndIndex: chord.childNotes![i].bendReleaseEndIndex,
-          preBendReleaseEndIndex: chord.childNotes![i].preBendReleaseEndIndex,
-        );
-        fretWasAdded = true;
-        break;
-      }
-    }
-
-    var newChildNote = MusicalNote(
-      pitch: _stringNames[stringIndex],
-      octave: stringIndex,
-      type: NoteType.fret,
-      unicodeCharacter: fretNumber == 0 ? "" : fretNumber.toString(),
-      duration: 0.0,
+    return GuitarTabHelpers.updateFretForString(
+      widget.sheetNoteRows,
+      selectedRow,
+      selectedNoteIndex,
+      stringIndex,
+      fretNumber,
+      goToNextString: goToNextString,
     );
-
-    if (!found) {
-      chord.childNotes!.add(newChildNote);
-      fretWasAdded = true;
-    }
-
-    if (fretWasAdded && goToNextString) {
-      setState(() {});
-      //Currently commented out as I think it is uncessary logic, can demo at next session.
-      /*setState(() {
-        // Switch to next string (0->1->2->3->4->5->0)
-        _selectedStringIndex = (_selectedStringIndex + 1) % 6;
-
-        // Update bend button states to reflect the new current string
-        _updateBendButtonStatesForCurrentString(selectedRow, selectedNoteIndex);
-      });*/
-    } else {
-      setState(() {});
-    }
-
-    return newChildNote;
   }
 
   // Build a technique button (for top two rows)
