@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/models/sheet_rows.dart';
 import 'package:music_keyboard/models/sheet_format.dart';
@@ -1488,8 +1489,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
         final chord = widget.sheetNoteRows[_dragRow!].chords[i];
         final childNotes = chord.childNotes;
         if (childNotes != null) {
-          for (int i = 0; i < childNotes.length; i++) {
-            var note = childNotes[i];
+          for (int x = 0; x < childNotes.length; x++) {
+            var note = childNotes[x];
             if (note.isBendStart && note.bendEndIndex != null) {
               // Check if crescendo overlaps with highlight range
               if ((i >= start && i <= end) ||
@@ -1510,8 +1511,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
           final chord = widget.sheetNoteRows[row].chords[i];
           final childNotes = chord.childNotes;
           if (childNotes != null) {
-            for (int i = 0; i < childNotes.length; i++) {
-              var note = childNotes[i];
+            for (int x = 0; x < childNotes.length; x++) {
+              var note = childNotes[x];
               if (note.isBendStart && note.bendEndIndex != null) {
                 if (i <= index && note.bendEndIndex! >= index) {
                   return true;
@@ -1537,8 +1538,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
         final chord = widget.sheetNoteRows[_dragRow!].chords[i];
         final childNotes = chord.childNotes;
         if (childNotes != null) {
-          for (int i = 0; i < childNotes.length; i++) {
-            var note = childNotes[i];
+          for (int x = 0; x < childNotes.length; x++) {
+            var note = childNotes[x];
             if (note.isPreBendStart && note.preBendEndIndex != null) {
               // Check if crescendo overlaps with highlight range
               if ((i >= start && i <= end) ||
@@ -1560,8 +1561,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
           final chord = widget.sheetNoteRows[row].chords[i];
           final childNotes = chord.childNotes;
           if (childNotes != null) {
-            for (int i = 0; i < childNotes.length; i++) {
-              var note = childNotes[i];
+            for (int x = 0; x < childNotes.length; x++) {
+              var note = childNotes[x];
               if (note.isPreBendStart && note.preBendEndIndex != null) {
                 if (i <= index && note.preBendEndIndex! >= index) {
                   return true;
@@ -1587,8 +1588,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
         final chord = widget.sheetNoteRows[_dragRow!].chords[i];
         final childNotes = chord.childNotes;
         if (childNotes != null) {
-          for (int i = 0; i < childNotes.length; i++) {
-            var note = childNotes[i];
+          for (int x = 0; x < childNotes.length; x++) {
+            var note = childNotes[x];
             if (note.isBendReleaseStart && note.bendReleaseEndIndex != null) {
               // Check if crescendo overlaps with highlight range
               if ((i >= start && i <= end) ||
@@ -1610,8 +1611,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
           final chord = widget.sheetNoteRows[row].chords[i];
           final childNotes = chord.childNotes;
           if (childNotes != null) {
-            for (int i = 0; i < childNotes.length; i++) {
-              var note = childNotes[i];
+            for (int x = 0; x < childNotes.length; x++) {
+              var note = childNotes[x];
               if (note.isBendReleaseStart && note.bendReleaseEndIndex != null) {
                 if (i <= index && note.bendReleaseEndIndex! >= index) {
                   return true;
@@ -1637,8 +1638,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
         final chord = widget.sheetNoteRows[_dragRow!].chords[i];
         final childNotes = chord.childNotes;
         if (childNotes != null) {
-          for (int i = 0; i < childNotes.length; i++) {
-            var note = childNotes[i];
+          for (int x = 0; x < childNotes.length; x++) {
+            var note = childNotes[x];
             if (note.isPreBendReleaseStart &&
                 note.preBendReleaseEndIndex != null) {
               // Check if crescendo overlaps with highlight range
@@ -1661,8 +1662,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
           final chord = widget.sheetNoteRows[row].chords[i];
           final childNotes = chord.childNotes;
           if (childNotes != null) {
-            for (int i = 0; i < childNotes.length; i++) {
-              var note = childNotes[i];
+            for (int x = 0; x < childNotes.length; x++) {
+              var note = childNotes[x];
               if (note.isPreBendReleaseStart &&
                   note.preBendReleaseEndIndex != null) {
                 if (i <= index && note.preBendReleaseEndIndex! >= index) {
@@ -2946,9 +2947,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                       _removeDynamicCharacter();
                     }, true, false),
                   ],
-                  if (_showHighlightButtons ||
-                      _showDecrescendoRemoveButton &&
-                          widget.keyboardType != KeyboardType.guitarTab) ...[
+                  if ((_showHighlightButtons || _showDecrescendoRemoveButton) &&
+                      widget.keyboardType != KeyboardType.guitarTab) ...[
                     const SizedBox(height: 5),
                     _buildStyledButton('\uE53F', () {
                       if (_showDecrescendoRemoveButton) {
@@ -2968,9 +2968,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                       }
                     }, true, !_showDecrescendoRemoveButton)
                   ],
-                  if (_showHighlightButtons ||
-                      _showCrescendoRemoveButton &&
-                          widget.keyboardType != KeyboardType.guitarTab) ...[
+                  if ((_showHighlightButtons || _showCrescendoRemoveButton) &&
+                      widget.keyboardType != KeyboardType.guitarTab) ...[
                     const SizedBox(height: 5),
                     _buildStyledButton('\uE53E', () {
                       if (_showCrescendoRemoveButton) {
@@ -2990,9 +2989,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                       }
                     }, true, !_showCrescendoRemoveButton)
                   ],
-                  if (_showHighlightButtons ||
-                      _showSlurRemoveButton &&
-                          widget.keyboardType != KeyboardType.guitarTab) ...[
+                  if ((_showHighlightButtons || _showSlurRemoveButton) &&
+                      widget.keyboardType != KeyboardType.guitarTab) ...[
                     const SizedBox(height: 5),
                     _buildStyledButton('SLUR', () {
                       if (_showSlurRemoveButton) {
@@ -3012,8 +3010,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                       }
                     }, false, !_showSlurRemoveButton)
                   ],
-                  if (_showHighlightButtons &&
-                      _showBeamAddButton &&
+                  if ((_showHighlightButtons && _showBeamAddButton) &&
                       widget.keyboardType != KeyboardType.guitarTab) ...[
                     const SizedBox(height: 5),
                     _buildStyledButton('BEAM', () {
@@ -3078,9 +3075,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                   ],
                   //Guitar tab buttons
                   //P.M
-                  if (_showHighlightButtons ||
-                      _showMuteRemoveButton &&
-                          widget.keyboardType == KeyboardType.guitarTab) ...[
+                  if ((_showHighlightButtons || _showMuteRemoveButton) &&
+                      widget.keyboardType == KeyboardType.guitarTab) ...[
                     const SizedBox(height: 5),
                     _buildStyledButton('P.M.', () {
                       if (_showMuteRemoveButton) {
@@ -3101,12 +3097,12 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                           _showHarmonicRemoveButton = false;
                         }
                       }
-                    }, true, !_showMuteRemoveButton)
+                    }, false, !_showMuteRemoveButton)
                   ],
                   //P.H
-                  if (_showHighlightButtons ||
-                      _showPinchHarmonicRemoveButton &&
-                          widget.keyboardType == KeyboardType.guitarTab) ...[
+                  if ((_showHighlightButtons ||
+                          _showPinchHarmonicRemoveButton) &&
+                      widget.keyboardType == KeyboardType.guitarTab) ...[
                     const SizedBox(height: 5),
                     _buildStyledButton('P.H.', () {
                       if (_showPinchHarmonicRemoveButton) {
@@ -3125,12 +3121,11 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                           _showHarmonicRemoveButton = false;
                         }
                       }
-                    }, true, !_showPinchHarmonicRemoveButton)
+                    }, false, !_showPinchHarmonicRemoveButton)
                   ],
                   //Ham.
-                  if (_showHighlightButtons ||
-                      _showMuteRemoveButton &&
-                          widget.keyboardType == KeyboardType.guitarTab) ...[
+                  if ((_showHighlightButtons || _showHarmonicRemoveButton) &&
+                      widget.keyboardType == KeyboardType.guitarTab) ...[
                     const SizedBox(height: 5),
                     _buildStyledButton('Ham.', () {
                       if (_showHarmonicRemoveButton) {
@@ -3149,12 +3144,11 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                           _showPinchHarmonicRemoveButton = false;
                         }
                       }
-                    }, true, !_showHarmonicRemoveButton)
+                    }, false, !_showHarmonicRemoveButton)
                   ],
                   //Vibrato
-                  if (_showHighlightButtons ||
-                      _showVibratoRemoveButton &&
-                          widget.keyboardType == KeyboardType.guitarTab) ...[
+                  if ((_showHighlightButtons || _showVibratoRemoveButton) &&
+                      widget.keyboardType == KeyboardType.guitarTab) ...[
                     const SizedBox(height: 5),
                     _buildStyledButton('\uE56E', () {
                       if (_showVibratoRemoveButton) {
@@ -3173,11 +3167,109 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                       }
                     }, true, !_showVibratoRemoveButton)
                   ],
-                  //Continue here
-                  //bend
+                  //Bend
+                  if ((_showHighlightButtons || _showBendRemoveButton) &&
+                      widget.keyboardType == KeyboardType.guitarTab) ...[
+                    const SizedBox(height: 5),
+                    _buildStyledButton('', () {
+                      if (_showBendRemoveButton) {
+                        _removeBend();
+                      } else {
+                        if (_dragRow != null &&
+                            _dragStart != null &&
+                            _dragEnd != null) {
+                          context.read<CurrentSelectedNoteProvider>().bendNotes(
+                              _dragRow!,
+                              _dragStart!,
+                              _dragEnd!,
+                              widget.sheetNoteRows,
+                              context);
+
+                          _showBendRemoveButton = true;
+                          _showPreBendRemoveButton = false;
+                          _showBendReleaseRemoveButton = false;
+                          _showPreBendReleaseRemoveButton = false;
+                        }
+                      }
+                    }, false, !_showBendRemoveButton,
+                        svgAssetPath: 'assets/svgs/bend.svg')
+                  ],
                   //pre-bend
+                  if ((_showHighlightButtons || _showPreBendRemoveButton) &&
+                      widget.keyboardType == KeyboardType.guitarTab) ...[
+                    const SizedBox(height: 5),
+                    _buildStyledButton('', () {
+                      if (_showPreBendRemoveButton) {
+                        _removePreBend();
+                      } else {
+                        if (_dragRow != null &&
+                            _dragStart != null &&
+                            _dragEnd != null) {
+                          context
+                              .read<CurrentSelectedNoteProvider>()
+                              .preBendNotes(_dragRow!, _dragStart!, _dragEnd!,
+                                  widget.sheetNoteRows, context);
+
+                          _showPreBendRemoveButton = true;
+                          _showBendRemoveButton = false;
+                          _showBendReleaseRemoveButton = false;
+                          _showPreBendReleaseRemoveButton = false;
+                        }
+                      }
+                    }, false, !_showPreBendRemoveButton,
+                        svgAssetPath: 'assets/svgs/pre-bend.svg')
+                  ],
                   //bend-release
+                  if ((_showHighlightButtons || _showBendReleaseRemoveButton) &&
+                      widget.keyboardType == KeyboardType.guitarTab) ...[
+                    const SizedBox(height: 5),
+                    _buildStyledButton('', () {
+                      if (_showBendReleaseRemoveButton) {
+                        _removeBendRelease();
+                      } else {
+                        if (_dragRow != null &&
+                            _dragStart != null &&
+                            _dragEnd != null) {
+                          context
+                              .read<CurrentSelectedNoteProvider>()
+                              .bendReleaseNotes(_dragRow!, _dragStart!,
+                                  _dragEnd!, widget.sheetNoteRows, context);
+
+                          _showBendReleaseRemoveButton = true;
+                          _showPreBendRemoveButton = false;
+                          _showBendRemoveButton = false;
+                          _showPreBendReleaseRemoveButton = false;
+                        }
+                      }
+                    }, false, !_showBendReleaseRemoveButton,
+                        svgAssetPath: 'assets/svgs/bend-release.svg')
+                  ],
                   //pre-bend-release
+                  if ((_showHighlightButtons ||
+                          _showPreBendReleaseRemoveButton) &&
+                      widget.keyboardType == KeyboardType.guitarTab) ...[
+                    const SizedBox(height: 5),
+                    _buildStyledButton('', () {
+                      if (_showPreBendReleaseRemoveButton) {
+                        _removePreBendRelease();
+                      } else {
+                        if (_dragRow != null &&
+                            _dragStart != null &&
+                            _dragEnd != null) {
+                          context
+                              .read<CurrentSelectedNoteProvider>()
+                              .preBendReleaseNotes(_dragRow!, _dragStart!,
+                                  _dragEnd!, widget.sheetNoteRows, context);
+
+                          _showPreBendReleaseRemoveButton = true;
+                          _showPreBendRemoveButton = false;
+                          _showBendReleaseRemoveButton = false;
+                          _showBendRemoveButton = false;
+                        }
+                      }
+                    }, false, !_showPreBendReleaseRemoveButton,
+                        svgAssetPath: 'assets/svgs/pre-bend-release.svg')
+                  ],
                 ],
               ),
             ),
@@ -3194,7 +3286,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
   }
 
   Widget _buildStyledButton(
-      String label, VoidCallback onPressed, bool useBravura, bool isAdd) {
+      String label, VoidCallback onPressed, bool useBravura, bool isAdd,
+      {String? svgAssetPath}) {
     return Row(
       children: [
         Text(
@@ -3236,13 +3329,18 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                         fontFamily: 'Bravura',
                       ),
                     ))
-                : Text(
-                    label,
-                    style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold),
-                  ),
+                : svgAssetPath != null
+                    ? SvgPicture.asset(svgAssetPath,
+                        width: 20,
+                        height: 20,
+                        colorFilter: ColorFilter.linearToSrgbGamma())
+                    : Text(
+                        label,
+                        style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold),
+                      ),
           ),
         ),
       ],
