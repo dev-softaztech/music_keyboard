@@ -769,6 +769,9 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
           case 'harmonic':
             _isHarmonicLocked = false;
             break;
+          case 'vibrato':
+            _isVibratoLocked = false;
+            break;
         }
       } else {
         // Third tap: switch active state off and remove technique from note
@@ -803,6 +806,12 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
             _isPickUpwardActive = false;
             chord.hasPickUpward = false;
             break;
+          case 'vibrato':
+            _isVibratoActive = false;
+            _isVibratoLocked = false;
+            chord.isVibratoStart = false;
+            chord.vibratoEndIndex = null;
+            break;
         }
       }
 
@@ -823,6 +832,12 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
         _isHarmonicLocked = false;
         chord.isHarmonicStart = false;
         chord.harmonicEndIndex = null;
+      }
+      if (techniqueType != 'vibrato') {
+        _isVibratoActive = false;
+        _isVibratoLocked = false;
+        chord.isVibratoStart = false;
+        chord.vibratoEndIndex = null;
       }
     });
   }
