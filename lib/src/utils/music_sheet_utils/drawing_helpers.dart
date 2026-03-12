@@ -17,7 +17,7 @@ void drawNote(
     KeyboardType keyboardType) {
   if (note.type == NoteType.clef || note.type == NoteType.bar) {
     drawClefKey(canvas, paint, note, lineSpacing, staffTop, noteX, notes, index,
-        noteColour);
+        noteColour, keyboardType);
     return;
   } else if (note.type == NoteType.timeSignature) {
     drawTimeSignatureKey(canvas, paint, note, lineSpacing, staffTop, noteX,
@@ -46,9 +46,11 @@ void drawClefKey(
     double noteX,
     List<MusicalNote> notes,
     int index,
-    Color noteColour) {
+    Color noteColour,
+    KeyboardType keyboardType) {
   var fontSize = 40.0;
   if (note.unicodeCharacter == "\uF40C") fontSize = 35;
+  if (keyboardType == KeyboardType.guitarTab) fontSize = 50;
 
   final textPainter = TextPainter(
     text: TextSpan(
@@ -82,6 +84,8 @@ void drawClefKey(
   }
 
   if (note.unicodeCharacter == "\uF40C") offsetY = offsetY - 4;
+
+  if (keyboardType == KeyboardType.guitarTab) offsetY = offsetY - 10;
 
   textPainter.paint(canvas, Offset(offsetX, offsetY + 0.5));
 }

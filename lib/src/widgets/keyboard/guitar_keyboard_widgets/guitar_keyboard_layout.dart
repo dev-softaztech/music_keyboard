@@ -1231,12 +1231,10 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: isNextNote
               ? [
-                  const SizedBox(width: 4),
                   const Icon(Icons.arrow_forward, size: 22),
                 ]
               : [
                   const Icon(Icons.arrow_back, size: 22),
-                  const SizedBox(width: 4),
                 ],
         ),
       ),
@@ -1298,7 +1296,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     }
 
     double screenWidth = MediaQuery.of(context).size.width;
-    double techniqueSpacing = screenWidth * 0.015;
+    double techniqueSpacing = screenWidth * 0.01;
 
     return Container(
       height: 270,
@@ -1350,7 +1348,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                           SizedBox(width: techniqueSpacing),
                           _buildTechniqueButton('vibrato', '\uE56E',
                               fontSize: 20,
-                              offset: Offset(0, 3),
+                              offset: Offset(0, 4),
                               onPressed: () => _handleTechniqueButtonPress(
                                   'vibrato', selectedRow, selectedNoteIndex),
                               isActive: _isVibratoActive ||
@@ -1360,7 +1358,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                           SizedBox(width: techniqueSpacing),
                           _buildTechniqueButton('hammer-left-hand', '\uE4BA',
                               fontSize: 38,
-                              offset: Offset(0, -8),
+                              offset: Offset(0, -6),
                               onPressed: () => _handleHammerLeftHandButtonPress(
                                   selectedRow, selectedNoteIndex),
                               isActive: _isHammerLeftHandActive ||
@@ -1388,6 +1386,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                           SizedBox(width: techniqueSpacing),
                           _buildTechniqueButton('pick-downward', '\uE610',
                               fontSize: 30,
+                              offset: Offset(0, 3),
                               onPressed: () => _handleTechniqueButtonPress(
                                   'pick-downward',
                                   selectedRow,
@@ -1469,7 +1468,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                           SizedBox(width: techniqueSpacing),
                           _buildTechniqueButton('pick-upward', '\uE612',
                               fontSize: 30,
-                              offset: Offset(0, 2),
+                              offset: Offset(0, 5),
                               onPressed: () => _handleTechniqueButtonPress(
                                   'pick-upward',
                                   selectedRow,
