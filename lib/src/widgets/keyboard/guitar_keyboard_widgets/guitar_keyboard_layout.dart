@@ -839,6 +839,13 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       // Three-tap behavior logic
       if (!isCurrentlyActive) {
         // First tap: set note to active and enter lock state
+        // Reset other technique properties if setting one of mute, pinch-harmonic, or harmonic
+        if (techniqueType == 'mute' ||
+            techniqueType == 'pinch-harmonic' ||
+            techniqueType == 'harmonic') {
+          _resetOtherTechniqueProperties(chord, techniqueType);
+        }
+
         switch (techniqueType) {
           case 'mute':
             _isMuteActive = true;
@@ -957,6 +964,26 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
         }
       }
     });
+  }
+
+  // Helper: Reset other technique properties when setting one of mute, pinch-harmonic, or harmonic
+  void _resetOtherTechniqueProperties(
+      MusicalNote chord, String activeTechnique) {
+    // Reset all three technique properties
+    chord.isMuteStart = false;
+    chord.muteEndIndex = null;
+    chord.isPinchHarmonicStart = false;
+    chord.pinchHarmonicEndIndex = null;
+    chord.isHarmonicStart = false;
+    chord.harmonicEndIndex = null;
+
+    // Reset lock states for all three techniques
+    _isMuteActive = false;
+    _isMuteLocked = false;
+    _isPinchHarmonicActive = false;
+    _isPinchHarmonicLocked = false;
+    _isHarmonicActive = false;
+    _isHarmonicLocked = false;
   }
 
   // Helper: Check if current chord has technique start property set
