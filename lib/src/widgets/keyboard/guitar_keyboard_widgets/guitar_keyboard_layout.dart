@@ -117,6 +117,137 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       _navigatedViaNextButton = true;
     });
 
+    // Update technique indices for locked techniques (same logic as Next button)
+    final chords = widget.sheetNoteRows[selectedRow].chords;
+    if (_isBendActive ||
+        _isPreBendActive ||
+        _isBendReleaseActive ||
+        _isPreBendReleaseActive) {
+      for (int i = selectedNoteIndex; i >= 0; i--) {
+        final chord = chords[i];
+        if (chord.childNotes == null) continue;
+
+        for (var childNote in chord.childNotes!) {
+          if (_isBendActive &&
+              childNote.isBendStart &&
+              childNote.bendEndIndex != null &&
+              ((i <= selectedNoteIndex &&
+                      selectedNoteIndex - 1 <= childNote.bendEndIndex!) ||
+                  (childNote.bendEndIndex == i - 1))) {
+            childNote.bendEndIndex = childNote.bendEndIndex! + 1;
+          }
+          if (_isPreBendActive &&
+              childNote.isPreBendStart &&
+              childNote.preBendEndIndex != null &&
+              ((i <= selectedNoteIndex &&
+                      selectedNoteIndex - 1 <= childNote.preBendEndIndex!) ||
+                  (childNote.preBendEndIndex == i - 1))) {
+            childNote.preBendEndIndex = childNote.preBendEndIndex! + 1;
+          }
+          if (_isBendReleaseActive &&
+              childNote.isBendReleaseStart &&
+              childNote.bendReleaseEndIndex != null &&
+              ((i <= selectedNoteIndex &&
+                      selectedNoteIndex - 1 <=
+                          childNote.bendReleaseEndIndex!) ||
+                  (childNote.bendReleaseEndIndex == i - 1))) {
+            childNote.bendReleaseEndIndex = childNote.bendReleaseEndIndex! + 1;
+          }
+          if (_isPreBendReleaseActive &&
+              childNote.isPreBendReleaseStart &&
+              childNote.preBendReleaseEndIndex != null &&
+              ((i <= selectedNoteIndex &&
+                      selectedNoteIndex - 1 <=
+                          childNote.preBendReleaseEndIndex!) ||
+                  (childNote.preBendReleaseEndIndex == i - 1))) {
+            childNote.preBendReleaseEndIndex =
+                childNote.preBendReleaseEndIndex! + 1;
+          }
+        }
+      }
+    }
+
+    // Update hammer-left-hand end indices if in locked mode
+    if (_isHammerLeftHandLocked) {
+      for (int i = selectedNoteIndex; i >= 0; i--) {
+        final chord = chords[i];
+        if (chord.childNotes == null) continue;
+
+        for (var childNote in chord.childNotes!) {
+          if (childNote.isHammerLeftHandStart &&
+              childNote.hammerLeftHandEndIndex != null &&
+              ((i <= selectedNoteIndex &&
+                      selectedNoteIndex <= childNote.hammerLeftHandEndIndex!) ||
+                  (childNote.hammerLeftHandEndIndex == i))) {
+            childNote.hammerLeftHandEndIndex =
+                childNote.hammerLeftHandEndIndex! + 1;
+          }
+        }
+      }
+    }
+
+    // Update technique end indices if in locked mode
+    if (_isMuteLocked ||
+        _isPinchHarmonicLocked ||
+        _isHarmonicLocked ||
+        _isVibratoLocked) {
+      // Find the chord that has the active technique with lock
+      MusicalNote? activeChord;
+      List<String> activeTechniqueTypes = [];
+
+      for (int i = selectedNoteIndex; i >= 0; i--) {
+        final chord = chords[i];
+        bool found = false;
+
+        if (_isMuteLocked && chord.isMuteStart && chord.muteEndIndex != null) {
+          activeChord = chord;
+          activeTechniqueTypes.add('mute');
+          found = true;
+        }
+        if (_isPinchHarmonicLocked &&
+            chord.isPinchHarmonicStart &&
+            chord.pinchHarmonicEndIndex != null) {
+          activeChord = chord;
+          activeTechniqueTypes.add('pinch-harmonic');
+          found = true;
+        }
+        if (_isHarmonicLocked &&
+            chord.isHarmonicStart &&
+            chord.harmonicEndIndex != null) {
+          activeChord = chord;
+          activeTechniqueTypes.add('harmonic');
+          found = true;
+        }
+        if (_isVibratoLocked &&
+            chord.isVibratoStart &&
+            chord.vibratoEndIndex != null) {
+          activeChord = chord;
+          activeTechniqueTypes.add('vibrato');
+          found = true;
+        }
+        if (found == true) break;
+      }
+
+      // Update the endIndex for the active technique
+      if (activeChord != null && activeTechniqueTypes.isNotEmpty) {
+        for (var activeTechniqueType in activeTechniqueTypes) {
+          if (activeTechniqueType == 'mute') {
+            activeChord.muteEndIndex = activeChord.muteEndIndex! + 1;
+          }
+          if (activeTechniqueType == 'pinch-harmonic') {
+            activeChord.pinchHarmonicEndIndex =
+                activeChord.pinchHarmonicEndIndex! + 1;
+          }
+          if (activeTechniqueType == 'harmonic') {
+            activeChord.harmonicEndIndex = activeChord.harmonicEndIndex! + 1;
+          }
+          if (activeTechniqueType == 'vibrato') {
+            activeChord.vibratoEndIndex = activeChord.vibratoEndIndex! + 1;
+          }
+        }
+      }
+    }
+
     // Insert the new fret chord
     widget.onKeyPress(MusicalNote(
       pitch: 'G',
