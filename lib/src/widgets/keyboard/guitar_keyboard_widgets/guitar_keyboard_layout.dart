@@ -813,31 +813,37 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
             chord.vibratoEndIndex = null;
             break;
         }
-      }
 
-      if (techniqueType != 'mute') {
-        _isMuteActive = false;
-        _isMuteLocked = false;
-        chord.isMuteStart = false;
-        chord.muteEndIndex = null;
-      }
-      if (techniqueType != 'pinch-harmonic') {
-        _isPinchHarmonicActive = false;
-        _isPinchHarmonicLocked = false;
-        chord.isPinchHarmonicStart = false;
-        chord.pinchHarmonicEndIndex = null;
-      }
-      if (techniqueType != 'harmonic') {
-        _isHarmonicActive = false;
-        _isHarmonicLocked = false;
-        chord.isHarmonicStart = false;
-        chord.harmonicEndIndex = null;
-      }
-      if (techniqueType != 'vibrato') {
-        _isVibratoActive = false;
-        _isVibratoLocked = false;
-        chord.isVibratoStart = false;
-        chord.vibratoEndIndex = null;
+        // Only clear other techniques for chord-level techniques that are mutually exclusive
+        // tap-right-hand is independent and should not clear other techniques
+        if (techniqueType != 'tap-right-hand' &&
+            techniqueType != 'pick-downward' &&
+            techniqueType != 'pick-upward') {
+          if (techniqueType != 'mute') {
+            _isMuteActive = false;
+            _isMuteLocked = false;
+            chord.isMuteStart = false;
+            chord.muteEndIndex = null;
+          }
+          if (techniqueType != 'pinch-harmonic') {
+            _isPinchHarmonicActive = false;
+            _isPinchHarmonicLocked = false;
+            chord.isPinchHarmonicStart = false;
+            chord.pinchHarmonicEndIndex = null;
+          }
+          if (techniqueType != 'harmonic') {
+            _isHarmonicActive = false;
+            _isHarmonicLocked = false;
+            chord.isHarmonicStart = false;
+            chord.harmonicEndIndex = null;
+          }
+          if (techniqueType != 'vibrato') {
+            _isVibratoActive = false;
+            _isVibratoLocked = false;
+            chord.isVibratoStart = false;
+            chord.vibratoEndIndex = null;
+          }
+        }
       }
     });
   }
@@ -1279,11 +1285,38 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           setState(() {
-            // Check the current chord's pick-upward and pick-downward states
+            // Always update technique states to reflect current note's properties
             final currentChord =
                 _getCurrentChord(selectedRow, selectedNoteIndex);
+
+            // Update pick states
             _isPickUpwardActive = currentChord?.hasPickUpward ?? false;
             _isPickDownwardActive = currentChord?.hasPickDownward ?? false;
+
+            // Update tap-right-hand state
+            _isTapRightHandActive =
+                currentChord?.tapRightHandCharacter == '\uEA8B';
+
+            // Update slide states by checking child notes for selected string
+            if (currentChord != null && currentChord.childNotes != null) {
+              final selectedStringProvider =
+                  Provider.of<SelectedStringProvider>(context, listen: false);
+              final selectedStringIndex =
+                  selectedStringProvider.selectedStringIndex;
+
+              for (var childNote in currentChord.childNotes!) {
+                if (childNote.octave == selectedStringIndex) {
+                  _isSlideUpActive = childNote.hasSlideUp;
+                  _isSlideDownActive = childNote.hasSlideDown;
+                  _isHammerLeftHandActive = childNote.isHammerLeftHandStart;
+                  break;
+                }
+              }
+            } else {
+              _isSlideUpActive = false;
+              _isSlideDownActive = false;
+              _isHammerLeftHandActive = false;
+            }
 
             // Only reset other lock states if NOT navigated via Next button
             if (!_navigatedViaNextButton) {
@@ -1296,11 +1329,9 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
               _isHarmonicActive = false;
               _isVibratoActive = false;
               _isVibratoLocked = false;
-              _isHammerLeftHandActive = false;
               _isHammerLeftHandLocked = false;
-              _isSlideUpActive = false;
-              _isSlideDownActive = false;
             }
+
             // Reset the flag after checking
             _navigatedViaNextButton = false;
             _previousSelectedRow = selectedRow;
