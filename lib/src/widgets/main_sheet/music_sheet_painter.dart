@@ -568,180 +568,185 @@ class MusicSheetPainter extends CustomPainter {
         }
 
         if (keyboardType == KeyboardType.guitarTab &&
-            chord.type == NoteType.fret &&
-            chord.childNotes != null) {
-          // Track bend-release info for single curve down drawing
-          List<({double startX, double peakX, double stringY})>
-              releaseBendCurves = [];
-          double? highestReleaseString;
+            chord.type == NoteType.fret) {
+          if (chord.childNotes != null) {
+            // Track bend-release info for single curve down drawing
+            List<({double startX, double peakX, double stringY})>
+                releaseBendCurves = [];
+            double? highestReleaseString;
 
-          for (var childNote in chord.childNotes!) {
-            double stringY = staffTop + (childNote.octave * lineSpacing);
+            for (var childNote in chord.childNotes!) {
+              double stringY = staffTop + (childNote.octave * lineSpacing);
 
-            if (highestReleaseString == null ||
-                stringY < highestReleaseString) {
-              highestReleaseString = stringY;
+              if (highestReleaseString == null ||
+                  stringY < highestReleaseString) {
+                highestReleaseString = stringY;
+              }
+            }
+
+            // Iterate through each childNote to draw bends
+            for (var childNote in chord.childNotes!) {
+              // Check for bend
+              if (childNote.isBendStart && childNote.bendEndIndex != null) {
+                var bendEndIndex = childNote.bendEndIndex! == (i - 1)
+                    ? i
+                    : childNote.bendEndIndex! <
+                            sheetNoteRows[rowIndex].chords.length - 1
+                        ? childNote.bendEndIndex!
+                        : sheetNoteRows[rowIndex].chords.length - 1;
+
+                var indexDistanceCount = bendEndIndex - i;
+
+                double bendEndX =
+                    x + ((indexDistanceCount) * currentRowSpacing);
+                bendEndX += (currentRowSpacing * 0.85);
+
+                // Get string Y position from this childNote
+                double stringY = staffTop + (childNote.octave * lineSpacing);
+
+                _drawBend(canvas, paint, x, bendEndX, stringY, staffTop,
+                    lineSpacing, noteColour, currentRowSpacing);
+              }
+
+              // Check for pre-bend
+              if (childNote.isPreBendStart &&
+                  childNote.preBendEndIndex != null) {
+                var preBendEndIndex = childNote.preBendEndIndex! == (i - 1)
+                    ? i
+                    : childNote.preBendEndIndex! <
+                            sheetNoteRows[rowIndex].chords.length - 1
+                        ? childNote.preBendEndIndex!
+                        : sheetNoteRows[rowIndex].chords.length - 1;
+
+                var indexDistanceCount = preBendEndIndex - i;
+
+                double preBendEndX =
+                    x + ((indexDistanceCount) * currentRowSpacing);
+                preBendEndX += (currentRowSpacing * 0.85);
+
+                // Get string Y position from this childNote
+                double stringY = staffTop + (childNote.octave * lineSpacing);
+
+                _drawPreBend(canvas, paint, x, preBendEndX, stringY, staffTop,
+                    lineSpacing, noteColour, currentRowSpacing);
+              }
+
+              // Check for bend-release
+              if (childNote.isBendReleaseStart &&
+                  childNote.bendReleaseEndIndex != null) {
+                var bendReleaseEndIndex =
+                    childNote.bendReleaseEndIndex! == (i - 1)
+                        ? i
+                        : childNote.bendReleaseEndIndex! <
+                                sheetNoteRows[rowIndex].chords.length - 1
+                            ? childNote.bendReleaseEndIndex!
+                            : sheetNoteRows[rowIndex].chords.length - 1;
+
+                var indexDistanceCount = bendReleaseEndIndex - i;
+
+                double bendReleaseEndX =
+                    x + ((indexDistanceCount) * currentRowSpacing);
+                bendReleaseEndX += (currentRowSpacing * 0.85);
+
+                // Get string Y position from this childNote
+                double stringY = staffTop + (childNote.octave * lineSpacing);
+
+                // Store this release bend for potential combined drawing
+                double peakX = x + (currentRowSpacing * 0.4);
+                releaseBendCurves
+                    .add((startX: x, peakX: peakX, stringY: stringY));
+
+                _drawBendRelease(
+                    canvas,
+                    paint,
+                    x,
+                    bendReleaseEndX,
+                    stringY,
+                    staffTop,
+                    lineSpacing,
+                    noteColour,
+                    currentRowSpacing,
+                    highestReleaseString);
+              }
+
+              // Check for pre-bend-release
+              if (childNote.isPreBendReleaseStart &&
+                  childNote.preBendReleaseEndIndex != null) {
+                var preBendReleaseEndIndex =
+                    childNote.preBendReleaseEndIndex! == (i - 1)
+                        ? i
+                        : childNote.preBendReleaseEndIndex! <
+                                sheetNoteRows[rowIndex].chords.length - 1
+                            ? childNote.preBendReleaseEndIndex!
+                            : sheetNoteRows[rowIndex].chords.length - 1;
+
+                var indexDistanceCount = preBendReleaseEndIndex - i;
+
+                double preBendReleaseEndX =
+                    x + ((indexDistanceCount) * currentRowSpacing);
+                preBendReleaseEndX += (currentRowSpacing * 0.85);
+
+                // Get string Y position from this childNote
+                double stringY = staffTop + (childNote.octave * lineSpacing);
+
+                _drawPreBendRelease(
+                    canvas,
+                    paint,
+                    x,
+                    preBendReleaseEndX,
+                    stringY,
+                    staffTop,
+                    lineSpacing,
+                    noteColour,
+                    currentRowSpacing,
+                    highestReleaseString);
+              }
+
+              // Check for hammer-left-hand
+              if (childNote.isHammerLeftHandStart &&
+                  childNote.hammerLeftHandEndIndex != null) {
+                var hammerLeftHandEndIndex = childNote.hammerLeftHandEndIndex! <
+                        sheetNoteRows[rowIndex].chords.length - 1
+                    ? childNote.hammerLeftHandEndIndex!
+                    : sheetNoteRows[rowIndex].chords.length - 1;
+
+                var indexDistanceCount = hammerLeftHandEndIndex - i;
+
+                double hammerLeftHandEndX =
+                    x + ((indexDistanceCount) * currentRowSpacing);
+                hammerLeftHandEndX += (currentRowSpacing * 0.85);
+
+                // Get string Y position from this childNote (start and end Y are the same)
+                double stringY = staffTop + (childNote.octave * lineSpacing);
+
+                _drawHammerLeftHand(
+                    canvas, paint, x, hammerLeftHandEndX, stringY, noteColour);
+              }
+
+              // Check for slide-up
+              if (childNote.hasSlideUp) {
+                double stringY = staffTop + (childNote.octave * lineSpacing);
+                _drawSlideUp(
+                    canvas, paint, x, stringY, noteColour, currentRowSpacing);
+              }
+
+              // Check for slide-down
+              if (childNote.hasSlideDown) {
+                double stringY = staffTop + (childNote.octave * lineSpacing);
+                _drawSlideDown(
+                    canvas, paint, x, stringY, noteColour, currentRowSpacing);
+              }
             }
           }
-
-          // Iterate through each childNote to draw bends
-          for (var childNote in chord.childNotes!) {
-            // Check for bend
-            if (childNote.isBendStart && childNote.bendEndIndex != null) {
-              var bendEndIndex = childNote.bendEndIndex! == (i - 1)
-                  ? i
-                  : childNote.bendEndIndex! <
-                          sheetNoteRows[rowIndex].chords.length - 1
-                      ? childNote.bendEndIndex!
-                      : sheetNoteRows[rowIndex].chords.length - 1;
-
-              var indexDistanceCount = bendEndIndex - i;
-
-              double bendEndX = x + ((indexDistanceCount) * currentRowSpacing);
-              bendEndX += (currentRowSpacing * 0.85);
-
-              // Get string Y position from this childNote
-              double stringY = staffTop + (childNote.octave * lineSpacing);
-
-              _drawBend(canvas, paint, x, bendEndX, stringY, staffTop,
-                  lineSpacing, noteColour, currentRowSpacing);
-            }
-
-            // Check for pre-bend
-            if (childNote.isPreBendStart && childNote.preBendEndIndex != null) {
-              var preBendEndIndex = childNote.preBendEndIndex! == (i - 1)
-                  ? i
-                  : childNote.preBendEndIndex! <
-                          sheetNoteRows[rowIndex].chords.length - 1
-                      ? childNote.preBendEndIndex!
-                      : sheetNoteRows[rowIndex].chords.length - 1;
-
-              var indexDistanceCount = preBendEndIndex - i;
-
-              double preBendEndX =
-                  x + ((indexDistanceCount) * currentRowSpacing);
-              preBendEndX += (currentRowSpacing * 0.85);
-
-              // Get string Y position from this childNote
-              double stringY = staffTop + (childNote.octave * lineSpacing);
-
-              _drawPreBend(canvas, paint, x, preBendEndX, stringY, staffTop,
-                  lineSpacing, noteColour, currentRowSpacing);
-            }
-
-            // Check for bend-release
-            if (childNote.isBendReleaseStart &&
-                childNote.bendReleaseEndIndex != null) {
-              var bendReleaseEndIndex =
-                  childNote.bendReleaseEndIndex! == (i - 1)
-                      ? i
-                      : childNote.bendReleaseEndIndex! <
-                              sheetNoteRows[rowIndex].chords.length - 1
-                          ? childNote.bendReleaseEndIndex!
-                          : sheetNoteRows[rowIndex].chords.length - 1;
-
-              var indexDistanceCount = bendReleaseEndIndex - i;
-
-              double bendReleaseEndX =
-                  x + ((indexDistanceCount) * currentRowSpacing);
-              bendReleaseEndX += (currentRowSpacing * 0.85);
-
-              // Get string Y position from this childNote
-              double stringY = staffTop + (childNote.octave * lineSpacing);
-
-              // Store this release bend for potential combined drawing
-              double peakX = x + (currentRowSpacing * 0.4);
-              releaseBendCurves
-                  .add((startX: x, peakX: peakX, stringY: stringY));
-
-              _drawBendRelease(
-                  canvas,
-                  paint,
-                  x,
-                  bendReleaseEndX,
-                  stringY,
-                  staffTop,
-                  lineSpacing,
-                  noteColour,
-                  currentRowSpacing,
-                  highestReleaseString);
-            }
-
-            // Check for pre-bend-release
-            if (childNote.isPreBendReleaseStart &&
-                childNote.preBendReleaseEndIndex != null) {
-              var preBendReleaseEndIndex =
-                  childNote.preBendReleaseEndIndex! == (i - 1)
-                      ? i
-                      : childNote.preBendReleaseEndIndex! <
-                              sheetNoteRows[rowIndex].chords.length - 1
-                          ? childNote.preBendReleaseEndIndex!
-                          : sheetNoteRows[rowIndex].chords.length - 1;
-
-              var indexDistanceCount = preBendReleaseEndIndex - i;
-
-              double preBendReleaseEndX =
-                  x + ((indexDistanceCount) * currentRowSpacing);
-              preBendReleaseEndX += (currentRowSpacing * 0.85);
-
-              // Get string Y position from this childNote
-              double stringY = staffTop + (childNote.octave * lineSpacing);
-
-              _drawPreBendRelease(
-                  canvas,
-                  paint,
-                  x,
-                  preBendReleaseEndX,
-                  stringY,
-                  staffTop,
-                  lineSpacing,
-                  noteColour,
-                  currentRowSpacing,
-                  highestReleaseString);
-            }
-
-            // Check for hammer-left-hand
-            if (childNote.isHammerLeftHandStart &&
-                childNote.hammerLeftHandEndIndex != null) {
-              var hammerLeftHandEndIndex = childNote.hammerLeftHandEndIndex! <
-                      sheetNoteRows[rowIndex].chords.length - 1
-                  ? childNote.hammerLeftHandEndIndex!
-                  : sheetNoteRows[rowIndex].chords.length - 1;
-
-              var indexDistanceCount = hammerLeftHandEndIndex - i;
-
-              double hammerLeftHandEndX =
-                  x + ((indexDistanceCount) * currentRowSpacing);
-              hammerLeftHandEndX += (currentRowSpacing * 0.85);
-
-              // Get string Y position from this childNote (start and end Y are the same)
-              double stringY = staffTop + (childNote.octave * lineSpacing);
-
-              _drawHammerLeftHand(
-                  canvas, paint, x, hammerLeftHandEndX, stringY, noteColour);
-            }
-
-            // Check for slide-up
-            if (childNote.hasSlideUp) {
-              double stringY = staffTop + (childNote.octave * lineSpacing);
-              _drawSlideUp(
-                  canvas, paint, x, stringY, noteColour, currentRowSpacing);
-            }
-
-            // Check for slide-down
-            if (childNote.hasSlideDown) {
-              double stringY = staffTop + (childNote.octave * lineSpacing);
-              _drawSlideDown(
-                  canvas, paint, x, stringY, noteColour, currentRowSpacing);
-            }
-          }
-
           // Check if chord has any bend to determine positioning
-          bool hasBend = chord.childNotes!.any((child) =>
-              child.isBendStart ||
-              child.isPreBendStart ||
-              child.isBendReleaseStart ||
-              child.isPreBendReleaseStart);
+          bool hasBend =
+              chord.childNotes != null && chord.childNotes!.isNotEmpty
+                  ? chord.childNotes!.any((child) =>
+                      child.isBendStart ||
+                      child.isPreBendStart ||
+                      child.isBendReleaseStart ||
+                      child.isPreBendReleaseStart)
+                  : false;
 
           // Check for mute technique
           if (chord.isMuteStart && chord.muteEndIndex != null) {
