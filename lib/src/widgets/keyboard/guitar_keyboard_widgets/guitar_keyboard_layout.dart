@@ -1466,6 +1466,14 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
               _isPinchHarmonicActive = false;
               _isHarmonicActive = false;
               _isVibratoActive = false;
+              // Reset all lock states when user selects a different note
+              _isBendLocked = false;
+              _isPreBendLocked = false;
+              _isBendReleaseLocked = false;
+              _isPreBendReleaseLocked = false;
+              _isMuteLocked = false;
+              _isPinchHarmonicLocked = false;
+              _isHarmonicLocked = false;
               _isVibratoLocked = false;
               _isHammerLeftHandLocked = false;
             }
