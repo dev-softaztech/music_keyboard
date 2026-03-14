@@ -3075,9 +3075,25 @@ class MusicSheetPainter extends CustomPainter {
       double lineSpacing,
       List<MusicalNote> notes,
       int noteIndex) {
-    double bendOrHarmonicOffset = _hasBendOrHarmonicOnChord(chord);
+    double baseOffset = _hasBendOrHarmonicOnChord(chord);
 
-    double symbolY = staffTop - 25 - bendOrHarmonicOffset;
+    // Check if this technique needs additional offset due to overlapping with other techniques
+    bool needsAdditionalOffset = false;
+    if (chord.tapRightHandCharacter.isNotEmpty) {
+      // Only tap-right-hand gets the additional offset when overlapping
+      bool hasPickUpward = chord.hasPickUpward;
+      bool hasPickDownward = chord.hasPickDownward;
+
+      if ((hasPickUpward || hasPickDownward) &&
+          chord.tapRightHandCharacter.isNotEmpty) {
+        needsAdditionalOffset = true;
+      }
+    }
+
+    double symbolY = staffTop - 25 - baseOffset;
+    if (needsAdditionalOffset) {
+      symbolY -= 15; // Additional offset for tap-right-hand when overlapping
+    }
 
     // Adjust position based on note height to avoid overlap
     if (noteIndex < notes.length) {
@@ -3118,9 +3134,9 @@ class MusicSheetPainter extends CustomPainter {
       double lineSpacing,
       List<MusicalNote> notes,
       int noteIndex) {
-    double bendOrHarmonicOffset = _hasBendOrHarmonicOnChord(chord);
+    double baseOffset = _hasBendOrHarmonicOnChord(chord);
 
-    double symbolY = staffTop - 25 - bendOrHarmonicOffset;
+    double symbolY = staffTop - 25 - baseOffset;
 
     // Adjust position based on note height to avoid overlap
     if (noteIndex < notes.length) {
@@ -3161,9 +3177,9 @@ class MusicSheetPainter extends CustomPainter {
       double lineSpacing,
       List<MusicalNote> notes,
       int noteIndex) {
-    double bendOrHarmonicOffset = _hasBendOrHarmonicOnChord(chord);
+    double baseOffset = _hasBendOrHarmonicOnChord(chord);
 
-    double symbolY = staffTop - 25 - bendOrHarmonicOffset;
+    double symbolY = staffTop - 25 - baseOffset;
 
     // Adjust position based on note height to avoid overlap
     if (noteIndex < notes.length) {
@@ -3250,6 +3266,11 @@ class MusicSheetPainter extends CustomPainter {
         chord.isHarmonicStart;
 
     bool hasVibrato = chord.isVibratoStart;
+
+    // Check for the three techniques that can overlap
+    bool hasTapRightHand = chord.tapRightHandCharacter.isNotEmpty;
+    bool hasPickUpward = chord.hasPickUpward;
+    bool hasPickDownward = chord.hasPickDownward;
 
     if (chord.childNotes != null) {
       for (var childNote in chord.childNotes!) {
