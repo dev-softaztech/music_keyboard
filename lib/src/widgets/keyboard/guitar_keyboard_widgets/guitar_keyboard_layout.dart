@@ -945,34 +945,14 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
             break;
         }
 
-        // Only clear other techniques for chord-level techniques that are mutually exclusive
-        // tap-right-hand is independent and should not clear other techniques
-        if (techniqueType != 'tap-right-hand' &&
-            techniqueType != 'pick-downward' &&
-            techniqueType != 'pick-upward') {
-          if (techniqueType != 'mute') {
-            _isMuteActive = false;
-            _isMuteLocked = false;
-            chord.isMuteStart = false;
-            chord.muteEndIndex = null;
-          }
-          if (techniqueType != 'pinch-harmonic') {
-            _isPinchHarmonicActive = false;
-            _isPinchHarmonicLocked = false;
-            chord.isPinchHarmonicStart = false;
-            chord.pinchHarmonicEndIndex = null;
-          }
-          if (techniqueType != 'harmonic') {
-            _isHarmonicActive = false;
-            _isHarmonicLocked = false;
-            chord.isHarmonicStart = false;
-            chord.harmonicEndIndex = null;
-          }
-          if (techniqueType != 'vibrato') {
-            _isVibratoActive = false;
-            _isVibratoLocked = false;
-            chord.isVibratoStart = false;
-            chord.vibratoEndIndex = null;
+        if (techniqueType == 'pick-downward' ||
+            techniqueType == 'pick-upward') {
+          if (techniqueType == 'pick-downward') {
+            _isPickUpwardActive = false;
+            chord.hasPickUpward = false;
+          } else {
+            _isPickDownwardActive = false;
+            chord.hasPickDownward = false;
           }
         }
       }
