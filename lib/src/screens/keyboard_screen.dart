@@ -477,6 +477,11 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
             selectedNoteProvider,
             sheet.sheetRows[selectedNoteProvider.selectedRow].chords);
 
+        // If a row overflowed, reset guitar keyboard technique states
+        if (rowOverflowed && sheet.keyboardType == KeyboardType.guitarTab) {
+          resetGuitarKeyboardTechniqueStates();
+        }
+
         // Mark as changed for auto-save
         _markAsChanged();
 

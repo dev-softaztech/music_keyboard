@@ -15,8 +15,8 @@ class GuitarKeyboardLayout extends StatefulWidget {
   final List<SheetRows> sheetNoteRows;
   final SheetFormat sheetFormat;
   final void Function(VoidCallback spaceHandler)? onRegisterSpaceHandler;
-  final VoidCallback? onNewRowCreated;
   final void Function(VoidCallback resetHandler)? onRegisterResetHandler;
+  final VoidCallback? onNewRowCreated;
 
   const GuitarKeyboardLayout({
     super.key,
