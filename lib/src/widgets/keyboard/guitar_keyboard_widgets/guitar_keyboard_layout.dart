@@ -11,10 +11,12 @@ import 'package:music_keyboard/src/utils/music_sheet_utils/guitar_tab_helpers.da
 class GuitarKeyboardLayout extends StatefulWidget {
   final bool showNotesKeyboard;
   final void Function(bool) onToggleKeyboard;
-  final void Function(MusicalNote) onKeyPress;
+  final bool Function(MusicalNote) onKeyPress;
   final List<SheetRows> sheetNoteRows;
   final SheetFormat sheetFormat;
   final void Function(VoidCallback spaceHandler)? onRegisterSpaceHandler;
+  final VoidCallback? onNewRowCreated;
+  final void Function(VoidCallback resetHandler)? onRegisterResetHandler;
 
   const GuitarKeyboardLayout({
     super.key,
@@ -24,6 +26,8 @@ class GuitarKeyboardLayout extends StatefulWidget {
     required this.sheetNoteRows,
     required this.sheetFormat,
     this.onRegisterSpaceHandler,
+    this.onNewRowCreated,
+    this.onRegisterResetHandler,
   });
 
   @override
@@ -73,9 +77,10 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
   @override
   void initState() {
     super.initState();
-    // Register the space press handler with the parent after the first frame
+    // Register the space press handler and reset handler with the parent after the first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       widget.onRegisterSpaceHandler?.call(_handleSpacePress);
+      widget.onRegisterResetHandler?.call(resetTechniqueStates);
     });
   }
 
@@ -87,6 +92,36 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       _overlayEntry = null;
     }
     super.dispose();
+  }
+
+  /// Reset all technique button states to not active or locked
+  void resetTechniqueStates() {
+    setState(() {
+      _isBendActive = false;
+      _isPreBendActive = false;
+      _isBendReleaseActive = false;
+      _isPreBendReleaseActive = false;
+      _isMuteActive = false;
+      _isPinchHarmonicActive = false;
+      _isHarmonicActive = false;
+      _isVibratoActive = false;
+      _isTapRightHandActive = false;
+      _isPickUpwardActive = false;
+      _isPickDownwardActive = false;
+      _isHammerLeftHandActive = false;
+      _isSlideUpActive = false;
+      _isSlideDownActive = false;
+
+      _isBendLocked = false;
+      _isPreBendLocked = false;
+      _isBendReleaseLocked = false;
+      _isPreBendReleaseLocked = false;
+      _isMuteLocked = false;
+      _isPinchHarmonicLocked = false;
+      _isHarmonicLocked = false;
+      _isVibratoLocked = false;
+      _isHammerLeftHandLocked = false;
+    });
   }
 
   void _handleSpacePress() {
@@ -1349,17 +1384,18 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                       duration: 0.0,
                       childNotes: [],
                     );
-                    widget.onKeyPress(emptyChord);
+                    var rowOverflowed = widget.onKeyPress(emptyChord);
 
                     // Set flag to preserve lock state when navigating
                     setState(() {
                       _navigatedViaNextButton = true;
                     });
-
-                    // Move to next position (onKeyPress will update the selected index)
-                    currentSelectedNoteProvider
-                        .updateSelectedIndexAndInsertionPoint(
-                            selectedRow, nextIndex);
+                    if (!rowOverflowed) {
+                      // Move to next position (onKeyPress will update the selected index)
+                      currentSelectedNoteProvider
+                          .updateSelectedIndexAndInsertionPoint(
+                              selectedRow, nextIndex);
+                    }
                   } else {
                     // Not at the end of the row: just navigate to the next note
                     currentSelectedNoteProvider

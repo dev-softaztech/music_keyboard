@@ -102,6 +102,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   // Callback function for zooming to a note
   Function(int row, int index)? _zoomToNoteCallback;
 
+  // Guitar keyboard state reset callback
+  VoidCallback? _guitarKeyboardResetCallback;
+
   // PDF export state variables
   int? _pdfRenderStartRow;
   int? _pdfRenderEndRow;
@@ -109,6 +112,14 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
   // Guitar keyboard space handler – registered by GuitarKeyboardLayout
   VoidCallback? _guitarSpaceHandler;
+
+  /// Reset guitar keyboard technique states when a new row is created
+  void resetGuitarKeyboardTechniqueStates() {
+    // Call the callback if it's been set by the GuitarKeyboardLayout
+    if (_guitarKeyboardResetCallback != null) {
+      _guitarKeyboardResetCallback!();
+    }
+  }
 
   // Database helper for clipboard operations
   late SheetDatabaseHelper _dbHelper;
@@ -432,7 +443,8 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     super.dispose();
   }
 
-  void handleKeyPress(MusicalNote note) {
+  bool handleKeyPress(MusicalNote note) {
+    bool rowOverflowed = false;
     try {
       final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
       final accidentalProvider = context.read<SelectedAccidentalProvider>();
@@ -460,7 +472,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         selectedNoteProvider.addNote(
             noteWithAccidental, sheet.sheetRows, context);
 
-        updateRowSpacing(selectedNoteProvider.selectedRow, selectedNoteProvider,
+        rowOverflowed = updateRowSpacing(
+            selectedNoteProvider.selectedRow,
+            selectedNoteProvider,
             sheet.sheetRows[selectedNoteProvider.selectedRow].chords);
 
         // Mark as changed for auto-save
@@ -485,6 +499,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     } catch (e) {
       print("Error adding note: $e");
     }
+    return rowOverflowed;
   }
 
   void handleRowOverflow(
@@ -552,17 +567,6 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         ));
       }
 
-      // For guitar tab sheets, add the default fret chord
-      if (sheet.keyboardType == KeyboardType.guitarTab) {
-        newRow.chords.add(MusicalNote(
-          pitch: 'G',
-          octave: 4,
-          type: NoteType.fret,
-          duration: 0.0,
-          childNotes: [],
-        ));
-      }
-
       sheet.sheetRows.insert(insertionPoint + i, newRow);
       rowSpacingList.insert(insertionPoint + i, defaultNoteSpacing);
     }
@@ -610,10 +614,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
     // Update cursor position to be safe after moving notes
     final currentRowNotesLength = sheet.sheetRows[targetRowIndex].chords.length;
-    //if (selectedNoteProvider.selectedIndex >= currentRowNotesLength) {
+
     selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
         targetRowIndex, math.max(0, currentRowNotesLength - 1));
-    //}
 
     updateRowSpacing(selectedNoteProvider.selectedRow, selectedNoteProvider,
         sheet.sheetRows[selectedNoteProvider.selectedRow].chords);
@@ -774,15 +777,13 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         sheet.sheetRows[targetRowIndex].chords);
 
     // Update the cursor position to the target row
-    if (selectedNoteProvider.insertionIndex >= maxNotesPerRow ||
-        selectedNoteProvider.insertionIndex >
-            (maxNotesPerRow - notesToMove.length)) {
+    if (selectedNoteProvider.insertionIndex >= startIndex) {
       selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
           targetRowIndex, notesToMove.length - 1);
     }
   }
 
-  void updateRowSpacing(
+  bool updateRowSpacing(
       int rowIndex,
       CurrentSelectedNoteProvider selectedNoteProvider,
       List<MusicalNote> notes) {
@@ -807,16 +808,16 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     // For Piano format, update spacing for entire connected group
     if (sheet.format == SheetFormat.single) {
       // Single format - original behavior
-      _updateSingleRowSpacing(rowIndex, selectedNoteProvider, notes,
+      return _updateSingleRowSpacing(rowIndex, selectedNoteProvider, notes,
           rowSpacingProvider, rowSpacingList, listOfSpacingSizes);
     } else {
-      _updateConnectedRowGroupSpacing(rowIndex, selectedNoteProvider,
+      return _updateConnectedRowGroupSpacing(rowIndex, selectedNoteProvider,
           rowSpacingProvider, rowSpacingList, listOfSpacingSizes);
     }
   }
 
   /// Updates spacing for a single row (original behavior)
-  void _updateSingleRowSpacing(
+  bool _updateSingleRowSpacing(
       int rowIndex,
       CurrentSelectedNoteProvider selectedNoteProvider,
       List<MusicalNote> notes,
@@ -839,13 +840,14 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
     double maxRowSize = 1200;
     var adjustedSpacingFitsAllNotesOnSingleLine = false;
-
-    for (int i = 0; i < listOfSpacingSizes.length; i++) {
-      if (clefAndKeySigLength + (countOfNormalNotes * listOfSpacingSizes[i]) <
-          maxRowSize) {
-        rowSpacingList[rowIndex] = listOfSpacingSizes[i];
-        adjustedSpacingFitsAllNotesOnSingleLine = true;
-        break;
+    if (rowSpacingList.length > rowIndex) {
+      for (int i = 0; i < listOfSpacingSizes.length; i++) {
+        if (clefAndKeySigLength + (countOfNormalNotes * listOfSpacingSizes[i]) <
+            maxRowSize) {
+          rowSpacingList[rowIndex] = listOfSpacingSizes[i];
+          adjustedSpacingFitsAllNotesOnSingleLine = true;
+          break;
+        }
       }
     }
 
@@ -855,10 +857,12 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     }
 
     rowSpacingProvider.updateRowSpacingList(rowSpacingList);
+
+    return !adjustedSpacingFitsAllNotesOnSingleLine;
   }
 
   /// Updates spacing for connected row groups (Piano format)
-  void _updateConnectedRowGroupSpacing(
+  bool _updateConnectedRowGroupSpacing(
       int rowIndex,
       CurrentSelectedNoteProvider selectedNoteProvider,
       ListOfSpacingForEachRow rowSpacingProvider,
@@ -950,6 +954,8 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     } else {
       rowSpacingProvider.updateRowSpacingList(rowSpacingList);
     }
+
+    return !adjustedSpacingFitsAllNotesOnSingleLine;
   }
 
   void _toggleDynamicsKeyboard() {
@@ -1607,6 +1613,14 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
           onKeyPress: handleKeyPress,
           onRegisterSpaceHandler: (handler) {
             _guitarSpaceHandler = handler;
+          },
+          onRegisterResetHandler: (handler) {
+            // Register the reset handler so we can call it when a new row is created
+            _guitarKeyboardResetCallback = handler;
+          },
+          onNewRowCreated: () {
+            // Reset guitar keyboard technique states when a new row is created
+            resetGuitarKeyboardTechniqueStates();
           },
         );
     }
