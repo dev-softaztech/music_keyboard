@@ -94,6 +94,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
   bool _showPreBendRemoveButton = false;
   bool _showBendReleaseRemoveButton = false;
   bool _showPreBendReleaseRemoveButton = false;
+  bool _showBendsPanel = false;
   int? _dragStart;
   int? _dragEnd;
   int? _dragRow;
@@ -624,6 +625,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
     // Reset buttons
     setState(() {
       _showHighlightButtons = false;
+      _showBendsPanel = false;
       _showTieButton = false;
       _showDynamicRemoveButton = false;
       _showBeamAddButton = false;
@@ -3076,7 +3078,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                   //Guitar tab buttons
                   //P.M
                   if ((_showHighlightButtons || _showMuteRemoveButton) &&
-                      widget.keyboardType == KeyboardType.guitarTab) ...[
+                      widget.keyboardType == KeyboardType.guitarTab &&
+                      !_showBendsPanel) ...[
                     const SizedBox(height: 5),
                     _buildStyledButton('P.M.', () {
                       if (_showMuteRemoveButton) {
@@ -3102,7 +3105,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                   //P.H
                   if ((_showHighlightButtons ||
                           _showPinchHarmonicRemoveButton) &&
-                      widget.keyboardType == KeyboardType.guitarTab) ...[
+                      widget.keyboardType == KeyboardType.guitarTab &&
+                      !_showBendsPanel) ...[
                     const SizedBox(height: 5),
                     _buildStyledButton('P.H.', () {
                       if (_showPinchHarmonicRemoveButton) {
@@ -3125,7 +3129,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                   ],
                   //Ham.
                   if ((_showHighlightButtons || _showHarmonicRemoveButton) &&
-                      widget.keyboardType == KeyboardType.guitarTab) ...[
+                      widget.keyboardType == KeyboardType.guitarTab &&
+                      !_showBendsPanel) ...[
                     const SizedBox(height: 5),
                     _buildStyledButton('Ham.', () {
                       if (_showHarmonicRemoveButton) {
@@ -3148,7 +3153,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                   ],
                   //Vibrato
                   if ((_showHighlightButtons || _showVibratoRemoveButton) &&
-                      widget.keyboardType == KeyboardType.guitarTab) ...[
+                      widget.keyboardType == KeyboardType.guitarTab &&
+                      !_showBendsPanel) ...[
                     const SizedBox(height: 5),
                     _buildStyledButton('\uE56E', () {
                       if (_showVibratoRemoveButton) {
@@ -3168,7 +3174,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                     }, true, !_showVibratoRemoveButton)
                   ],
                   //Bend
-                  if ((_showHighlightButtons || _showBendRemoveButton) &&
+                  if (((_showHighlightButtons && _showBendsPanel) ||
+                          _showBendRemoveButton) &&
                       widget.keyboardType == KeyboardType.guitarTab) ...[
                     const SizedBox(height: 5),
                     _buildStyledButton('', () {
@@ -3195,7 +3202,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                         svgAssetPath: 'assets/svgs/bend.svg')
                   ],
                   //pre-bend
-                  if ((_showHighlightButtons || _showPreBendRemoveButton) &&
+                  if (((_showHighlightButtons && _showBendsPanel) ||
+                          _showPreBendRemoveButton) &&
                       widget.keyboardType == KeyboardType.guitarTab) ...[
                     const SizedBox(height: 5),
                     _buildStyledButton('', () {
@@ -3220,7 +3228,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                         svgAssetPath: 'assets/svgs/pre-bend.svg')
                   ],
                   //bend-release
-                  if ((_showHighlightButtons || _showBendReleaseRemoveButton) &&
+                  if (((_showHighlightButtons && _showBendsPanel) ||
+                          _showBendReleaseRemoveButton) &&
                       widget.keyboardType == KeyboardType.guitarTab) ...[
                     const SizedBox(height: 5),
                     _buildStyledButton('', () {
@@ -3245,7 +3254,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                         svgAssetPath: 'assets/svgs/bend-release.svg')
                   ],
                   //pre-bend-release
-                  if ((_showHighlightButtons ||
+                  if (((_showHighlightButtons && _showBendsPanel) ||
                           _showPreBendReleaseRemoveButton) &&
                       widget.keyboardType == KeyboardType.guitarTab) ...[
                     const SizedBox(height: 5),
@@ -3269,6 +3278,16 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                       }
                     }, false, !_showPreBendReleaseRemoveButton,
                         svgAssetPath: 'assets/svgs/pre-bend-release.svg')
+                  ],
+                  //BENDS toggle button
+                  if (_showHighlightButtons &&
+                      widget.keyboardType == KeyboardType.guitarTab) ...[
+                    const SizedBox(height: 5),
+                    _buildBendsToggleButton(_showBendsPanel, () {
+                      setState(() {
+                        _showBendsPanel = !_showBendsPanel;
+                      });
+                    }),
                   ],
                 ],
               ),
@@ -3341,6 +3360,43 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                             color: Colors.black,
                             fontWeight: FontWeight.bold),
                       ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBendsToggleButton(bool isOpen, VoidCallback onPressed) {
+    return Row(
+      children: [
+        const SizedBox(width: 13),
+        Material(
+          color: Colors.transparent,
+          elevation: 5,
+          shadowColor: Colors.black.withOpacity(0.3),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(25),
+          ),
+          child: RawMaterialButton(
+            onPressed: onPressed,
+            fillColor: Colors.white,
+            constraints: const BoxConstraints.tightFor(width: 50, height: 35),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(25),
+              side: BorderSide(
+                color: isOpen ? Colors.red : Colors.black,
+                width: 1,
+              ),
+            ),
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            child: Text(
+              isOpen ? 'X' : 'BENDS',
+              style: TextStyle(
+                fontSize: isOpen ? 14 : 10,
+                color: isOpen ? Colors.red : Colors.black,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ),
       ],
