@@ -172,8 +172,9 @@ class _ConfigureSheetScreenState extends State<ConfigureSheetScreen> {
                           ),
                           const SizedBox(height: 16),
 
-                          // Format Selection Cards - All 5 formats
-                          _buildAllFormatCards(),
+                          _selectedKeyboardType == KeyboardType.guitarTab
+                              ? _buildSingleFormatCard()
+                              : _buildAllFormatCards(),
 
                           const SizedBox(height: 24),
                         ],
@@ -254,6 +255,73 @@ class _ConfigureSheetScreenState extends State<ConfigureSheetScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSingleFormatCard() {
+    // For Guitar Tab, only show Single Stave option and make it full width with larger height
+    return FractionallySizedBox(
+      widthFactor: 1,
+      child: Container(
+        height: 70,
+        decoration: BoxDecoration(
+          color: _selectedFormat == SheetFormat.single
+              ? const Color(0xFF242038)
+              : Colors.white,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(12),
+            topRight: Radius.circular(12),
+          ),
+          border: Border.all(
+            color: _selectedFormat == SheetFormat.single
+                ? const Color(0xFF242038)
+                : Colors.grey[300]!,
+            width: 2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                SheetFormat.single.displayName,
+                style: TextStyle(
+                  fontSize: 13, // Increased font size
+                  fontWeight: FontWeight.w700, // Bolder font
+                  color: _selectedFormat == SheetFormat.single
+                      ? Colors.white
+                      : const Color(0xFF242038),
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                SheetFormat.single.description,
+                style: TextStyle(
+                  fontSize: 9, // Increased font size
+                  color: _selectedFormat == SheetFormat.single
+                      ? Colors.white.withOpacity(0.9)
+                      : Colors.grey[600],
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -371,6 +439,10 @@ class _ConfigureSheetScreenState extends State<ConfigureSheetScreen> {
       onTap: () {
         setState(() {
           _selectedKeyboardType = keyboardType;
+          // Auto-select Single Stave when Guitar Tab is chosen
+          if (keyboardType == KeyboardType.guitarTab) {
+            _selectedFormat = SheetFormat.single;
+          }
         });
       },
       child: Container(
