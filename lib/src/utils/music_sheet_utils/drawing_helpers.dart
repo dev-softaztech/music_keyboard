@@ -905,10 +905,70 @@ void drawChordNotes(
       }
     }
   } else {
-    // Not beamed — draw every child note normally.
-    for (final childNote in parentChord.childNotes!) {
-      drawNoteKey(canvas, paint, childNote, lineSpacing, staffTop, noteX, notes,
-          index, childNote.noteY, noteSpacing, noteColour);
+    // Not beamed.
+    // For beamable note types (eighth, sixteenth, etc.) only the extremal
+    // child — highest note for stem-up chords, lowest for stem-down chords —
+    // receives the flag.  All other children have their stems extended so they
+    // reach the same height as the flagged note's stem tip, with no flag of
+    // their own.
+    if (hasBeamableChildren) {
+      // Use the first child's isUpsideDown as the chord-wide stem direction.
+      final bool chordStemDown =
+          parentChord.childNotes!.first.isUpsideDown ?? false;
+
+      final MusicalNote? extremalChild = getExtremalChildNote(
+          parentChord, chordStemDown, lineSpacing, staffTop);
+      final double extremalChildY = extremalChild != null
+          ? calculateNoteYMainSheet(
+              extremalChild.pitch, extremalChild.octave, lineSpacing, staffTop)
+          : 0;
+
+      for (final childNote in parentChord.childNotes!) {
+        final double childNoteY = childNote.noteY;
+        final bool isExtremal = childNote == extremalChild;
+
+        if (isExtremal) {
+          // Extremal child: drawn normally — it gets the flag and a default
+          // 35 px stem in the correct direction.
+          drawNoteKey(canvas, paint, childNote, lineSpacing, staffTop, noteX,
+              notes, index, childNoteY, noteSpacing, noteColour);
+        } else {
+          // Non-extremal child: suppress flag and extend the stem so its tip
+          // aligns with the extremal child's stem tip.
+          //
+          // Passing beamedGroupOverride with length > 1 suppresses the flag.
+          // Passing extremalChildY as both beamedGroupHighestY and
+          // beamedGroupLowestY makes the stem-extension formula produce the
+          // correct extra height:
+          //   stem-up:   stemHeight = (childNoteY – extremalChildY) + 35
+          //   stem-down: stemHeight = (extremalChildY – childNoteY) + 35
+          drawNoteKey(
+            canvas,
+            paint,
+            childNote,
+            lineSpacing,
+            staffTop,
+            noteX,
+            notes,
+            index,
+            childNoteY,
+            noteSpacing,
+            noteColour,
+            beamedGroupOverride: [childNote, childNote],
+            firstNoteUpsideDownOverride: chordStemDown,
+            beamedGroupHighestYOverride: extremalChildY,
+            beamedGroupLowestYOverride: extremalChildY,
+            isFirstNoteInGroupListOverride: true,
+            doesGroupContain32ndOr64thNoteOverride: false,
+          );
+        }
+      }
+    } else {
+      // No beamable children — draw everything normally.
+      for (final childNote in parentChord.childNotes!) {
+        drawNoteKey(canvas, paint, childNote, lineSpacing, staffTop, noteX,
+            notes, index, childNote.noteY, noteSpacing, noteColour);
+      }
     }
   }
 }
