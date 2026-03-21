@@ -200,7 +200,13 @@ void drawNoteKey(
     int index,
     double noteY,
     double noteSpacing,
-    Color noteColour) {
+    Color noteColour,
+    {List<MusicalNote>? beamedGroupOverride,
+    bool? firstNoteUpsideDownOverride,
+    double? beamedGroupHighestYOverride,
+    double? beamedGroupLowestYOverride,
+    bool? isFirstNoteInGroupListOverride,
+    bool? doesGroupContain32ndOr64thNoteOverride}) {
   final double noteRadius = 8.0; // Radius of the note head
   double stemHeight = 35.0; // Stem height for all notes
   double noteWidth = 10;
@@ -220,25 +226,36 @@ void drawNoteKey(
     isABeamedNote = true;
   }
 
-  if (isABeamedNote && note.isBeamed) {
-    ({bool isFirst, List<MusicalNote> notesGroup}) notesGroup =
-        getBeamedNotesGroup(index, notes);
-    beamedNotesGroup = notesGroup.notesGroup;
-    isFirstNoteInGroupList = notesGroup.isFirst;
+  if (isABeamedNote && (note.isBeamed || beamedGroupOverride != null)) {
+    if (beamedGroupOverride != null) {
+      // Use pre-computed values supplied by the caller (e.g. drawChordNotes)
+      beamedNotesGroup = beamedGroupOverride;
+      isFirstNoteInGroupList = isFirstNoteInGroupListOverride ?? false;
+      beamedGroupHighestY = beamedGroupHighestYOverride ?? 0.0;
+      beamedGroupLowestY = beamedGroupLowestYOverride ?? 0.0;
+      firstNoteUpsideDown = firstNoteUpsideDownOverride ?? false;
+      doesGroupContain32ndOr64thNote =
+          doesGroupContain32ndOr64thNoteOverride ?? false;
+    } else {
+      ({bool isFirst, List<MusicalNote> notesGroup}) notesGroup =
+          getBeamedNotesGroup(index, notes);
+      beamedNotesGroup = notesGroup.notesGroup;
+      isFirstNoteInGroupList = notesGroup.isFirst;
 
-    ({
-      double highestY,
-      double lowestY,
-      double firstNoteY,
-      bool doesGroupContain32ndOr64thNote
-    }) notesGroupYs = getBeamedNotesGroupHighestY(
-        beamedNotesGroup, lineSpacing, staffTop, staffCenter);
+      ({
+        double highestY,
+        double lowestY,
+        double firstNoteY,
+        bool doesGroupContain32ndOr64thNote
+      }) notesGroupYs = getBeamedNotesGroupHighestY(
+          beamedNotesGroup, lineSpacing, staffTop, staffCenter);
 
-    beamedGroupHighestY = notesGroupYs.highestY;
-    beamedGroupLowestY = notesGroupYs.lowestY;
-    firstNoteUpsideDown = notesGroupYs.firstNoteY < staffCenter;
-    doesGroupContain32ndOr64thNote =
-        notesGroupYs.doesGroupContain32ndOr64thNote;
+      beamedGroupHighestY = notesGroupYs.highestY;
+      beamedGroupLowestY = notesGroupYs.lowestY;
+      firstNoteUpsideDown = notesGroupYs.firstNoteY < staffCenter;
+      doesGroupContain32ndOr64thNote =
+          notesGroupYs.doesGroupContain32ndOr64thNote;
+    }
   }
 
   // Draw accidental if present
@@ -313,11 +330,12 @@ void drawNoteKey(
     textPainter.paint(canvas, Offset(offsetX, offsetY));
     noteWidth = textPainter.width;
 
-    if (note.isBeamed && doesGroupContain32ndOr64thNote) {
+    if ((note.isBeamed || beamedGroupOverride != null) &&
+        doesGroupContain32ndOr64thNote) {
       stemHeight = stemHeight + 10;
     }
 
-    if (isABeamedNote && note.isBeamed) {
+    if (isABeamedNote && (note.isBeamed || beamedGroupOverride != null)) {
       if (!firstNoteUpsideDown) {
         stemHeight = (noteY - beamedGroupHighestY) + stemHeight;
       }
@@ -328,9 +346,15 @@ void drawNoteKey(
 
     double stemX = 0.0;
 
-    if ((note.isBeamed && !firstNoteUpsideDown) ||
-        (note.isUpsideDown == false &&
-            !(note.isBeamed && firstNoteUpsideDown))) {
+    // When beaming overrides are supplied (chord beaming), use firstNoteUpsideDown
+    // directly so all child stems follow the group direction.
+    final bool stemGoesUp = beamedGroupOverride != null
+        ? !firstNoteUpsideDown
+        : ((note.isBeamed && !firstNoteUpsideDown) ||
+            (note.isUpsideDown == false &&
+                !(note.isBeamed && firstNoteUpsideDown)));
+
+    if (stemGoesUp) {
       stemX = noteX + 5.0;
       canvas.drawLine(
         Offset(stemX, noteY - 1),
@@ -531,6 +555,86 @@ void drawBeamedNotes(Canvas canvas, Paint paint, MusicalNote note, double stemX,
   );
 }
 
+/// Collects the beamed group that contains the note at [index].
+/// Unlike [getBeamedNotesGroup], this version also recognises
+/// [NoteType.chord] parents whose [MusicalNote.isBeamed] flag is true and
+/// whose [MusicalNote.childNotes] contain at least one beamable note type
+/// (eighth, sixteenth, thirtySecond, sixtyFourth).  Regular beamed notes are
+/// matched as before, so mixed groups work correctly.
+({List<MusicalNote> notesGroup, bool isFirst}) getBeamedChordGroup(
+    int index, List<MusicalNote> notes) {
+  MusicalNote firstNote = notes[index];
+  List<MusicalNote> beamedGroup = [firstNote];
+
+  bool isBeamable(MusicalNote n) {
+    if (!n.isBeamed || n.type == NoteType.space) return false;
+    if (n.type == NoteType.chord) {
+      return n.childNotes?.any((c) =>
+              c.type == NoteType.eighth ||
+              c.type == NoteType.sixteenth ||
+              c.type == NoteType.thirtySecond ||
+              c.type == NoteType.sixtyFourth) ??
+          false;
+    }
+    return n.type == NoteType.eighth ||
+        n.type == NoteType.sixteenth ||
+        n.type == NoteType.thirtySecond ||
+        n.type == NoteType.sixtyFourth;
+  }
+
+  for (int i = index - 1; i >= 0; i--) {
+    if (isBeamable(notes[i])) {
+      beamedGroup.insert(0, notes[i]);
+    } else {
+      break;
+    }
+  }
+
+  for (int i = index + 1; i < notes.length; i++) {
+    if (isBeamable(notes[i])) {
+      beamedGroup.add(notes[i]);
+    } else {
+      break;
+    }
+  }
+
+  bool isFirst = beamedGroup.first == firstNote;
+  return (notesGroup: beamedGroup, isFirst: isFirst);
+}
+
+/// Returns the extremal child note of [chord] that should carry the beamed
+/// stem — the one whose stem tip is closest to the beam line.
+///
+/// * When [stemDown] is **false** (stem up) this is the child with the
+///   **smallest Y** on the canvas (highest pitch on the stave).
+/// * When [stemDown] is **true**  (stem down) this is the child with the
+///   **largest Y** on the canvas (lowest pitch on the stave).
+MusicalNote? getExtremalChildNote(
+    MusicalNote chord, bool stemDown, double lineSpacing, double staffTop) {
+  if (chord.childNotes == null || chord.childNotes!.isEmpty) return null;
+
+  MusicalNote? extremal;
+  double extremalY = 0;
+
+  for (var child in chord.childNotes!) {
+    final double y = calculateNoteYMainSheet(
+        child.pitch, child.octave, lineSpacing, staffTop);
+    if (extremalY == 0) {
+      extremalY = y;
+      extremal = child;
+    } else if (stemDown && y > extremalY) {
+      // Stem down → want lowest note (largest canvas Y)
+      extremalY = y;
+      extremal = child;
+    } else if (!stemDown && y < extremalY) {
+      // Stem up → want highest note (smallest canvas Y)
+      extremalY = y;
+      extremal = child;
+    }
+  }
+  return extremal;
+}
+
 void drawLedgerLines(Canvas canvas, Paint paint, double noteY, double noteX,
     double noteWidth, double lineSpacing, double staffTop) {
   final double staffBottom = staffTop + (4 * lineSpacing); // Bottom staff line
@@ -637,8 +741,17 @@ void drawGuitarTabFrets(Canvas canvas, MusicalNote parentChord,
 }
 
 /// Draw all child notes of a NoteType.chord at the same X position.
-/// Each child note is a regular musical note; its Y position is calculated
-/// from its pitch/octave using [calculateNoteYMainSheet].
+///
+/// When [parentChord.isBeamed] is true and the children have beamable note
+/// types (eighth, sixteenth, thirtySecond, sixtyFourth), this function
+/// applies the same beaming logic as [drawNoteKey] for regular notes:
+///
+/// * Only the **extremal** child note — the highest note on the stave for
+///   stem-up groups, or the lowest for stem-down groups — receives the
+///   extended stem that connects to the shared beam bar.
+/// * All other child notes are drawn with a normal-length stem and no flag.
+/// * The beam position is determined by examining the extremal child notes
+///   across every chord (and regular note) in the beamed group.
 void drawChordNotes(
     Canvas canvas,
     Paint paint,
@@ -656,17 +769,146 @@ void drawChordNotes(
 
   final double staffCenter = staffTop + (lineSpacing * 2);
 
+  // Pre-compute Y positions and stem direction for every child note.
   for (var childNote in parentChord.childNotes!) {
-    // Calculate and store the Y position for this child note
-    final double childNoteY = calculateNoteYMainSheet(
+    final double y = calculateNoteYMainSheet(
         childNote.pitch, childNote.octave, lineSpacing, staffTop);
-    childNote.noteY = childNoteY;
+    childNote.noteY = y;
+    childNote.isUpsideDown ??= y <= staffCenter;
+  }
 
-    // Determine stem direction if not already set
-    childNote.isUpsideDown ??= childNoteY <= staffCenter;
+  // Check whether this chord should be drawn with beamed stems.
+  final bool hasBeamableChildren = parentChord.childNotes!.any((c) =>
+      c.type == NoteType.eighth ||
+      c.type == NoteType.sixteenth ||
+      c.type == NoteType.thirtySecond ||
+      c.type == NoteType.sixtyFourth);
 
-    // Draw the child note using the existing drawNoteKey function
-    drawNoteKey(canvas, paint, childNote, lineSpacing, staffTop, noteX, notes,
-        index, childNoteY, noteSpacing, noteColour);
+  if (parentChord.isBeamed && hasBeamableChildren) {
+    // ── 1. Find the full beamed group in the main notes list ───────────────
+    final chordGroupResult = getBeamedChordGroup(index, notes);
+    final List<MusicalNote> chordGroup = chordGroupResult.notesGroup;
+    final bool isFirstChordInGroup = chordGroupResult.isFirst;
+
+    // ── 2. Determine stem direction from the first entry in the group ───────
+    //    Mirror the logic used in getBeamedNotesGroupHighestY: prefer the
+    //    explicit isUpsideDown flag, otherwise fall back to staff-centre test.
+    final MusicalNote firstInGroup = chordGroup.first;
+    bool firstNoteUpsideDown;
+    if (firstInGroup.isUpsideDown != null) {
+      firstNoteUpsideDown = firstInGroup.isUpsideDown!;
+    } else if (firstInGroup.type == NoteType.chord &&
+        firstInGroup.childNotes != null &&
+        firstInGroup.childNotes!.isNotEmpty) {
+      final double firstChildY = calculateNoteYMainSheet(
+          firstInGroup.childNotes!.first.pitch,
+          firstInGroup.childNotes!.first.octave,
+          lineSpacing,
+          staffTop);
+      firstNoteUpsideDown = firstChildY <= staffCenter;
+    } else {
+      final double firstY = calculateNoteYMainSheet(
+          firstInGroup.pitch, firstInGroup.octave, lineSpacing, staffTop);
+      firstNoteUpsideDown = firstY <= staffCenter;
+    }
+
+    // ── 3. Build a synthetic beamed group made of one representative note
+    //       per entry in the chord group.  For chord parents the representative
+    //       is the extremal child; for regular notes it is the note itself.
+    //       The synthetic group is used by drawNoteKey to determine stem
+    //       extension and to draw the beam bars.
+    List<MusicalNote> syntheticGroup = [];
+    double beamedGroupHighestY = 0;
+    double beamedGroupLowestY = 0;
+    bool doesGroupContain32ndOr64thNote = false;
+
+    for (final entry in chordGroup) {
+      MusicalNote? representative;
+      if (entry.type == NoteType.chord) {
+        representative = getExtremalChildNote(
+            entry, firstNoteUpsideDown, lineSpacing, staffTop);
+      } else {
+        representative = entry;
+      }
+      if (representative == null) continue;
+
+      syntheticGroup.add(representative);
+
+      final double repY = calculateNoteYMainSheet(
+          representative.pitch, representative.octave, lineSpacing, staffTop);
+      if (beamedGroupHighestY == 0 || repY < beamedGroupHighestY) {
+        beamedGroupHighestY = repY;
+      }
+      if (beamedGroupLowestY == 0 || repY > beamedGroupLowestY) {
+        beamedGroupLowestY = repY;
+      }
+      if (representative.type == NoteType.thirtySecond ||
+          representative.type == NoteType.sixtyFourth) {
+        doesGroupContain32ndOr64thNote = true;
+      }
+    }
+
+    // ── 4. Identify the extremal child of THIS chord ─────────────────────
+    final MusicalNote? extremalChild = getExtremalChildNote(
+        parentChord, firstNoteUpsideDown, lineSpacing, staffTop);
+
+    // ── 5. Draw every child note ──────────────────────────────────────────
+    for (final childNote in parentChord.childNotes!) {
+      final double childNoteY = childNote.noteY;
+      final bool isExtremal = childNote == extremalChild;
+
+      if (isExtremal && syntheticGroup.isNotEmpty) {
+        // Extremal child: extended stem + beam bar (if not first in group).
+        drawNoteKey(
+          canvas,
+          paint,
+          childNote,
+          lineSpacing,
+          staffTop,
+          noteX,
+          notes,
+          index,
+          childNoteY,
+          noteSpacing,
+          noteColour,
+          beamedGroupOverride: syntheticGroup,
+          firstNoteUpsideDownOverride: firstNoteUpsideDown,
+          beamedGroupHighestYOverride: beamedGroupHighestY,
+          beamedGroupLowestYOverride: beamedGroupLowestY,
+          isFirstNoteInGroupListOverride: isFirstChordInGroup,
+          doesGroupContain32ndOr64thNoteOverride:
+              doesGroupContain32ndOr64thNote,
+        );
+      } else {
+        // Non-extremal child: normal stem, no flag, no beam bar.
+        // Pass a fake 2-note group so drawNoteKey suppresses the flag, and
+        // mark it as "first in group" so no beam bar is drawn from here.
+        drawNoteKey(
+          canvas,
+          paint,
+          childNote,
+          lineSpacing,
+          staffTop,
+          noteX,
+          notes,
+          index,
+          childNoteY,
+          noteSpacing,
+          noteColour,
+          beamedGroupOverride: [childNote, childNote],
+          firstNoteUpsideDownOverride: firstNoteUpsideDown,
+          beamedGroupHighestYOverride: childNoteY,
+          beamedGroupLowestYOverride: childNoteY,
+          isFirstNoteInGroupListOverride: true,
+          doesGroupContain32ndOr64thNoteOverride: false,
+        );
+      }
+    }
+  } else {
+    // Not beamed — draw every child note normally.
+    for (final childNote in parentChord.childNotes!) {
+      drawNoteKey(canvas, paint, childNote, lineSpacing, staffTop, noteX, notes,
+          index, childNote.noteY, noteSpacing, noteColour);
+    }
   }
 }
