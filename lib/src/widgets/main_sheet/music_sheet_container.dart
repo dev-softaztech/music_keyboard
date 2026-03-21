@@ -2692,7 +2692,22 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                               .sheetNoteRows[selectedNoteProvider.selectedRow]
                               .chords[selectedNoteProvider.selectedIndex];
 
-                          note.isUpsideDown = note.isUpsideDown == false;
+                          if (note.type == NoteType.chord &&
+                              note.childNotes != null &&
+                              note.childNotes!.isNotEmpty) {
+                            // For chord notes, derive current state from the
+                            // first child (defaults to false / stem-up) and
+                            // toggle all children together so they stay consistent.
+                            final bool currentState =
+                                note.childNotes!.first.isUpsideDown ?? false;
+                            final bool newState = !currentState;
+                            for (var childNote in note.childNotes!) {
+                              childNote.isUpsideDown = newState;
+                            }
+                            note.isUpsideDown = newState;
+                          } else {
+                            note.isUpsideDown = note.isUpsideDown == false;
+                          }
                         }
                       }
                     });

@@ -770,11 +770,13 @@ void drawChordNotes(
   final double staffCenter = staffTop + (lineSpacing * 2);
 
   // Pre-compute Y positions and stem direction for every child note.
+  // Chord child notes default to stem-up (isUpsideDown = false) so the chord
+  // renders consistently; the Flip Note button can override this explicitly.
   for (var childNote in parentChord.childNotes!) {
     final double y = calculateNoteYMainSheet(
         childNote.pitch, childNote.octave, lineSpacing, staffTop);
     childNote.noteY = y;
-    childNote.isUpsideDown ??= y <= staffCenter;
+    childNote.isUpsideDown ??= false;
   }
 
   // Check whether this chord should be drawn with beamed stems.
