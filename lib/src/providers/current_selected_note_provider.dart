@@ -302,7 +302,12 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// **Get all notes in the same beamed group as the given note**
+  /// **Get all notes in the same beamed group as the given note.**
+  ///
+  /// Recognises both regular beamable note types (eighth, sixteenth,
+  /// thirtySecond, sixtyFourth) *and* [NoteType.chord] parents whose
+  /// [MusicalNote.isBeamed] flag is true and whose [MusicalNote.childNotes]
+  /// contain at least one beamable type.
   List<int> getBeamedGroupIndices(int noteIndex, List<MusicalNote> notes) {
     if (noteIndex < 0 ||
         noteIndex >= notes.length ||
@@ -310,15 +315,30 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
       return [];
     }
 
+    // Returns true if a note is part of a beamed group (regular or chord).
+    bool isBeamable(MusicalNote n) {
+      if (!n.isBeamed) return false;
+      if (n.type == NoteType.chord) {
+        return n.childNotes?.any((c) =>
+                c.type == NoteType.eighth ||
+                c.type == NoteType.sixteenth ||
+                c.type == NoteType.thirtySecond ||
+                c.type == NoteType.sixtyFourth) ??
+            false;
+      }
+      return n.type == NoteType.eighth ||
+          n.type == NoteType.sixteenth ||
+          n.type == NoteType.thirtySecond ||
+          n.type == NoteType.sixtyFourth;
+    }
+
+    if (!isBeamable(notes[noteIndex])) return [];
+
     List<int> groupIndices = [noteIndex];
 
     // Traverse backwards to find connected beamed notes
     for (int i = noteIndex - 1; i >= 0; i--) {
-      if (notes[i].isBeamed &&
-          (notes[i].type == NoteType.eighth ||
-              notes[i].type == NoteType.sixteenth ||
-              notes[i].type == NoteType.thirtySecond ||
-              notes[i].type == NoteType.sixtyFourth)) {
+      if (isBeamable(notes[i])) {
         groupIndices.insert(0, i);
       } else {
         break;
@@ -327,11 +347,7 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
 
     // Traverse forwards to find connected beamed notes
     for (int i = noteIndex + 1; i < notes.length; i++) {
-      if (notes[i].isBeamed &&
-          (notes[i].type == NoteType.eighth ||
-              notes[i].type == NoteType.sixteenth ||
-              notes[i].type == NoteType.thirtySecond ||
-              notes[i].type == NoteType.sixtyFourth)) {
+      if (isBeamable(notes[i])) {
         groupIndices.add(i);
       } else {
         break;
@@ -357,10 +373,19 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
         if (groupIndices.isNotEmpty) {
           final firstNote = sheetNoteRows[row].chords[groupIndices.first];
 
-          if (firstNote.isUpsideDown == true) {
-            firstNote.isUpsideDown = false;
-          } else {
-            firstNote.isUpsideDown = true;
+          // Toggle — derive the new state from the current first-note value.
+          final bool newState = firstNote.isUpsideDown != true;
+
+          // Apply to every note in the group.  For chord parents, also apply
+          // to all of their child notes so they stay visually consistent.
+          for (final idx in groupIndices) {
+            final note = sheetNoteRows[row].chords[idx];
+            note.isUpsideDown = newState;
+            if (note.type == NoteType.chord && note.childNotes != null) {
+              for (var child in note.childNotes!) {
+                child.isUpsideDown = newState;
+              }
+            }
           }
         }
       }
