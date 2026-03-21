@@ -16,13 +16,18 @@ class KeyboardBySymbols extends StatefulWidget {
   final bool showLowerPair;
   final List<SheetRows> sheetNoteRows;
   final SheetFormat sheetFormat;
+  // When chord mode is active, the list of child notes already added to the
+  // current chord. Keys whose pitch+octave match an entry are highlighted with
+  // a blue border.
+  final List<MusicalNote>? chordChildNotes;
 
   const KeyboardBySymbols(
       {super.key,
       required this.onKeyPress,
       required this.showLowerPair,
       required this.sheetNoteRows,
-      required this.sheetFormat});
+      required this.sheetFormat,
+      this.chordChildNotes});
 
   @override
   State<KeyboardBySymbols> createState() => _KeyboardBySymbolsState();
@@ -86,6 +91,14 @@ class _KeyboardBySymbolsState extends State<KeyboardBySymbols> {
     );
   }
 
+  /// Returns true if the key at [pitch]/[octave] has already been added as a
+  /// child note to the current chord.
+  bool _isChordAdded(String pitch, int octave) {
+    final childNotes = widget.chordChildNotes;
+    if (childNotes == null) return false;
+    return childNotes.any((n) => n.pitch == pitch && n.octave == octave);
+  }
+
   Widget _buildKeyboardGrid({
     required NoteUnicodeCharacters selectedCharacter,
     required NoteType noteType,
@@ -110,6 +123,8 @@ class _KeyboardBySymbolsState extends State<KeyboardBySymbols> {
             final octave = _getOctave(index, row);
             final isKeyDisabled = _isKeyDisabled(pitch, octave, row);
 
+            final bool isChordAdded = _isChordAdded(pitch, octave);
+
             return MusicKey(
                 unicodeCharacter: selectedCharacter,
                 pitch: pitch,
@@ -118,7 +133,8 @@ class _KeyboardBySymbolsState extends State<KeyboardBySymbols> {
                 isConnected: isConnected,
                 onTap: isKeyDisabled ? null : (note) => widget.onKeyPress(note),
                 index: index,
-                isDisabled: isKeyDisabled);
+                isDisabled: isKeyDisabled,
+                isChordAdded: isChordAdded);
           },
         ),
       ),
@@ -249,6 +265,9 @@ class MusicKey extends StatefulWidget {
   final void Function(MusicalNote note)? onTap;
   final int index;
   final bool isDisabled;
+  // True when this key's pitch+octave is already in the current chord's
+  // childNotes – shown with a blue border to indicate it has been added.
+  final bool isChordAdded;
 
   const MusicKey(
       {super.key,
@@ -259,7 +278,8 @@ class MusicKey extends StatefulWidget {
       required this.isConnected,
       required this.onTap,
       required this.index,
-      this.isDisabled = false});
+      this.isDisabled = false,
+      this.isChordAdded = false});
 
   @override
   _MusicKeyState createState() => _MusicKeyState();
@@ -311,9 +331,13 @@ class _MusicKeyState extends State<MusicKey> {
                   : Colors.white,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-              color: widget.isDisabled
-                  ? Colors.grey[400]!
-                  : const Color.fromARGB(255, 130, 130, 130)),
+            color: widget.isDisabled
+                ? Colors.grey[400]!
+                : widget.isChordAdded
+                    ? Colors.blue
+                    : const Color.fromARGB(255, 130, 130, 130),
+            width: widget.isChordAdded ? 2.0 : 1.0,
+          ),
         ),
         child: CustomPaint(
           painter: KeyboardSymbolsMusicStaffPainter(

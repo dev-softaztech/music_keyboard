@@ -18,6 +18,7 @@ class NotesKeyboardLayout extends StatefulWidget {
   final void Function(bool) onToggleKeyboard;
   final void Function(MusicalNote) onKeyPress;
   final void Function(MusicalNote)? onAddToChord;
+  final void Function(MusicalNote)? onRemoveFromChord;
   final List<SheetRows> sheetNoteRows;
   final SheetFormat sheetFormat;
 
@@ -27,6 +28,7 @@ class NotesKeyboardLayout extends StatefulWidget {
     required this.onToggleKeyboard,
     required this.onKeyPress,
     this.onAddToChord,
+    this.onRemoveFromChord,
     required this.sheetNoteRows,
     required this.sheetFormat,
   });
@@ -97,8 +99,19 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
     }
 
     if (currentNoteIsChord) {
-      // Add the tapped note to the existing chord's childNotes
-      widget.onAddToChord?.call(note);
+      // Check whether this pitch+octave is already a child note.
+      // If so, remove it (toggle off); otherwise add it.
+      final currentChord =
+          widget.sheetNoteRows[selectedRow].chords[selectedIndex];
+      final alreadyAdded = currentChord.childNotes?.any((child) =>
+              child.pitch == note.pitch && child.octave == note.octave) ??
+          false;
+
+      if (alreadyAdded) {
+        widget.onRemoveFromChord?.call(note);
+      } else {
+        widget.onAddToChord?.call(note);
+      }
     } else {
       // Insert a new empty chord container, then add the tapped note to it
       widget.onKeyPress(MusicalNote(
@@ -992,7 +1005,13 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                   onKeyPress: _handleKeyPress,
                   showLowerPair: showLowerPair,
                   sheetNoteRows: widget.sheetNoteRows,
-                  sheetFormat: widget.sheetFormat),
+                  sheetFormat: widget.sheetFormat,
+                  // When chord mode is active and the selected note is a chord,
+                  // pass its childNotes so already-added keys get a blue border.
+                  chordChildNotes:
+                      (_isChordsActive && selectedNote?.type == NoteType.chord)
+                          ? selectedNote?.childNotes
+                          : null),
               Container(
                 margin: EdgeInsets.fromLTRB(5, 0, 0, 0),
                 padding: EdgeInsets.fromLTRB(5, 0, 0, 0),

@@ -510,9 +510,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   }
 
   /// Adds the given note to the childNotes list of the currently selected
-  /// NoteType.chord note. If a childNote with the same pitch and octave already
-  /// exists it is removed first (toggle / replace behaviour), ensuring only one
-  /// note occupies each staff position in the chord.
+  /// NoteType.chord note. Ensures no duplicate pitch+octave exists before
+  /// adding (safety guard – the toggle logic in NotesKeyboardLayout means this
+  /// method is only called when the key is NOT already a child note).
   void handleAddToChord(MusicalNote note) {
     setState(() {
       final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
@@ -531,13 +531,38 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
       chord.childNotes ??= [];
 
-      // Remove any existing child note that occupies the same staff position
-      // (same pitch letter AND same octave).
+      // Guard against duplicates (same pitch + octave).
       chord.childNotes!.removeWhere(
           (child) => child.pitch == note.pitch && child.octave == note.octave);
 
       // Add the new note.
       chord.childNotes!.add(note);
+
+      _markAsChanged();
+    });
+  }
+
+  /// Removes the childNote that matches [note]'s pitch and octave from the
+  /// currently selected NoteType.chord. Called when the user taps a key that
+  /// is already highlighted as added (blue border).
+  void handleRemoveFromChord(MusicalNote note) {
+    setState(() {
+      final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+      final selectedRow = selectedNoteProvider.selectedRow;
+      final selectedIndex = selectedNoteProvider.selectedIndex;
+
+      if (sheet.sheetRows.isEmpty ||
+          selectedRow < 0 ||
+          selectedRow >= sheet.sheetRows.length) return;
+
+      final rowChords = sheet.sheetRows[selectedRow].chords;
+      if (selectedIndex < 0 || selectedIndex >= rowChords.length) return;
+
+      final chord = rowChords[selectedIndex];
+      if (chord.type != NoteType.chord) return;
+
+      chord.childNotes?.removeWhere(
+          (child) => child.pitch == note.pitch && child.octave == note.octave);
 
       _markAsChanged();
     });
@@ -1640,6 +1665,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
           },
           onKeyPress: handleKeyPress,
           onAddToChord: handleAddToChord,
+          onRemoveFromChord: handleRemoveFromChord,
         );
 
       case KeyboardType.guitarTab:
