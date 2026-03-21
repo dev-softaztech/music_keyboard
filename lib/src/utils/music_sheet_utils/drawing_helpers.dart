@@ -204,12 +204,12 @@ void drawNoteKey(
   final double noteRadius = 8.0; // Radius of the note head
   double stemHeight = 35.0; // Stem height for all notes
   double noteWidth = 10;
-  double connectedGroupHighestY = 0.0;
-  double connectedGroupLowestY = 0.0;
+  double beamedGroupHighestY = 0.0;
+  double beamedGroupLowestY = 0.0;
   bool firstNoteUpsideDown = false;
-  List<MusicalNote> connectedNotesGroup = [];
+  List<MusicalNote> beamedNotesGroup = [];
   bool isFirstNoteInGroupList = false;
-  bool isAConnectedNote = false;
+  bool isABeamedNote = false;
   bool doesGroupContain32ndOr64thNote = false;
   final double staffCenter = staffTop + (lineSpacing * 2);
 
@@ -217,13 +217,13 @@ void drawNoteKey(
       note.type == NoteType.sixteenth ||
       note.type == NoteType.thirtySecond ||
       note.type == NoteType.sixtyFourth) {
-    isAConnectedNote = true;
+    isABeamedNote = true;
   }
 
-  if (isAConnectedNote && note.isBeamed) {
+  if (isABeamedNote && note.isBeamed) {
     ({bool isFirst, List<MusicalNote> notesGroup}) notesGroup =
-        getConnectedNotesGroup(index, notes);
-    connectedNotesGroup = notesGroup.notesGroup;
+        getBeamedNotesGroup(index, notes);
+    beamedNotesGroup = notesGroup.notesGroup;
     isFirstNoteInGroupList = notesGroup.isFirst;
 
     ({
@@ -231,11 +231,11 @@ void drawNoteKey(
       double lowestY,
       double firstNoteY,
       bool doesGroupContain32ndOr64thNote
-    }) notesGroupYs = getConnectedNotesGroupHighestY(
-        connectedNotesGroup, lineSpacing, staffTop, staffCenter);
+    }) notesGroupYs = getBeamedNotesGroupHighestY(
+        beamedNotesGroup, lineSpacing, staffTop, staffCenter);
 
-    connectedGroupHighestY = notesGroupYs.highestY;
-    connectedGroupLowestY = notesGroupYs.lowestY;
+    beamedGroupHighestY = notesGroupYs.highestY;
+    beamedGroupLowestY = notesGroupYs.lowestY;
     firstNoteUpsideDown = notesGroupYs.firstNoteY < staffCenter;
     doesGroupContain32ndOr64thNote =
         notesGroupYs.doesGroupContain32ndOr64thNote;
@@ -317,12 +317,12 @@ void drawNoteKey(
       stemHeight = stemHeight + 10;
     }
 
-    if (isAConnectedNote && note.isBeamed) {
+    if (isABeamedNote && note.isBeamed) {
       if (!firstNoteUpsideDown) {
-        stemHeight = (noteY - connectedGroupHighestY) + stemHeight;
+        stemHeight = (noteY - beamedGroupHighestY) + stemHeight;
       }
       if (firstNoteUpsideDown) {
-        stemHeight = (connectedGroupLowestY - noteY) + stemHeight;
+        stemHeight = (beamedGroupLowestY - noteY) + stemHeight;
       }
     }
 
@@ -346,13 +346,13 @@ void drawNoteKey(
       );
     }
 
-    if (isAConnectedNote &&
-        connectedNotesGroup.length > 1 &&
+    if (isABeamedNote &&
+        beamedNotesGroup.length > 1 &&
         !isFirstNoteInGroupList) {
       var stemTopY =
           firstNoteUpsideDown ? noteY + stemHeight - 3 : noteY - stemHeight + 3;
-      drawConnectedNotes(canvas, paint, note, stemX, stemTopY,
-          firstNoteUpsideDown, noteSpacing);
+      drawBeamedNotes(canvas, paint, note, stemX, stemTopY, firstNoteUpsideDown,
+          noteSpacing);
     }
   }
 
@@ -360,7 +360,7 @@ void drawNoteKey(
           note.type == NoteType.sixteenth ||
           note.type == NoteType.thirtySecond ||
           note.type == NoteType.sixtyFourth) &&
-      connectedNotesGroup.length <= 1) {
+      beamedNotesGroup.length <= 1) {
     String flagCharacter = "";
     double flagY = note.isUpsideDown == false
         ? (noteY - stemHeight - 64)
@@ -408,14 +408,8 @@ void drawNoteKey(
       canvas, paint, noteY, noteX, noteWidth, lineSpacing, staffTop);
 }
 
-void drawConnectedNotes(
-    Canvas canvas,
-    Paint paint,
-    MusicalNote note,
-    double stemX,
-    double stemTopY,
-    bool firstNoteUpsideDown,
-    double noteSpacing) {
+void drawBeamedNotes(Canvas canvas, Paint paint, MusicalNote note, double stemX,
+    double stemTopY, bool firstNoteUpsideDown, double noteSpacing) {
   canvas.drawLine(
     Offset(stemX, stemTopY),
     Offset(stemX - noteSpacing, stemTopY),
@@ -454,12 +448,12 @@ void drawConnectedNotes(
   }
 }
 
-({List<MusicalNote> notesGroup, bool isFirst}) getConnectedNotesGroup(
+({List<MusicalNote> notesGroup, bool isFirst}) getBeamedNotesGroup(
     int index, List<MusicalNote> notes) {
   MusicalNote firstNote = notes[index];
-  List<MusicalNote> connectedNotesGroup = [firstNote];
+  List<MusicalNote> beamedNotesGroup = [firstNote];
 
-  // Traverse backwards to find connected notes before the index
+  // Traverse backwards to find Beamed notes before the index
   for (int i = index - 1; i >= 0; i--) {
     if (notes[i].isBeamed &&
         (notes[i].type == NoteType.eighth ||
@@ -468,13 +462,13 @@ void drawConnectedNotes(
             notes[i].type == NoteType.sixtyFourth) &&
         notes[i].type != NoteType.space) {
       // && notes[i].type == firstNote.type) {
-      connectedNotesGroup.insert(0, notes[i]); // Insert at the beginning
+      beamedNotesGroup.insert(0, notes[i]); // Insert at the beginning
     } else {
       break;
     }
   }
 
-  // Traverse forwards to find connected notes after the index
+  // Traverse forwards to find Beamed notes after the index
   for (int i = index + 1; i < notes.length; i++) {
     if (notes[i].isBeamed &&
         (notes[i].type == NoteType.eighth ||
@@ -482,15 +476,15 @@ void drawConnectedNotes(
             notes[i].type == NoteType.thirtySecond ||
             notes[i].type == NoteType.sixtyFourth) &&
         notes[i].type != NoteType.space) {
-      connectedNotesGroup.add(notes[i]);
+      beamedNotesGroup.add(notes[i]);
     } else {
       break;
     }
   }
 
-  bool isFirst = connectedNotesGroup.first == firstNote;
+  bool isFirst = beamedNotesGroup.first == firstNote;
 
-  return (notesGroup: connectedNotesGroup, isFirst: isFirst);
+  return (notesGroup: beamedNotesGroup, isFirst: isFirst);
 }
 
 ({
@@ -498,7 +492,7 @@ void drawConnectedNotes(
   double lowestY,
   double firstNoteY,
   bool doesGroupContain32ndOr64thNote
-}) getConnectedNotesGroupHighestY(List<MusicalNote> notes, double lineSpacing,
+}) getBeamedNotesGroupHighestY(List<MusicalNote> notes, double lineSpacing,
     double staffTop, double staffCenter) {
   double highestY = 0;
   double lowestY = 0;

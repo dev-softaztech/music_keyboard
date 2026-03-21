@@ -1003,10 +1003,10 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                 note.type == NoteType.thirtySecond ||
                 note.type == NoteType.sixtyFourth) &&
             note.isBeamed) {
-          var notesGroup = getConnectedNotesGroup(i, rowNotes);
+          var notesGroup = getBeamedNotesGroup(i, rowNotes);
           var connectedNotesGroup = notesGroup.notesGroup;
           if (connectedNotesGroup.isNotEmpty) {
-            var notesGroupYs = getConnectedNotesGroupHighestY(
+            var notesGroupYs = getBeamedNotesGroupHighestY(
                 connectedNotesGroup, 10.0, staffTop, staffCenter);
             double connectedGroupHighestY = notesGroupYs.highestY;
             double connectedGroupLowestY = notesGroupYs.lowestY;

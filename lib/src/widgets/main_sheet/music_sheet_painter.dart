@@ -1802,12 +1802,12 @@ class MusicSheetPainter extends CustomPainter {
                 note.type == NoteType.sixtyFourth) &&
             note.isBeamed) {
           // Get the connected notes group to determine actual stem height
-          var notesGroup = getConnectedNotesGroup(i, rowNotes);
+          var notesGroup = getBeamedNotesGroup(i, rowNotes);
           var connectedNotesGroup = notesGroup.notesGroup;
           bool firstNoteUpsideDown = false;
 
           if (connectedNotesGroup.isNotEmpty) {
-            var notesGroupYs = getConnectedNotesGroupHighestY(
+            var notesGroupYs = getBeamedNotesGroupHighestY(
                 connectedNotesGroup, 10.0, staffTop, staffCentre);
 
             double connectedGroupHighestY = notesGroupYs.highestY;
@@ -2415,7 +2415,7 @@ class MusicSheetPainter extends CustomPainter {
 
     // Handle beamed notes special case
     if (note.isBeamed) {
-      var notesGroup = getConnectedNotesGroup(noteIndex, notes);
+      var notesGroup = getBeamedNotesGroup(noteIndex, notes);
       var connectedNotesGroup = notesGroup.notesGroup;
 
       if (connectedNotesGroup.isNotEmpty) {
