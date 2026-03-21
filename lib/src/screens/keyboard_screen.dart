@@ -538,6 +538,11 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
       // Add the new note.
       chord.childNotes!.add(note);
 
+      // If beam lock is active, ensure the chord container is also beamed.
+      if (isBeamLockActive) {
+        chord.isBeamed = true;
+      }
+
       _markAsChanged();
     });
   }

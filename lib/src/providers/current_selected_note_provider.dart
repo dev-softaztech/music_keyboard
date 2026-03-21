@@ -319,12 +319,16 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
     bool isBeamable(MusicalNote n) {
       if (!n.isBeamed) return false;
       if (n.type == NoteType.chord) {
-        return n.childNotes?.any((c) =>
-                c.type == NoteType.eighth ||
-                c.type == NoteType.sixteenth ||
-                c.type == NoteType.thirtySecond ||
-                c.type == NoteType.sixtyFourth) ??
-            false;
+        // A chord with isBeamed=true but no children yet (user set beam before
+        // adding child notes) is still considered beamable so callers never
+        // receive an empty list for a note whose isBeamed flag is true.
+        final children = n.childNotes;
+        if (children == null || children.isEmpty) return true;
+        return children.any((c) =>
+            c.type == NoteType.eighth ||
+            c.type == NoteType.sixteenth ||
+            c.type == NoteType.thirtySecond ||
+            c.type == NoteType.sixtyFourth);
       }
       return n.type == NoteType.eighth ||
           n.type == NoteType.sixteenth ||

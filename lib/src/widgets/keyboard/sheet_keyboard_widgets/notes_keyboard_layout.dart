@@ -4,6 +4,7 @@ import 'package:music_keyboard/models/note_unicode_characters.dart';
 import 'package:music_keyboard/models/sheet_rows.dart';
 import 'package:music_keyboard/models/sheet_format.dart';
 import 'package:music_keyboard/src/providers/current_selected_note_provider.dart';
+import 'package:music_keyboard/src/providers/is_connected_provider.dart';
 import 'package:music_keyboard/src/providers/selected_accidental_provider.dart';
 import 'package:music_keyboard/src/widgets/keyboard/sheet_keyboard_widgets/keyboard_by_symbols.dart';
 import 'package:music_keyboard/src/providers/selected_unicode_provider.dart';
@@ -178,12 +179,15 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
 
             if (isLastNote) {
               // Insert a new empty chord container after the current position
-              // and move the cursor to it.
+              // and move the cursor to it. Respect the current beam-lock state.
+              final isConnected =
+                  Provider.of<IsConnectedProvider>(context, listen: false)
+                      .isConnected;
               widget.onKeyPress(MusicalNote(
                 pitch: 'C',
                 octave: 4,
                 type: NoteType.chord,
-                isBeamed: false,
+                isBeamed: isConnected,
                 duration: 0.0,
                 childNotes: [],
               ));
