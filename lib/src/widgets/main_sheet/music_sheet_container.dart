@@ -2711,26 +2711,24 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                         }
                       }
                     });
-                  },
-                      widget
-                              .sheetNoteRows[selectedNoteProvider.selectedRow]
-                              .chords[selectedNoteProvider.selectedIndex]
-                              .isBeamed
-                          ? widget
-                              .sheetNoteRows[selectedNoteProvider.selectedRow]
-                              .chords[selectedNoteProvider
-                                  .getBeamedGroupIndices(
-                                      selectedNoteProvider.selectedIndex,
-                                      widget
-                                          .sheetNoteRows[
-                                              selectedNoteProvider.selectedRow]
-                                          .chords)
-                                  .first]
-                              .isUpsideDown
-                          : widget
-                              .sheetNoteRows[selectedNoteProvider.selectedRow]
-                              .chords[selectedNoteProvider.selectedIndex]
-                              .isUpsideDown),
+                  }, () {
+                    final beamedIndices =
+                        selectedNoteProvider.getBeamedGroupIndices(
+                            selectedNoteProvider.selectedIndex,
+                            widget
+                                .sheetNoteRows[selectedNoteProvider.selectedRow]
+                                .chords);
+                    final chord = widget
+                        .sheetNoteRows[selectedNoteProvider.selectedRow]
+                        .chords[selectedNoteProvider.selectedIndex];
+                    if (chord.isBeamed && beamedIndices.isNotEmpty) {
+                      return widget
+                          .sheetNoteRows[selectedNoteProvider.selectedRow]
+                          .chords[beamedIndices.first]
+                          .isUpsideDown;
+                    }
+                    return chord.isUpsideDown;
+                  }()),
                 ],
               ])),
           // Select Rows Mode UI - Exit Button
