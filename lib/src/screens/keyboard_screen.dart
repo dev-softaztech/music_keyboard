@@ -465,7 +465,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
           bottomTimeSignatureCharacter: note.bottomTimeSignatureCharacter,
           keySignatureName: note.keySignatureName,
           keySignatureClefType: note.keySignatureClefType,
-          clefType: note.clefType);
+          clefType: note.clefType,
+          childNotes: note.childNotes,
+          duration: note.duration);
 
       setState(() {
         // Add the note first
@@ -505,6 +507,31 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
       print("Error adding note: $e");
     }
     return rowOverflowed;
+  }
+
+  /// Adds the given note to the childNotes list of the currently selected
+  /// NoteType.chord note. Triggers a rebuild so the sheet repaints.
+  void handleAddToChord(MusicalNote note) {
+    setState(() {
+      final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+      final selectedRow = selectedNoteProvider.selectedRow;
+      final selectedIndex = selectedNoteProvider.selectedIndex;
+
+      if (sheet.sheetRows.isEmpty ||
+          selectedRow < 0 ||
+          selectedRow >= sheet.sheetRows.length) return;
+
+      final rowChords = sheet.sheetRows[selectedRow].chords;
+      if (selectedIndex < 0 || selectedIndex >= rowChords.length) return;
+
+      final chord = rowChords[selectedIndex];
+      if (chord.type != NoteType.chord) return;
+
+      chord.childNotes ??= [];
+      chord.childNotes!.add(note);
+
+      _markAsChanged();
+    });
   }
 
   void handleRowOverflow(
@@ -1603,6 +1630,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
             });
           },
           onKeyPress: handleKeyPress,
+          onAddToChord: handleAddToChord,
         );
 
       case KeyboardType.guitarTab:

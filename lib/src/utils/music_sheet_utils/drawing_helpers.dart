@@ -31,6 +31,11 @@ void drawNote(
     // Draw guitar tab fret notes - only draw childNotes, not the parent
     drawGuitarTabFrets(canvas, note, lineSpacing, staffTop, noteX, noteColour);
     return;
+  } else if (note.type == NoteType.chord) {
+    // Draw each child note at the same X position
+    drawChordNotes(canvas, paint, note, lineSpacing, staffTop, noteX, notes,
+        index, noteSpacing, noteColour);
+    return;
   } else {
     drawNoteKey(canvas, paint, note, lineSpacing, staffTop, noteX, notes, index,
         note.noteY, noteSpacing, noteColour);
@@ -634,5 +639,40 @@ void drawGuitarTabFrets(Canvas canvas, MusicalNote parentChord,
 
     // Draw the text on top of the white background
     textPainter.paint(canvas, Offset(xPos, yPos));
+  }
+}
+
+/// Draw all child notes of a NoteType.chord at the same X position.
+/// Each child note is a regular musical note; its Y position is calculated
+/// from its pitch/octave using [calculateNoteYMainSheet].
+void drawChordNotes(
+    Canvas canvas,
+    Paint paint,
+    MusicalNote parentChord,
+    double lineSpacing,
+    double staffTop,
+    double noteX,
+    List<MusicalNote> notes,
+    int index,
+    double noteSpacing,
+    Color noteColour) {
+  if (parentChord.childNotes == null || parentChord.childNotes!.isEmpty) {
+    return;
+  }
+
+  final double staffCenter = staffTop + (lineSpacing * 2);
+
+  for (var childNote in parentChord.childNotes!) {
+    // Calculate and store the Y position for this child note
+    final double childNoteY = calculateNoteYMainSheet(
+        childNote.pitch, childNote.octave, lineSpacing, staffTop);
+    childNote.noteY = childNoteY;
+
+    // Determine stem direction if not already set
+    childNote.isUpsideDown ??= childNoteY <= staffCenter;
+
+    // Draw the child note using the existing drawNoteKey function
+    drawNoteKey(canvas, paint, childNote, lineSpacing, staffTop, noteX, notes,
+        index, childNoteY, noteSpacing, noteColour);
   }
 }

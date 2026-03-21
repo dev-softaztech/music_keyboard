@@ -17,6 +17,7 @@ class NotesKeyboardLayout extends StatefulWidget {
   final bool showNotesKeyboard;
   final void Function(bool) onToggleKeyboard;
   final void Function(MusicalNote) onKeyPress;
+  final void Function(MusicalNote)? onAddToChord;
   final List<SheetRows> sheetNoteRows;
   final SheetFormat sheetFormat;
 
@@ -25,6 +26,7 @@ class NotesKeyboardLayout extends StatefulWidget {
     required this.showNotesKeyboard,
     required this.onToggleKeyboard,
     required this.onKeyPress,
+    this.onAddToChord,
     required this.sheetNoteRows,
     required this.sheetFormat,
   });
@@ -57,10 +59,132 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
   // Octave pair state - false = Middle+Top pair, true = Bottom+Middle pair
   bool showLowerPair = false;
 
+  // Chord mode state
+  bool _isChordsActive = false;
+
   void _toggleOctavePair() {
     setState(() {
       showLowerPair = !showLowerPair;
     });
+  }
+
+  /// Routes key presses through chord-mode logic when active.
+  /// In chord mode, tapping a note adds it as a child of the current
+  /// selected note (which must be a NoteType.chord). If the current
+  /// selected note is not yet a chord, a new empty chord is inserted
+  /// first, then the tapped note is added to it.
+  void _handleKeyPress(MusicalNote note) {
+    if (!_isChordsActive) {
+      widget.onKeyPress(note);
+      return;
+    }
+
+    final selectedNoteProvider =
+        Provider.of<CurrentSelectedNoteProvider>(context, listen: false);
+    final selectedIndex = selectedNoteProvider.selectedIndex;
+    final selectedRow = selectedNoteProvider.selectedRow;
+
+    // Check if the current selected note is already a chord container
+    bool currentNoteIsChord = false;
+    if (widget.sheetNoteRows.isNotEmpty &&
+        selectedRow >= 0 &&
+        selectedRow < widget.sheetNoteRows.length &&
+        selectedIndex >= 0 &&
+        selectedIndex < widget.sheetNoteRows[selectedRow].chords.length) {
+      currentNoteIsChord =
+          widget.sheetNoteRows[selectedRow].chords[selectedIndex].type ==
+              NoteType.chord;
+    }
+
+    if (currentNoteIsChord) {
+      // Add the tapped note to the existing chord's childNotes
+      widget.onAddToChord?.call(note);
+    } else {
+      // Insert a new empty chord container, then add the tapped note to it
+      widget.onKeyPress(MusicalNote(
+        pitch: note.pitch,
+        octave: note.octave,
+        type: NoteType.chord,
+        isBeamed: note.isBeamed,
+        duration: note.duration,
+        childNotes: [],
+      ));
+      // After onKeyPress, selectedIndex now points to the newly inserted chord
+      widget.onAddToChord?.call(note);
+    }
+  }
+
+  /// Build the chords toggle button shown above the note selector.
+  Widget _buildChordsToggleButton() {
+    return SizedBox(
+      width: 44,
+      height: 34,
+      child: ElevatedButton(
+        onPressed: () {
+          setState(() {
+            _isChordsActive = !_isChordsActive;
+          });
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: _isChordsActive ? Colors.black : Colors.grey[100],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: const BorderSide(color: Colors.black, width: 1),
+          ),
+          padding: EdgeInsets.zero,
+        ),
+        child: Text(
+          'CHD',
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+            color: _isChordsActive ? Colors.white : Colors.black,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Build a Back (isNext=false) or Next (isNext=true) navigation button
+  /// used to move between notes when chord mode is active.
+  Widget _buildChordNavButton(
+      bool isNext, int selectedRow, int selectedNoteIndex) {
+    return SizedBox(
+      width: 34,
+      height: 34,
+      child: ElevatedButton(
+        onPressed: () {
+          final provider =
+              Provider.of<CurrentSelectedNoteProvider>(context, listen: false);
+          if (isNext) {
+            if (selectedNoteIndex <
+                widget.sheetNoteRows[selectedRow].chords.length - 1) {
+              provider.updateSelectedIndexAndInsertionPoint(
+                  selectedRow, selectedNoteIndex + 1);
+            }
+          } else {
+            if (selectedNoteIndex > 0) {
+              provider.updateSelectedIndexAndInsertionPoint(
+                  selectedRow, selectedNoteIndex - 1);
+            }
+          }
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 1,
+          padding: EdgeInsets.zero,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: const BorderSide(color: Colors.black, width: 2),
+          ),
+        ),
+        child: Icon(
+          isNext ? Icons.arrow_forward : Icons.arrow_back,
+          size: 18,
+        ),
+      ),
+    );
   }
 
   @override
@@ -612,27 +736,33 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
       padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
       child: Column(
         children: [
-          // For notes, show the horizontal scroll of unicode characters
+          // Note selector row with optional chord toggle and nav buttons
           if (unicodeCharacters.isNotEmpty)
             Row(
               children: [
-                const SizedBox(width: 10),
+                const SizedBox(width: 4),
+                // Chords toggle button (always visible)
+                _buildChordsToggleButton(),
+                const SizedBox(width: 4),
+                // Back button – only shown when chord mode is active
+                if (_isChordsActive) ...[
+                  _buildChordNavButton(false, selectedRow, selectedNoteIndex),
+                  const SizedBox(width: 2),
+                ],
+                // Unicode note-type selector
                 Expanded(
                   child: Consumer<SelectedUnicodeProvider>(
                     builder: (context, provider, _) => LayoutBuilder(
                       builder: (context, constraints) {
                         final itemCount = unicodeCharacters.length;
-                        final itemWidth = constraints.maxWidth /
-                            itemCount; // full width split evenly
+                        final itemWidth = constraints.maxWidth / itemCount;
 
                         return SizedBox(
                           height: 34,
-                          //margin: const EdgeInsets.fromLTRB(0, 0, 0, 6),
                           child: ListView.builder(
                             scrollDirection: Axis.horizontal,
                             itemCount: itemCount,
-                            physics:
-                                const NeverScrollableScrollPhysics(), // disable scroll
+                            physics: const NeverScrollableScrollPhysics(),
                             itemBuilder: (context, index) {
                               final character = unicodeCharacters[index];
                               final isSelected =
@@ -659,8 +789,8 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                                     ),
                                     child: Transform.translate(
                                       offset: character.normal == "\ue1d2"
-                                          ? Offset(0, 2)
-                                          : Offset(0, 10),
+                                          ? const Offset(0, 2)
+                                          : const Offset(0, 10),
                                       child: Text(
                                         character.normal,
                                         style: TextStyle(
@@ -683,7 +813,12 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
+                // Next button – only shown when chord mode is active
+                if (_isChordsActive) ...[
+                  const SizedBox(width: 2),
+                  _buildChordNavButton(true, selectedRow, selectedNoteIndex),
+                ],
+                const SizedBox(width: 4),
               ],
             ),
           SizedBox(height: 4),
@@ -836,7 +971,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                 ),
               ),
               KeyboardBySymbols(
-                  onKeyPress: widget.onKeyPress,
+                  onKeyPress: _handleKeyPress,
                   showLowerPair: showLowerPair,
                   sheetNoteRows: widget.sheetNoteRows,
                   sheetFormat: widget.sheetFormat),

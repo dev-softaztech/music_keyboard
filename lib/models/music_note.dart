@@ -289,7 +289,8 @@ enum NoteType {
   timeSignature,
   space,
   keySignature,
-  fret
+  fret,
+  chord
 }
 
 extension NoteTypeExtension on NoteType {
