@@ -510,7 +510,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   }
 
   /// Adds the given note to the childNotes list of the currently selected
-  /// NoteType.chord note. Triggers a rebuild so the sheet repaints.
+  /// NoteType.chord note. If a childNote with the same pitch and octave already
+  /// exists it is removed first (toggle / replace behaviour), ensuring only one
+  /// note occupies each staff position in the chord.
   void handleAddToChord(MusicalNote note) {
     setState(() {
       final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
@@ -528,6 +530,13 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
       if (chord.type != NoteType.chord) return;
 
       chord.childNotes ??= [];
+
+      // Remove any existing child note that occupies the same staff position
+      // (same pitch letter AND same octave).
+      chord.childNotes!.removeWhere(
+          (child) => child.pitch == note.pitch && child.octave == note.octave);
+
+      // Add the new note.
       chord.childNotes!.add(note);
 
       _markAsChanged();

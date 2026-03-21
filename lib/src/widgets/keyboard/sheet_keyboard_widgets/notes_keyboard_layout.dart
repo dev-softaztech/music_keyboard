@@ -147,6 +147,8 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
 
   /// Build a Back (isNext=false) or Next (isNext=true) navigation button
   /// used to move between notes when chord mode is active.
+  /// When Next is tapped and the current note is the last in the row, a new
+  /// empty NoteType.chord is inserted after it and immediately selected.
   Widget _buildChordNavButton(
       bool isNext, int selectedRow, int selectedNoteIndex) {
     return SizedBox(
@@ -156,9 +158,25 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
         onPressed: () {
           final provider =
               Provider.of<CurrentSelectedNoteProvider>(context, listen: false);
+
           if (isNext) {
-            if (selectedNoteIndex <
-                widget.sheetNoteRows[selectedRow].chords.length - 1) {
+            final rowChords = widget.sheetNoteRows[selectedRow].chords;
+            final isLastNote = selectedNoteIndex >= rowChords.length - 1;
+
+            if (isLastNote) {
+              // Insert a new empty chord container after the current position
+              // and move the cursor to it.
+              widget.onKeyPress(MusicalNote(
+                pitch: 'C',
+                octave: 4,
+                type: NoteType.chord,
+                isBeamed: false,
+                duration: 0.0,
+                childNotes: [],
+              ));
+              // onKeyPress calls addNote which advances the provider index
+              // automatically, so no manual update is needed here.
+            } else {
               provider.updateSelectedIndexAndInsertionPoint(
                   selectedRow, selectedNoteIndex + 1);
             }
