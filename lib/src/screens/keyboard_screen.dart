@@ -513,9 +513,16 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   /// NoteType.chord note. Ensures no duplicate pitch+octave exists before
   /// adding (safety guard – the toggle logic in NotesKeyboardLayout means this
   /// method is only called when the key is NOT already a child note).
+  ///
+  /// The currently selected accidental (sharp, flat, natural, dotted) from
+  /// [SelectedAccidentalProvider] is applied to the child note so that
+  /// accidentals and augmentation dots are drawn correctly on the staff.
   void handleAddToChord(MusicalNote note) {
     setState(() {
       final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+      final accidentalProvider = context.read<SelectedAccidentalProvider>();
+      final selectedAccidental = accidentalProvider.selectedAccidental;
+
       final selectedRow = selectedNoteProvider.selectedRow;
       final selectedIndex = selectedNoteProvider.selectedIndex;
 
@@ -535,8 +542,19 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
       chord.childNotes!.removeWhere(
           (child) => child.pitch == note.pitch && child.octave == note.octave);
 
+      // Create a new child note that includes the currently selected
+      // accidental/dot so it is rendered correctly on the music sheet.
+      final noteWithAccidental = MusicalNote(
+        pitch: note.pitch,
+        octave: note.octave,
+        type: note.type,
+        isBeamed: note.isBeamed,
+        unicodeCharacter: note.unicodeCharacter,
+        accidentalCharacter: selectedAccidental,
+      );
+
       // Add the new note.
-      chord.childNotes!.add(note);
+      chord.childNotes!.add(noteWithAccidental);
 
       // If beam lock is active, ensure the chord container is also beamed.
       if (isBeamLockActive) {
