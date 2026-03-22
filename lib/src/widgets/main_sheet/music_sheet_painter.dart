@@ -453,34 +453,50 @@ class MusicSheetPainter extends CustomPainter {
                   : sheetNoteRows[rowIndex].chords.length - 1;
 
           double startX = x;
-          double startY = calculateNoteYMainSheet(
-              chord.pitch, chord.octave, lineSpacing, staffTop);
 
           // Calculate endX by accounting for space note spacing
           double endX = keyboardType.startingNoteX;
-          for (int index = 0; index <= slurEndIndex; index++) {
+          for (int index = 0; index < slurEndIndex; index++) {
             final currentNote = sheetNoteRows[rowIndex].chords[index];
 
-            if (currentNote.type == NoteType.space && index > 0) {
-              bool prevIsSpace =
-                  sheetNoteRows[rowIndex].chords[index - 1].type ==
-                      NoteType.space;
-              endX += prevIsSpace ? currentRowSpacing : 0;
-            } else if (currentNote.type != NoteType.space) {
-              endX += currentNote.type == NoteType.clef ||
-                      currentNote.type == NoteType.timeSignature
-                  ? getNoteWidth(currentNote)
-                  : currentNote.type == NoteType.keySignature
-                      ? getNoteWidth(currentNote) + 10
-                      : currentRowSpacing;
-            }
+            endX += currentNote.type == NoteType.clef ||
+                    currentNote.type == NoteType.timeSignature
+                ? getNoteWidth(currentNote)
+                : currentNote.type == NoteType.keySignature
+                    ? getNoteWidth(currentNote) + 10
+                    : currentRowSpacing;
           }
 
-          double endY = calculateNoteYMainSheet(
-              sheetNoteRows[rowIndex].chords[slurEndIndex].pitch,
-              sheetNoteRows[rowIndex].chords[slurEndIndex].octave,
-              lineSpacing,
-              staffTop);
+          // Pre-determine slur direction (mirrors logic inside drawSlurBetweenNotes)
+          // so we can pick the correct extremal child note for chord notes.
+          final bool slurIsAbove = _isSlurAboveForRange(
+              sheetNoteRows[rowIndex].chords, i, slurEndIndex, staffCenter);
+
+          // For NoteType.chord start note, attach slur to highest child (if
+          // curving above) or lowest child (if curving below).
+          double startY;
+          if (chord.type == NoteType.chord &&
+              chord.childNotes != null &&
+              chord.childNotes!.isNotEmpty) {
+            startY = _extremalChildY(chord, slurIsAbove, lineSpacing, staffTop);
+          } else {
+            startY = calculateNoteYMainSheet(
+                chord.pitch, chord.octave, lineSpacing, staffTop);
+          }
+
+          // For NoteType.chord end note, do the same.
+          final MusicalNote endChord =
+              sheetNoteRows[rowIndex].chords[slurEndIndex];
+          double endY;
+          if (endChord.type == NoteType.chord &&
+              endChord.childNotes != null &&
+              endChord.childNotes!.isNotEmpty) {
+            endY =
+                _extremalChildY(endChord, slurIsAbove, lineSpacing, staffTop);
+          } else {
+            endY = calculateNoteYMainSheet(
+                endChord.pitch, endChord.octave, lineSpacing, staffTop);
+          }
 
           drawSlurBetweenNotes(
               canvas,
@@ -3437,5 +3453,67 @@ class MusicSheetPainter extends CustomPainter {
 
     canvas.drawLine(Offset(x1, tripletY), Offset(x1, tripletY + 7), paint);
     canvas.drawLine(Offset(x3, tripletY), Offset(x3, tripletY + 7), paint);
+  }
+
+  /// Returns true when the slur should arc **above** the notes in the range
+  /// [startIndex..endIndex].  Mirrors the identical logic inside
+  /// [drawSlurBetweenNotes] so the call-site can pre-determine direction
+  /// before selecting the extremal child note of a chord.
+  bool _isSlurAboveForRange(List<MusicalNote> rowNotes, int startIndex,
+      int endIndex, double staffCentre) {
+    final int minIndex = startIndex < endIndex ? startIndex : endIndex;
+    final int maxIndex = startIndex > endIndex ? startIndex : endIndex;
+
+    int notesAboveCenter = 0;
+    int notesBelowCenter = 0;
+
+    for (int i = minIndex; i <= maxIndex; i++) {
+      final note = rowNotes[i];
+      if (note.type != NoteType.space) {
+        if (note.noteY > staffCentre) {
+          notesAboveCenter++;
+        } else {
+          notesBelowCenter++;
+        }
+      }
+    }
+
+    return notesBelowCenter >= notesAboveCenter;
+  }
+
+  /// Returns the canvas Y coordinate of the extremal child note of [chord]
+  /// that a slur should attach to.
+  ///
+  /// * [slurIsAbove] == true  → slur curves **over** the chord → attach to the
+  ///   **highest** child note (smallest canvas Y).
+  /// * [slurIsAbove] == false → slur curves **under** the chord → attach to
+  ///   the **lowest** child note (largest canvas Y).
+  ///
+  /// Falls back to [calculateNoteYMainSheet] on the parent chord if there are
+  /// no children.
+  double _extremalChildY(MusicalNote chord, bool slurIsAbove,
+      double lineSpacing, double staffTop) {
+    final children = chord.childNotes;
+    if (children == null || children.isEmpty) {
+      return calculateNoteYMainSheet(
+          chord.pitch, chord.octave, lineSpacing, staffTop);
+    }
+
+    double extremalY = calculateNoteYMainSheet(
+        children.first.pitch, children.first.octave, lineSpacing, staffTop);
+
+    for (int i = 1; i < children.length; i++) {
+      final double y = calculateNoteYMainSheet(
+          children[i].pitch, children[i].octave, lineSpacing, staffTop);
+      if (slurIsAbove) {
+        // Slur above → want highest note (smallest Y on canvas)
+        if (y < extremalY) extremalY = y;
+      } else {
+        // Slur below → want lowest note (largest Y on canvas)
+        if (y > extremalY) extremalY = y;
+      }
+    }
+
+    return extremalY;
   }
 }
