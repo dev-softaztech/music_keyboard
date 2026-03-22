@@ -1094,8 +1094,36 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
         MusicalNote currentNote = notes[closestNoteIndex];
         if (closestNoteIndex < notes.length - 1) {
           MusicalNote nextNote = notes[closestNoteIndex + 1];
+
+          // Regular note match (same pitch)
           if (currentNote.pitch == nextNote.pitch) {
             return true;
+          }
+
+          // Chord note: show TIE button if any childNote matches a note or
+          // childNote at the next position on the stave.
+          if (currentNote.type == NoteType.chord &&
+              currentNote.childNotes != null &&
+              currentNote.childNotes!.isNotEmpty) {
+            if (nextNote.type == NoteType.chord &&
+                nextNote.childNotes != null &&
+                nextNote.childNotes!.isNotEmpty) {
+              // Both are chords – check for any matching pitch+octave pair.
+              for (final child in currentNote.childNotes!) {
+                if (nextNote.childNotes!.any((n) =>
+                    n.pitch == child.pitch && n.octave == child.octave)) {
+                  return true;
+                }
+              }
+            } else {
+              // Next is a regular note – check if any child matches it.
+              for (final child in currentNote.childNotes!) {
+                if (child.pitch == nextNote.pitch &&
+                    child.octave == nextNote.octave) {
+                  return true;
+                }
+              }
+            }
           }
         }
       }
@@ -3071,7 +3099,30 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                           MusicalNote nextNote =
                               widget.sheetNoteRows[row].chords[index + 1];
 
-                          if (currentNote.pitch == nextNote.pitch) {
+                          // Determine whether a tie is valid: either a direct
+                          // pitch match (regular notes) or at least one
+                          // childNote of a chord matches the next position.
+                          bool canTie = currentNote.pitch == nextNote.pitch;
+
+                          if (!canTie &&
+                              currentNote.type == NoteType.chord &&
+                              currentNote.childNotes != null &&
+                              currentNote.childNotes!.isNotEmpty) {
+                            if (nextNote.type == NoteType.chord &&
+                                nextNote.childNotes != null &&
+                                nextNote.childNotes!.isNotEmpty) {
+                              canTie = currentNote.childNotes!.any((child) =>
+                                  nextNote.childNotes!.any((n) =>
+                                      n.pitch == child.pitch &&
+                                      n.octave == child.octave));
+                            } else {
+                              canTie = currentNote.childNotes!.any((child) =>
+                                  child.pitch == nextNote.pitch &&
+                                  child.octave == nextNote.octave);
+                            }
+                          }
+
+                          if (canTie) {
                             setState(() {
                               currentNote.isTiedToNext =
                                   !currentNote.isTiedToNext;

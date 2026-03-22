@@ -441,9 +441,38 @@ class MusicSheetPainter extends CustomPainter {
 
         if (chord.isTiedToNext &&
             i < sheetNoteRows[rowIndex].chords.length - 1) {
-          double y = calculateNoteYMainSheet(
-              chord.pitch, chord.octave, lineSpacing, staffTop);
-          drawTie(canvas, paint, x, staffCenter, x + currentRowSpacing, y);
+          if (chord.type == NoteType.chord &&
+              chord.childNotes != null &&
+              chord.childNotes!.isNotEmpty) {
+            // For NoteType.chord, draw a tie for every childNote that has a
+            // matching note (same pitch + octave) at the next position in the
+            // row, whether the next note is a regular note or another chord.
+            final MusicalNote nextNote = sheetNoteRows[rowIndex].chords[i + 1];
+            for (final childNote in chord.childNotes!) {
+              bool hasMatch = false;
+              if (nextNote.type == NoteType.chord &&
+                  nextNote.childNotes != null) {
+                // Next note is also a chord – match against its children.
+                hasMatch = nextNote.childNotes!.any((n) =>
+                    n.pitch == childNote.pitch && n.octave == childNote.octave);
+              } else {
+                // Next note is a regular note – match directly.
+                hasMatch = nextNote.pitch == childNote.pitch &&
+                    nextNote.octave == childNote.octave;
+              }
+              if (hasMatch) {
+                final double childY = calculateNoteYMainSheet(
+                    childNote.pitch, childNote.octave, lineSpacing, staffTop);
+                drawTie(canvas, paint, x, staffCenter, x + currentRowSpacing,
+                    childY);
+              }
+            }
+          } else {
+            // Regular (non-chord) note – draw a single tie as before.
+            double y = calculateNoteYMainSheet(
+                chord.pitch, chord.octave, lineSpacing, staffTop);
+            drawTie(canvas, paint, x, staffCenter, x + currentRowSpacing, y);
+          }
         }
 
         if (chord.slurEndIndex != null) {
@@ -1640,11 +1669,11 @@ class MusicSheetPainter extends CustomPainter {
   void drawTie(Canvas canvas, Paint paint, double startX, double staffCentre,
       double endX, double y) {
     Path path = Path();
-    double controlY = y >= staffCentre ? y + 30 : y - 30;
-    y = y >= staffCentre ? y + 10 : y - 10;
+    double controlY = y >= staffCentre ? y + 25 : y - 25;
+    y = y >= staffCentre ? y + 5 : y - 5;
 
-    path.moveTo(startX + 5, y);
-    path.quadraticBezierTo((startX + endX) / 2, controlY, endX - 5, y);
+    path.moveTo(startX + 6, y);
+    path.quadraticBezierTo((startX + endX) / 2, controlY, endX - 6, y);
 
     paint.style = PaintingStyle.stroke;
     paint.strokeWidth = 2.0;
