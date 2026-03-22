@@ -882,9 +882,11 @@ void drawChordNotes(
               doesGroupContain32ndOr64thNote,
         );
       } else {
-        // Non-extremal child: normal stem, no flag, no beam bar.
-        // Pass a fake 2-note group so drawNoteKey suppresses the flag, and
-        // mark it as "first in group" so no beam bar is drawn from here.
+        // Non-extremal child: extended stem reaching the beam height, no flag,
+        // no beam bar.  Pass the group-wide highest/lowest Y so the stem
+        // extension formula aligns this stem tip with the beam line — the same
+        // approach used in the beam-off path where extremalChildY is passed for
+        // both overrides.
         drawNoteKey(
           canvas,
           paint,
@@ -899,8 +901,8 @@ void drawChordNotes(
           noteColour,
           beamedGroupOverride: [childNote, childNote],
           firstNoteUpsideDownOverride: firstNoteUpsideDown,
-          beamedGroupHighestYOverride: childNoteY,
-          beamedGroupLowestYOverride: childNoteY,
+          beamedGroupHighestYOverride: beamedGroupHighestY,
+          beamedGroupLowestYOverride: beamedGroupLowestY,
           isFirstNoteInGroupListOverride: true,
           doesGroupContain32ndOr64thNoteOverride: false,
         );

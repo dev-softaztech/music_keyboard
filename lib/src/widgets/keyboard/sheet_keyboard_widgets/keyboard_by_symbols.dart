@@ -494,8 +494,8 @@ void drawLedgerLines(Canvas canvas, Paint paint, double noteY, double noteX,
         y <= noteY + lineSpacing / 3;
         y += lineSpacing) {
       canvas.drawLine(
-        Offset(noteX - (noteWidth / 2) - leftX, y),
-        Offset(noteX + (noteWidth / 2) + rightX, y),
+        Offset(noteX - (noteWidth / 3) - leftX, y),
+        Offset(noteX + (noteWidth / 3) + rightX, y),
         paint..strokeWidth = 1.0,
       );
     }
