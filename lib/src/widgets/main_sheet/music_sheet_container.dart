@@ -317,6 +317,9 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
       _showPreBendRemoveButton = false;
       _showBendReleaseRemoveButton = false;
       _showPreBendReleaseRemoveButton = false;
+
+      // Re-show flip note button if the currently selected note is valid
+      _showFlipNoteButton = _shouldShowFlipNote();
     });
   }
 
@@ -575,6 +578,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
           _isDraggingRightHandle = false;
           _fixedBoundary = null;
           _showHighlightButtons = false;
+
+          _showFlipNoteButton = _shouldShowFlipNote();
         });
         return;
       }
@@ -645,6 +650,8 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
       _showPreBendRemoveButton = false;
       _showBendReleaseRemoveButton = false;
       _showPreBendReleaseRemoveButton = false;
+
+      _showFlipNoteButton = _shouldShowFlipNote();
     });
 
     var showDynamicRemoveButton = _shouldShowDynamicRemove();
