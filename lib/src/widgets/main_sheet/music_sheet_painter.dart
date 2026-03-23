@@ -2240,26 +2240,18 @@ class MusicSheetPainter extends CustomPainter {
         end, rowNotes, rowSpacingList[rowIndex], false,
         startingX: keyboardType.startingNoteX);
 
-    double min_y = double.infinity;
-    double max_y = double.negativeInfinity;
+    // Always cover at minimum the full stave height, then expand for notes outside
+    final double staveTop = staffTop;
+    final double staveBottom =
+        staffTop + (lineSpacing * (keyboardType.lineCount - 1));
+    double min_y = staveTop;
+    double max_y = staveBottom;
 
     for (int i = start; i <= end; i++) {
       final note = rowNotes[i];
       double y = note.noteY;
       min_y = math.min(min_y, y - 15);
       max_y = math.max(max_y, y + 15);
-
-      if (note.type == NoteType.rest ||
-          note.type == NoteType.clef ||
-          note.type == NoteType.bar ||
-          note.type == NoteType.accidental ||
-          note.type == NoteType.timeSignature ||
-          note.type == NoteType.keySignature ||
-          note.type == NoteType.accidental ||
-          note.type == NoteType.space) {
-        min_y = staffTop - 25;
-        max_y = staffTop + (lineSpacing * 4) + 25;
-      }
 
       if (note.type != NoteType.whole &&
           note.type != NoteType.rest &&
@@ -2276,9 +2268,9 @@ class MusicSheetPainter extends CustomPainter {
           stemHeight += 20.0;
         }
         if (isUpsideDownNote) {
-          min_y = math.min(min_y, y + stemHeight);
+          min_y = math.min(min_y, y - stemHeight);
         } else {
-          max_y = math.max(max_y, y - stemHeight);
+          max_y = math.max(max_y, y + stemHeight);
         }
       }
     }
