@@ -2418,7 +2418,7 @@ class MusicSheetPainter extends CustomPainter {
     double yPos = math.max(lowestY + 50, minDynamicY);
 
     if (hasUpsideDownNoteOnStaff) {
-      yPos += 20;
+      yPos += 30;
     }
 
     double xPos = x - (textPainter.width / 2);
@@ -2557,6 +2557,7 @@ class MusicSheetPainter extends CustomPainter {
 
     double lowestY = double.negativeInfinity;
     bool hasUpsideDownNoteOnStaff = false;
+    bool hasDynamicCharacter = false;
     for (int i = startIndex; i <= endIndex; i++) {
       if (notes[i].type != NoteType.space) {
         if (notes[i].noteY > lowestY) {
@@ -2564,6 +2565,9 @@ class MusicSheetPainter extends CustomPainter {
         }
         if (notes[i].isUpsideDown == true && notes[i].noteY >= staffTop) {
           hasUpsideDownNoteOnStaff = true;
+        }
+        if (notes[i].dynamicCharacter.isNotEmpty) {
+          hasDynamicCharacter = true;
         }
       }
     }
@@ -2573,7 +2577,11 @@ class MusicSheetPainter extends CustomPainter {
     double y = math.max(lowestY + 50, minDynamicY);
 
     if (hasUpsideDownNoteOnStaff) {
-      y += 20;
+      y += 30;
+    }
+
+    if (hasDynamicCharacter) {
+      y += 15;
     }
 
     double openWidth = 15.0;
