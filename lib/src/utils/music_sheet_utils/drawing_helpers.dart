@@ -237,24 +237,63 @@ void drawNoteKey(
       doesGroupContain32ndOr64thNote =
           doesGroupContain32ndOr64thNoteOverride ?? false;
     } else {
-      ({bool isFirst, List<MusicalNote> notesGroup}) notesGroup =
-          getBeamedNotesGroup(index, notes);
-      beamedNotesGroup = notesGroup.notesGroup;
-      isFirstNoteInGroupList = notesGroup.isFirst;
+      // Use chord-aware group traversal so that mixed groups (regular notes +
+      // NoteType.chord entries) are handled correctly.  getBeamedNotesGroup
+      // stops at chord entries, which means regular notes in a mixed group
+      // would compute a different beamedGroupHighestY than chord notes do —
+      // causing beam misalignment when the highest note belongs to a chord.
+      final chordGroupResult = getBeamedChordGroup(index, notes);
+      final List<MusicalNote> mixedGroup = chordGroupResult.notesGroup;
+      isFirstNoteInGroupList = chordGroupResult.isFirst;
 
-      ({
-        double highestY,
-        double lowestY,
-        double firstNoteY,
-        bool doesGroupContain32ndOr64thNote
-      }) notesGroupYs = getBeamedNotesGroupHighestY(
-          beamedNotesGroup, lineSpacing, staffTop, staffCenter);
+      // Determine stem direction from the first entry in the group, mirroring
+      // the logic used in drawChordNotes.
+      final MusicalNote firstEntry = mixedGroup.first;
+      if (firstEntry.isUpsideDown != null) {
+        firstNoteUpsideDown = firstEntry.isUpsideDown!;
+      } else if (firstEntry.type == NoteType.chord &&
+          firstEntry.childNotes != null &&
+          firstEntry.childNotes!.isNotEmpty) {
+        final double firstChildY = calculateNoteYMainSheet(
+            firstEntry.childNotes!.first.pitch,
+            firstEntry.childNotes!.first.octave,
+            lineSpacing,
+            staffTop);
+        firstNoteUpsideDown = firstChildY <= staffCenter;
+      } else {
+        final double firstY = calculateNoteYMainSheet(
+            firstEntry.pitch, firstEntry.octave, lineSpacing, staffTop);
+        firstNoteUpsideDown = firstY <= staffCenter;
+      }
 
-      beamedGroupHighestY = notesGroupYs.highestY;
-      beamedGroupLowestY = notesGroupYs.lowestY;
-      firstNoteUpsideDown = notesGroupYs.firstNoteY < staffCenter;
-      doesGroupContain32ndOr64thNote =
-          notesGroupYs.doesGroupContain32ndOr64thNote;
+      // Build the synthetic beamed group: for chord entries use their extremal
+      // child note (same as drawChordNotes does); for regular notes use the
+      // note itself.  This ensures beamedGroupHighestY / beamedGroupLowestY are
+      // identical for every note in the mixed group.
+      for (final entry in mixedGroup) {
+        MusicalNote? representative;
+        if (entry.type == NoteType.chord) {
+          representative = getExtremalChildNote(
+              entry, firstNoteUpsideDown, lineSpacing, staffTop);
+        } else {
+          representative = entry;
+        }
+        if (representative == null) continue;
+        beamedNotesGroup.add(representative);
+
+        final double repY = calculateNoteYMainSheet(
+            representative.pitch, representative.octave, lineSpacing, staffTop);
+        if (beamedGroupHighestY == 0 || repY < beamedGroupHighestY) {
+          beamedGroupHighestY = repY;
+        }
+        if (beamedGroupLowestY == 0 || repY > beamedGroupLowestY) {
+          beamedGroupLowestY = repY;
+        }
+        if (representative.type == NoteType.thirtySecond ||
+            representative.type == NoteType.sixtyFourth) {
+          doesGroupContain32ndOr64thNote = true;
+        }
+      }
     }
   }
 
