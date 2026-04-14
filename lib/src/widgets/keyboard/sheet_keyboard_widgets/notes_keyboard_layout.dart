@@ -4,7 +4,6 @@ import 'package:music_keyboard/models/note_unicode_characters.dart';
 import 'package:music_keyboard/models/sheet_rows.dart';
 import 'package:music_keyboard/models/sheet_format.dart';
 import 'package:music_keyboard/src/providers/current_selected_note_provider.dart';
-import 'package:music_keyboard/src/providers/is_connected_provider.dart';
 import 'package:music_keyboard/src/providers/selected_accidental_provider.dart';
 import 'package:music_keyboard/src/widgets/keyboard/sheet_keyboard_widgets/keyboard_by_symbols.dart';
 import 'package:music_keyboard/src/providers/selected_unicode_provider.dart';
@@ -20,6 +19,7 @@ class NotesKeyboardLayout extends StatefulWidget {
   final void Function(MusicalNote) onKeyPress;
   final void Function(MusicalNote)? onAddToChord;
   final void Function(MusicalNote)? onRemoveFromChord;
+  final void Function(MusicalNote)? onConvertToChord;
   final List<SheetRows> sheetNoteRows;
   final SheetFormat sheetFormat;
 
@@ -30,6 +30,7 @@ class NotesKeyboardLayout extends StatefulWidget {
     required this.onKeyPress,
     this.onAddToChord,
     this.onRemoveFromChord,
+    this.onConvertToChord,
     required this.sheetNoteRows,
     required this.sheetFormat,
   });
@@ -114,17 +115,9 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
         widget.onAddToChord?.call(note);
       }
     } else {
-      // Insert a new empty chord container, then add the tapped note to it
-      widget.onKeyPress(MusicalNote(
-        pitch: note.pitch,
-        octave: note.octave,
-        type: NoteType.chord,
-        isBeamed: note.isBeamed,
-        duration: note.duration,
-        childNotes: [],
-      ));
-      // After onKeyPress, selectedIndex now points to the newly inserted chord
-      widget.onAddToChord?.call(note);
+      // Convert the currently selected note into a chord, preserving its
+      // properties as the first child, and add the tapped note as a child.
+      widget.onConvertToChord?.call(note);
     }
   }
 
@@ -154,59 +147,6 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
             fontWeight: FontWeight.bold,
             color: _isChordsActive ? Colors.white : Colors.black,
           ),
-        ),
-      ),
-    );
-  }
-
-  /// Build a Back (isNext=false) or Next (isNext=true) navigation button
-  /// used to move between notes when chord mode is active.
-  /// When Next is tapped and the current note is the last in the row, a new
-  /// empty NoteType.chord is inserted after it and immediately selected.
-  Widget _buildChordNavButton(int selectedRow, int selectedNoteIndex) {
-    return SizedBox(
-      width: 44,
-      height: 34,
-      child: ElevatedButton(
-        onPressed: () {
-          final isConnected =
-              Provider.of<IsConnectedProvider>(context, listen: false)
-                  .isConnected;
-          widget.onKeyPress(MusicalNote(
-            pitch: 'C',
-            octave: 4,
-            type: NoteType.chord,
-            isBeamed: isConnected,
-            duration: 0.0,
-            childNotes: [],
-          ));
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
-          elevation: 1,
-          padding: EdgeInsets.zero,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: const BorderSide(color: Colors.black, width: 2),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Add',
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-            Icon(
-              Icons.arrow_forward,
-              size: 18,
-            ),
-          ],
         ),
       ),
     );
@@ -833,11 +773,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                     ),
                   ),
                 ),
-                // Next button – only shown when chord mode is active
-                if (_isChordsActive) ...[
-                  const SizedBox(width: 2),
-                  _buildChordNavButton(selectedRow, selectedNoteIndex),
-                ],
+
                 const SizedBox(width: 12),
               ],
             ),
@@ -995,12 +931,17 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                   showLowerPair: showLowerPair,
                   sheetNoteRows: widget.sheetNoteRows,
                   sheetFormat: widget.sheetFormat,
-                  // When chord mode is active and the selected note is a chord,
-                  // pass its childNotes so already-added keys get a blue border.
-                  chordChildNotes:
-                      (_isChordsActive && selectedNote?.type == NoteType.chord)
+                  // When chord mode is active, pass child notes so already-added
+                  // keys get a blue border. If the note isn't a chord yet, wrap
+                  // it in a list so its own key is pre-highlighted.
+                  chordChildNotes: _isChordsActive
+                      ? (selectedNote?.type == NoteType.chord
                           ? selectedNote?.childNotes
-                          : null),
+                          : (selectedNote != null &&
+                                  selectedNote.type != NoteType.space
+                              ? [selectedNote]
+                              : null))
+                      : null),
               Container(
                 margin: EdgeInsets.fromLTRB(5, 0, 0, 0),
                 padding: EdgeInsets.fromLTRB(5, 0, 0, 0),

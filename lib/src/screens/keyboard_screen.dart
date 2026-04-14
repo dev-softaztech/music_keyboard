@@ -565,6 +565,69 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     });
   }
 
+  /// Converts the currently selected note into a NoteType.chord. The existing
+  /// note's properties become the first child, and [tappedNote] (with the
+  /// current accidental applied) becomes the second child.
+  void handleConvertToChord(MusicalNote tappedNote) {
+    setState(() {
+      final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+      final accidentalProvider = context.read<SelectedAccidentalProvider>();
+      final selectedAccidental = accidentalProvider.selectedAccidental;
+
+      final selectedRow = selectedNoteProvider.selectedRow;
+      final selectedIndex = selectedNoteProvider.selectedIndex;
+
+      if (sheet.sheetRows.isEmpty ||
+          selectedRow < 0 ||
+          selectedRow >= sheet.sheetRows.length) return;
+
+      final rowChords = sheet.sheetRows[selectedRow].chords;
+      if (selectedIndex < 0 || selectedIndex >= rowChords.length) return;
+
+      final existing = rowChords[selectedIndex];
+      if (existing.type == NoteType.chord) return;
+
+      // The tapped note becomes a child with the current accidental.
+      final tappedAsChild = MusicalNote(
+        pitch: tappedNote.pitch,
+        octave: tappedNote.octave,
+        type: tappedNote.type,
+        isBeamed: tappedNote.isBeamed,
+        unicodeCharacter: tappedNote.unicodeCharacter,
+        accidentalCharacter: selectedAccidental,
+      );
+
+      // Only include the existing note as a child if it is not a space.
+      final children = [
+        if (existing.type != NoteType.space)
+          MusicalNote(
+            pitch: existing.pitch,
+            octave: existing.octave,
+            type: existing.type,
+            isBeamed: existing.isBeamed,
+            unicodeCharacter: existing.unicodeCharacter,
+            accidentalCharacter: existing.accidentalCharacter,
+            duration: existing.duration,
+          ),
+        tappedAsChild,
+      ];
+
+      final chordNote = MusicalNote(
+        pitch: existing.pitch,
+        octave: existing.octave,
+        type: NoteType.chord,
+        isBeamed: existing.isBeamed,
+        duration: existing.duration,
+        unicodeCharacter: existing.unicodeCharacter,
+        childNotes: children,
+      );
+
+      rowChords[selectedIndex] = chordNote;
+
+      _markAsChanged();
+    });
+  }
+
   /// Removes the childNote that matches [note]'s pitch and octave from the
   /// currently selected NoteType.chord. Called when the user taps a key that
   /// is already highlighted as added (blue border).
@@ -1689,6 +1752,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
           onKeyPress: handleKeyPress,
           onAddToChord: handleAddToChord,
           onRemoveFromChord: handleRemoveFromChord,
+          onConvertToChord: handleConvertToChord,
         );
 
       case KeyboardType.guitarTab:
