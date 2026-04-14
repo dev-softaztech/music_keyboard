@@ -67,6 +67,9 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
   bool _isVibratoLocked = false;
   bool _isHammerLeftHandLocked = false;
 
+  // Chord mode — when active, fret taps add to the current fret note
+  bool _isChordsActive = false;
+
   // Track previous selected note to detect changes
   int _previousSelectedRow = -1;
   int _previousSelectedIndex = -1;
@@ -152,8 +155,25 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       _navigatedViaNextButton = true;
     });
 
-    // Update technique indices for locked techniques (same logic as Next button)
+    _updateTechniqueIndicesForNewNote(selectedRow, selectedNoteIndex);
+
+    // Insert the new fret chord
+    widget.onKeyPress(MusicalNote(
+      pitch: 'G',
+      octave: 4,
+      type: NoteType.fret,
+      duration: 0.0,
+      childNotes: [],
+    ));
+  }
+
+  /// Updates all active/locked technique end-indices to account for the new
+  /// fret note being inserted after [selectedNoteIndex]. Called both from
+  /// [_handleSpacePress] and from the fret button in normal (non-chord) mode.
+  void _updateTechniqueIndicesForNewNote(
+      int selectedRow, int selectedNoteIndex) {
     final chords = widget.sheetNoteRows[selectedRow].chords;
+
     if (_isBendActive ||
         _isPreBendActive ||
         _isBendReleaseActive ||
@@ -202,7 +222,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       }
     }
 
-    // Update hammer-left-hand end indices if in locked mode
     if (_isHammerLeftHandLocked) {
       for (int i = selectedNoteIndex; i >= 0; i--) {
         final chord = chords[i];
@@ -221,12 +240,10 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       }
     }
 
-    // Update technique end indices if in locked mode
     if (_isMuteLocked ||
         _isPinchHarmonicLocked ||
         _isHarmonicLocked ||
         _isVibratoLocked) {
-      // Find the chord that has the active technique with lock
       MusicalNote? activeChord;
       List<String> activeTechniqueTypes = [];
 
@@ -260,37 +277,27 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
           activeTechniqueTypes.add('vibrato');
           found = true;
         }
-        if (found == true) break;
+        if (found) break;
       }
 
-      // Update the endIndex for the active technique
       if (activeChord != null && activeTechniqueTypes.isNotEmpty) {
-        for (var activeTechniqueType in activeTechniqueTypes) {
-          if (activeTechniqueType == 'mute') {
+        for (var type in activeTechniqueTypes) {
+          if (type == 'mute') {
             activeChord.muteEndIndex = activeChord.muteEndIndex! + 1;
           }
-          if (activeTechniqueType == 'pinch-harmonic') {
+          if (type == 'pinch-harmonic') {
             activeChord.pinchHarmonicEndIndex =
                 activeChord.pinchHarmonicEndIndex! + 1;
           }
-          if (activeTechniqueType == 'harmonic') {
+          if (type == 'harmonic') {
             activeChord.harmonicEndIndex = activeChord.harmonicEndIndex! + 1;
           }
-          if (activeTechniqueType == 'vibrato') {
+          if (type == 'vibrato') {
             activeChord.vibratoEndIndex = activeChord.vibratoEndIndex! + 1;
           }
         }
       }
     }
-
-    // Insert the new fret chord
-    widget.onKeyPress(MusicalNote(
-      pitch: 'G',
-      octave: 4,
-      type: NoteType.fret,
-      duration: 0.0,
-      childNotes: [],
-    ));
   }
 
   // Helper: Get current chord being edited
@@ -1184,8 +1191,41 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       margin: EdgeInsets.symmetric(horizontal: marginWidth),
       child: ElevatedButton(
         onPressed: () {
-          _updateFretForString(
-              selectedRow, selectedNoteIndex, selectedStringIndex, fretNumber);
+          if (_isChordsActive) {
+            // Chord mode: add/update this fret on the current fret note
+            setState(() {
+              _updateFretForString(selectedRow, selectedNoteIndex,
+                  selectedStringIndex, fretNumber);
+            });
+          } else {
+            // Normal mode: update technique indices, then insert a new fret
+            // note with this fret pre-populated as a child (mirrors the logic
+            // that was previously in the Next button).
+            if (widget.sheetNoteRows.isNotEmpty &&
+                selectedRow >= 0 &&
+                selectedRow < widget.sheetNoteRows.length &&
+                selectedNoteIndex >= 0) {
+              setState(() {
+                _navigatedViaNextButton = true;
+              });
+              _updateTechniqueIndicesForNewNote(selectedRow, selectedNoteIndex);
+            }
+            widget.onKeyPress(MusicalNote(
+              pitch: 'G',
+              octave: 4,
+              type: NoteType.fret,
+              duration: 0.0,
+              childNotes: [
+                MusicalNote(
+                  pitch: 'G',
+                  octave: selectedStringIndex,
+                  type: NoteType.fret,
+                  unicodeCharacter: fretNumber.toString(),
+                  duration: 0.0,
+                ),
+              ],
+            ));
+          }
         },
         style: ElevatedButton.styleFrom(
           backgroundColor:
@@ -1211,226 +1251,33 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     );
   }
 
-  Widget _buildNextLastButton(
-      bool isNextNote, int selectedRow, int selectedNoteIndex) {
-    //double buttonWidth = MediaQuery.of(context).size.width / 2.8;
-
-    // Validate inputs to prevent crashes
-    bool isValidState = widget.sheetNoteRows.isNotEmpty &&
-        selectedRow >= 0 &&
-        selectedRow < widget.sheetNoteRows.length;
-
+  Widget _buildChordsToggleButton() {
     return Container(
+      //width: 44,
       height: 80,
       margin: const EdgeInsets.symmetric(horizontal: 3),
+
       child: ElevatedButton(
-        onPressed: isValidState
-            ? () {
-                final currentSelectedNoteProvider =
-                    Provider.of<CurrentSelectedNoteProvider>(context,
-                        listen: false);
-
-                if (isNextNote) {
-                  final chords = widget.sheetNoteRows[selectedRow].chords;
-                  final bool isLastNoteInRow =
-                      selectedNoteIndex >= chords.length - 1;
-
-                  if (isLastNoteInRow) {
-                    if (_isBendActive ||
-                        _isPreBendActive ||
-                        _isBendReleaseActive ||
-                        _isPreBendReleaseActive) {
-                      for (int i = selectedNoteIndex; i >= 0; i--) {
-                        final chord = chords[i];
-                        if (chord.childNotes == null) continue;
-
-                        for (var childNote in chord.childNotes!) {
-                          if (_isBendActive &&
-                              childNote.isBendStart &&
-                              childNote.bendEndIndex != null &&
-                              ((i <= selectedNoteIndex &&
-                                      selectedNoteIndex - 1 <=
-                                          childNote.bendEndIndex!) ||
-                                  (childNote.bendEndIndex == i - 1))) {
-                            childNote.bendEndIndex =
-                                childNote.bendEndIndex! + 1;
-                          }
-                          if (_isPreBendActive &&
-                              childNote.isPreBendStart &&
-                              childNote.preBendEndIndex != null &&
-                              ((i <= selectedNoteIndex &&
-                                      selectedNoteIndex - 1 <=
-                                          childNote.preBendEndIndex!) ||
-                                  (childNote.preBendEndIndex == i - 1))) {
-                            childNote.preBendEndIndex =
-                                childNote.preBendEndIndex! + 1;
-                          }
-                          if (_isBendReleaseActive &&
-                              childNote.isBendReleaseStart &&
-                              childNote.bendReleaseEndIndex != null &&
-                              ((i <= selectedNoteIndex &&
-                                      selectedNoteIndex - 1 <=
-                                          childNote.bendReleaseEndIndex!) ||
-                                  (childNote.bendReleaseEndIndex == i - 1))) {
-                            childNote.bendReleaseEndIndex =
-                                childNote.bendReleaseEndIndex! + 1;
-                          }
-                          if (_isPreBendReleaseActive &&
-                              childNote.isPreBendReleaseStart &&
-                              childNote.preBendReleaseEndIndex != null &&
-                              ((i <= selectedNoteIndex &&
-                                      selectedNoteIndex - 1 <=
-                                          childNote.preBendReleaseEndIndex!) ||
-                                  (childNote.preBendReleaseEndIndex ==
-                                      i - 1))) {
-                            childNote.preBendReleaseEndIndex =
-                                childNote.preBendReleaseEndIndex! + 1;
-                          }
-                        }
-                      }
-                    }
-
-                    // Update hammer-left-hand end indices if in locked mode
-                    if (_isHammerLeftHandLocked) {
-                      for (int i = selectedNoteIndex; i >= 0; i--) {
-                        final chord = chords[i];
-                        if (chord.childNotes == null) continue;
-
-                        for (var childNote in chord.childNotes!) {
-                          if (childNote.isHammerLeftHandStart &&
-                              childNote.hammerLeftHandEndIndex != null &&
-                              ((i <= selectedNoteIndex &&
-                                      selectedNoteIndex <=
-                                          childNote.hammerLeftHandEndIndex!) ||
-                                  (childNote.hammerLeftHandEndIndex == i))) {
-                            childNote.hammerLeftHandEndIndex =
-                                childNote.hammerLeftHandEndIndex! + 1;
-                          }
-                        }
-                      }
-                    }
-
-                    // Update technique end indices if in locked mode
-                    if (_isMuteLocked ||
-                        _isPinchHarmonicLocked ||
-                        _isHarmonicLocked ||
-                        _isVibratoLocked) {
-                      // Find the chord that has the active technique with lock
-                      MusicalNote? activeChord;
-                      String? activeTechniqueType;
-
-                      for (int i = selectedNoteIndex; i >= 0; i--) {
-                        final chord = chords[i];
-
-                        if (_isMuteLocked &&
-                            chord.isMuteStart &&
-                            chord.muteEndIndex != null) {
-                          activeChord = chord;
-                          activeTechniqueType = 'mute';
-                          break;
-                        }
-                        if (_isPinchHarmonicLocked &&
-                            chord.isPinchHarmonicStart &&
-                            chord.pinchHarmonicEndIndex != null) {
-                          activeChord = chord;
-                          activeTechniqueType = 'pinch-harmonic';
-                          break;
-                        }
-                        if (_isHarmonicLocked &&
-                            chord.isHarmonicStart &&
-                            chord.harmonicEndIndex != null) {
-                          activeChord = chord;
-                          activeTechniqueType = 'harmonic';
-                          break;
-                        }
-                        if (_isVibratoLocked &&
-                            chord.isVibratoStart &&
-                            chord.vibratoEndIndex != null) {
-                          activeChord = chord;
-                          activeTechniqueType = 'vibrato';
-                          break;
-                        }
-                      }
-
-                      // Update the endIndex for the active technique
-                      if (activeChord != null && activeTechniqueType != null) {
-                        switch (activeTechniqueType) {
-                          case 'mute':
-                            activeChord.muteEndIndex =
-                                activeChord.muteEndIndex! + 1;
-                            break;
-                          case 'pinch-harmonic':
-                            activeChord.pinchHarmonicEndIndex =
-                                activeChord.pinchHarmonicEndIndex! + 1;
-                            break;
-                          case 'harmonic':
-                            activeChord.harmonicEndIndex =
-                                activeChord.harmonicEndIndex! + 1;
-                            break;
-                          case 'vibrato':
-                            activeChord.vibratoEndIndex =
-                                activeChord.vibratoEndIndex! + 1;
-                            break;
-                        }
-                      }
-                    }
-
-                    int nextIndex = selectedNoteIndex + 1;
-
-                    MusicalNote emptyChord = MusicalNote(
-                      pitch: 'G',
-                      octave: 4,
-                      type: NoteType.fret,
-                      duration: 0.0,
-                      childNotes: [],
-                    );
-                    var rowOverflowed = widget.onKeyPress(emptyChord);
-
-                    // Set flag to preserve lock state when navigating
-                    setState(() {
-                      _navigatedViaNextButton = true;
-                    });
-                    if (!rowOverflowed) {
-                      // Move to next position (onKeyPress will update the selected index)
-                      currentSelectedNoteProvider
-                          .updateSelectedIndexAndInsertionPoint(
-                              selectedRow, nextIndex);
-                    }
-                  } else {
-                    // Not at the end of the row: just navigate to the next note
-                    currentSelectedNoteProvider
-                        .updateSelectedIndexAndInsertionPoint(
-                            selectedRow, selectedNoteIndex + 1);
-                  }
-                } else {
-                  // Back button: Move to previous chord position
-                  if (selectedNoteIndex > 0) {
-                    currentSelectedNoteProvider
-                        .updateSelectedIndexAndInsertionPoint(
-                            selectedRow, selectedNoteIndex - 1);
-                  }
-                }
-              }
-            : null, // Disable button if state is invalid
+        onPressed: () {
+          setState(() {
+            _isChordsActive = !_isChordsActive;
+          });
+        },
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
-          elevation: 1,
-          padding: EdgeInsets.zero,
+          backgroundColor: _isChordsActive ? Colors.black : Colors.grey[100],
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
-            side: BorderSide(color: Colors.black, width: 2),
+            side: const BorderSide(color: Colors.black, width: 1),
           ),
+          padding: EdgeInsets.zero,
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: isNextNote
-              ? [
-                  const Icon(Icons.arrow_forward, size: 22),
-                ]
-              : [
-                  const Icon(Icons.arrow_back, size: 22),
-                ],
+        child: Text(
+          'Chord',
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+            color: _isChordsActive ? Colors.white : Colors.black,
+          ),
         ),
       ),
     );
@@ -1531,16 +1378,14 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       padding: const EdgeInsets.all(1),
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SizedBox(width: techniqueSpacing),
-              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            SizedBox(width: techniqueSpacing),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
                 SizedBox(
-                  width: screenWidth * 0.10,
-                  child: _buildNextLastButton(
-                      false, selectedRow, selectedNoteIndex),
-                ),
+                    width: screenWidth * 0.10,
+                    child: _buildChordsToggleButton()),
                 SizedBox(width: techniqueSpacing),
                 Column(
                   children: [
@@ -1708,16 +1553,10 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                     )
                   ],
                 ),
-                SizedBox(width: techniqueSpacing),
-                SizedBox(
-                  width: screenWidth * 0.10,
-                  child: _buildNextLastButton(
-                      true, selectedRow, selectedNoteIndex),
-                ),
-              ]),
-            ],
-          ),
-          SizedBox(height: 12),
+              ],
+            )
+          ]),
+          SizedBox(height: 8),
           SizedBox(
               height: 166,
               width: screenWidth,
