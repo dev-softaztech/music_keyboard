@@ -217,10 +217,10 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
       child: GridView.builder(
         padding: EdgeInsets.zero,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
+          crossAxisCount: 9,
           crossAxisSpacing: 2,
-          mainAxisSpacing: 0,
-          childAspectRatio: 0.90,
+          mainAxisSpacing: 5,
+          childAspectRatio: 0.30,
         ),
         itemCount: _favouriteChords.length,
         itemBuilder: (context, index) {

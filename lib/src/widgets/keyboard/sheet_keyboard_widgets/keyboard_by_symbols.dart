@@ -639,8 +639,12 @@ class _ChordKeyPainter extends CustomPainter {
 
     // ── Ledger lines & note heads ────────────────────────────────────────────
     for (int i = 0; i < childNotes.length; i++) {
+      final MusicalNote child = childNotes[i];
       final double noteY = noteYs[i];
       final double noteX = centreX;
+      final String accidental = child.accidentalCharacter;
+      final bool hasAccidental =
+          accidental.isNotEmpty && accidental != 'dotted_rest';
 
       drawLedgerLines(
           canvas, paint, noteY, noteX, headW, lineSpacing, staffTop, false);
@@ -658,6 +662,27 @@ class _ChordKeyPainter extends CustomPainter {
       )..layout();
 
       tp.paint(canvas, Offset(headOffsetX, noteY - headH / 2));
+
+      // Accidental glyph to the left of the note head.
+      if (hasAccidental) {
+        final TextPainter accPainter = TextPainter(
+          text: TextSpan(
+            text: accidental,
+            style: TextStyle(
+              fontFamily: 'Bravura',
+              fontSize: size.height / 7.0,
+              color: Colors.black,
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        )..layout();
+
+        final double accX = headOffsetX - accPainter.width * 1.3;
+        // Mirror the single-note painter's y offsets (13 when stem-down, 5 otherwise).
+        final double accY =
+            stemDown ? noteY - headH / 2 + 13 : noteY - headH / 2.8;
+        accPainter.paint(canvas, Offset(accX, accY));
+      }
 
       // Augmentation dot for dotted notes.
       if (isDotted) {
@@ -707,9 +732,7 @@ class _ChordKeyPainter extends CustomPainter {
         // Scale the Y anchor offsets from drawing_helpers proportionally.
         // Main sheet: stem-up offset = -64 / fontSize 34 ≈ 1.88×
         //             stem-down offset = -68 / fontSize 34 ≈ 2.0×
-        final double flagY = stemDown
-            ? stemTipY - flagFontSize * 2.0
-            : stemTipY - flagFontSize * 1.88;
+        final double flagY = stemTipY - flagFontSize * 2.0;
 
         // Flag connects at the stem x position.
         final double flagX = stemX - flagFontSize * 0.01;
