@@ -23,6 +23,13 @@ class NotesKeyboardLayout extends StatefulWidget {
   final List<SheetRows> sheetNoteRows;
   final SheetFormat sheetFormat;
 
+  /// Loads the list of favourite chords from storage. Called when the
+  /// favourites panel is opened.
+  final Future<List<({int id, MusicalNote chord})>> Function()? loadFavourites;
+
+  /// Called when the user selects a favourite chord to insert.
+  final void Function(MusicalNote chord)? onFavouriteChordTapped;
+
   const NotesKeyboardLayout({
     super.key,
     required this.showNotesKeyboard,
@@ -33,6 +40,8 @@ class NotesKeyboardLayout extends StatefulWidget {
     this.onConvertToChord,
     required this.sheetNoteRows,
     required this.sheetFormat,
+    this.loadFavourites,
+    this.onFavouriteChordTapped,
   });
 
   @override
@@ -65,6 +74,11 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
 
   // Chord mode state
   bool _isChordsActive = false;
+
+  // Favourites panel state
+  bool _isFavouritesActive = false;
+  bool _favouritesLoading = false;
+  List<({int id, MusicalNote chord})> _favouriteChords = [];
 
   void _toggleOctavePair() {
     setState(() {
@@ -119,6 +133,134 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
       // properties as the first child, and add the tapped note as a child.
       widget.onConvertToChord?.call(note);
     }
+  }
+
+  /// Opens or closes the favourites panel, loading chords from storage on open.
+  Future<void> _toggleFavourites() async {
+    if (_isFavouritesActive) {
+      setState(() => _isFavouritesActive = false);
+      return;
+    }
+    setState(() => _favouritesLoading = true);
+    final favs = widget.loadFavourites != null
+        ? await widget.loadFavourites!()
+        : <({int id, MusicalNote chord})>[];
+    if (mounted) {
+      setState(() {
+        _favouriteChords = favs;
+        _isFavouritesActive = true;
+        _favouritesLoading = false;
+      });
+    }
+  }
+
+  /// The heart button placed at the right end of the note-type selector row.
+  Widget _buildFavouritesToggleButton() {
+    return SizedBox(
+      width: 44,
+      height: 34,
+      child: ElevatedButton(
+        onPressed: _toggleFavourites,
+        style: ElevatedButton.styleFrom(
+          backgroundColor:
+              _isFavouritesActive ? Colors.red.shade50 : Colors.grey[100],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: BorderSide(
+              color: _isFavouritesActive ? Colors.red : Colors.black,
+              width: 1,
+            ),
+          ),
+          padding: EdgeInsets.zero,
+        ),
+        child: Icon(
+          _isFavouritesActive ? Icons.favorite : Icons.favorite_border,
+          color: _isFavouritesActive ? Colors.red : Colors.black,
+          size: 18,
+        ),
+      ),
+    );
+  }
+
+  /// Grid of saved favourite chords, shown instead of [KeyboardBySymbols]
+  /// when favourites mode is active.
+  Widget _buildFavouritesGrid(BuildContext context) {
+    final double gridWidth = MediaQuery.of(context).size.width - 105;
+
+    if (_favouritesLoading) {
+      return SizedBox(
+        height: 220,
+        width: gridWidth,
+        child: const Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (_favouriteChords.isEmpty) {
+      return SizedBox(
+        height: 220,
+        width: gridWidth,
+        child: const Center(
+          child: Text(
+            'No favourite chords saved yet.\nTap ♥ on a chord in the sheet to save one.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 11, color: Colors.grey),
+          ),
+        ),
+      );
+    }
+
+    // Match the exact proportions of KeyboardBySymbols: 9 cols × aspect 0.30,
+    // but for chords we use 3 cols so each tile is 3× wider. Keeping the same
+    // height-per-tile means aspect ratio scales to 0.30 × 3 = 0.90.
+    return SizedBox(
+      height: 220,
+      width: gridWidth,
+      child: GridView.builder(
+        padding: EdgeInsets.zero,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          crossAxisSpacing: 2,
+          mainAxisSpacing: 0,
+          childAspectRatio: 0.90,
+        ),
+        itemCount: _favouriteChords.length,
+        itemBuilder: (context, index) {
+          final fav = _favouriteChords[index];
+          final childNotes = fav.chord.childNotes ?? [];
+          final isDotted = _dottedRestState == 1;
+
+          return FavouriteChordKey(
+            childNotes: childNotes,
+            isDotted: isDotted,
+            onTap: () {
+              final children = childNotes.map((child) {
+                return MusicalNote(
+                  pitch: child.pitch,
+                  octave: child.octave,
+                  type: child.type,
+                  unicodeCharacter: child.unicodeCharacter,
+                  accidentalCharacter:
+                      isDotted ? 'dotted_rest' : child.accidentalCharacter,
+                  duration: child.duration,
+                  isUpsideDown: child.isUpsideDown,
+                  isBeamed: child.isBeamed,
+                );
+              }).toList();
+
+              final chordNote = MusicalNote(
+                pitch: fav.chord.pitch,
+                octave: fav.chord.octave,
+                type: NoteType.chord,
+                unicodeCharacter: fav.chord.unicodeCharacter,
+                duration: fav.chord.duration,
+                childNotes: children,
+              );
+
+              widget.onFavouriteChordTapped?.call(chordNote);
+            },
+          );
+        },
+      ),
+    );
   }
 
   /// Build the chords toggle button shown above the note selector.
@@ -466,23 +608,25 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
       width: 30,
       height: 40,
       child: ElevatedButton(
-        onPressed: () {
-          setState(() {
-            _sharpState = (_sharpState + 1) % 3;
-            _flatState = 0;
-            _naturalState = 0;
-            _dottedRestState = 0;
-            String accidental = '';
-            if (_sharpState == 1) {
-              accidental = '\uF4DE';
-            } else if (_sharpState == 2) {
-              accidental = '\uF4DF';
-            }
-            context
-                .read<SelectedAccidentalProvider>()
-                .updateSelectedAccidental(accidental);
-          });
-        },
+        onPressed: _isFavouritesActive
+            ? null
+            : () {
+                setState(() {
+                  _sharpState = (_sharpState + 1) % 3;
+                  _flatState = 0;
+                  _naturalState = 0;
+                  _dottedRestState = 0;
+                  String accidental = '';
+                  if (_sharpState == 1) {
+                    accidental = '\uF4DE';
+                  } else if (_sharpState == 2) {
+                    accidental = '\uF4DF';
+                  }
+                  context
+                      .read<SelectedAccidentalProvider>()
+                      .updateSelectedAccidental(accidental);
+                });
+              },
         style: ElevatedButton.styleFrom(
           backgroundColor:
               _sharpState != 0 ? Colors.grey[300] : Colors.grey[100],
@@ -524,23 +668,25 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
       width: 30,
       height: 40,
       child: ElevatedButton(
-        onPressed: () {
-          setState(() {
-            _flatState = (_flatState + 1) % 3;
-            _sharpState = 0;
-            _naturalState = 0;
-            _dottedRestState = 0;
-            String accidental = '';
-            if (_flatState == 1) {
-              accidental = '\uF4DC';
-            } else if (_flatState == 2) {
-              accidental = '\uF4E0';
-            }
-            context
-                .read<SelectedAccidentalProvider>()
-                .updateSelectedAccidental(accidental);
-          });
-        },
+        onPressed: _isFavouritesActive
+            ? null
+            : () {
+                setState(() {
+                  _flatState = (_flatState + 1) % 3;
+                  _sharpState = 0;
+                  _naturalState = 0;
+                  _dottedRestState = 0;
+                  String accidental = '';
+                  if (_flatState == 1) {
+                    accidental = '\uF4DC';
+                  } else if (_flatState == 2) {
+                    accidental = '\uF4E0';
+                  }
+                  context
+                      .read<SelectedAccidentalProvider>()
+                      .updateSelectedAccidental(accidental);
+                });
+              },
         style: ElevatedButton.styleFrom(
           backgroundColor:
               _flatState != 0 ? Colors.grey[300] : Colors.grey[100],
@@ -570,21 +716,23 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
       width: 30,
       height: 40,
       child: ElevatedButton(
-        onPressed: () {
-          setState(() {
-            _naturalState = (_naturalState + 1) % 2;
-            _sharpState = 0;
-            _flatState = 0;
-            _dottedRestState = 0;
-            String accidental = '';
-            if (_naturalState == 1) {
-              accidental = '\uF4DD';
-            }
-            context
-                .read<SelectedAccidentalProvider>()
-                .updateSelectedAccidental(accidental);
-          });
-        },
+        onPressed: _isFavouritesActive
+            ? null
+            : () {
+                setState(() {
+                  _naturalState = (_naturalState + 1) % 2;
+                  _sharpState = 0;
+                  _flatState = 0;
+                  _dottedRestState = 0;
+                  String accidental = '';
+                  if (_naturalState == 1) {
+                    accidental = '\uF4DD';
+                  }
+                  context
+                      .read<SelectedAccidentalProvider>()
+                      .updateSelectedAccidental(accidental);
+                });
+              },
         style: ElevatedButton.styleFrom(
           backgroundColor:
               _naturalState != 0 ? Colors.grey[300] : Colors.grey[100],
@@ -774,6 +922,9 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                   ),
                 ),
 
+                const SizedBox(width: 4),
+                // Favourites toggle button (always visible, opposite end to Chord)
+                _buildFavouritesToggleButton(),
                 const SizedBox(width: 12),
               ],
             ),
@@ -926,22 +1077,24 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                   ],
                 ),
               ),
-              KeyboardBySymbols(
-                  onKeyPress: _handleKeyPress,
-                  showLowerPair: showLowerPair,
-                  sheetNoteRows: widget.sheetNoteRows,
-                  sheetFormat: widget.sheetFormat,
-                  // When chord mode is active, pass child notes so already-added
-                  // keys get a blue border. If the note isn't a chord yet, wrap
-                  // it in a list so its own key is pre-highlighted.
-                  chordChildNotes: _isChordsActive
-                      ? (selectedNote?.type == NoteType.chord
-                          ? selectedNote?.childNotes
-                          : (selectedNote != null &&
-                                  selectedNote.type != NoteType.space
-                              ? [selectedNote]
-                              : null))
-                      : null),
+              _isFavouritesActive
+                  ? _buildFavouritesGrid(context)
+                  : KeyboardBySymbols(
+                      onKeyPress: _handleKeyPress,
+                      showLowerPair: showLowerPair,
+                      sheetNoteRows: widget.sheetNoteRows,
+                      sheetFormat: widget.sheetFormat,
+                      // When chord mode is active, pass child notes so already-added
+                      // keys get a blue border. If the note isn't a chord yet, wrap
+                      // it in a list so its own key is pre-highlighted.
+                      chordChildNotes: _isChordsActive
+                          ? (selectedNote?.type == NoteType.chord
+                              ? selectedNote?.childNotes
+                              : (selectedNote != null &&
+                                      selectedNote.type != NoteType.space
+                                  ? [selectedNote]
+                                  : null))
+                          : null),
               Container(
                 margin: EdgeInsets.fromLTRB(5, 0, 0, 0),
                 padding: EdgeInsets.fromLTRB(5, 0, 0, 0),

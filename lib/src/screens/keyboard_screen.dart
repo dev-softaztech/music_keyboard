@@ -1579,6 +1579,21 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     }
   }
 
+  /// Inserts a favourite chord (a [NoteType.chord] note with pre-built
+  /// [childNotes]) at the current cursor position.
+  void handleFavouriteChordTapped(MusicalNote chord) {
+    setState(() {
+      final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
+      selectedNoteProvider.addNote(chord, sheet.sheetRows, context);
+      updateRowSpacing(
+        selectedNoteProvider.selectedRow,
+        selectedNoteProvider,
+        sheet.sheetRows[selectedNoteProvider.selectedRow].chords,
+      );
+      _markAsChanged();
+    });
+  }
+
   // Save the current screenshot to the gallery and show a toast
   Future<void> handleSavePress() async {
     try {
@@ -1786,6 +1801,8 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
           onAddToChord: handleAddToChord,
           onRemoveFromChord: handleRemoveFromChord,
           onConvertToChord: handleConvertToChord,
+          loadFavourites: _dbHelper.getAllFavouriteChords,
+          onFavouriteChordTapped: handleFavouriteChordTapped,
         );
 
       case KeyboardType.guitarTab:

@@ -501,3 +501,254 @@ void drawLedgerLines(Canvas canvas, Paint paint, double noteY, double noteX,
     }
   }
 }
+
+// ---------------------------------------------------------------------------
+// FavouriteChordKey – a keyboard key that renders a full chord on the staff.
+// ---------------------------------------------------------------------------
+
+class FavouriteChordKey extends StatefulWidget {
+  final List<MusicalNote> childNotes;
+  final bool isDotted;
+  final VoidCallback onTap;
+
+  const FavouriteChordKey({
+    super.key,
+    required this.childNotes,
+    required this.isDotted,
+    required this.onTap,
+  });
+
+  @override
+  State<FavouriteChordKey> createState() => _FavouriteChordKeyState();
+}
+
+class _FavouriteChordKeyState extends State<FavouriteChordKey> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        widget.onTap();
+      },
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 100),
+        decoration: BoxDecoration(
+          color: _pressed ? Colors.grey[400] : Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: widget.isDotted
+                ? Colors.blue.shade300
+                : const Color.fromARGB(255, 130, 130, 130),
+            width: widget.isDotted ? 1.5 : 1.0,
+          ),
+        ),
+        child: CustomPaint(
+          painter: _ChordKeyPainter(
+            childNotes: widget.childNotes,
+            isDotted: widget.isDotted,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Paints multiple note heads on a mini staff with a shared connecting stem,
+/// matching the visual style of [KeyboardSymbolsMusicStaffPainter].
+class _ChordKeyPainter extends CustomPainter {
+  final List<MusicalNote> childNotes;
+  final bool isDotted;
+
+  _ChordKeyPainter({required this.childNotes, required this.isDotted});
+
+  /// SMuFL note-head glyphs (no stem).
+  static const String _headWhole = '\uE0A2';
+  static const String _headHalf = '\uE0A3';
+  static const String _headBlack = '\uE0A4';
+
+  String _headGlyph(NoteType type) {
+    switch (type) {
+      case NoteType.whole:
+        return _headWhole;
+      case NoteType.half:
+        return _headHalf;
+      default:
+        return _headBlack;
+    }
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (childNotes.isEmpty) return;
+
+    final paint = Paint()
+      ..color = Colors.black
+      ..strokeWidth = 1.0;
+
+    final lineSpacing = size.height / 20;
+    final staffTop = (size.height - 4 * lineSpacing) / 2;
+    final staffCenter = staffTop + 2 * lineSpacing;
+
+    // ── Staff lines ──────────────────────────────────────────────────────────
+    for (int i = 0; i < 5; i++) {
+      canvas.drawLine(
+        Offset(0, staffTop + i * lineSpacing),
+        Offset(size.width, staffTop + i * lineSpacing),
+        paint,
+      );
+    }
+
+    // ── Note positions ───────────────────────────────────────────────────────
+    final noteYs = childNotes
+        .map((n) => calculateNoteYVerticalKeyboard(
+            n.pitch, n.octave, lineSpacing, staffTop))
+        .toList();
+
+    final double avgY = noteYs.reduce((a, b) => a + b) / noteYs.length;
+    // stemDown = notes are on average above the middle line
+    final bool stemDown = avgY <= staffCenter;
+
+    final NoteType noteType = childNotes.first.type;
+    final bool isWhole = noteType == NoteType.whole;
+    final String headGlyph = _headGlyph(noteType);
+    final double fontSize = size.height / 5;
+
+    // Pre-measure the glyph to get its dimensions.
+    final TextPainter measurer = TextPainter(
+      text: TextSpan(
+        text: headGlyph,
+        style: TextStyle(fontFamily: 'Bravura', fontSize: fontSize),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    final double headW = measurer.width;
+    final double headH = measurer.height;
+
+    // Horizontal centre of note heads.  Stem is on right (stem-up) or left
+    // (stem-down), consistent with standard notation.
+    final double centreX = size.width / 2;
+    // Shift heads slightly so the stem sits at the key's horizontal centre.
+    // stem-up: head to the left of centre; stem-down: head to the right.
+    final double headOffsetX =
+        stemDown ? (centreX - headW / 2 + 2) : (centreX - headW / 2 - 2);
+
+    // ── Ledger lines & note heads ────────────────────────────────────────────
+    for (int i = 0; i < childNotes.length; i++) {
+      final double noteY = noteYs[i];
+      final double noteX = centreX;
+
+      drawLedgerLines(
+          canvas, paint, noteY, noteX, headW, lineSpacing, staffTop, false);
+
+      final TextPainter tp = TextPainter(
+        text: TextSpan(
+          text: headGlyph,
+          style: TextStyle(
+            fontFamily: 'Bravura',
+            fontSize: fontSize,
+            color: Colors.black,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+
+      tp.paint(canvas, Offset(headOffsetX, noteY - headH / 2));
+
+      // Augmentation dot for dotted notes.
+      if (isDotted) {
+        final Paint dotPaint = Paint()
+          ..color = Colors.black
+          ..style = PaintingStyle.fill;
+        canvas.drawCircle(
+          Offset(headOffsetX + headW + 2.5, noteY + 1.5),
+          1.5,
+          dotPaint,
+        );
+      }
+    }
+
+    // ── Shared stem & flag ───────────────────────────────────────────────────
+    if (!isWhole) {
+      final double topY = noteYs.reduce((a, b) => a < b ? a : b);
+      final double bottomY = noteYs.reduce((a, b) => a > b ? a : b);
+      final double stemLength = lineSpacing * 3.0;
+
+      final stemPaint = Paint()
+        ..color = Colors.black
+        ..strokeWidth = 1.2;
+
+      double stemTipY;
+      double stemX;
+
+      if (stemDown) {
+        // Stem on the left, going downward from top note head.
+        stemX = headOffsetX + 1;
+        stemTipY = bottomY + stemLength;
+        canvas.drawLine(
+            Offset(stemX, topY), Offset(stemX, stemTipY), stemPaint);
+      } else {
+        // Stem on the right, going upward from bottom note head.
+        stemX = headOffsetX + headW - 1;
+        stemTipY = topY - stemLength;
+        canvas.drawLine(
+            Offset(stemX, bottomY), Offset(stemX, stemTipY), stemPaint);
+      }
+
+      // ── Flag (only for unbeamed notes with flags) ────────────────────────
+      final String? flagGlyph = _flagGlyph(noteType, stemDown);
+      if (flagGlyph != null) {
+        final double flagFontSize = fontSize * 0.8;
+
+        // Scale the Y anchor offsets from drawing_helpers proportionally.
+        // Main sheet: stem-up offset = -64 / fontSize 34 ≈ 1.88×
+        //             stem-down offset = -68 / fontSize 34 ≈ 2.0×
+        final double flagY = stemDown
+            ? stemTipY - flagFontSize * 2.0
+            : stemTipY - flagFontSize * 1.88;
+
+        // Flag connects at the stem x position.
+        final double flagX = stemX - flagFontSize * 0.01;
+
+        final TextPainter flagPainter = TextPainter(
+          text: TextSpan(
+            text: flagGlyph,
+            style: TextStyle(
+              fontFamily: 'Bravura',
+              fontSize: flagFontSize,
+              color: Colors.black,
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        )..layout();
+
+        flagPainter.paint(canvas, Offset(flagX, flagY));
+      }
+    }
+  }
+
+  /// Returns the flag glyph for [type] and stem direction, or null if the
+  /// note type doesn't carry a flag (whole, half, quarter).
+  static String? _flagGlyph(NoteType type, bool stemDown) {
+    switch (type) {
+      case NoteType.eighth:
+        return stemDown ? '\uE241' : '\uE240';
+      case NoteType.sixteenth:
+        return stemDown ? '\uE243' : '\uE242';
+      case NoteType.thirtySecond:
+        return stemDown ? '\uE245' : '\uE244';
+      case NoteType.sixtyFourth:
+        return stemDown ? '\uE247' : '\uE246';
+      default:
+        return null;
+    }
+  }
+
+  @override
+  bool shouldRepaint(_ChordKeyPainter old) =>
+      old.childNotes != childNotes || old.isDotted != isDotted;
+}
