@@ -2322,8 +2322,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                           if (row < 0 ||
                               row >= sheet.sheetRows.length ||
                               index < 0 ||
-                              index >=
-                                  sheet.sheetRows[row].chords.length) {
+                              index >= sheet.sheetRows[row].chords.length) {
                             return const SizedBox.shrink();
                           }
                           final note = sheet.sheetRows[row].chords[index];
@@ -2344,15 +2343,13 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                     : Colors.white,
                                 borderRadius: BorderRadius.circular(25),
                                 border: Border.all(
-                                  color: isFavourited
-                                      ? Colors.red
-                                      : Colors.black,
+                                  color:
+                                      isFavourited ? Colors.red : Colors.black,
                                   width: 1,
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color:
-                                        Colors.black.withValues(alpha: 0.3),
+                                    color: Colors.black.withValues(alpha: 0.3),
                                     spreadRadius: 2,
                                     blurRadius: 5,
                                     offset: const Offset(0, 3),
@@ -2363,8 +2360,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                                 isFavourited
                                     ? Icons.favorite
                                     : Icons.favorite_border,
-                                color:
-                                    isFavourited ? Colors.red : Colors.black,
+                                color: isFavourited ? Colors.red : Colors.black,
                                 size: 20,
                               ),
                             ),

@@ -180,7 +180,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
           padding: EdgeInsets.zero,
         ),
         child: Icon(
-          _isFavouritesActive ? Icons.favorite : Icons.favorite_border,
+          Icons.favorite,
           color: _isFavouritesActive ? Colors.red : Colors.black,
           size: 18,
         ),
@@ -206,7 +206,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
         width: gridWidth,
         child: const Center(
           child: Text(
-            'No favourite chords saved yet.\nTap ♥ on a chord in the sheet to save one.',
+            'You have no favourites.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 11, color: Colors.grey),
           ),
@@ -219,7 +219,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
       width: gridWidth,
       //below is the pink background
       decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 255, 216, 223),
+        color: const Color.fromARGB(255, 255, 222, 228),
         borderRadius: BorderRadius.circular(8),
       ),
       padding: const EdgeInsets.all(4),
@@ -229,7 +229,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
           crossAxisCount: 9,
           crossAxisSpacing: 2,
           mainAxisSpacing: 5,
-          childAspectRatio: 0.30,
+          childAspectRatio: 0.31,
         ),
         itemCount: _favouriteChords.length,
         itemBuilder: (context, index) {
