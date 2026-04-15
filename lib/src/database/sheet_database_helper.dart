@@ -388,6 +388,17 @@ class SheetDatabaseHelper {
     });
   }
 
+  /// Update the last-used timestamp of a favourite chord so it sorts first.
+  Future<void> touchFavouriteChord(int id) async {
+    final db = await database;
+    await db.update(
+      'favourite_chords',
+      {'date_added': DateTime.now().toIso8601String()},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
   /// Remove a favourite chord by its database id.
   Future<void> deleteFavouriteChord(int id) async {
     final db = await database;

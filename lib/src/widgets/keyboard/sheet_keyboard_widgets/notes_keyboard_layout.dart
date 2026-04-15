@@ -30,6 +30,10 @@ class NotesKeyboardLayout extends StatefulWidget {
   /// Called when the user selects a favourite chord to insert.
   final void Function(MusicalNote chord)? onFavouriteChordTapped;
 
+  /// Called after a favourite chord is inserted so the DB last-used timestamp
+  /// can be updated. Receives the row id of the favourite.
+  final Future<void> Function(int id)? onFavouriteChordUsed;
+
   const NotesKeyboardLayout({
     super.key,
     required this.showNotesKeyboard,
@@ -42,6 +46,7 @@ class NotesKeyboardLayout extends StatefulWidget {
     required this.sheetFormat,
     this.loadFavourites,
     this.onFavouriteChordTapped,
+    this.onFavouriteChordUsed,
   });
 
   @override
@@ -83,6 +88,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
   void _toggleOctavePair() {
     setState(() {
       showLowerPair = !showLowerPair;
+      _isFavouritesActive = false;
     });
   }
 
@@ -208,12 +214,15 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
       );
     }
 
-    // Match the exact proportions of KeyboardBySymbols: 9 cols × aspect 0.30,
-    // but for chords we use 3 cols so each tile is 3× wider. Keeping the same
-    // height-per-tile means aspect ratio scales to 0.30 × 3 = 0.90.
-    return SizedBox(
+    return Container(
       height: 220,
       width: gridWidth,
+      //below is the pink background
+      decoration: BoxDecoration(
+        color: const Color.fromARGB(255, 255, 216, 223),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      padding: const EdgeInsets.all(4),
       child: GridView.builder(
         padding: EdgeInsets.zero,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -256,6 +265,10 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
               );
 
               widget.onFavouriteChordTapped?.call(chordNote);
+
+              // Update DB timestamp only — list order stays fixed until the
+              // favourites panel is next opened.
+              widget.onFavouriteChordUsed?.call(fav.id);
             },
           );
         },
@@ -272,6 +285,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
         onPressed: () {
           setState(() {
             _isChordsActive = !_isChordsActive;
+            _isFavouritesActive = false;
           });
         },
         style: ElevatedButton.styleFrom(

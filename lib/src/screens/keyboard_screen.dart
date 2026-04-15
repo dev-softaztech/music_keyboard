@@ -1803,6 +1803,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
           onConvertToChord: handleConvertToChord,
           loadFavourites: _dbHelper.getAllFavouriteChords,
           onFavouriteChordTapped: handleFavouriteChordTapped,
+          onFavouriteChordUsed: _dbHelper.touchFavouriteChord,
         );
 
       case KeyboardType.guitarTab:
