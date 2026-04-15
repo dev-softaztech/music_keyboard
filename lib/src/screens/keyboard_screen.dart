@@ -124,6 +124,10 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   // Database helper for clipboard operations
   late SheetDatabaseHelper _dbHelper;
 
+  // Favourite chord state
+  int? _favouriteChordId; // non-null when the selected chord is already saved
+  String? _lastCheckedChordKey; // tracks which chord we last queried
+
   // Auto-save functionality
   bool _hasUnsavedChanges = false;
   Timer? _autoSaveTimer;
@@ -1546,6 +1550,35 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     }
   }
 
+  /// Check whether [chord] is already in favourites and update
+  /// [_favouriteChordId]. Skips the DB query if the chord hasn't changed.
+  Future<void> _checkFavouriteStatus(MusicalNote chord) async {
+    final key = (chord.childNotes ?? [])
+        .map((n) => '${n.pitch}${n.octave}')
+        .toList()
+      ..sort();
+    final keyStr = key.join(',');
+    if (keyStr == _lastCheckedChordKey) return;
+    _lastCheckedChordKey = keyStr;
+    final id = await _dbHelper.findMatchingFavouriteChordId(chord);
+    if (mounted) {
+      setState(() {
+        _favouriteChordId = id;
+      });
+    }
+  }
+
+  /// Toggle the favourite state of [chord].
+  Future<void> _toggleFavourite(MusicalNote chord) async {
+    if (_favouriteChordId != null) {
+      await _dbHelper.deleteFavouriteChord(_favouriteChordId!);
+      if (mounted) setState(() => _favouriteChordId = null);
+    } else {
+      final id = await _dbHelper.insertFavouriteChord(chord);
+      if (mounted) setState(() => _favouriteChordId = id);
+    }
+  }
+
   // Save the current screenshot to the gallery and show a toast
   Future<void> handleSavePress() async {
     try {
@@ -2257,6 +2290,68 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                             size: 24,
                           ),
                         ),
+                      ),
+                    ),
+
+                    // Floating Favourite Chord Button - Below share button
+                    Positioned(
+                      top: 100,
+                      left: 5,
+                      child: Consumer<CurrentSelectedNoteProvider>(
+                        builder: (context, selectedNoteProvider, _) {
+                          final row = selectedNoteProvider.selectedRow;
+                          final index = selectedNoteProvider.selectedIndex;
+                          if (row < 0 ||
+                              row >= sheet.sheetRows.length ||
+                              index < 0 ||
+                              index >=
+                                  sheet.sheetRows[row].chords.length) {
+                            return const SizedBox.shrink();
+                          }
+                          final note = sheet.sheetRows[row].chords[index];
+                          if (note.type != NoteType.chord) {
+                            return const SizedBox.shrink();
+                          }
+                          // Kick off a DB check only when the chord changes.
+                          _checkFavouriteStatus(note);
+                          final isFavourited = _favouriteChordId != null;
+                          return GestureDetector(
+                            onTap: () => _toggleFavourite(note),
+                            child: Container(
+                              width: 35,
+                              height: 35,
+                              decoration: BoxDecoration(
+                                color: isFavourited
+                                    ? Colors.red.shade50
+                                    : Colors.white,
+                                borderRadius: BorderRadius.circular(25),
+                                border: Border.all(
+                                  color: isFavourited
+                                      ? Colors.red
+                                      : Colors.black,
+                                  width: 1,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color:
+                                        Colors.black.withValues(alpha: 0.3),
+                                    spreadRadius: 2,
+                                    blurRadius: 5,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                isFavourited
+                                    ? Icons.favorite
+                                    : Icons.favorite_border,
+                                color:
+                                    isFavourited ? Colors.red : Colors.black,
+                                size: 20,
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
 

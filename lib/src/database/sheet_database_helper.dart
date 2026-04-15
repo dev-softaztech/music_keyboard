@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:music_keyboard/models/sheet.dart';
 import 'package:music_keyboard/models/clipboard_item.dart';
+import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/models/sheet_rows.dart';
 import 'package:music_keyboard/src/services/firestore_service.dart';
 import 'package:uuid/uuid.dart';
@@ -29,7 +30,7 @@ class SheetDatabaseHelper {
     String path = join(await getDatabasesPath(), 'music_sheets.db');
     return await openDatabase(
       path,
-      version: 4,
+      version: 5,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -53,6 +54,14 @@ class SheetDatabaseHelper {
         rows_data TEXT NOT NULL
       )
     ''');
+
+    await db.execute('''
+      CREATE TABLE favourite_chords(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        chord_data TEXT NOT NULL,
+        date_added TEXT NOT NULL
+      )
+    ''');
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -70,6 +79,16 @@ class SheetDatabaseHelper {
     if (oldVersion < 4) {
       // Migration from integer IDs to GUID-based IDs
       await _migrateToGuidIds(db);
+    }
+
+    if (oldVersion < 5) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS favourite_chords(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          chord_data TEXT NOT NULL,
+          date_added TEXT NOT NULL
+        )
+      ''');
     }
   }
 
@@ -358,6 +377,51 @@ class SheetDatabaseHelper {
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  /// Add a chord note to the favourites table. Returns the inserted row id.
+  Future<int> insertFavouriteChord(MusicalNote chord) async {
+    final db = await database;
+    return await db.insert('favourite_chords', {
+      'chord_data': jsonEncode(chord.toJson()),
+      'date_added': DateTime.now().toIso8601String(),
+    });
+  }
+
+  /// Remove a favourite chord by its database id.
+  Future<void> deleteFavouriteChord(int id) async {
+    final db = await database;
+    await db.delete('favourite_chords', where: 'id = ?', whereArgs: [id]);
+  }
+
+  /// Return all favourite chords ordered most-recent first.
+  Future<List<({int id, MusicalNote chord})>> getAllFavouriteChords() async {
+    final db = await database;
+    final rows = await db.query('favourite_chords', orderBy: 'date_added DESC');
+    return rows.map((row) {
+      final note = MusicalNote.fromJson(
+          jsonDecode(row['chord_data'] as String) as Map<String, dynamic>);
+      return (id: row['id'] as int, chord: note);
+    }).toList();
+  }
+
+  /// Find the database id of a stored favourite chord that matches [chord] by
+  /// its child-note pitches/octaves. Returns null if no match is found.
+  Future<int?> findMatchingFavouriteChordId(MusicalNote chord) async {
+    final all = await getAllFavouriteChords();
+    final childPitches = (chord.childNotes ?? [])
+        .map((n) => '${n.pitch}${n.octave}')
+        .toSet();
+    for (final fav in all) {
+      final favPitches = (fav.chord.childNotes ?? [])
+          .map((n) => '${n.pitch}${n.octave}')
+          .toSet();
+      if (childPitches.length == favPitches.length &&
+          childPitches.containsAll(favPitches)) {
+        return fav.id;
+      }
+    }
+    return null;
   }
 
   /// Close the database connection
