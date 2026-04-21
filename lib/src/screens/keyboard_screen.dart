@@ -1574,7 +1574,12 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
       await _dbHelper.deleteFavouriteChord(_favouriteChordId!);
       if (mounted) setState(() => _favouriteChordId = null);
     } else {
-      final id = await _dbHelper.insertFavouriteChord(chord);
+      final id = await _dbHelper.insertFavouriteChord(
+        chord,
+        keyboardType: sheet.keyboardType == KeyboardType.guitarTab
+            ? 'guitarTab'
+            : 'sheetMusic',
+      );
       if (mounted) setState(() => _favouriteChordId = id);
     }
   }
@@ -1828,6 +1833,10 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
             // Reset guitar keyboard technique states when a new row is created
             resetGuitarKeyboardTechniqueStates();
           },
+          loadFavourites: () =>
+              _dbHelper.getFavouriteChordsByKeyboardType('guitarTab'),
+          onFavouriteChordTapped: handleFavouriteChordTapped,
+          onFavouriteChordUsed: _dbHelper.touchFavouriteChord,
         );
     }
   }
@@ -2326,7 +2335,8 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                             return const SizedBox.shrink();
                           }
                           final note = sheet.sheetRows[row].chords[index];
-                          if (note.type != NoteType.chord) {
+                          if (note.type != NoteType.chord &&
+                              note.type != NoteType.fret) {
                             return const SizedBox.shrink();
                           }
                           // Kick off a DB check only when the chord changes.

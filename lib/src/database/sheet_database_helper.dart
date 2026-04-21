@@ -30,7 +30,7 @@ class SheetDatabaseHelper {
     String path = join(await getDatabasesPath(), 'music_sheets.db');
     return await openDatabase(
       path,
-      version: 5,
+      version: 6,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -59,7 +59,8 @@ class SheetDatabaseHelper {
       CREATE TABLE favourite_chords(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         chord_data TEXT NOT NULL,
-        date_added TEXT NOT NULL
+        date_added TEXT NOT NULL,
+        keyboard_type TEXT NOT NULL DEFAULT 'sheetMusic'
       )
     ''');
   }
@@ -89,6 +90,12 @@ class SheetDatabaseHelper {
           date_added TEXT NOT NULL
         )
       ''');
+    }
+
+    if (oldVersion < 6) {
+      await db.execute(
+        "ALTER TABLE favourite_chords ADD COLUMN keyboard_type TEXT NOT NULL DEFAULT 'sheetMusic'",
+      );
     }
   }
 
@@ -380,11 +387,13 @@ class SheetDatabaseHelper {
   }
 
   /// Add a chord note to the favourites table. Returns the inserted row id.
-  Future<int> insertFavouriteChord(MusicalNote chord) async {
+  Future<int> insertFavouriteChord(MusicalNote chord,
+      {String keyboardType = 'sheetMusic'}) async {
     final db = await database;
     return await db.insert('favourite_chords', {
       'chord_data': jsonEncode(chord.toJson()),
       'date_added': DateTime.now().toIso8601String(),
+      'keyboard_type': keyboardType,
     });
   }
 
@@ -409,6 +418,23 @@ class SheetDatabaseHelper {
   Future<List<({int id, MusicalNote chord})>> getAllFavouriteChords() async {
     final db = await database;
     final rows = await db.query('favourite_chords', orderBy: 'date_added DESC');
+    return rows.map((row) {
+      final note = MusicalNote.fromJson(
+          jsonDecode(row['chord_data'] as String) as Map<String, dynamic>);
+      return (id: row['id'] as int, chord: note);
+    }).toList();
+  }
+
+  /// Return favourite chords for a specific keyboard type, ordered most-recent first.
+  Future<List<({int id, MusicalNote chord})>> getFavouriteChordsByKeyboardType(
+      String keyboardType) async {
+    final db = await database;
+    final rows = await db.query(
+      'favourite_chords',
+      where: 'keyboard_type = ?',
+      whereArgs: [keyboardType],
+      orderBy: 'date_added DESC',
+    );
     return rows.map((row) {
       final note = MusicalNote.fromJson(
           jsonDecode(row['chord_data'] as String) as Map<String, dynamic>);
