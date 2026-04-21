@@ -1394,7 +1394,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
                 final chordNote = MusicalNote(
                   pitch: fav.chord.pitch,
                   octave: fav.chord.octave,
-                  type: NoteType.chord,
+                  type: fav.chord.type,
                   unicodeCharacter: fav.chord.unicodeCharacter,
                   duration: fav.chord.duration,
                   childNotes: children,
