@@ -22,6 +22,10 @@ class GuitarKeyboardLayout extends StatefulWidget {
   final void Function(MusicalNote chord)? onFavouriteChordTapped;
   final Future<void> Function(int id)? onFavouriteChordUsed;
 
+  /// Incremented by the parent whenever a favourite is added or removed.
+  /// The widget reloads the panel if it is currently open.
+  final int favouritesVersion;
+
   const GuitarKeyboardLayout({
     super.key,
     required this.showNotesKeyboard,
@@ -35,6 +39,7 @@ class GuitarKeyboardLayout extends StatefulWidget {
     this.loadFavourites,
     this.onFavouriteChordTapped,
     this.onFavouriteChordUsed,
+    this.favouritesVersion = 0,
   });
 
   @override
@@ -97,6 +102,29 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       widget.onRegisterSpaceHandler?.call(_handleSpacePress);
       widget.onRegisterResetHandler?.call(resetTechniqueStates);
     });
+  }
+
+  @override
+  void didUpdateWidget(GuitarKeyboardLayout oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.favouritesVersion != oldWidget.favouritesVersion &&
+        _isFavouritesActive) {
+      _reloadFavourites();
+    }
+  }
+
+  /// Reloads the favourites list in place without toggling panel visibility.
+  Future<void> _reloadFavourites() async {
+    setState(() => _favouritesLoading = true);
+    final favs = widget.loadFavourites != null
+        ? await widget.loadFavourites!()
+        : <({int id, MusicalNote chord})>[];
+    if (mounted) {
+      setState(() {
+        _favouriteChords = favs;
+        _favouritesLoading = false;
+      });
+    }
   }
 
   @override

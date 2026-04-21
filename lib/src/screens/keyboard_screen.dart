@@ -105,6 +105,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   // Guitar keyboard state reset callback
   VoidCallback? _guitarKeyboardResetCallback;
 
+  // Incremented on insert/delete so keyboard layouts can refresh their panels.
+  int _favouritesVersion = 0;
+
   // PDF export state variables
   int? _pdfRenderStartRow;
   int? _pdfRenderEndRow;
@@ -1574,7 +1577,12 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   Future<void> _toggleFavourite(MusicalNote chord) async {
     if (_favouriteChordId != null) {
       await _dbHelper.deleteFavouriteChord(_favouriteChordId!);
-      if (mounted) setState(() => _favouriteChordId = null);
+      if (mounted) {
+        setState(() {
+          _favouriteChordId = null;
+          _favouritesVersion++;
+        });
+      }
     } else {
       final id = await _dbHelper.insertFavouriteChord(
         chord,
@@ -1582,7 +1590,12 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
             ? 'guitarTab'
             : 'sheetMusic',
       );
-      if (mounted) setState(() => _favouriteChordId = id);
+      if (mounted) {
+        setState(() {
+          _favouriteChordId = id;
+          _favouritesVersion++;
+        });
+      }
     }
   }
 
@@ -1811,6 +1824,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
           loadFavourites: _dbHelper.getAllFavouriteChords,
           onFavouriteChordTapped: handleFavouriteChordTapped,
           onFavouriteChordUsed: _dbHelper.touchFavouriteChord,
+          favouritesVersion: _favouritesVersion,
         );
 
       case KeyboardType.guitarTab:
@@ -1839,6 +1853,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
               _dbHelper.getFavouriteChordsByKeyboardType('guitarTab'),
           onFavouriteChordTapped: handleFavouriteChordTapped,
           onFavouriteChordUsed: _dbHelper.touchFavouriteChord,
+          favouritesVersion: _favouritesVersion,
         );
     }
   }

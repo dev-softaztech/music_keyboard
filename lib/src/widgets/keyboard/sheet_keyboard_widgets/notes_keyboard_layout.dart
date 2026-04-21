@@ -34,6 +34,10 @@ class NotesKeyboardLayout extends StatefulWidget {
   /// can be updated. Receives the row id of the favourite.
   final Future<void> Function(int id)? onFavouriteChordUsed;
 
+  /// Incremented by the parent whenever a favourite is added or removed.
+  /// The widget reloads the panel if it is currently open.
+  final int favouritesVersion;
+
   const NotesKeyboardLayout({
     super.key,
     required this.showNotesKeyboard,
@@ -47,6 +51,7 @@ class NotesKeyboardLayout extends StatefulWidget {
     this.loadFavourites,
     this.onFavouriteChordTapped,
     this.onFavouriteChordUsed,
+    this.favouritesVersion = 0,
   });
 
   @override
@@ -306,6 +311,29 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
         ),
       ),
     );
+  }
+
+  @override
+  void didUpdateWidget(NotesKeyboardLayout oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.favouritesVersion != oldWidget.favouritesVersion &&
+        _isFavouritesActive) {
+      _reloadFavourites();
+    }
+  }
+
+  /// Reloads the favourites list in place without toggling panel visibility.
+  Future<void> _reloadFavourites() async {
+    setState(() => _favouritesLoading = true);
+    final favs = widget.loadFavourites != null
+        ? await widget.loadFavourites!()
+        : <({int id, MusicalNote chord})>[];
+    if (mounted) {
+      setState(() {
+        _favouriteChords = favs;
+        _favouritesLoading = false;
+      });
+    }
   }
 
   @override
