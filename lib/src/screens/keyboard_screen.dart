@@ -522,6 +522,36 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   /// method is only called when the key is NOT already a child note).
   ///
   /// The currently selected accidental (sharp, flat, natural, dotted) from
+  /// Returns the note offset from the staff top (higher value = lower on staff).
+  /// The staff centre is at offset 2.0; notes above it have a smaller offset.
+  double _noteStaffOffset(String pitch, int octave) {
+    const offsets = {
+      'C': 5.5, 'D': 5.0, 'E': 4.5, 'F': 4.0,
+      'G': 3.5, 'A': 3.0, 'B': 2.5,
+    };
+    return (offsets[pitch] ?? 4.0) + (4 - octave) * 3.5;
+  }
+
+  /// Computes whether a chord's stem should go down (isUpsideDown = true) based
+  /// on which child note is furthest from the staff centre (offset 2.0).
+  /// If the furthest note is above the centre it returns true (stem down);
+  /// if below the centre it returns false (stem up).
+  bool _chordIsUpsideDown(List<MusicalNote> children) {
+    const double staffCentreOffset = 2.0;
+    double maxDistance = -1;
+    bool upsideDown = false;
+    for (final child in children) {
+      final offset = _noteStaffOffset(child.pitch, child.octave);
+      final distance = (offset - staffCentreOffset).abs();
+      if (distance > maxDistance) {
+        maxDistance = distance;
+        // Above centre (offset < 2.0) → stem goes down → isUpsideDown = true.
+        upsideDown = offset < staffCentreOffset;
+      }
+    }
+    return upsideDown;
+  }
+
   /// [SelectedAccidentalProvider] is applied to the child note so that
   /// accidentals and augmentation dots are drawn correctly on the staff.
   void handleAddToChord(MusicalNote note) {
@@ -562,6 +592,13 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
       // Add the new note.
       chord.childNotes!.add(noteWithAccidental);
+
+      // Recalculate stem direction based on the note furthest from staff centre.
+      final newUpsideDown = _chordIsUpsideDown(chord.childNotes!);
+      chord.isUpsideDown = newUpsideDown;
+      for (final child in chord.childNotes!) {
+        child.isUpsideDown = newUpsideDown;
+      }
 
       // If beam lock is active, ensure the chord container is also beamed.
       if (isBeamLockActive) {
@@ -605,6 +642,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
       );
 
       // Only include the existing note as a child if it is not a space.
+      // Preserve the existing note's isUpsideDown so the child looks the same.
       final children = [
         if (existing.type != NoteType.space)
           MusicalNote(
@@ -615,9 +653,16 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
             unicodeCharacter: existing.unicodeCharacter,
             accidentalCharacter: existing.accidentalCharacter,
             duration: existing.duration,
+            isUpsideDown: existing.isUpsideDown,
           ),
         tappedAsChild,
       ];
+
+      // Determine stem direction from the note furthest from the staff centre.
+      final stemUpsideDown = _chordIsUpsideDown(children);
+      for (final child in children) {
+        child.isUpsideDown = stemUpsideDown;
+      }
 
       final chordNote = MusicalNote(
         pitch: existing.pitch,
@@ -626,6 +671,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         isBeamed: existing.isBeamed,
         duration: existing.duration,
         unicodeCharacter: existing.unicodeCharacter,
+        isUpsideDown: stemUpsideDown,
         childNotes: children,
       );
 
