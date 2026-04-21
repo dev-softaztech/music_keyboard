@@ -443,18 +443,25 @@ class SheetDatabaseHelper {
   }
 
   /// Find the database id of a stored favourite chord that matches [chord] by
-  /// its child-note pitches/octaves. Returns null if no match is found.
+  /// its child-note pitches/octaves. For guitar tab fret notes the fret number
+  /// (unicodeCharacter) is included in the key so that chords on the same
+  /// string with different fret numbers are correctly treated as distinct.
+  /// Returns null if no match is found.
   Future<int?> findMatchingFavouriteChordId(MusicalNote chord) async {
     final all = await getAllFavouriteChords();
-    final childPitches = (chord.childNotes ?? [])
-        .map((n) => '${n.pitch}${n.octave}')
+    final childKeys = (chord.childNotes ?? [])
+        .map((n) => n.type == NoteType.fret
+            ? '${n.octave}:${n.unicodeCharacter}'
+            : '${n.pitch}${n.octave}')
         .toSet();
     for (final fav in all) {
-      final favPitches = (fav.chord.childNotes ?? [])
-          .map((n) => '${n.pitch}${n.octave}')
+      final favKeys = (fav.chord.childNotes ?? [])
+          .map((n) => n.type == NoteType.fret
+              ? '${n.octave}:${n.unicodeCharacter}'
+              : '${n.pitch}${n.octave}')
           .toSet();
-      if (childPitches.length == favPitches.length &&
-          childPitches.containsAll(favPitches)) {
+      if (childKeys.length == favKeys.length &&
+          childKeys.containsAll(favKeys)) {
         return fav.id;
       }
     }

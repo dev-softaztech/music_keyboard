@@ -1554,7 +1554,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   /// [_favouriteChordId]. Skips the DB query if the chord hasn't changed.
   Future<void> _checkFavouriteStatus(MusicalNote chord) async {
     final key = (chord.childNotes ?? [])
-        .map((n) => '${n.pitch}${n.octave}')
+        .map((n) => n.type == NoteType.fret
+            ? '${n.octave}:${n.unicodeCharacter}'
+            : '${n.pitch}${n.octave}')
         .toList()
       ..sort();
     final keyStr = key.join(',');
