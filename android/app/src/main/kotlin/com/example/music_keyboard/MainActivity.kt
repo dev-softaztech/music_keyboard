@@ -1,4 +1,4 @@
-package com.example.music_keyboard
+package softaztech.motez_notes
 
 import io.flutter.embedding.android.FlutterActivity
 
