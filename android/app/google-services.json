@@ -26,9 +26,9 @@
     },
     {
       "client_info": {
-        "mobilesdk_app_id": "1:901229537114:android:d0eb990aab15d8b7fef563",
+        "mobilesdk_app_id": "1:901229537114:android:805a2c3830b00469fef563",
         "android_client_info": {
-          "package_name": "softaztech.motez_notes"
+          "package_name": "com.softaztech.moteznotes"
         }
       },
       "oauth_client": [],

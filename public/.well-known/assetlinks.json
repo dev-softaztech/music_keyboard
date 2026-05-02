@@ -2,7 +2,7 @@
   "relation": ["delegate_permission/common.handle_all_urls"],
   "target": {
     "namespace": "android_app",
-    "package_name": "softaztech.motez_notes",
+    "package_name": "com.softaztech.moteznotes",
     "sha256_cert_fingerprints": [
       "E5:4E:1C:52:E1:85:C1:6F:4C:C0:21:69:45:D3:EA:60:F2:78:DD:19:70:E0:C2:0E:D6:9A:F4:1B:CF:9B:FF:A6"
     ]

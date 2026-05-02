@@ -63,6 +63,6 @@ class DefaultFirebaseOptions {
     messagingSenderId: '901229537114',
     projectId: 'motez-notes',
     storageBucket: 'motez-notes.firebasestorage.app',
-    iosBundleId: 'com.example.musicKeyboard',
+    iosBundleId: 'com.softaztech.moteznotes',
   );
 }
