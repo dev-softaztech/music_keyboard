@@ -32,6 +32,7 @@ import 'package:music_keyboard/src/providers/undo_manager.dart';
 import 'package:music_keyboard/src/widgets/shared/popup_theme.dart';
 import 'package:music_keyboard/src/widgets/shared/pdf_export_loading_overlay.dart';
 import 'package:music_keyboard/src/utils/haptic_feedback_utils.dart';
+import 'package:music_keyboard/src/widgets/shared/banner_ad_widget.dart';
 import 'package:music_keyboard/src/services/dynamic_link_service.dart';
 import 'package:music_keyboard/src/services/firestore_service.dart';
 import 'package:music_keyboard/src/providers/auth_provider.dart' as app;
@@ -3022,30 +3023,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                 ),
               ),
 
-              Align(
+              const Align(
                 alignment: Alignment.bottomCenter,
-                child: Container(
-                  height: 50,
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    border: Border(
-                      top: BorderSide(
-                        color: Colors.black,
-                        width: 1,
-                      ),
-                    ),
-                    color: Colors.white,
-                  ),
-                  alignment: Alignment.center,
-                  child: const Text(
-                    'AD BANNER',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                ),
+                child: BannerAdWidget(),
               ),
             ])));
   }

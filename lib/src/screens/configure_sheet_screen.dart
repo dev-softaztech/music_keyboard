@@ -10,6 +10,7 @@ import 'package:music_keyboard/src/database/sheet_database_helper.dart';
 import 'package:music_keyboard/src/services/firestore_service.dart';
 import 'package:music_keyboard/src/providers/auth_provider.dart' as app;
 import 'package:provider/provider.dart';
+import 'package:music_keyboard/src/widgets/shared/banner_ad_widget.dart';
 import 'keyboard_screen.dart';
 
 class ConfigureSheetScreen extends StatefulWidget {
@@ -229,30 +230,9 @@ class _ConfigureSheetScreenState extends State<ConfigureSheetScreen> {
           ),
 
           // AD BANNER (always visible)
-          Align(
+          const Align(
             alignment: Alignment.bottomCenter,
-            child: Container(
-              height: 50,
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                border: Border(
-                  top: BorderSide(
-                    color: Colors.black,
-                    width: 1,
-                  ),
-                ),
-                color: Colors.white,
-              ),
-              alignment: Alignment.center,
-              child: const Text(
-                'AD BANNER',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-              ),
-            ),
+            child: BannerAdWidget(),
           ),
         ],
       ),

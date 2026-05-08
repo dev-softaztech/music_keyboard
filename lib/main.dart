@@ -11,6 +11,7 @@ import 'package:music_keyboard/src/providers/selected_string_provider.dart';
 import 'package:music_keyboard/src/providers/selected_unicode_provider.dart';
 import 'package:music_keyboard/src/providers/undo_manager.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:music_keyboard/firebase_options.dart';
 import 'package:music_keyboard/src/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
@@ -26,6 +27,8 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  await MobileAds.instance.initialize();
 
   // Set preferred orientations to portrait only
   await SystemChrome.setPreferredOrientations([
