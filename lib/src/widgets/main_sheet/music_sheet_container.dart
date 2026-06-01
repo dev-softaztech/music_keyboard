@@ -201,7 +201,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
     const double targetScale = 0.7;
 
     // Calculate the center of the VISIBLE canvas area (excluding keyboard and status bar)
-    const double keyboardHeight = 312.0;
+    const double keyboardHeight = 357.0;
     final double appBarHeight = AppBar().preferredSize.height;
     final double visibleCanvasHeight = widget.screenSize.height -
         appBarHeight -
@@ -348,7 +348,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
 
     // Calculate screen dimensions
     final double screenCenterX = widget.screenSize.width / 2;
-    const double keyboardHeight = 312.0;
+    const double keyboardHeight = 357.0;
     final double appBarHeight = AppBar().preferredSize.height;
     final double visibleCanvasHeight = widget.screenSize.height -
         appBarHeight -
@@ -2381,7 +2381,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
     final selectRowsModeProvider = Provider.of<SelectRowsModeProvider>(context);
 
     // Adjust keyboard height based on read-only mode
-    var keyboardHeight = widget.isReadOnly ? 0 : 312;
+    var keyboardHeight = widget.isReadOnly ? 0 : 357;
     var canvasHeight = widget.screenSize.height -
         AppBar().preferredSize.height -
         keyboardHeight -

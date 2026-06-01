@@ -527,8 +527,13 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
   /// The staff centre is at offset 2.0; notes above it have a smaller offset.
   double _noteStaffOffset(String pitch, int octave) {
     const offsets = {
-      'C': 5.5, 'D': 5.0, 'E': 4.5, 'F': 4.0,
-      'G': 3.5, 'A': 3.0, 'B': 2.5,
+      'C': 5.5,
+      'D': 5.0,
+      'E': 4.5,
+      'F': 4.0,
+      'G': 3.5,
+      'A': 3.0,
+      'B': 2.5,
     };
     return (offsets[pitch] ?? 4.0) + (4 - octave) * 3.5;
   }
@@ -1928,6 +1933,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                     Positioned.fill(
                       child: Column(
                         children: [
+                          const SizedBox(height: 50),
                           MusicSheetContainer(
                             screenSize: screenSize,
                             screenshotController: screenshotController,
@@ -1966,7 +1972,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                     if (!selectRowsModeProvider.isSelectRowsMode &&
                         !isViewingOtherUsersSheet)
                       Positioned(
-                        top: 10,
+                        top: 60,
                         right: 5,
                         child: GestureDetector(
                           onTap: () {
@@ -2022,7 +2028,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                     // Popup Menu - appears next to the menu button (positioned after overlay so it's on top)
                     if (showToolsMenu && !isViewingOtherUsersSheet)
                       Positioned(
-                        top: statusBarHeight + 15, // Below the menu button
+                        top: statusBarHeight + 65, // Below the menu button
                         right: 15,
                         child: Material(
                           elevation: 8,
@@ -2313,7 +2319,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
                     // Floating Menu Button - Top left
                     Positioned(
-                      top: 10,
+                      top: 60,
                       left: 5,
                       child: GestureDetector(
                         onTap: () {
@@ -2352,7 +2358,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
                     // Floating Share Button - Below menu button
                     Positioned(
-                      top: 55,
+                      top: 105,
                       left: 5,
                       child: GestureDetector(
                         onTap: _shareSheet,
@@ -2386,7 +2392,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
                     // Floating Favourite Chord Button - Below share button
                     Positioned(
-                      top: 100,
+                      top: 150,
                       left: 5,
                       child: Consumer<CurrentSelectedNoteProvider>(
                         builder: (context, selectedNoteProvider, _) {
@@ -2462,7 +2468,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                     // Popup Menu - appears next to the menu button (positioned after overlay so it's on top)
                     if (showMenu)
                       Positioned(
-                        top: statusBarHeight + 15, // Below the menu button
+                        top: statusBarHeight + 65, // Below the menu button
                         left: 15,
                         child: Material(
                           elevation: 8,
@@ -2649,7 +2655,7 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                         child: ColoredBox(
                           color: const Color.fromARGB(255, 255, 253, 253),
                           child: Container(
-                            height: 314,
+                            height: 357,
                             padding: const EdgeInsets.fromLTRB(0, 5, 0, 0),
                             child: Column(
                               children: [
@@ -3018,14 +3024,14 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
                             ),
                           ),
                         ),
-                      )
+                      ),
+
+                    const Align(
+                      alignment: Alignment.topCenter,
+                      child: BannerAdWidget(),
+                    ),
                   ],
                 ),
-              ),
-
-              const Align(
-                alignment: Alignment.bottomCenter,
-                child: BannerAdWidget(),
               ),
             ])));
   }

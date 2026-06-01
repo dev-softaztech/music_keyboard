@@ -177,8 +177,7 @@ class _HomeScreenState extends State<HomeScreen> {
               if (showVerificationBanner)
                 Container(
                   width: double.infinity,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.fromLTRB(16, 58, 16, 8),
                   decoration: BoxDecoration(
                     color: Colors.orange[100],
                     border: Border(
@@ -239,7 +238,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: SafeArea(
                     child: Padding(
                       padding: const EdgeInsets.only(
-                          left: 32.0, top: 27, right: 32.0, bottom: 27.0),
+                          left: 32.0, top: 77, right: 32.0, bottom: 27.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -490,8 +489,11 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           // AD BANNER (always visible)
           const Align(
-            alignment: Alignment.bottomCenter,
-            child: BannerAdWidget(),
+            alignment: Alignment.topCenter,
+            child: SafeArea(
+              bottom: false,
+              child: BannerAdWidget(),
+            ),
           ),
         ],
       ),

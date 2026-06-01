@@ -70,7 +70,7 @@ class _ConfigureSheetScreenState extends State<ConfigureSheetScreen> {
                 children: [
                   Expanded(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(32.0),
+                      padding: const EdgeInsets.fromLTRB(32, 82, 32, 32),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -231,8 +231,11 @@ class _ConfigureSheetScreenState extends State<ConfigureSheetScreen> {
 
           // AD BANNER (always visible)
           const Align(
-            alignment: Alignment.bottomCenter,
-            child: BannerAdWidget(),
+            alignment: Alignment.topCenter,
+            child: SafeArea(
+              bottom: false,
+              child: BannerAdWidget(),
+            ),
           ),
         ],
       ),
