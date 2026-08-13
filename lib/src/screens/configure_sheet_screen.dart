@@ -1,17 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:music_keyboard/models/row_properties.dart';
-import 'package:music_keyboard/models/sheet.dart';
-import 'package:music_keyboard/models/sheet_properties.dart';
-import 'package:music_keyboard/models/sheet_rows.dart';
 import 'package:music_keyboard/models/sheet_format.dart';
 import 'package:music_keyboard/models/keyboard_type.dart';
-import 'package:music_keyboard/models/music_note.dart';
-import 'package:music_keyboard/src/database/sheet_database_helper.dart';
-import 'package:music_keyboard/src/services/firestore_service.dart';
 import 'package:music_keyboard/src/providers/auth_provider.dart' as app;
 import 'package:provider/provider.dart';
 import 'package:music_keyboard/src/widgets/shared/banner_ad_widget.dart';
 import 'keyboard_screen.dart';
+import 'configure_sheet_screen/keyboard_type_card.dart';
+import 'configure_sheet_screen/sheet_creation_service.dart';
+import 'configure_sheet_screen/sheet_format_cards.dart';
 
 class ConfigureSheetScreen extends StatefulWidget {
   const ConfigureSheetScreen({super.key});
@@ -138,23 +134,35 @@ class _ConfigureSheetScreenState extends State<ConfigureSheetScreen> {
                           Row(
                             children: [
                               Expanded(
-                                child: _buildKeyboardTypeCard(
-                                  KeyboardType.sheet,
-                                  Icons.music_note,
+                                child: KeyboardTypeCard(
+                                  keyboardType: KeyboardType.sheet,
+                                  icon: Icons.music_note,
+                                  isSelected: _selectedKeyboardType ==
+                                      KeyboardType.sheet,
+                                  onTap: () =>
+                                      _selectKeyboardType(KeyboardType.sheet),
                                 ),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
-                                child: _buildKeyboardTypeCard(
-                                  KeyboardType.drumTab,
-                                  Icons.audiotrack,
+                                child: KeyboardTypeCard(
+                                  keyboardType: KeyboardType.drumTab,
+                                  icon: Icons.audiotrack,
+                                  isSelected: _selectedKeyboardType ==
+                                      KeyboardType.drumTab,
+                                  onTap: () => _selectKeyboardType(
+                                      KeyboardType.drumTab),
                                 ),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
-                                child: _buildKeyboardTypeCard(
-                                  KeyboardType.guitarTab,
-                                  Icons.piano,
+                                child: KeyboardTypeCard(
+                                  keyboardType: KeyboardType.guitarTab,
+                                  icon: Icons.piano,
+                                  isSelected: _selectedKeyboardType ==
+                                      KeyboardType.guitarTab,
+                                  onTap: () => _selectKeyboardType(
+                                      KeyboardType.guitarTab),
                                 ),
                               ),
                             ],
@@ -174,7 +182,10 @@ class _ConfigureSheetScreenState extends State<ConfigureSheetScreen> {
                           const SizedBox(height: 16),
 
                           _selectedKeyboardType == KeyboardType.guitarTab
-                              ? _buildSingleFormatCard()
+                              ? SingleSheetFormatCard(
+                                  isSelected:
+                                      _selectedFormat == SheetFormat.single,
+                                )
                               : _buildAllFormatCards(),
 
                           const SizedBox(height: 24),
@@ -242,71 +253,14 @@ class _ConfigureSheetScreenState extends State<ConfigureSheetScreen> {
     );
   }
 
-  Widget _buildSingleFormatCard() {
-    // For Guitar Tab, only show Single Stave option and make it full width with larger height
-    return FractionallySizedBox(
-      widthFactor: 1,
-      child: Container(
-        height: 70,
-        decoration: BoxDecoration(
-          color: _selectedFormat == SheetFormat.single
-              ? const Color(0xFF242038)
-              : Colors.white,
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(12),
-            topRight: Radius.circular(12),
-          ),
-          border: Border.all(
-            color: _selectedFormat == SheetFormat.single
-                ? const Color(0xFF242038)
-                : Colors.grey[300]!,
-            width: 2,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              spreadRadius: 1,
-              blurRadius: 6,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                SheetFormat.single.displayName,
-                style: TextStyle(
-                  fontSize: 13, // Increased font size
-                  fontWeight: FontWeight.w700, // Bolder font
-                  color: _selectedFormat == SheetFormat.single
-                      ? Colors.white
-                      : const Color(0xFF242038),
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                SheetFormat.single.description,
-                style: TextStyle(
-                  fontSize: 9, // Increased font size
-                  color: _selectedFormat == SheetFormat.single
-                      ? Colors.white.withOpacity(0.9)
-                      : Colors.grey[600],
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  void _selectKeyboardType(KeyboardType keyboardType) {
+    setState(() {
+      _selectedKeyboardType = keyboardType;
+      // Auto-select Single Stave when Guitar Tab is chosen
+      if (keyboardType == KeyboardType.guitarTab) {
+        _selectedFormat = SheetFormat.single;
+      }
+    });
   }
 
   Widget _buildAllFormatCards() {
@@ -345,146 +299,15 @@ class _ConfigureSheetScreenState extends State<ConfigureSheetScreen> {
   }
 
   Widget _buildFormatCard(SheetFormat format, {required bool isTopRow}) {
-    final bool isSelected = _selectedFormat == format;
-
-    return GestureDetector(
+    return SheetFormatCard(
+      format: format,
+      isSelected: _selectedFormat == format,
+      isTopRow: isTopRow,
       onTap: () {
         setState(() {
           _selectedFormat = format;
         });
       },
-      child: Container(
-        height: 70,
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF242038) : Colors.white,
-          borderRadius: isTopRow
-              ? const BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  topRight: Radius.circular(12),
-                )
-              : const BorderRadius.only(
-                  bottomLeft: Radius.circular(12),
-                  bottomRight: Radius.circular(12),
-                ),
-          border: Border.all(
-            color: isSelected ? const Color(0xFF242038) : Colors.grey[300]!,
-            width: 2,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              spreadRadius: 1,
-              blurRadius: 6,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                format.displayName,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: isSelected ? Colors.white : const Color(0xFF242038),
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                format.description,
-                style: TextStyle(
-                  fontSize: 9,
-                  color: isSelected
-                      ? Colors.white.withOpacity(0.8)
-                      : Colors.grey[600],
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildKeyboardTypeCard(KeyboardType keyboardType, IconData icon) {
-    final bool isSelected = _selectedKeyboardType == keyboardType;
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedKeyboardType = keyboardType;
-          // Auto-select Single Stave when Guitar Tab is chosen
-          if (keyboardType == KeyboardType.guitarTab) {
-            _selectedFormat = SheetFormat.single;
-          }
-        });
-      },
-      child: Container(
-        height: 100,
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF242038) : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? const Color(0xFF242038) : Colors.grey[300]!,
-            width: 2,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              spreadRadius: 1,
-              blurRadius: 6,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 28,
-                color: isSelected ? Colors.white : const Color(0xFF242038),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                keyboardType.displayName,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: isSelected ? Colors.white : const Color(0xFF242038),
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 2),
-              Text(
-                keyboardType.description,
-                style: TextStyle(
-                  fontSize: 9,
-                  color: isSelected
-                      ? Colors.white.withOpacity(0.8)
-                      : Colors.grey[600],
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
@@ -494,74 +317,17 @@ class _ConfigureSheetScreenState extends State<ConfigureSheetScreen> {
     });
 
     try {
-      // Create initial rows based on selected format
-      List<SheetRows> initialRows = [];
-
-      for (int i = 0; i < _selectedFormat.rowsPerGroup; i++) {
-        final row = SheetRows(
-          chords: [],
-          rowProperties: RowProperties(tempoNumber: 0),
-        );
-
-        // Add appropriate clef for each row
-        if (i < _selectedFormat.defaultClefsFor(_selectedKeyboardType).length) {
-          row.chords.add(MusicalNote(
-            pitch: "G",
-            octave: 4,
-            type: NoteType.clef,
-            isBeamed: false,
-            unicodeCharacter:
-                _selectedFormat.defaultClefsFor(_selectedKeyboardType)[i],
-            clefType: _selectedFormat.defaultClefsFor(_selectedKeyboardType)[i],
-          ));
-        }
-
-        // For guitar tab sheets, add the default fret chord
-        if (_selectedKeyboardType == KeyboardType.guitarTab) {
-          row.chords.add(MusicalNote(
-            pitch: 'G',
-            octave: 4,
-            type: NoteType.fret,
-            duration: 0.0,
-            childNotes: [],
-          ));
-        }
-
-        initialRows.add(row);
-      }
-
-      // Create SheetProperties with title and composer
-      final sheetProperties = SheetProperties(
-        title: _titleController.text.trim().isEmpty
-            ? 'Untitled'
-            : _titleController.text.trim(),
-        composer: _composerController.text.trim(),
-      );
-
-      // Initialize a new Sheet object with the configured properties
-      final initialSheet = Sheet(
-        sheetRows: initialRows,
-        sheetProperties: sheetProperties,
-        format: _selectedFormat,
-        keyboardType: _selectedKeyboardType,
-      );
-
-      // Insert the sheet into the database and get the assigned ID
       final authProvider =
           Provider.of<app.AuthProvider>(context, listen: false);
       final userId = authProvider.user?.uid;
-      final dbHelper = SheetDatabaseHelper(userId: userId);
-      await dbHelper.insertSheet(initialSheet);
 
-      // Verify the sheet has an ID before proceeding
-      if (initialSheet.id == null) {
-        throw Exception('Sheet was inserted but no ID was assigned');
-      }
-
-      // Mirror the new sheet to Firebase if the user is logged in
-      if (userId != null) {
-        await FirestoreService().addSheet(initialSheet, userId);
-      }
+      final initialSheet = await SheetCreationService.createSheet(
+        format: _selectedFormat,
+        keyboardType: _selectedKeyboardType,
+        title: _titleController.text,
+        composer: _composerController.text,
+        userId: userId,
+      );
 
       // Navigate to keyboard screen with the initialized Sheet
       if (mounted) {

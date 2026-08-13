@@ -5,14 +5,15 @@ import 'package:music_keyboard/src/widgets/home/sheet_preview_card.dart';
 import 'package:music_keyboard/src/providers/auth_provider.dart' as app;
 import 'package:music_keyboard/src/services/firestore_service.dart';
 import 'package:music_keyboard/src/services/dynamic_link_service.dart';
-import 'package:music_keyboard/src/services/sync_service.dart';
-import 'package:music_keyboard/src/widgets/shared/popup_theme.dart';
 import 'package:music_keyboard/src/widgets/shared/banner_ad_widget.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'configure_sheet_screen.dart';
 import 'keyboard_screen.dart';
 import 'login_screen.dart';
+import 'home_screen/email_verification_banner.dart';
+import 'home_screen/home_screen_controller.dart';
+import 'home_screen/home_screen_dialogs.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,137 +24,52 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> implements HomeScreenHost {
   List<Sheet> _savedSheets = [];
   bool _isLoadingSheets = true;
   bool _isSelectionMode = false;
   Set<String> _selectedSheets = {};
-  bool _isSyncing = false; // Guard to prevent concurrent syncs
-  String? _syncErrorMessage; // Track sync error messages
+  String? _syncErrorMessage;
+
+  late final HomeScreenController _controller =
+      HomeScreenController(host: this);
+
+  @override
+  String? get userId =>
+      Provider.of<app.AuthProvider>(context, listen: false).user?.uid;
+
+  @override
+  void onSheetsLoaded(List<Sheet> sheets) {
+    setState(() {
+      _savedSheets = sheets;
+    });
+  }
+
+  @override
+  void onLoadingChanged(bool isLoading) {
+    setState(() {
+      _isLoadingSheets = isLoading;
+    });
+  }
+
+  @override
+  void onSyncErrorChanged(String? message) {
+    setState(() {
+      _syncErrorMessage = message;
+    });
+  }
 
   @override
   void initState() {
     super.initState();
-    _loadSavedSheets();
+    _controller.loadSavedSheets();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Reload sheets whenever the screen becomes active
-    _loadSavedSheets();
-  }
-
-  Future<void> _loadSavedSheets() async {
-    // Prevent concurrent sync operations
-    if (_isSyncing) {
-      print('HomeScreen: Sync already in progress, skipping...');
-      return;
-    }
-
-    try {
-      _isSyncing = true;
-      setState(() {
-        _isLoadingSheets = true;
-      });
-
-      final authProvider =
-          Provider.of<app.AuthProvider>(context, listen: false);
-      final userId = authProvider.user?.uid;
-
-      // If user is logged in, sync sheets from Firebase first
-      if (userId != null) {
-        print('HomeScreen: User logged in, starting sync...');
-        final syncService = SyncService();
-        await syncService.syncSheets(userId);
-        print('HomeScreen: Sync completed, loading sheets from database...');
-      }
-
-      final dbHelper = SheetDatabaseHelper(userId: userId);
-      final sheets = await dbHelper.getAllSheets();
-      print('HomeScreen: Loaded ${sheets.length} sheets from database');
-      for (var sheet in sheets) {
-        print(
-            'HomeScreen: Sheet ${sheet.id} has ${sheet.sheetRows.length} rows');
-        if (sheet.sheetRows.isNotEmpty) {
-          print(
-              'HomeScreen: First row has ${sheet.sheetRows[0].chords.length} notes');
-        }
-      }
-
-      // Force UI refresh with new data
-      if (mounted) {
-        setState(() {
-          _savedSheets = sheets;
-          _isLoadingSheets = false;
-        });
-        print('HomeScreen: UI updated with ${sheets.length} sheets');
-      }
-    } catch (e) {
-      print('HomeScreen: Error loading sheets: $e');
-      if (mounted) {
-        setState(() {
-          _isLoadingSheets = false;
-        });
-      }
-    } finally {
-      // Always reset the sync flag
-      _isSyncing = false;
-    }
-  }
-
-  /// Handle pull-to-refresh action
-  Future<void> _handleRefresh() async {
-    // Clear any previous error messages
-    setState(() {
-      _syncErrorMessage = null;
-    });
-
-    final authProvider = Provider.of<app.AuthProvider>(context, listen: false);
-    final userId = authProvider.user?.uid;
-
-    // Only sync if user is logged in
-    if (userId == null) {
-      setState(() {
-        _syncErrorMessage = 'Unable to sync';
-      });
-      return;
-    }
-
-    // Prevent concurrent sync operations
-    if (_isSyncing) {
-      print('HomeScreen: Sync already in progress, skipping...');
-      return;
-    }
-
-    try {
-      _isSyncing = true;
-      print('HomeScreen: Manual refresh triggered, starting sync...');
-
-      final syncService = SyncService();
-      await syncService.syncSheets(userId);
-
-      final dbHelper = SheetDatabaseHelper(userId: userId);
-      final sheets = await dbHelper.getAllSheets();
-      print(
-          'HomeScreen: Manual refresh completed with ${sheets.length} sheets');
-
-      if (mounted) {
-        setState(() {
-          _savedSheets = sheets;
-          _syncErrorMessage = null; // Clear error on success
-        });
-      }
-    } catch (e) {
-      print('HomeScreen: Error during manual refresh: $e');
-      if (mounted) {
-        setState(() {
-          _syncErrorMessage = 'Unable to sync';
-        });
-      }
-    } finally {
-      _isSyncing = false;
-    }
+    _controller.loadSavedSheets();
   }
 
   @override
@@ -169,53 +85,8 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               // Email verification banner
               if (showVerificationBanner)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.fromLTRB(16, 58, 16, 8),
-                  decoration: BoxDecoration(
-                    color: Colors.orange[100],
-                    border: Border(
-                      bottom: BorderSide(color: Colors.orange[300]!, width: 1),
-                    ),
-                  ),
-                  child: SafeArea(
-                    bottom: false,
-                    child: Row(
-                      children: [
-                        Icon(Icons.warning_amber_rounded,
-                            color: Colors.orange[900], size: 20),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Please verify your email',
-                            style: TextStyle(
-                              color: Colors.orange[900],
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () =>
-                              _resendVerificationEmail(authProvider),
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.orange[900],
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 4),
-                            minimumSize: const Size(0, 32),
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          child: const Text(
-                            'Resend',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                EmailVerificationBanner(
+                  onResend: () => _resendVerificationEmail(authProvider),
                 ),
               Expanded(
                 child: Container(
@@ -310,7 +181,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ? const Center(
                                       child: CircularProgressIndicator())
                                   : RefreshIndicator(
-                                      onRefresh: _handleRefresh,
+                                      onRefresh: _controller.handleRefresh,
                                       color: const Color(0xFF242038),
                                       backgroundColor: Colors.white,
                                       child: GridView.builder(
@@ -367,10 +238,10 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-          // Sign in/sign up button (when not signed in and not in selection mode)
+          // Sign in/sign up button
           if (authProvider.user == null && !_isSelectionMode)
             Positioned(
-              bottom: 60, // Above the AD BANNER
+              bottom: 60,
               left: 16,
               right: 16,
               child: Center(
@@ -411,7 +282,7 @@ class _HomeScreenState extends State<HomeScreen> {
           // Floating selection buttons
           if (_isSelectionMode)
             Positioned(
-              bottom: 60, // Above the AD BANNER
+              bottom: 60,
               left: 16,
               right: 16,
               child: Row(
@@ -505,62 +376,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (hasUnsynced) {
       // Show warning dialog
-      final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (BuildContext context) {
-          return Dialog(
-            insetPadding: const EdgeInsets.all(PopupTheme.dialogMargin),
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.8,
-              decoration: PopupTheme.dialogDecoration,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Header
-                  PopupTheme.buildHeader(
-                    title: 'Unsynced Sheets',
-                    onClose: () => Navigator.of(context).pop(false),
-                  ),
-
-                  // Content
-                  Padding(
-                    padding: const EdgeInsets.all(PopupTheme.contentPadding),
-                    child: Text(
-                      'If you sign out some sheets that have not synced will be deleted. Please sign out when you have an internet connection.',
-                      style: PopupTheme.bodyStyle,
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-
-                  // Actions
-                  Padding(
-                    padding: const EdgeInsets.all(PopupTheme.actionsPadding),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(false),
-                          style: PopupTheme.secondaryButtonStyle,
-                          child: const Text('Cancel'),
-                        ),
-                        const SizedBox(width: 12),
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(true),
-                          style: PopupTheme.secondaryButtonStyle.copyWith(
-                            foregroundColor:
-                                MaterialStateProperty.all(Colors.red),
-                          ),
-                          child: const Text('Confirm'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      );
+      final confirmed = await showUnsyncedSheetsDialog(context);
 
       if (confirmed == true) {
         await authProvider.signOut();
@@ -615,81 +431,11 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _deleteSelectedSheets() async {
     if (_selectedSheets.isEmpty) return;
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return Dialog(
-          insetPadding: const EdgeInsets.all(PopupTheme.dialogMargin),
-          child: Container(
-            width: MediaQuery.of(context).size.width * 0.8,
-            decoration: PopupTheme.dialogDecoration,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Header
-                PopupTheme.buildHeader(
-                  title: 'Confirm Deletion',
-                  onClose: () => Navigator.of(context).pop(false),
-                ),
-
-                // Content
-                Padding(
-                  padding: const EdgeInsets.all(PopupTheme.contentPadding),
-                  child: Text(
-                    'Are you sure you want to delete ${_selectedSheets.length} sheet${_selectedSheets.length != 1 ? 's' : ''}?',
-                    style: PopupTheme.bodyStyle,
-                  ),
-                ),
-
-                // Actions
-                Padding(
-                  padding: const EdgeInsets.all(PopupTheme.actionsPadding),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(false),
-                        style: PopupTheme.secondaryButtonStyle,
-                        child: const Text('Cancel'),
-                      ),
-                      const SizedBox(width: 12),
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(true),
-                        style: PopupTheme.secondaryButtonStyle.copyWith(
-                          foregroundColor:
-                              MaterialStateProperty.all(Colors.red),
-                        ),
-                        child: const Text('Delete'),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+    final confirmed =
+        await showDeleteConfirmationDialog(context, _selectedSheets.length);
 
     if (confirmed == true) {
-      final authProvider =
-          Provider.of<app.AuthProvider>(context, listen: false);
-      final userId = authProvider.user?.uid;
-      final dbHelper = SheetDatabaseHelper(userId: userId);
-      final firestoreService = FirestoreService();
-
-      for (final sheetId in _selectedSheets) {
-        // Delete from local database
-        await dbHelper.deleteSheet(sheetId);
-
-        // If user is logged in, delete from Firebase and mark as deleted
-        if (userId != null) {
-          await firestoreService.deleteSheet(sheetId, userId);
-          await firestoreService.markSheetAsDeleted(sheetId, userId);
-        }
-      }
-
-      await _loadSavedSheets();
+      await _controller.deleteSheets(_selectedSheets);
       _exitSelectionMode();
     }
   }
@@ -728,7 +474,6 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
 
-    // Navigate to keyboard screen with the selected sheet
     await Navigator.pushNamed(
       context,
       KeyboardScreen.routeName,
@@ -736,7 +481,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     // Reload sheets when returning from keyboard screen
-    _loadSavedSheets();
+    _controller.loadSavedSheets();
   }
 
   Future<void> _resendVerificationEmail(app.AuthProvider authProvider) async {
