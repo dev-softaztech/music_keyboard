@@ -4,6 +4,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'package:music_keyboard/src/wrapper.dart';
+import 'package:music_keyboard/src/services/deep_link_handler.dart';
 import 'screens/configure_sheet_screen.dart';
 import 'screens/keyboard_screen.dart';
 import 'screens/login_screen.dart';
@@ -26,6 +27,16 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Register the deep-link navigation callback so DeepLinkHandler never
+    // needs to import screen widgets directly.
+    DeepLinkHandler.onNavigateToSheet = (BuildContext navContext, sheet) {
+      Navigator.pushNamed(
+        navContext,
+        KeyboardScreen.routeName,
+        arguments: sheet,
+      );
+    };
+
     // Glue the SettingsController to the MaterialApp.
     //
     // The ListenableBuilder Widget listens to the SettingsController for changes.

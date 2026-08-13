@@ -69,10 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
         print('HomeScreen: Sync completed, loading sheets from database...');
       }
 
-      final dbHelper = SheetDatabaseHelper(
-        userId: userId,
-        firestoreService: userId != null ? FirestoreService() : null,
-      );
+      final dbHelper = SheetDatabaseHelper(userId: userId);
       final sheets = await dbHelper.getAllSheets();
       print('HomeScreen: Loaded ${sheets.length} sheets from database');
       for (var sheet in sheets) {
@@ -136,10 +133,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final syncService = SyncService();
       await syncService.syncSheets(userId);
 
-      final dbHelper = SheetDatabaseHelper(
-        userId: userId,
-        firestoreService: FirestoreService(),
-      );
+      final dbHelper = SheetDatabaseHelper(userId: userId);
       final sheets = await dbHelper.getAllSheets();
       print(
           'HomeScreen: Manual refresh completed with ${sheets.length} sheets');
@@ -681,10 +675,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final authProvider =
           Provider.of<app.AuthProvider>(context, listen: false);
       final userId = authProvider.user?.uid;
-      final dbHelper = SheetDatabaseHelper(
-        userId: userId,
-        firestoreService: userId != null ? FirestoreService() : null,
-      );
+      final dbHelper = SheetDatabaseHelper(userId: userId);
       final firestoreService = FirestoreService();
 
       for (final sheetId in _selectedSheets) {
@@ -720,10 +711,7 @@ class _HomeScreenState extends State<HomeScreen> {
           // Compare lastUpdated timestamps
           if (firebaseSheet.lastUpdated.isAfter(sheet.lastUpdated)) {
             // Firebase version is newer, update local
-            final dbHelper = SheetDatabaseHelper(
-              userId: userId,
-              firestoreService: firestoreService,
-            );
+            final dbHelper = SheetDatabaseHelper(userId: userId);
             await dbHelper.updateSheet(firebaseSheet);
             sheetToOpen = firebaseSheet;
             print('Updated local sheet with newer Firebase version');

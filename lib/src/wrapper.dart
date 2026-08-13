@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:music_keyboard/src/screens/home_screen.dart';
-import 'package:music_keyboard/src/services/dynamic_link_service.dart';
+import 'package:music_keyboard/src/services/deep_link_handler.dart';
 
 class Wrapper extends StatefulWidget {
   const Wrapper({super.key});
@@ -10,7 +10,7 @@ class Wrapper extends StatefulWidget {
 }
 
 class _WrapperState extends State<Wrapper> {
-  final DynamicLinkService _dynamicLinkService = DynamicLinkService();
+  final DeepLinkHandler _dynamicLinkService = DeepLinkHandler();
 
   @override
   void initState() {

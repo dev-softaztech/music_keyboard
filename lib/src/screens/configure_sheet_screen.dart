@@ -550,15 +550,17 @@ class _ConfigureSheetScreenState extends State<ConfigureSheetScreen> {
       final authProvider =
           Provider.of<app.AuthProvider>(context, listen: false);
       final userId = authProvider.user?.uid;
-      final dbHelper = SheetDatabaseHelper(
-        userId: userId,
-        firestoreService: userId != null ? FirestoreService() : null,
-      );
+      final dbHelper = SheetDatabaseHelper(userId: userId);
       await dbHelper.insertSheet(initialSheet);
 
       // Verify the sheet has an ID before proceeding
       if (initialSheet.id == null) {
         throw Exception('Sheet was inserted but no ID was assigned');
+      }
+
+      // Mirror the new sheet to Firebase if the user is logged in
+      if (userId != null) {
+        await FirestoreService().addSheet(initialSheet, userId);
       }
 
       // Navigate to keyboard screen with the initialized Sheet

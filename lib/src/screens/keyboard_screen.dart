@@ -127,6 +127,8 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
   // Database helper for clipboard operations
   late SheetDatabaseHelper _dbHelper;
+  final FirestoreService _firestoreService = FirestoreService();
+  String? _syncUserId;
 
   // Favourite chord state
   int? _favouriteChordId; // non-null when the selected chord is already saved
@@ -152,6 +154,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
         print('DEBUG: First row has ${sheet.sheetRows[0].chords.length} notes');
       }
       await _dbHelper.updateSheet(sheet);
+      if (_syncUserId != null) {
+        await _firestoreService.updateSheet(sheet, _syncUserId!);
+      }
       _hasUnsavedChanges = false;
       print('DEBUG: Sheet saved successfully');
     } catch (e) {
@@ -398,8 +403,8 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     _dbHelper = SheetDatabaseHelper(
       userId: userId,
       ownerName: ownerName,
-      firestoreService: userId != null ? FirestoreService() : null,
     );
+    _syncUserId = userId;
 
     // Determine if viewing another user's sheet (read-only mode)
     // If the sheet has a userId and it doesn't match the current user's ID, it's read-only
@@ -442,6 +447,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
     // Save any unsaved changes before disposing
     if (_hasUnsavedChanges && sheet.id != null) {
       _dbHelper.updateSheet(sheet);
+      if (_syncUserId != null) {
+        _firestoreService.updateSheet(sheet, _syncUserId!);
+      }
     }
     // Cancel auto-save timer
     _autoSaveTimer?.cancel();
@@ -1523,6 +1531,9 @@ class _NoteInputScreenState extends State<NoteInputScreen> {
 
       // The insert method will automatically set the userId and ownerName
       final newSheetId = await _dbHelper.insertSheet(copiedSheet);
+      if (_syncUserId != null) {
+        await _firestoreService.addSheet(copiedSheet, _syncUserId!);
+      }
 
       ToastUtils.showToast("Sheet copied successfully!");
 

@@ -10,10 +10,7 @@ class SyncService {
       print('=== Starting sync for user: $userId ===');
 
       // Create database helper with userId context
-      final _dbHelper = SheetDatabaseHelper(
-        userId: userId,
-        firestoreService: _firestoreService,
-      );
+      final _dbHelper = SheetDatabaseHelper(userId: userId);
 
       // Get local sheets, remote sheets, and deleted sheet IDs
       final localSheets = await _dbHelper.getAllSheets();
@@ -124,10 +121,7 @@ class SyncService {
   }
 
   Future<void> uploadLocalSheetsOnLogin(String userId) async {
-    final _dbHelper = SheetDatabaseHelper(
-      userId: userId,
-      firestoreService: _firestoreService,
-    );
+    final _dbHelper = SheetDatabaseHelper(userId: userId);
     final localSheets = await _dbHelper.getAllSheets();
     for (final sheet in localSheets) {
       sheet.userId = userId;

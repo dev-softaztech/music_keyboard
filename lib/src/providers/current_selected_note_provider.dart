@@ -3,9 +3,10 @@ import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/models/sheet_rows.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/bar_line_calculator.dart';
 import 'package:music_keyboard/src/providers/undo_manager.dart';
-import 'package:music_keyboard/src/utils/music_sheet_utils/guitar_tab_helpers.dart';
 import 'package:provider/provider.dart';
-import 'package:music_keyboard/src/providers/selected_string_provider.dart';
+import 'package:music_keyboard/src/services/beam_slur_service.dart';
+import 'package:music_keyboard/src/services/bend_technique_service.dart';
+import 'package:music_keyboard/src/services/mute_harmonic_service.dart';
 
 class CurrentSelectedNoteProvider extends ChangeNotifier {
   int selectedRow = 0;
@@ -192,113 +193,27 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
 
   void beamNotes(int row, int startIndex, int endIndex,
       List<SheetRows> sheetNoteRows, BuildContext context) {
-    context.read<SheetUndoManager>().saveState(sheetNoteRows);
-
-    // Ensure selection is left-to-right
-    if (startIndex > endIndex) {
-      int tempIndex = startIndex;
-      startIndex = endIndex;
-      endIndex = tempIndex;
-    }
-
-    // Apply beaming to all notes in the range
-    for (int i = startIndex; i <= endIndex; i++) {
-      sheetNoteRows[row].chords[i].isBeamed = true;
-    }
-
+    BeamSlurService.beamNotes(row, startIndex, endIndex, sheetNoteRows, context);
     notifyListeners();
   }
 
   void slurNotes(int row, int startIndex, int endIndex,
       List<SheetRows> sheetNoteRows, BuildContext context) {
-    //saveState(sheetNoteRows); // Save for undo
-
-    // Ensure selection is left-to-right
-    if (startIndex > endIndex) {
-      int tempIndex = startIndex;
-      startIndex = endIndex;
-      endIndex = tempIndex;
-    }
-
-    MusicalNote firstNote = sheetNoteRows[row].chords[startIndex];
-    firstNote.slurEndIndex = endIndex;
-
+    BeamSlurService.slurNotes(row, startIndex, endIndex, sheetNoteRows, context);
     notifyListeners();
   }
 
   void crescendoNotes(int row, int startIndex, int endIndex,
       List<SheetRows> sheetNoteRows, BuildContext context) {
-    context.read<SheetUndoManager>().saveState(sheetNoteRows);
-
-    if (startIndex > endIndex) {
-      int temp = startIndex;
-      startIndex = endIndex;
-      endIndex = temp;
-    }
-
-    // Remove any overlapping dynamics
-    for (int i = 0; i < sheetNoteRows[row].chords.length; i++) {
-      final note = sheetNoteRows[row].chords[i];
-      if (note.isCrescendoStart && note.crescendoEndIndex != null) {
-        if ((i >= startIndex && i <= endIndex) ||
-            (note.crescendoEndIndex! >= startIndex &&
-                note.crescendoEndIndex! <= endIndex)) {
-          note.isCrescendoStart = false;
-          note.crescendoEndIndex = null;
-        }
-      }
-      if (note.isDecrescendoStart && note.decrescendoEndIndex != null) {
-        if ((i >= startIndex && i <= endIndex) ||
-            (note.decrescendoEndIndex! >= startIndex &&
-                note.decrescendoEndIndex! <= endIndex)) {
-          note.isDecrescendoStart = false;
-          note.decrescendoEndIndex = null;
-        }
-      }
-    }
-
-    MusicalNote firstNote = sheetNoteRows[row].chords[startIndex];
-    firstNote.isCrescendoStart = true;
-    firstNote.crescendoEndIndex = endIndex;
-
+    BeamSlurService.crescendoNotes(
+        row, startIndex, endIndex, sheetNoteRows, context);
     notifyListeners();
   }
 
   void decrescendoNotes(int row, int startIndex, int endIndex,
       List<SheetRows> sheetNoteRows, BuildContext context) {
-    context.read<SheetUndoManager>().saveState(sheetNoteRows);
-
-    if (startIndex > endIndex) {
-      int temp = startIndex;
-      startIndex = endIndex;
-      endIndex = temp;
-    }
-
-    // Remove any overlapping dynamics
-    for (int i = 0; i < sheetNoteRows[row].chords.length; i++) {
-      final note = sheetNoteRows[row].chords[i];
-      if (note.isCrescendoStart && note.crescendoEndIndex != null) {
-        if ((i >= startIndex && i <= endIndex) ||
-            (note.crescendoEndIndex! >= startIndex &&
-                note.crescendoEndIndex! <= endIndex)) {
-          note.isCrescendoStart = false;
-          note.crescendoEndIndex = null;
-        }
-      }
-      if (note.isDecrescendoStart && note.decrescendoEndIndex != null) {
-        if ((i >= startIndex && i <= endIndex) ||
-            (note.decrescendoEndIndex! >= startIndex &&
-                note.decrescendoEndIndex! <= endIndex)) {
-          note.isDecrescendoStart = false;
-          note.decrescendoEndIndex = null;
-        }
-      }
-    }
-
-    MusicalNote firstNote = sheetNoteRows[row].chords[startIndex];
-    firstNote.isDecrescendoStart = true;
-    firstNote.decrescendoEndIndex = endIndex;
-
+    BeamSlurService.decrescendoNotes(
+        row, startIndex, endIndex, sheetNoteRows, context);
     notifyListeners();
   }
 
@@ -309,471 +224,75 @@ class CurrentSelectedNoteProvider extends ChangeNotifier {
   /// [MusicalNote.isBeamed] flag is true and whose [MusicalNote.childNotes]
   /// contain at least one beamable type.
   List<int> getBeamedGroupIndices(int noteIndex, List<MusicalNote> notes) {
-    if (noteIndex < 0 ||
-        noteIndex >= notes.length ||
-        !notes[noteIndex].isBeamed) {
-      return [];
-    }
-
-    // Returns true if a note is part of a beamed group (regular or chord).
-    bool isBeamable(MusicalNote n) {
-      if (!n.isBeamed) return false;
-      if (n.type == NoteType.chord) {
-        // A chord with isBeamed=true but no children yet (user set beam before
-        // adding child notes) is still considered beamable so callers never
-        // receive an empty list for a note whose isBeamed flag is true.
-        final children = n.childNotes;
-        if (children == null || children.isEmpty) return true;
-        return children.any((c) =>
-            c.type == NoteType.eighth ||
-            c.type == NoteType.sixteenth ||
-            c.type == NoteType.thirtySecond ||
-            c.type == NoteType.sixtyFourth);
-      }
-      return n.type == NoteType.eighth ||
-          n.type == NoteType.sixteenth ||
-          n.type == NoteType.thirtySecond ||
-          n.type == NoteType.sixtyFourth;
-    }
-
-    if (!isBeamable(notes[noteIndex])) return [];
-
-    List<int> groupIndices = [noteIndex];
-
-    // Traverse backwards to find connected beamed notes
-    for (int i = noteIndex - 1; i >= 0; i--) {
-      if (isBeamable(notes[i])) {
-        groupIndices.insert(0, i);
-      } else {
-        break;
-      }
-    }
-
-    // Traverse forwards to find connected beamed notes
-    for (int i = noteIndex + 1; i < notes.length; i++) {
-      if (isBeamable(notes[i])) {
-        groupIndices.add(i);
-      } else {
-        break;
-      }
-    }
-
-    return groupIndices;
+    return BeamSlurService.getBeamedGroupIndices(noteIndex, notes);
   }
 
   void switchBeamRotation(List<SheetRows> sheetNoteRows, BuildContext context) {
-    context.read<SheetUndoManager>().saveState(sheetNoteRows);
-
-    final row = selectedRow;
-    final index = selectedIndex;
-
-    if (index >= 0 && index < sheetNoteRows[row].chords.length) {
-      final selectedNote = sheetNoteRows[row].chords[index];
-
-      if (selectedNote.isBeamed) {
-        List<int> groupIndices =
-            getBeamedGroupIndices(index, sheetNoteRows[row].chords);
-
-        if (groupIndices.isNotEmpty) {
-          final firstNote = sheetNoteRows[row].chords[groupIndices.first];
-
-          // Toggle — derive the new state from the current first-note value.
-          final bool newState = firstNote.isUpsideDown != true;
-
-          // Apply to every note in the group.  For chord parents, also apply
-          // to all of their child notes so they stay visually consistent.
-          for (final idx in groupIndices) {
-            final note = sheetNoteRows[row].chords[idx];
-            note.isUpsideDown = newState;
-            if (note.type == NoteType.chord && note.childNotes != null) {
-              for (var child in note.childNotes!) {
-                child.isUpsideDown = newState;
-              }
-            }
-          }
-        }
-      }
-    }
-
+    BeamSlurService.switchBeamRotation(
+        selectedRow, selectedIndex, sheetNoteRows, context);
     notifyListeners();
   }
 
 //Guitar tab
   void muteNotes(int row, int startIndex, int endIndex,
       List<SheetRows> sheetNoteRows, BuildContext context) {
-    context.read<SheetUndoManager>().saveState(sheetNoteRows);
-
-    if (startIndex > endIndex) {
-      int temp = startIndex;
-      startIndex = endIndex;
-      endIndex = temp;
-    }
-
-    // Remove any overlapping dynamics
-    for (int i = 0; i < sheetNoteRows[row].chords.length; i++) {
-      final note = sheetNoteRows[row].chords[i];
-      if (note.isPinchHarmonicStart && note.pinchHarmonicEndIndex != null) {
-        if ((i >= startIndex && i <= endIndex) ||
-            (note.pinchHarmonicEndIndex! >= startIndex &&
-                note.pinchHarmonicEndIndex! <= endIndex)) {
-          note.isPinchHarmonicStart = false;
-          note.pinchHarmonicEndIndex = null;
-        }
-      }
-      if (note.isHarmonicStart && note.harmonicEndIndex != null) {
-        if ((i >= startIndex && i <= endIndex) ||
-            (note.harmonicEndIndex! >= startIndex &&
-                note.harmonicEndIndex! <= endIndex)) {
-          note.isHarmonicStart = false;
-          note.harmonicEndIndex = null;
-        }
-      }
-      if (note.isMuteStart && note.muteEndIndex != null) {
-        if ((i >= startIndex && i <= endIndex) ||
-            (note.muteEndIndex! >= startIndex &&
-                note.muteEndIndex! <= endIndex)) {
-          note.isMuteStart = false;
-          note.muteEndIndex = null;
-        }
-      }
-    }
-
-    MusicalNote firstNote = sheetNoteRows[row].chords[startIndex];
-    firstNote.isMuteStart = true;
-    firstNote.muteEndIndex = endIndex;
-
+    MuteHarmonicService.muteNotes(
+        row, startIndex, endIndex, sheetNoteRows, context);
     notifyListeners();
   }
 
   void pinchHarmonicNotes(int row, int startIndex, int endIndex,
       List<SheetRows> sheetNoteRows, BuildContext context) {
-    context.read<SheetUndoManager>().saveState(sheetNoteRows);
-
-    if (startIndex > endIndex) {
-      int temp = startIndex;
-      startIndex = endIndex;
-      endIndex = temp;
-    }
-
-    // Remove any overlapping dynamics
-    for (int i = 0; i < sheetNoteRows[row].chords.length; i++) {
-      final note = sheetNoteRows[row].chords[i];
-      if (note.isMuteStart && note.muteEndIndex != null) {
-        if ((i >= startIndex && i <= endIndex) ||
-            (note.muteEndIndex! >= startIndex &&
-                note.muteEndIndex! <= endIndex)) {
-          note.isMuteStart = false;
-          note.muteEndIndex = null;
-        }
-      }
-      if (note.isHarmonicStart && note.harmonicEndIndex != null) {
-        if ((i >= startIndex && i <= endIndex) ||
-            (note.harmonicEndIndex! >= startIndex &&
-                note.harmonicEndIndex! <= endIndex)) {
-          note.isHarmonicStart = false;
-          note.harmonicEndIndex = null;
-        }
-      }
-      if (note.isPinchHarmonicStart && note.pinchHarmonicEndIndex != null) {
-        if ((i >= startIndex && i <= endIndex) ||
-            (note.pinchHarmonicEndIndex! >= startIndex &&
-                note.pinchHarmonicEndIndex! <= endIndex)) {
-          note.isPinchHarmonicStart = false;
-          note.pinchHarmonicEndIndex = null;
-        }
-      }
-    }
-
-    MusicalNote firstNote = sheetNoteRows[row].chords[startIndex];
-    firstNote.isPinchHarmonicStart = true;
-    firstNote.pinchHarmonicEndIndex = endIndex;
-
+    MuteHarmonicService.pinchHarmonicNotes(
+        row, startIndex, endIndex, sheetNoteRows, context);
     notifyListeners();
   }
 
   void harmonicNotes(int row, int startIndex, int endIndex,
       List<SheetRows> sheetNoteRows, BuildContext context) {
-    context.read<SheetUndoManager>().saveState(sheetNoteRows);
-
-    if (startIndex > endIndex) {
-      int temp = startIndex;
-      startIndex = endIndex;
-      endIndex = temp;
-    }
-
-    // Remove any overlapping dynamics
-    for (int i = 0; i < sheetNoteRows[row].chords.length; i++) {
-      final note = sheetNoteRows[row].chords[i];
-      if (note.isPinchHarmonicStart && note.pinchHarmonicEndIndex != null) {
-        if ((i >= startIndex && i <= endIndex) ||
-            (note.pinchHarmonicEndIndex! >= startIndex &&
-                note.pinchHarmonicEndIndex! <= endIndex)) {
-          note.isPinchHarmonicStart = false;
-          note.pinchHarmonicEndIndex = null;
-        }
-      }
-      if (note.isMuteStart && note.muteEndIndex != null) {
-        if ((i >= startIndex && i <= endIndex) ||
-            (note.muteEndIndex! >= startIndex &&
-                note.muteEndIndex! <= endIndex)) {
-          note.isMuteStart = false;
-          note.muteEndIndex = null;
-        }
-      }
-      if (note.isHarmonicStart && note.harmonicEndIndex != null) {
-        if ((i >= startIndex && i <= endIndex) ||
-            (note.harmonicEndIndex! >= startIndex &&
-                note.harmonicEndIndex! <= endIndex)) {
-          note.isHarmonicStart = false;
-          note.harmonicEndIndex = null;
-        }
-      }
-    }
-
-    MusicalNote firstNote = sheetNoteRows[row].chords[startIndex];
-    firstNote.isHarmonicStart = true;
-    firstNote.harmonicEndIndex = endIndex;
-
+    MuteHarmonicService.harmonicNotes(
+        row, startIndex, endIndex, sheetNoteRows, context);
     notifyListeners();
   }
 
   void vibratoNotes(int row, int startIndex, int endIndex,
       List<SheetRows> sheetNoteRows, BuildContext context) {
-    context.read<SheetUndoManager>().saveState(sheetNoteRows);
-
-    if (startIndex > endIndex) {
-      int temp = startIndex;
-      startIndex = endIndex;
-      endIndex = temp;
-    }
-
-    // Remove any overlapping dynamics
-    for (int i = 0; i < sheetNoteRows[row].chords.length; i++) {
-      final note = sheetNoteRows[row].chords[i];
-      if (note.isVibratoStart && note.vibratoEndIndex != null) {
-        if ((i >= startIndex && i <= endIndex) ||
-            (note.vibratoEndIndex! >= startIndex &&
-                note.vibratoEndIndex! <= endIndex)) {
-          note.isVibratoStart = false;
-          note.vibratoEndIndex = null;
-        }
-      }
-    }
-
-    MusicalNote firstNote = sheetNoteRows[row].chords[startIndex];
-    firstNote.isVibratoStart = true;
-    firstNote.vibratoEndIndex = endIndex;
-
+    MuteHarmonicService.vibratoNotes(
+        row, startIndex, endIndex, sheetNoteRows, context);
     notifyListeners();
   }
 
   void bendNotes(int row, int startIndex, int endIndex,
       List<SheetRows> sheetNoteRows, BuildContext context) {
-    context.read<SheetUndoManager>().saveState(sheetNoteRows);
-
-    if (startIndex > endIndex) {
-      int temp = startIndex;
-      startIndex = endIndex;
-      endIndex = temp;
-    }
-
-    removeAllBendsInRange(sheetNoteRows, row, startIndex, endIndex);
-
-    MusicalNote firstNote = sheetNoteRows[row].chords[startIndex];
-
-    firstNote.childNotes ??= [];
-
-    // Get the selected string index from the provider
-    final selectedStringProvider =
-        Provider.of<SelectedStringProvider>(context, listen: false);
-    final selectedStringIndex = selectedStringProvider.selectedStringIndex;
-
-    // Find or create the childNote for the currently selected string
-    MusicalNote? childNote;
-    for (var child in firstNote.childNotes!) {
-      if (child.octave == selectedStringIndex) {
-        childNote = child;
-        break;
-      }
-    }
-
-    // If no childNote exists for this string, we can't add a bend without a fret
-    childNote ??= GuitarTabHelpers.updateFretForString(
-        sheetNoteRows, selectedRow, startIndex, selectedStringIndex, 0,
-        goToNextString: false);
-
-    childNote.isBendStart = true;
-    childNote.bendEndIndex = endIndex;
-
+    BendTechniqueService.bendNotes(
+        selectedRow, row, startIndex, endIndex, sheetNoteRows, context);
     notifyListeners();
   }
 
   void preBendNotes(int row, int startIndex, int endIndex,
       List<SheetRows> sheetNoteRows, BuildContext context) {
-    context.read<SheetUndoManager>().saveState(sheetNoteRows);
-
-    if (startIndex > endIndex) {
-      int temp = startIndex;
-      startIndex = endIndex;
-      endIndex = temp;
-    }
-
-    removeAllBendsInRange(sheetNoteRows, row, startIndex, endIndex);
-
-    MusicalNote firstNote = sheetNoteRows[row].chords[startIndex];
-
-    firstNote.childNotes ??= [];
-
-    // Get the selected string index from the provider
-    final selectedStringProvider =
-        Provider.of<SelectedStringProvider>(context, listen: false);
-    final selectedStringIndex = selectedStringProvider.selectedStringIndex;
-
-    // Find or create the childNote for the currently selected string
-    MusicalNote? childNote;
-    for (var child in firstNote.childNotes!) {
-      if (child.octave == selectedStringIndex) {
-        childNote = child;
-        break;
-      }
-    }
-
-    // If no childNote exists for this string, we can't add a bend without a fret
-    childNote ??= GuitarTabHelpers.updateFretForString(
-        sheetNoteRows, selectedRow, startIndex, selectedStringIndex, 0,
-        goToNextString: false);
-
-    childNote.isPreBendStart = true;
-    childNote.preBendEndIndex = endIndex;
-
+    BendTechniqueService.preBendNotes(
+        selectedRow, row, startIndex, endIndex, sheetNoteRows, context);
     notifyListeners();
   }
 
   void bendReleaseNotes(int row, int startIndex, int endIndex,
       List<SheetRows> sheetNoteRows, BuildContext context) {
-    context.read<SheetUndoManager>().saveState(sheetNoteRows);
-
-    if (startIndex > endIndex) {
-      int temp = startIndex;
-      startIndex = endIndex;
-      endIndex = temp;
-    }
-
-    removeAllBendsInRange(sheetNoteRows, row, startIndex, endIndex);
-
-    MusicalNote firstNote = sheetNoteRows[row].chords[startIndex];
-
-    firstNote.childNotes ??= [];
-
-    // Get the selected string index from the provider
-    final selectedStringProvider =
-        Provider.of<SelectedStringProvider>(context, listen: false);
-    final selectedStringIndex = selectedStringProvider.selectedStringIndex;
-
-    // Find or create the childNote for the currently selected string
-    MusicalNote? childNote;
-    for (var child in firstNote.childNotes!) {
-      if (child.octave == selectedStringIndex) {
-        childNote = child;
-        break;
-      }
-    }
-
-    // If no childNote exists for this string, we can't add a bend without a fret
-    childNote ??= GuitarTabHelpers.updateFretForString(
-        sheetNoteRows, selectedRow, startIndex, selectedStringIndex, 0,
-        goToNextString: false);
-
-    childNote.isBendReleaseStart = true;
-    childNote.bendReleaseEndIndex = endIndex;
-
+    BendTechniqueService.bendReleaseNotes(
+        selectedRow, row, startIndex, endIndex, sheetNoteRows, context);
     notifyListeners();
   }
 
   void preBendReleaseNotes(int row, int startIndex, int endIndex,
       List<SheetRows> sheetNoteRows, BuildContext context) {
-    context.read<SheetUndoManager>().saveState(sheetNoteRows);
-
-    if (startIndex > endIndex) {
-      int temp = startIndex;
-      startIndex = endIndex;
-      endIndex = temp;
-    }
-
-    removeAllBendsInRange(sheetNoteRows, row, startIndex, endIndex);
-
-    MusicalNote firstNote = sheetNoteRows[row].chords[startIndex];
-
-    firstNote.childNotes ??= [];
-
-    // Get the selected string index from the provider
-    final selectedStringProvider =
-        Provider.of<SelectedStringProvider>(context, listen: false);
-    final selectedStringIndex = selectedStringProvider.selectedStringIndex;
-
-    // Find or create the childNote for the currently selected string
-    MusicalNote? childNote;
-    for (var child in firstNote.childNotes!) {
-      if (child.octave == selectedStringIndex) {
-        childNote = child;
-        break;
-      }
-    }
-
-    // If no childNote exists for this string, we can't add a bend without a fret
-    childNote ??= GuitarTabHelpers.updateFretForString(
-        sheetNoteRows, selectedRow, startIndex, selectedStringIndex, 0,
-        goToNextString: false);
-
-    childNote.isPreBendReleaseStart = true;
-    childNote.preBendReleaseEndIndex = endIndex;
-
+    BendTechniqueService.preBendReleaseNotes(
+        selectedRow, row, startIndex, endIndex, sheetNoteRows, context);
     notifyListeners();
   }
 
   void removeAllBendsInRange(
       List<SheetRows> sheetNoteRows, int row, int startIndex, int endIndex) {
-    for (int i = 0; i < sheetNoteRows[row].chords.length; i++) {
-      final chord = sheetNoteRows[row].chords[i];
-      final childNotes = chord.childNotes;
-      if (childNotes != null) {
-        for (int i = 0; i < childNotes.length; i++) {
-          var note = childNotes[i];
-          if (note.isBendStart && note.bendEndIndex != null) {
-            if ((i >= startIndex && i <= endIndex) ||
-                (note.bendEndIndex! >= startIndex &&
-                    note.bendEndIndex! <= endIndex)) {
-              note.isBendStart = false;
-              note.bendEndIndex = null;
-            }
-          }
-          if (note.isPreBendStart && note.preBendEndIndex != null) {
-            if ((i >= startIndex && i <= endIndex) ||
-                (note.preBendEndIndex! >= startIndex &&
-                    note.preBendEndIndex! <= endIndex)) {
-              note.isPreBendStart = false;
-              note.preBendEndIndex = null;
-            }
-          }
-          if (note.isBendReleaseStart && note.bendReleaseEndIndex != null) {
-            if ((i >= startIndex && i <= endIndex) ||
-                (note.bendReleaseEndIndex! >= startIndex &&
-                    note.bendReleaseEndIndex! <= endIndex)) {
-              note.isBendReleaseStart = false;
-              note.bendReleaseEndIndex = null;
-            }
-          }
-          if (note.isPreBendReleaseStart &&
-              note.preBendReleaseEndIndex != null) {
-            if ((i >= startIndex && i <= endIndex) ||
-                (note.preBendReleaseEndIndex! >= startIndex &&
-                    note.preBendReleaseEndIndex! <= endIndex)) {
-              note.isPreBendReleaseStart = false;
-              note.preBendReleaseEndIndex = null;
-            }
-          }
-        }
-      }
-    }
+    BendTechniqueService.removeAllBendsInRange(
+        sheetNoteRows, row, startIndex, endIndex);
   }
 }

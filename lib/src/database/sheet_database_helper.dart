@@ -5,20 +5,20 @@ import 'package:music_keyboard/models/sheet.dart';
 import 'package:music_keyboard/models/clipboard_item.dart';
 import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/models/sheet_rows.dart';
-import 'package:music_keyboard/src/services/firestore_service.dart';
 import 'package:uuid/uuid.dart';
 
+/// Local-storage-only persistence for sheets, clipboard items, and favourite
+/// chords. Never talks to Firestore directly — remote sync is [SyncService]'s
+/// job; callers that need a local write mirrored remotely call
+/// `FirestoreService` themselves after the local write succeeds.
 class SheetDatabaseHelper {
   static Database? _database;
-  final FirestoreService? _firestoreService;
   final String? _userId;
   final String? _ownerName;
 
-  SheetDatabaseHelper(
-      {String? userId, String? ownerName, FirestoreService? firestoreService})
+  SheetDatabaseHelper({String? userId, String? ownerName})
       : _userId = userId,
-        _ownerName = ownerName,
-        _firestoreService = firestoreService;
+        _ownerName = ownerName;
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -168,10 +168,6 @@ class SheetDatabaseHelper {
 
     await db.insert('sheets', row);
 
-    if (_userId != null && _firestoreService != null) {
-      await _firestoreService!.addSheet(sheet, _userId!);
-    }
-
     return sheet.id!;
   }
 
@@ -253,10 +249,6 @@ class SheetDatabaseHelper {
       whereArgs: [sheet.id],
     );
 
-    if (_userId != null && _firestoreService != null) {
-      await _firestoreService!.updateSheet(sheet, _userId!);
-    }
-
     return result;
   }
 
@@ -305,10 +297,6 @@ class SheetDatabaseHelper {
       where: 'id = ?',
       whereArgs: [id],
     );
-
-    if (_userId != null && _firestoreService != null) {
-      await _firestoreService!.deleteSheet(id, _userId!);
-    }
 
     return result;
   }
