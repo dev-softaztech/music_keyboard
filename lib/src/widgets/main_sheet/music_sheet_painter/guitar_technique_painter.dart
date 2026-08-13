@@ -1,13 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/music_note.dart';
 
-/// Draws guitar-technique markings on the main music sheet: bends, mutes,
-/// harmonics, vibrato, slides, taps, and pick strokes.
-///
-/// This is a plain (non-CustomPainter) helper class used by
-/// [MusicSheetPainter] via composition. All methods take the
-/// [Canvas]/[Paint]/geometry they need as explicit arguments and hold no
-/// mutable state of their own.
 class GuitarTechniquePainter {
   void drawArrowHead(Canvas canvas, Paint paint, double peakX, double peakY,
       String labelText, Color noteColour, bool isUpArrow) {
@@ -54,16 +47,8 @@ class GuitarTechniquePainter {
     }
   }
 
-  /// Helper function to draw upward curved line from start to peak
-  void drawBendCurveUp(
-      Canvas canvas,
-      Paint paint,
-      double startX,
-      double startY,
-      double endX,
-      double endY,
-      double currentRowSpacing,
-      bool isRelease) {
+  void drawBendCurveUp(Canvas canvas, Paint paint, double startX, double startY,
+      double endX, double endY, double currentRowSpacing, bool isRelease) {
     final Path path = Path();
     path.moveTo(startX + 8, startY - 2);
 
@@ -83,7 +68,6 @@ class GuitarTechniquePainter {
     canvas.drawPath(path, paint);
   }
 
-  /// Helper function to draw downward curved line from peak to end
   void drawBendCurveDown(Canvas canvas, Paint paint, double startX,
       double startY, double endX, double? endY, double currentRowSpacing) {
     final Path path = Path();
@@ -99,7 +83,6 @@ class GuitarTechniquePainter {
     canvas.drawPath(path, paint);
   }
 
-  /// Draw bend arrow (single upward arrow with "full" label)
   void drawBend(
       Canvas canvas,
       Paint paint,
@@ -118,7 +101,6 @@ class GuitarTechniquePainter {
     drawArrowHead(canvas, paint, endX, peakY, 'full', noteColour, true);
   }
 
-  /// Draw pre-bend arrow (single upward arrow with "1/2" label)
   void drawPreBend(
       Canvas canvas,
       Paint paint,
@@ -138,7 +120,6 @@ class GuitarTechniquePainter {
     drawArrowHead(canvas, paint, endX, peakY, '1/2', noteColour, true);
   }
 
-  /// Draw bend-release arrow (up then down with "full" label)
   void drawBendRelease(
       Canvas canvas,
       Paint paint,
@@ -150,7 +131,6 @@ class GuitarTechniquePainter {
       Color noteColour,
       double currentRowSpacing,
       double? curveDownY) {
-    // Calculate peak position above the staff
     final double peakY = staffTop - 20;
 
     double peakX = startX + (currentRowSpacing * 0.4);
@@ -165,7 +145,6 @@ class GuitarTechniquePainter {
     drawArrowHead(canvas, paint, endX, curveDownY!, 'full', noteColour, false);
   }
 
-  /// Draw pre-bend-release arrow (up then down with "1/2" label)
   void drawPreBendRelease(
       Canvas canvas,
       Paint paint,
@@ -177,29 +156,24 @@ class GuitarTechniquePainter {
       Color noteColour,
       double currentRowSpacing,
       double? curveDownY) {
-    // Calculate peak position above the staff
     final double peakY = staffTop - 20;
     double peakX = startX + (currentRowSpacing * 0.4);
 
-    // Draw curved line from start to peak - curve bulges downward under the arrow
     drawBendCurveUp(
         canvas, paint, startX, stringY, peakX, peakY, currentRowSpacing, true);
 
-    // Draw curved line from peak back down to end
     drawBendCurveDown(
         canvas, paint, peakX, peakY, endX, curveDownY, currentRowSpacing);
 
-    // Draw "1/2" label at peak
     drawArrowHead(canvas, paint, peakX, peakY, '1/2', noteColour, true);
     drawArrowHead(canvas, paint, endX, curveDownY!, '1/2', noteColour, false);
   }
 
-  /// Draw hammer-left-hand: a quadratic bezier curve along the same string Y
   void drawHammerLeftHand(Canvas canvas, Paint paint, double startX,
       double endX, double stringY, Color noteColour) {
     final Path path = Path();
     final double controlX = (startX + endX) / 2;
-    // Arc slightly above the string line
+
     stringY = stringY - 5;
     final double controlY = stringY - 20;
 
@@ -212,8 +186,6 @@ class GuitarTechniquePainter {
     canvas.drawPath(path, paint);
   }
 
-  /// Draw slide-up: diagonal line going from lower-left to upper-right on the string,
-  /// sitting between the current note and the next note position.
   void drawSlideUp(Canvas canvas, Paint paint, double x, double stringY,
       Color noteColour, double rowSpacing) {
     const double startOffset = 10.0;
@@ -232,8 +204,6 @@ class GuitarTechniquePainter {
     canvas.drawLine(Offset(startX, startY), Offset(endX, endY), paint);
   }
 
-  /// Draw slide-down: diagonal line going from upper-left to lower-right on the string,
-  /// sitting between the current note and the next note position.
   void drawSlideDown(Canvas canvas, Paint paint, double x, double stringY,
       Color noteColour, double rowSpacing) {
     const double startOffset = 10.0;
@@ -282,7 +252,6 @@ class GuitarTechniquePainter {
     );
   }
 
-  /// Draw mute technique (P.M. label with dotted line)
   void drawMute(
       Canvas canvas,
       Paint paint,
@@ -293,10 +262,8 @@ class GuitarTechniquePainter {
       Color noteColour,
       bool hasBend,
       bool isSingleChordSpan) {
-    // Position label above staff, higher if there's also a bend
     final double labelY = hasBend ? staffTop - 60 : staffTop - 30;
 
-    // Draw the "P.M." label
     final textPainter = TextPainter(
       text: TextSpan(
         text: 'P.M.',
@@ -317,7 +284,6 @@ class GuitarTechniquePainter {
     }
   }
 
-  /// Draw pinch harmonic technique (P.H. label with dotted line)
   void drawPinchHarmonic(
       Canvas canvas,
       Paint paint,
@@ -328,10 +294,8 @@ class GuitarTechniquePainter {
       Color noteColour,
       bool hasBend,
       bool isSingleChordSpan) {
-    // Position label above staff, higher if there's also a bend
     final double labelY = hasBend ? staffTop - 60 : staffTop - 30;
 
-    // Draw the "P.H." label
     final textPainter = TextPainter(
       text: TextSpan(
         text: 'P.H.',
@@ -352,7 +316,6 @@ class GuitarTechniquePainter {
     }
   }
 
-  /// Draw harmonic technique (Ham. label with dotted line)
   void drawHarmonic(
       Canvas canvas,
       Paint paint,
@@ -363,10 +326,8 @@ class GuitarTechniquePainter {
       Color noteColour,
       bool hasBend,
       bool isSingleChordSpan) {
-    // Position label above staff, higher if there's also a bend
     final double labelY = hasBend ? staffTop - 60 : staffTop - 30;
 
-    // Draw the "Ham." label
     final textPainter = TextPainter(
       text: TextSpan(
         text: 'Ham.',
@@ -387,7 +348,6 @@ class GuitarTechniquePainter {
     }
   }
 
-  /// Draw vibrato technique (vibrato unicode character with multiple instances)
   void drawVibrato(
       Canvas canvas,
       Paint paint,
@@ -440,10 +400,8 @@ class GuitarTechniquePainter {
       int noteIndex) {
     double baseOffset = hasBendOrHarmonicOnChord(chord);
 
-    // Check if this technique needs additional offset due to overlapping with other techniques
     bool needsAdditionalOffset = false;
     if (chord.tapRightHandCharacter.isNotEmpty) {
-      // Only tap-right-hand gets the additional offset when overlapping
       bool hasPickUpward = chord.hasPickUpward;
       bool hasPickDownward = chord.hasPickDownward;
 
@@ -455,10 +413,9 @@ class GuitarTechniquePainter {
 
     double symbolY = staffTop - 25 - baseOffset;
     if (needsAdditionalOffset) {
-      symbolY -= 15; // Additional offset for tap-right-hand when overlapping
+      symbolY -= 15;
     }
 
-    // Adjust position based on note height to avoid overlap
     if (noteIndex < notes.length) {
       double noteY = notes[noteIndex].noteY;
       if (noteY < symbolY + 20) {
@@ -481,7 +438,6 @@ class GuitarTechniquePainter {
     );
     textPainter.layout();
 
-    // Center the symbol horizontally over the note
     double xPos = x - (textPainter.width / 2);
     double yPos = symbolY - 20;
 
@@ -501,7 +457,6 @@ class GuitarTechniquePainter {
 
     double symbolY = staffTop - 25 - baseOffset;
 
-    // Adjust position based on note height to avoid overlap
     if (noteIndex < notes.length) {
       double noteY = notes[noteIndex].noteY;
       if (noteY < symbolY + 20) {
@@ -524,7 +479,6 @@ class GuitarTechniquePainter {
     );
     textPainter.layout();
 
-    // Center the symbol horizontally over the note
     double xPos = x - (textPainter.width / 2);
     double yPos = symbolY - 35;
 
@@ -544,7 +498,6 @@ class GuitarTechniquePainter {
 
     double symbolY = staffTop - 25 - baseOffset;
 
-    // Adjust position based on note height to avoid overlap
     if (noteIndex < notes.length) {
       double noteY = notes[noteIndex].noteY;
       if (noteY < symbolY + 20) {
@@ -567,16 +520,12 @@ class GuitarTechniquePainter {
     );
     textPainter.layout();
 
-    // Center the symbol horizontally over the note
     double xPos = x - (textPainter.width / 2);
     double yPos = symbolY - 35;
 
     textPainter.paint(canvas, Offset(xPos, yPos));
   }
 
-  /// Checks whether any chord in [chords] has a bend (on any childNote) whose
-  /// normalized index range [j, normalizedBendEnd] overlaps with [startIndex, endIndex].
-  /// Two ranges [a, b] and [c, d] overlap when a <= d && c <= b.
   bool hasBendOverlappingRange(
       List<MusicalNote> chords, int startIndex, int endIndex) {
     for (int j = 0; j < chords.length; j++) {
@@ -600,15 +549,12 @@ class GuitarTechniquePainter {
         }
 
         if (rawBendEnd != null) {
-          // Normalize the bend end index the same way the painter does
           final int normalizedBendEnd = rawBendEnd == (j - 1)
               ? j
               : rawBendEnd < chords.length - 1
                   ? rawBendEnd
                   : chords.length - 1;
 
-          // Check if bend range [j, normalizedBendEnd] overlaps technique range
-          // [startIndex, endIndex]
           if (j <= endIndex && normalizedBendEnd >= startIndex) {
             return true;
           }
@@ -629,11 +575,6 @@ class GuitarTechniquePainter {
         chord.isHarmonicStart;
 
     bool hasVibrato = chord.isVibratoStart;
-
-    // Check for the three techniques that can overlap
-    bool hasTapRightHand = chord.tapRightHandCharacter.isNotEmpty;
-    bool hasPickUpward = chord.hasPickUpward;
-    bool hasPickDownward = chord.hasPickDownward;
 
     if (chord.childNotes != null) {
       for (var childNote in chord.childNotes!) {

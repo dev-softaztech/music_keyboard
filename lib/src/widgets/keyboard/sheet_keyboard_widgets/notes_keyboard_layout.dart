@@ -6,6 +6,7 @@ import 'package:music_keyboard/models/sheet_format.dart';
 import 'package:music_keyboard/src/providers/current_selected_note_provider.dart';
 import 'package:music_keyboard/src/providers/selected_accidental_provider.dart';
 import 'package:music_keyboard/src/widgets/keyboard/sheet_keyboard_widgets/keyboard_by_symbols.dart';
+import 'package:music_keyboard/src/widgets/keyboard/sheet_keyboard_widgets/favourite_chord_key.dart';
 import 'package:music_keyboard/src/providers/selected_unicode_provider.dart';
 import 'package:music_keyboard/src/widgets/keyboard/sheet_keyboard_widgets/time_signature_popup.dart';
 import 'package:music_keyboard/src/widgets/keyboard/sheet_keyboard_widgets/key_signature_popup.dart';
@@ -62,11 +63,11 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
   String _selectedRestUnicode = '\ue4e5'; // Default rest unicode, whole note
   String _selectedClefUnicode = '\uf472'; // Default clef unicode, treble clef
   String _selectedClefType = 'Treble'; // Default clef type
-  // Track which shift button is currently showing its popup
+
   String? _activeShiftButton;
-  // Overlay entry for the popup
+
   OverlayEntry? _overlayEntry;
-  // Global keys to get the positions of the shift buttons
+
   final Map<String, GlobalKey> _shiftButtonKeys = {
     'sharp': GlobalKey(),
     'flat': GlobalKey(),
@@ -79,13 +80,9 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
   int _naturalState = 0; // 0: off, 1: natural
   int _dottedRestState = 0;
 
-  // Octave pair state - false = Middle+Top pair, true = Bottom+Middle pair
   bool showLowerPair = false;
-
-  // Chord mode state
   bool _isChordsActive = false;
 
-  // Favourites panel state
   bool _isFavouritesActive = false;
   bool _favouritesLoading = false;
   List<({int id, MusicalNote chord})> _favouriteChords = [];
@@ -97,11 +94,6 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
     });
   }
 
-  /// Routes key presses through chord-mode logic when active.
-  /// In chord mode, tapping a note adds it as a child of the current
-  /// selected note (which must be a NoteType.chord). If the current
-  /// selected note is not yet a chord, a new empty chord is inserted
-  /// first, then the tapped note is added to it.
   void _handleKeyPress(MusicalNote note) {
     if (!_isChordsActive) {
       widget.onKeyPress(note);
@@ -113,7 +105,6 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
     final selectedIndex = selectedNoteProvider.selectedIndex;
     final selectedRow = selectedNoteProvider.selectedRow;
 
-    // Check if the current selected note is already a chord container
     bool currentNoteIsChord = false;
     if (widget.sheetNoteRows.isNotEmpty &&
         selectedRow >= 0 &&
@@ -126,8 +117,6 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
     }
 
     if (currentNoteIsChord) {
-      // Check whether this pitch+octave is already a child note.
-      // If so, remove it (toggle off); otherwise add it.
       final currentChord =
           widget.sheetNoteRows[selectedRow].chords[selectedIndex];
       final alreadyAdded = currentChord.childNotes?.any((child) =>
@@ -140,13 +129,10 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
         widget.onAddToChord?.call(note);
       }
     } else {
-      // Convert the currently selected note into a chord, preserving its
-      // properties as the first child, and add the tapped note as a child.
       widget.onConvertToChord?.call(note);
     }
   }
 
-  /// Opens or closes the favourites panel, loading chords from storage on open.
   Future<void> _toggleFavourites() async {
     if (_isFavouritesActive) {
       setState(() => _isFavouritesActive = false);
@@ -165,7 +151,6 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
     }
   }
 
-  /// The heart button placed at the right end of the note-type selector row.
   Widget _buildFavouritesToggleButton() {
     return SizedBox(
       width: 44,
@@ -271,8 +256,6 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
 
               widget.onFavouriteChordTapped?.call(chordNote);
 
-              // Update DB timestamp only — list order stays fixed until the
-              // favourites panel is next opened.
               widget.onFavouriteChordUsed?.call(fav.id);
             },
           );
@@ -281,7 +264,6 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
     );
   }
 
-  /// Build the chords toggle button shown above the note selector.
   Widget _buildChordsToggleButton() {
     return SizedBox(
       width: 44,
@@ -322,7 +304,6 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
     }
   }
 
-  /// Reloads the favourites list in place without toggling panel visibility.
   Future<void> _reloadFavourites() async {
     setState(() => _favouritesLoading = true);
     final favs = widget.loadFavourites != null
@@ -338,7 +319,6 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
 
   @override
   void dispose() {
-    // Make sure to remove any active overlay when disposing
     if (_overlayEntry != null) {
       _overlayEntry!.remove();
       _overlayEntry = null;
@@ -349,7 +329,6 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
   void _showPopup(String buttonType, BuildContext context) {
     _removeOverlay();
 
-    // Trigger haptic feedback for clef and rest buttons
     if (buttonType == 'clef' || buttonType == 'rest') {
       HapticFeedbackUtils.lightVibration();
     }
@@ -373,11 +352,9 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
       bottom = 130;
     }
 
-    // Create the overlay entry
     _overlayEntry = OverlayEntry(
       builder: (context) => Stack(
         children: [
-          // Invisible full-screen button to detect taps outside
           Positioned.fill(
             child: GestureDetector(
               onTap: _removeOverlay,
@@ -387,7 +364,6 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
               ),
             ),
           ),
-          // The actual popup - centered on screen
           Positioned(
             left: 50,
             bottom: bottom,
@@ -407,11 +383,9 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
       ),
     );
 
-    // Add the overlay to the overlay
     Overlay.of(context).insert(_overlayEntry!);
   }
 
-  // Remove the overlay
   void _removeOverlay() {
     _overlayEntry?.remove();
     _overlayEntry = null;
@@ -420,7 +394,6 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
     });
   }
 
-  // Get unicode options based on button type
   List<String> _getUnicodeOptions(String buttonType) {
     if (buttonType == 'rest') {
       return [
@@ -443,7 +416,6 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
     return [];
   }
 
-  // Get clef data with names
   List<Map<String, String>> _getClefOptions() {
     return [
       {'unicode': '\uf472', 'name': 'Treble'},
@@ -453,7 +425,6 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
     ];
   }
 
-  // Build the content of the popup based on the button type
   Widget _buildPopupContent(String buttonType, BuildContext context) {
     if (buttonType == 'clef') {
       List<Map<String, String>> clefOptions = _getClefOptions();
@@ -517,7 +488,6 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
         },
       );
     } else {
-      // Rest popup (existing functionality)
       List<String> unicodeOptions = _getUnicodeOptions(buttonType);
 
       return GridView.builder(
@@ -887,19 +857,16 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
     ];
 
     return Container(
-      height: 270, // Increased height to accommodate the arrows
+      height: 270,
       padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
       child: Column(
         children: [
-          // Note selector row with optional chord toggle and nav buttons
           if (unicodeCharacters.isNotEmpty)
             Row(
               children: [
                 const SizedBox(width: 12),
-                // Chords toggle button (always visible)
                 _buildChordsToggleButton(),
                 const SizedBox(width: 4),
-                // Unicode note-type selector
                 Expanded(
                   child: Consumer<SelectedUnicodeProvider>(
                     builder: (context, provider, _) => LayoutBuilder(
@@ -963,9 +930,7 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                     ),
                   ),
                 ),
-
                 const SizedBox(width: 4),
-                // Favourites toggle button (always visible, opposite end to Chord)
                 _buildFavouritesToggleButton(),
                 const SizedBox(width: 12),
               ],
@@ -1126,9 +1091,6 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                       showLowerPair: showLowerPair,
                       sheetNoteRows: widget.sheetNoteRows,
                       sheetFormat: widget.sheetFormat,
-                      // When chord mode is active, pass child notes so already-added
-                      // keys get a blue border. If the note isn't a chord yet, wrap
-                      // it in a list so its own key is pre-highlighted.
                       chordChildNotes: _isChordsActive
                           ? (selectedNote?.type == NoteType.chord
                               ? selectedNote?.childNotes
@@ -1175,7 +1137,6 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                               style: const TextStyle(
                                 color: Colors.black,
                                 fontSize: 24,
-                                //fontWeight: FontWeight.bold,
                                 fontFamily: 'Bravura',
                               ),
                             ),

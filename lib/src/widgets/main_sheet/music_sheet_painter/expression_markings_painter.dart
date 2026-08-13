@@ -236,86 +236,64 @@ class ExpressionMarkingsPainter {
         highestPoint = math.min(highestPoint, highestStemY);
       }
 
-      // For slurs above, we need to ensure the control point is well above the highest obstacle
-      // The control point should be at least 40px above the highest point
       double requiredControlY = highestPoint - 40.0;
       double slurMidY = (start.dy + end.dy) / 2;
 
-      // Calculate how much curve height we need to reach that control point
       minRequiredCurveHeight =
           math.max(minRequiredCurveHeight, slurMidY - requiredControlY);
 
-      // Additional clearance for upward stems
       if (hasUpsideDownStems) {
         minRequiredCurveHeight += 20.0;
       }
     } else {
-      // Slur goes below notes - find the lowest point (highest Y value) and add clearance
       double lowestPoint = lowestNoteY;
       if (lowestStemY != double.negativeInfinity) {
         lowestPoint = math.max(lowestPoint, lowestStemY);
       }
 
-      // For slurs below, we need to ensure the control point is well below the lowest obstacle
-      // The control point should be at least 40px below the lowest point
       double requiredControlY = lowestPoint + 40.0;
       double slurMidY = (start.dy + end.dy) / 2;
 
-      // Calculate how much curve height we need to reach that control point
       minRequiredCurveHeight =
           math.max(minRequiredCurveHeight, requiredControlY - slurMidY);
 
-      // Additional clearance for downward stems
       if (hasDownwardStems) {
         minRequiredCurveHeight += 20.0;
       }
     }
 
-    // Set curve height to at least the minimum required
     curveHeight = math.max(curveHeight, minRequiredCurveHeight);
 
-    // Find the most problematic obstacle for control point positioning
     double maxObstacleImpact = 0;
-    double obstaclePositionRatio = 0.5; // Default to center
+    double obstaclePositionRatio = 0.5;
 
     for (var obstacle in obstacles) {
-      // Calculate where this obstacle is along the x-axis (0.0 = start, 1.0 = end)
       double positionRatio = (obstacle.x - startX) / horizontalDistance;
       positionRatio = positionRatio.clamp(0.0, 1.0);
 
-      // Calculate the impact of this obstacle
       double impact = 0;
 
       if (obstacle.isStem) {
-        // Stems have higher impact when they're in the slur's path
         if (isSlurAbove && obstacle.isUpsideDown == true) {
-          // For upward stems when slur is above
           impact = obstacle.height * 1.5;
         } else if (!isSlurAbove && obstacle.isUpsideDown == false) {
-          // For downward stems when slur is below
           impact = obstacle.height * 1.5;
         }
       } else {
-        // Note heads have impact regardless of slur position
         impact = obstacle.height;
       }
 
-      // If this obstacle has more impact than previous ones
       if (impact > maxObstacleImpact) {
         maxObstacleImpact = impact;
-        // Shift control point slightly away from the obstacle
         obstaclePositionRatio =
             positionRatio > 0.5 ? positionRatio - 0.2 : positionRatio + 0.2;
-        obstaclePositionRatio = obstaclePositionRatio.clamp(
-            0.3, 0.7); // Keep within reasonable bounds
+        obstaclePositionRatio = obstaclePositionRatio.clamp(0.3, 0.7);
       }
     }
 
-    // Calculate control point for the Bezier curve
     double controlX = startX + (horizontalDistance * obstaclePositionRatio);
     double controlY = (start.dy + end.dy) / 2;
 
-    // Apply curve height with height multiplier for longer distances
     double heightMultiplier = 1.0 + (horizontalDistance / 500);
     heightMultiplier = heightMultiplier.clamp(1.0, 1.5);
 
@@ -323,49 +301,38 @@ class ExpressionMarkingsPainter {
         ? -curveHeight * heightMultiplier
         : curveHeight * heightMultiplier;
 
-    // Configurable parameters for slur appearance
-    const double minBufferSpace = 25.0; // Minimum space above/below notes
-    const double maxSlurHeight =
-        180.0; // Maximum slur height to prevent overlap with other rows
+    const double minBufferSpace = 25.0;
+    const double maxSlurHeight = 180.0;
 
-    // Force the slur to have proper clearance above or below ALL obstacles
     if (isSlurAbove) {
-      // Force the slur to be well above ALL obstacles
       double highestObstacle = highestNoteY;
       if (highestStemY != double.infinity) {
         highestObstacle = math.min(highestObstacle, highestStemY);
       }
 
-      // Force control point to be at least minBufferSpace above the highest obstacle
       double forcedControlY = highestObstacle - minBufferSpace;
       controlY = math.min(controlY, forcedControlY);
 
-      // Apply maximum height limit to prevent overlap with other rows
       double maxAllowedY = staffCentre - maxSlurHeight;
       controlY = math.max(controlY, maxAllowedY);
     } else {
-      // Force the slur to be well below ALL obstacles
       double lowestObstacle = lowestNoteY;
       if (lowestStemY != double.negativeInfinity) {
         lowestObstacle = math.max(lowestObstacle, lowestStemY);
       }
 
-      // Force control point to be at least minBufferSpace below the lowest obstacle
       double forcedControlY = lowestObstacle + minBufferSpace;
       controlY = math.max(controlY, forcedControlY);
 
-      // Apply maximum height limit to prevent overlap with other rows
       double maxAllowedY = staffCentre + maxSlurHeight;
       controlY = math.min(controlY, maxAllowedY);
     }
 
     Offset control = Offset(controlX, controlY);
 
-    // Final validation: Generate curve points and verify clearance
     List<Offset> bezierPoints = [];
     const int segments = 100;
 
-    // Generate points along the curve for validation
     for (int i = 0; i <= segments; i++) {
       double t = i / segments;
       double x = (1 - t) * (1 - t) * start.dx +
@@ -377,25 +344,20 @@ class ExpressionMarkingsPainter {
       bezierPoints.add(Offset(x, y));
     }
 
-    // Final check for intersections and adjust if needed
     bool hasIntersection;
-    int maxIterations =
-        5; // Reduced iterations since we pre-calculated clearance
+    int maxIterations = 5;
     int iteration = 0;
 
     do {
       hasIntersection = false;
       iteration++;
 
-      // Check each obstacle against the curve
       for (var obstacle in obstacles) {
-        // For stems, check if the curve intersects the stem line
         if (obstacle.isStem) {
           double stemX = obstacle.x;
           double stemTop = obstacle.obstacleTop;
           double stemBottom = obstacle.obstacleBottom;
 
-          // Find the closest point on the curve to this stem's x-coordinate
           Offset? closestPoint;
           double minDistance = double.infinity;
 
@@ -408,42 +370,34 @@ class ExpressionMarkingsPainter {
           }
 
           if (closestPoint != null && minDistance < 5.0) {
-            // Check if this point intersects with the stem
             bool intersects = false;
 
             if (isSlurAbove && obstacle.isUpsideDown == true) {
-              // For upward stems when slur is above
               intersects =
                   closestPoint.dy > stemTop && closestPoint.dy < stemBottom;
             } else if (!isSlurAbove && obstacle.isUpsideDown == false) {
-              // For downward stems when slur is below
               intersects =
                   closestPoint.dy > stemTop && closestPoint.dy < stemBottom;
             }
 
             if (intersects) {
               hasIntersection = true;
-              // Increase curve height to avoid this stem
               curveHeight += 10.0;
               break;
             }
           }
-        }
-        // For note heads, check if the curve passes through the note head
-        else {
+        } else {
           double noteHeadLeft = obstacle.x - (obstacle.width / 2);
           double noteHeadRight = obstacle.x + (obstacle.width / 2);
           double noteHeadTop = obstacle.obstacleTop;
           double noteHeadBottom = obstacle.obstacleBottom;
 
-          // Check if any point on the curve intersects with this note head
           for (var point in bezierPoints) {
             if (point.dx >= noteHeadLeft &&
                 point.dx <= noteHeadRight &&
                 point.dy >= noteHeadTop &&
                 point.dy <= noteHeadBottom) {
               hasIntersection = true;
-              // Increase curve height to avoid this note head
               curveHeight += 8.0;
               break;
             }
@@ -454,13 +408,11 @@ class ExpressionMarkingsPainter {
       }
 
       if (hasIntersection) {
-        // Recalculate control point with new curve height
         controlY = (start.dy + end.dy) / 2;
         controlY += isSlurAbove
             ? -curveHeight * heightMultiplier
             : curveHeight * heightMultiplier;
 
-        // Re-apply our forced positioning to maintain buffer space
         if (isSlurAbove) {
           double highestObstacle = highestNoteY;
           if (highestStemY != double.infinity) {
@@ -469,7 +421,6 @@ class ExpressionMarkingsPainter {
           double forcedControlY = highestObstacle - minBufferSpace;
           controlY = math.min(controlY, forcedControlY);
 
-          // Apply maximum height limit
           double maxAllowedY = staffCentre - maxSlurHeight;
           controlY = math.max(controlY, maxAllowedY);
         } else {
@@ -480,14 +431,12 @@ class ExpressionMarkingsPainter {
           double forcedControlY = lowestObstacle + minBufferSpace;
           controlY = math.max(controlY, forcedControlY);
 
-          // Apply maximum height limit
           double maxAllowedY = staffCentre + maxSlurHeight;
           controlY = math.min(controlY, maxAllowedY);
         }
 
         control = Offset(controlX, controlY);
 
-        // Regenerate bezier points
         bezierPoints.clear();
         for (int i = 0; i <= segments; i++) {
           double t = i / segments;
@@ -502,7 +451,6 @@ class ExpressionMarkingsPainter {
       }
     } while (hasIntersection && iteration < maxIterations);
 
-    // Draw the slur
     drawVariableThicknessBezier(
       canvas: canvas,
       start: start,
@@ -521,17 +469,15 @@ class ExpressionMarkingsPainter {
     required double maxThickness,
     required Color color,
   }) {
-    const int segments = 300; // More segments = smoother curve
+    const int segments = 300;
     final path = Path();
 
-    // Store left and right edge of the stroke
     List<Offset> leftPoints = [];
     List<Offset> rightPoints = [];
 
     for (int i = 0; i <= segments; i++) {
       double t = i / segments;
 
-      // Bézier curve formula
       double x = (1 - t) * (1 - t) * start.dx +
           2 * (1 - t) * t * control.dx +
           t * t * end.dx;
@@ -540,19 +486,15 @@ class ExpressionMarkingsPainter {
           t * t * end.dy;
       Offset point = Offset(x, y);
 
-      // Tangent vector
       double dx =
           2 * (1 - t) * (control.dx - start.dx) + 2 * t * (end.dx - control.dx);
       double dy =
           2 * (1 - t) * (control.dy - start.dy) + 2 * t * (end.dy - control.dy);
       vec.Vector2 tangent = vec.Vector2(dx, dy).normalized();
 
-      // Normal vector (perpendicular to tangent)
       vec.Vector2 normal = vec.Vector2(-tangent.y, tangent.x);
 
-      // Thickness tapers in and out toward center
-      double thickness =
-          maxThickness * (1 - ((t - 0.5) * 2).abs()); // triangle shape taper
+      double thickness = maxThickness * (1 - ((t - 0.5) * 2).abs());
 
       vec.Vector2 offset = normal.scaled(thickness / 2);
       Offset left = point + Offset(offset.x, offset.y);
@@ -562,9 +504,8 @@ class ExpressionMarkingsPainter {
       rightPoints.add(right);
     }
 
-    // Draw thick curve as a filled path
     path.addPolygon(leftPoints, false);
-    path.addPolygon(rightPoints.reversed.toList(), true); // Close the shape
+    path.addPolygon(rightPoints.reversed.toList(), true);
 
     canvas.drawPath(
       path,
@@ -655,7 +596,6 @@ class ExpressionMarkingsPainter {
     double xPos = x - (textPainter.width / 2);
     bool isUpsideDownNote = note.isUpsideDown == true;
 
-    // Handle beamed notes special case
     if (note.isBeamed) {
       var notesGroup = getBeamedNotesGroup(noteIndex, notes);
       var connectedNotesGroup = notesGroup.notesGroup;
@@ -670,28 +610,23 @@ class ExpressionMarkingsPainter {
           : (note.noteY - staffBottomLineY).abs();
 
       if (distanceFromStaff > 30) {
-        // Position accent at ~30 pixels from note, between staff lines
         if (isUpsideDownNote) {
-          // For upside-down notes, accent goes above
           yPos = note.noteY - 85;
-          // Adjust to position between staff lines (staff lines are at 0, 10, 20, 30, 40)
 
           double relativeToStaff = yPos - staffTop;
           double nearestStaffLine =
               (relativeToStaff / lineSpacing).round() * lineSpacing;
           if ((relativeToStaff - nearestStaffLine).abs() < 3) {
-            yPos = staffTop + nearestStaffLine; // Move between lines
+            yPos = staffTop + nearestStaffLine;
           }
         } else {
-          // For normal notes, accent goes below
           yPos = note.noteY - 45;
-          // Adjust to position between staff lines
 
           double relativeToStaff = yPos - staffTop;
           double nearestStaffLine =
               (relativeToStaff / lineSpacing).round() * lineSpacing;
           if ((relativeToStaff - nearestStaffLine).abs() < 3) {
-            yPos = staffTop + nearestStaffLine; // Move between lines
+            yPos = staffTop + nearestStaffLine;
           }
         }
 
@@ -810,10 +745,8 @@ class ExpressionMarkingsPainter {
     }
   }
 
-  /// Draw rehearsal marking above the staff at the note's position
   void drawRehearsalMarking(Canvas canvas, MusicalNote note, Color noteColour,
       double x, double staffTop, double lineSpacing, double yPos) {
-    // Determine if this is a unicode character (from Bravura font)
     final bool isUnicode =
         note.rehearsalMarking == '' || note.rehearsalMarking == '';
 
@@ -836,7 +769,6 @@ class ExpressionMarkingsPainter {
     );
     textPainter.layout();
 
-    // Center the text horizontally over the note
     double xPos = x - (textPainter.width / 2);
     if (isUnicode) yPos = yPos - 40;
 
@@ -925,7 +857,6 @@ class ExpressionMarkingsPainter {
     double highestNoteY = math.min(y1, math.min(y2, y3));
     double tripletY = highestNoteY - 50;
 
-    // Adjust Y to avoid overlap with notes above
     for (int i = noteIndex; i <= noteIndex + 2; i++) {
       if (notes[i].noteY < tripletY + 10) {
         tripletY = notes[i].noteY - 20;
@@ -940,13 +871,12 @@ class ExpressionMarkingsPainter {
 
     if (isAnyNoteInTripletBeamed) {
       int beamStartIndex = noteIndex;
-      // Find the actual start of the beamed group by looking backwards
+
       while (beamStartIndex > 0 && notes[beamStartIndex - 1].isBeamed) {
         beamStartIndex--;
       }
       MusicalNote firstNoteOfBeam = notes[beamStartIndex];
 
-      // Apply the condition using the first note of the entire beamed group
       if (firstNoteOfBeam.isUpsideDown == true && y1 < staffTop - 20) {
         tripletY = tripletY - 40;
       }
@@ -981,10 +911,6 @@ class ExpressionMarkingsPainter {
     canvas.drawLine(Offset(x3, tripletY), Offset(x3, tripletY + 7), paint);
   }
 
-  /// Returns true when the slur should arc **above** the notes in the range
-  /// [startIndex..endIndex].  Mirrors the identical logic inside
-  /// [drawSlurBetweenNotes] so the call-site can pre-determine direction
-  /// before selecting the extremal child note of a chord.
   bool isSlurAboveForRange(List<MusicalNote> rowNotes, int startIndex,
       int endIndex, double staffCentre) {
     final int minIndex = startIndex < endIndex ? startIndex : endIndex;
@@ -1007,16 +933,6 @@ class ExpressionMarkingsPainter {
     return notesBelowCenter >= notesAboveCenter;
   }
 
-  /// Returns the canvas Y coordinate of the extremal child note of [chord]
-  /// that a slur should attach to.
-  ///
-  /// * [slurIsAbove] == true  → slur curves **over** the chord → attach to the
-  ///   **highest** child note (smallest canvas Y).
-  /// * [slurIsAbove] == false → slur curves **under** the chord → attach to
-  ///   the **lowest** child note (largest canvas Y).
-  ///
-  /// Falls back to [calculateNoteYMainSheet] on the parent chord if there are
-  /// no children.
   double extremalChildY(MusicalNote chord, bool slurIsAbove, double lineSpacing,
       double staffTop) {
     final children = chord.childNotes;
@@ -1032,10 +948,8 @@ class ExpressionMarkingsPainter {
       final double y = calculateNoteYMainSheet(
           children[i].pitch, children[i].octave, lineSpacing, staffTop);
       if (slurIsAbove) {
-        // Slur above → want highest note (smallest Y on canvas)
         if (y < extremalY) extremalY = y;
       } else {
-        // Slur below → want lowest note (largest Y on canvas)
         if (y > extremalY) extremalY = y;
       }
     }

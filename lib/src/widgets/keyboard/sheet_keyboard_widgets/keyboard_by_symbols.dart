@@ -3,22 +3,19 @@ import 'package:music_keyboard/models/note_unicode_characters.dart';
 import 'package:music_keyboard/src/utils/keyboard_utils/unicode_mapper.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/note_position_calculator.dart';
 import 'package:provider/provider.dart';
-import 'package:music_keyboard/src/providers/selected_accidental_provider.dart';
 import 'package:music_keyboard/src/providers/selected_unicode_provider.dart';
 import 'package:music_keyboard/src/providers/is_connected_provider.dart';
 import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/models/sheet_rows.dart';
 import 'package:music_keyboard/models/sheet_format.dart';
 import 'package:music_keyboard/src/providers/current_selected_note_provider.dart';
+import 'package:music_keyboard/src/widgets/keyboard/sheet_keyboard_widgets/music_key.dart';
 
 class KeyboardBySymbols extends StatefulWidget {
   final void Function(MusicalNote note) onKeyPress;
   final bool showLowerPair;
   final List<SheetRows> sheetNoteRows;
   final SheetFormat sheetFormat;
-  // When chord mode is active, the list of child notes already added to the
-  // current chord. Keys whose pitch+octave match an entry are highlighted with
-  // a blue border.
   final List<MusicalNote>? chordChildNotes;
 
   const KeyboardBySymbols(
@@ -54,13 +51,11 @@ class _KeyboardBySymbolsState extends State<KeyboardBySymbols> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Two keyboard rows - always visible
           SizedBox(
-            height: 220, // Double the height for two rows
+            height: 220,
             width: screenWidth - 105,
             child: Column(
               children: [
-                // Top row
                 Expanded(
                   child: _buildKeyboardGrid(
                     selectedCharacter: selectedCharacter,
@@ -71,8 +66,7 @@ class _KeyboardBySymbolsState extends State<KeyboardBySymbols> {
                         : KeyboardRow.top,
                   ),
                 ),
-                const SizedBox(height: 5), // Small gap between rows
-                // Bottom row
+                const SizedBox(height: 5),
                 Expanded(
                   child: _buildKeyboardGrid(
                     selectedCharacter: selectedCharacter,
@@ -91,8 +85,6 @@ class _KeyboardBySymbolsState extends State<KeyboardBySymbols> {
     );
   }
 
-  /// Returns true if the key at [pitch]/[octave] has already been added as a
-  /// child note to the current chord.
   bool _isChordAdded(String pitch, int octave) {
     final childNotes = widget.chordChildNotes;
     if (childNotes == null) return false;
@@ -106,16 +98,16 @@ class _KeyboardBySymbolsState extends State<KeyboardBySymbols> {
     required KeyboardRow row,
   }) {
     return Padding(
-      padding: EdgeInsets.zero, // No padding
+      padding: EdgeInsets.zero,
       child: Container(
-        color: Colors.transparent, // No background color
-        margin: EdgeInsets.zero, // No margin
+        color: Colors.transparent,
+        margin: EdgeInsets.zero,
         child: GridView.builder(
-          padding: EdgeInsets.zero, // No internal padding in the GridView
+          padding: EdgeInsets.zero,
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 9,
-              crossAxisSpacing: 2, // Space between columns
-              mainAxisSpacing: 0, // Space between rows
+              crossAxisSpacing: 2,
+              mainAxisSpacing: 0,
               childAspectRatio: 0.30),
           itemCount: 9,
           itemBuilder: (context, index) {
@@ -141,11 +133,9 @@ class _KeyboardBySymbolsState extends State<KeyboardBySymbols> {
     );
   }
 
-  // Map the index to a pitch based on the current row
   String _getPitch(int index, KeyboardRow row) {
     const pitches = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 
-    // Starting pitch index depends on the row
     int startPitchIndex;
     switch (row) {
       case KeyboardRow.top:
@@ -159,14 +149,11 @@ class _KeyboardBySymbolsState extends State<KeyboardBySymbols> {
         break;
     }
 
-    // Calculate the pitch index by adding the starting index and the current index
     int pitchIndex = (startPitchIndex + index) % pitches.length;
     return pitches[pitchIndex];
   }
 
-  // Map the index to an octave based on the current row
   int _getOctave(int index, KeyboardRow row) {
-    // Base octave depends on which row we're showing
     int baseOctave;
     switch (row) {
       case KeyboardRow.top:
@@ -180,27 +167,26 @@ class _KeyboardBySymbolsState extends State<KeyboardBySymbols> {
         break;
     }
 
-    // Calculate the pitch index to determine when to increment the octave
     const pitches = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
     int startPitchIndex;
     switch (row) {
       case KeyboardRow.top:
         startPitchIndex = 5; // Start with 'A' for top row
-        // If we've gone past 'B' (index 6), increment the octave
+
         if ((startPitchIndex + index) >= pitches.length) {
           return baseOctave + ((startPitchIndex + index) ~/ pitches.length);
         }
         break;
       case KeyboardRow.middle:
         startPitchIndex = 3; // Start with 'F' for middle row
-        // If we've gone past 'B' (index 6), increment the octave
+
         if ((startPitchIndex + index) >= pitches.length) {
           return baseOctave + ((startPitchIndex + index) ~/ pitches.length);
         }
         break;
       case KeyboardRow.bottom:
         startPitchIndex = 1; // Start with 'D' for bottom row
-        // If we've gone past 'B' (index 6), increment the octave
+
         if ((startPitchIndex + index) >= pitches.length) {
           return baseOctave + ((startPitchIndex + index) ~/ pitches.length);
         }
@@ -210,9 +196,7 @@ class _KeyboardBySymbolsState extends State<KeyboardBySymbols> {
     return baseOctave;
   }
 
-  // Determine if a key should be disabled in Piano mode
   bool _isKeyDisabled(String pitch, int octave, KeyboardRow row) {
-    // Only apply disabling logic when sheet format is Piano
     if (widget.sheetFormat != SheetFormat.twoRows) {
       return false;
     }
@@ -226,10 +210,8 @@ class _KeyboardBySymbolsState extends State<KeyboardBySymbols> {
     final rowsPerGroup = widget.sheetFormat.rowsPerGroup;
     final groupStartRow = (selectedRow ~/ rowsPerGroup) * rowsPerGroup;
 
-    // Determine if the cursor is currently on a treble or bass row within the connected group
     final isCursorOnTrebleRow = (selectedRow - groupStartRow) == 0;
 
-    // Calculate the note's Y position relative to the staff to determine if it needs ledger lines
     const double lineSpacing = 10.0; // Approximate line spacing
     const double staffTop = 20.0; // Approximate staff top
     const double rowHeight = (4 * lineSpacing);
@@ -238,540 +220,16 @@ class _KeyboardBySymbolsState extends State<KeyboardBySymbols> {
     final double noteY =
         calculateNoteYVerticalKeyboard(pitch, octave, lineSpacing, staffTop);
 
-    // When cursor is on treble row (first row): disable keys below the first ledger line below the staff
     if (isCursorOnTrebleRow) {
-      // First ledger line below staff is at staffBottom + lineSpacing
       final double firstLedgerLineBelowStaff = staffBottom + rowHeight;
       return noteY > firstLedgerLineBelowStaff;
     }
 
-    // When cursor is on bass row (second row): disable keys above the first ledger line above the staff
     if (!isCursorOnTrebleRow) {
-      // First ledger line above staff is at staffTop - lineSpacing
       final double firstLedgerLineAboveStaff = staffTop - rowHeight;
       return noteY < firstLedgerLineAboveStaff;
     }
 
     return false;
   }
-}
-
-class MusicKey extends StatefulWidget {
-  final NoteUnicodeCharacters unicodeCharacter;
-  final String pitch;
-  final int octave;
-  final NoteType type;
-  final bool isConnected;
-  final void Function(MusicalNote note)? onTap;
-  final int index;
-  final bool isDisabled;
-  // True when this key's pitch+octave is already in the current chord's
-  // childNotes – shown with a blue border to indicate it has been added.
-  final bool isChordAdded;
-
-  const MusicKey(
-      {super.key,
-      required this.unicodeCharacter,
-      required this.pitch,
-      required this.octave,
-      required this.type,
-      required this.isConnected,
-      required this.onTap,
-      required this.index,
-      this.isDisabled = false,
-      this.isChordAdded = false});
-
-  @override
-  _MusicKeyState createState() => _MusicKeyState();
-}
-
-class _MusicKeyState extends State<MusicKey> {
-  bool isPressed = false;
-
-  void _handleTap() {
-    if (widget.isDisabled || widget.onTap == null) return;
-
-    setState(() {
-      isPressed = true;
-    });
-
-    // Delay to reset the effect
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (mounted) {
-        setState(() {
-          isPressed = false;
-        });
-      }
-    });
-
-    // Trigger the actual note event
-    widget.onTap!(MusicalNote(
-        pitch: widget.pitch,
-        octave: widget.octave,
-        type: widget.type,
-        isBeamed: widget.isConnected,
-        unicodeCharacter: widget.unicodeCharacter.normal));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // Get the selected accidental from the provider
-    final selectedAccidental =
-        context.watch<SelectedAccidentalProvider>().selectedAccidental;
-
-    return GestureDetector(
-      onTap: widget.isDisabled ? null : _handleTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 100),
-        decoration: BoxDecoration(
-          color: widget.isDisabled
-              ? Colors.grey[300] // Grey out disabled keys
-              : isPressed
-                  ? Colors.grey[400]
-                  : Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: widget.isDisabled
-                ? Colors.grey[400]!
-                : widget.isChordAdded
-                    ? Colors.blue
-                    : const Color.fromARGB(255, 130, 130, 130),
-            width: widget.isChordAdded ? 2.0 : 1.0,
-          ),
-        ),
-        child: CustomPaint(
-          painter: KeyboardSymbolsMusicStaffPainter(
-            unicodeCharacter: widget.unicodeCharacter,
-            accidentalCharacter: selectedAccidental,
-            musicalNote: MusicalNote(
-              pitch: widget.pitch,
-              octave: widget.octave,
-              type: widget.type,
-              isBeamed: widget.isConnected,
-            ),
-            index: widget.index,
-            context: context,
-            isDisabled: widget.isDisabled,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class KeyboardSymbolsMusicStaffPainter extends CustomPainter {
-  final NoteUnicodeCharacters unicodeCharacter; // Unicode character to draw
-  final String accidentalCharacter;
-  final MusicalNote musicalNote; // Vertical position of the character
-  final int index;
-  final BuildContext? context;
-  final bool isDisabled;
-
-  KeyboardSymbolsMusicStaffPainter({
-    required this.unicodeCharacter,
-    required this.accidentalCharacter,
-    required this.musicalNote,
-    required this.index,
-    this.context,
-    this.isDisabled = false,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.black
-      ..strokeWidth = 1.0; // Slightly thinner lines for smaller keys
-
-    // Calculate dynamic spacing for the 5 staff lines
-    final lineSpacing = size.height / 15; // Scale based on the smaller height
-    final staffTop =
-        (size.height - (4 * lineSpacing)) / 2; // Center the staff vertically
-    final staffCenter = staffTop + (2 * lineSpacing);
-
-    for (int i = 0; i < 5; i++) {
-      final y = staffTop + (i * lineSpacing);
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-
-    // Determine if we need to draw ledger lines based on the note's position
-    // Calculate the note's Y position
-    final double noteY = calculateNoteYVerticalKeyboard(
-        musicalNote.pitch, musicalNote.octave, lineSpacing, staffTop);
-
-    // Get the width of the note for drawing ledger lines
-    double noteWidth = size.width / 3; // Approximate width of the note
-
-    // Draw ledger lines for notes above or below the staff
-    drawLedgerLines(canvas, paint, noteY, size.width / 2, noteWidth,
-        lineSpacing, staffTop, accidentalCharacter != '');
-
-    bool isUpsideDownNote = noteY <= staffCenter;
-
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: isUpsideDownNote
-            ? unicodeCharacter.upsideDown
-            : unicodeCharacter.normal,
-        style: TextStyle(
-          fontFamily: 'Bravura',
-          fontSize: size.height / 4.4, // Dynamically scale Unicode size
-          color: Colors.black,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    );
-
-    textPainter.layout();
-    double x = (size.width - textPainter.width) / 2; // Center horizontally
-    final y = (calculateNoteYVerticalKeyboard(
-            musicalNote.pitch, musicalNote.octave, lineSpacing, staffTop)) -
-        (textPainter.height / 2);
-
-    if (accidentalCharacter != '') {
-      x = x + 6;
-    } else if (!isUpsideDownNote && musicalNote.type != NoteType.whole) {
-      x = x + 3;
-    }
-
-    textPainter.paint(canvas, Offset(x, y));
-
-    if (accidentalCharacter != '') {
-      double noteX = 0.0;
-      final accidentalPainter = TextPainter(
-        text: TextSpan(
-          text: accidentalCharacter,
-          style: TextStyle(
-            fontFamily: 'Bravura',
-            fontSize: size.height / 5.0,
-            color: Colors.black,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      );
-
-      if (accidentalCharacter != 'dotted_rest') {
-        accidentalPainter.layout();
-        final accidentalX = (size.width - textPainter.width) / 2 -
-            accidentalPainter.width * 0.9;
-
-        accidentalPainter.paint(
-            canvas, Offset(accidentalX, isUpsideDownNote ? y + 13 : y + 5));
-      } else {
-        noteX = (size.width - textPainter.width) / 2 * 1.2;
-
-        final Paint handlePaint = Paint()
-          ..color = Colors.black
-          ..style = PaintingStyle.fill;
-
-        canvas.drawCircle(Offset(noteX + 12, noteY + 5), 1.5, handlePaint);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => true;
-}
-
-void drawLedgerLines(Canvas canvas, Paint paint, double noteY, double noteX,
-    double noteWidth, double lineSpacing, double staffTop, bool hasAccidental) {
-  final double staffBottom = staffTop + (4 * lineSpacing);
-
-  double leftX = hasAccidental ? -2 : 2;
-  double rightX = hasAccidental ? 8 : 2;
-
-  if (noteY <= staffTop - lineSpacing) {
-    for (double y = staffTop - lineSpacing;
-        y >= noteY - lineSpacing / 3;
-        y -= lineSpacing) {
-      canvas.drawLine(
-        Offset(noteX - (noteWidth / 3) - leftX, y),
-        Offset(noteX + (noteWidth / 3) + rightX, y),
-        paint..strokeWidth = 1.0,
-      );
-    }
-  } else if (noteY >= staffBottom + lineSpacing) {
-    for (double y = staffBottom + lineSpacing;
-        y <= noteY + lineSpacing / 3;
-        y += lineSpacing) {
-      canvas.drawLine(
-        Offset(noteX - (noteWidth / 3) - leftX, y),
-        Offset(noteX + (noteWidth / 3) + rightX, y),
-        paint..strokeWidth = 1.0,
-      );
-    }
-  }
-}
-
-// ---------------------------------------------------------------------------
-// FavouriteChordKey – a keyboard key that renders a full chord on the staff.
-// ---------------------------------------------------------------------------
-
-class FavouriteChordKey extends StatefulWidget {
-  final List<MusicalNote> childNotes;
-  final bool isDotted;
-  final VoidCallback onTap;
-
-  const FavouriteChordKey({
-    super.key,
-    required this.childNotes,
-    required this.isDotted,
-    required this.onTap,
-  });
-
-  @override
-  State<FavouriteChordKey> createState() => _FavouriteChordKeyState();
-}
-
-class _FavouriteChordKeyState extends State<FavouriteChordKey> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) {
-        setState(() => _pressed = false);
-        widget.onTap();
-      },
-      onTapCancel: () => setState(() => _pressed = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 100),
-        decoration: BoxDecoration(
-          color: _pressed ? Colors.grey[400] : Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: widget.isDotted
-                ? Colors.blue.shade300
-                : const Color.fromARGB(255, 130, 130, 130),
-            width: widget.isDotted ? 1.5 : 1.0,
-          ),
-        ),
-        child: CustomPaint(
-          painter: _ChordKeyPainter(
-            childNotes: widget.childNotes,
-            isDotted: widget.isDotted,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Paints multiple note heads on a mini staff with a shared connecting stem,
-/// matching the visual style of [KeyboardSymbolsMusicStaffPainter].
-class _ChordKeyPainter extends CustomPainter {
-  final List<MusicalNote> childNotes;
-  final bool isDotted;
-
-  _ChordKeyPainter({required this.childNotes, required this.isDotted});
-
-  /// SMuFL note-head glyphs (no stem).
-  static const String _headWhole = '\uE0A2';
-  static const String _headHalf = '\uE0A3';
-  static const String _headBlack = '\uE0A4';
-
-  String _headGlyph(NoteType type) {
-    switch (type) {
-      case NoteType.whole:
-        return _headWhole;
-      case NoteType.half:
-        return _headHalf;
-      default:
-        return _headBlack;
-    }
-  }
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (childNotes.isEmpty) return;
-
-    final paint = Paint()
-      ..color = Colors.black
-      ..strokeWidth = 1.0;
-
-    final lineSpacing = size.height / 20;
-    final staffTop = (size.height - 4 * lineSpacing) / 2;
-    final staffCenter = staffTop + 2 * lineSpacing;
-
-    // ── Staff lines ──────────────────────────────────────────────────────────
-    for (int i = 0; i < 5; i++) {
-      canvas.drawLine(
-        Offset(0, staffTop + i * lineSpacing),
-        Offset(size.width, staffTop + i * lineSpacing),
-        paint,
-      );
-    }
-
-    // ── Note positions ───────────────────────────────────────────────────────
-    final noteYs = childNotes
-        .map((n) => calculateNoteYVerticalKeyboard(
-            n.pitch, n.octave, lineSpacing, staffTop))
-        .toList();
-
-    final double avgY = noteYs.reduce((a, b) => a + b) / noteYs.length;
-    // stemDown = notes are on average above the middle line
-    final bool stemDown = avgY <= staffCenter;
-
-    final NoteType noteType = childNotes.first.type;
-    final bool isWhole = noteType == NoteType.whole;
-    final String headGlyph = _headGlyph(noteType);
-    final double fontSize = size.height / 5;
-
-    // Pre-measure the glyph to get its dimensions.
-    final TextPainter measurer = TextPainter(
-      text: TextSpan(
-        text: headGlyph,
-        style: TextStyle(fontFamily: 'Bravura', fontSize: fontSize),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
-
-    final double headW = measurer.width;
-    final double headH = measurer.height;
-
-    // Horizontal centre of note heads.  Stem is on right (stem-up) or left
-    // (stem-down), consistent with standard notation.
-    final double centreX = size.width / 2;
-    // Shift heads slightly so the stem sits at the key's horizontal centre.
-    // stem-up: head to the left of centre; stem-down: head to the right.
-    final double headOffsetX =
-        stemDown ? (centreX - headW / 2 + 2) : (centreX - headW / 2 - 2);
-
-    // ── Ledger lines & note heads ────────────────────────────────────────────
-    for (int i = 0; i < childNotes.length; i++) {
-      final MusicalNote child = childNotes[i];
-      final double noteY = noteYs[i];
-      final double noteX = centreX;
-      final String accidental = child.accidentalCharacter;
-      final bool hasAccidental =
-          accidental.isNotEmpty && accidental != 'dotted_rest';
-
-      drawLedgerLines(
-          canvas, paint, noteY, noteX, headW, lineSpacing, staffTop, false);
-
-      final TextPainter tp = TextPainter(
-        text: TextSpan(
-          text: headGlyph,
-          style: TextStyle(
-            fontFamily: 'Bravura',
-            fontSize: fontSize,
-            color: Colors.black,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-
-      tp.paint(canvas, Offset(headOffsetX, noteY - headH / 2));
-
-      // Accidental glyph to the left of the note head.
-      if (hasAccidental) {
-        final TextPainter accPainter = TextPainter(
-          text: TextSpan(
-            text: accidental,
-            style: TextStyle(
-              fontFamily: 'Bravura',
-              fontSize: size.height / 7.0,
-              color: Colors.black,
-            ),
-          ),
-          textDirection: TextDirection.ltr,
-        )..layout();
-
-        final double accX = headOffsetX - accPainter.width * 1.3;
-        // Mirror the single-note painter's y offsets (13 when stem-down, 5 otherwise).
-        final double accY =
-            stemDown ? noteY - headH / 2 + 13 : noteY - headH / 2.8;
-        accPainter.paint(canvas, Offset(accX, accY));
-      }
-
-      // Augmentation dot for dotted notes.
-      if (isDotted) {
-        final Paint dotPaint = Paint()
-          ..color = Colors.black
-          ..style = PaintingStyle.fill;
-        canvas.drawCircle(
-          Offset(headOffsetX + headW + 2.5, noteY + 1.5),
-          1.5,
-          dotPaint,
-        );
-      }
-    }
-
-    // ── Shared stem & flag ───────────────────────────────────────────────────
-    if (!isWhole) {
-      final double topY = noteYs.reduce((a, b) => a < b ? a : b);
-      final double bottomY = noteYs.reduce((a, b) => a > b ? a : b);
-      final double stemLength = lineSpacing * 3.0;
-
-      final stemPaint = Paint()
-        ..color = Colors.black
-        ..strokeWidth = 1.2;
-
-      double stemTipY;
-      double stemX;
-
-      if (stemDown) {
-        // Stem on the left, going downward from top note head.
-        stemX = headOffsetX + 1;
-        stemTipY = bottomY + stemLength;
-        canvas.drawLine(
-            Offset(stemX, topY), Offset(stemX, stemTipY), stemPaint);
-      } else {
-        // Stem on the right, going upward from bottom note head.
-        stemX = headOffsetX + headW - 1;
-        stemTipY = topY - stemLength;
-        canvas.drawLine(
-            Offset(stemX, bottomY), Offset(stemX, stemTipY), stemPaint);
-      }
-
-      // ── Flag (only for unbeamed notes with flags) ────────────────────────
-      final String? flagGlyph = _flagGlyph(noteType, stemDown);
-      if (flagGlyph != null) {
-        final double flagFontSize = fontSize * 0.8;
-
-        // Scale the Y anchor offsets from drawing_helpers proportionally.
-        // Main sheet: stem-up offset = -64 / fontSize 34 ≈ 1.88×
-        //             stem-down offset = -68 / fontSize 34 ≈ 2.0×
-        final double flagY = stemTipY - flagFontSize * 2.0;
-
-        // Flag connects at the stem x position.
-        final double flagX = stemX - flagFontSize * 0.01;
-
-        final TextPainter flagPainter = TextPainter(
-          text: TextSpan(
-            text: flagGlyph,
-            style: TextStyle(
-              fontFamily: 'Bravura',
-              fontSize: flagFontSize,
-              color: Colors.black,
-            ),
-          ),
-          textDirection: TextDirection.ltr,
-        )..layout();
-
-        flagPainter.paint(canvas, Offset(flagX, flagY));
-      }
-    }
-  }
-
-  /// Returns the flag glyph for [type] and stem direction, or null if the
-  /// note type doesn't carry a flag (whole, half, quarter).
-  static String? _flagGlyph(NoteType type, bool stemDown) {
-    switch (type) {
-      case NoteType.eighth:
-        return stemDown ? '\uE241' : '\uE240';
-      case NoteType.sixteenth:
-        return stemDown ? '\uE243' : '\uE242';
-      case NoteType.thirtySecond:
-        return stemDown ? '\uE245' : '\uE244';
-      case NoteType.sixtyFourth:
-        return stemDown ? '\uE247' : '\uE246';
-      default:
-        return null;
-    }
-  }
-
-  @override
-  bool shouldRepaint(_ChordKeyPainter old) =>
-      old.childNotes != childNotes || old.isDotted != isDotted;
 }

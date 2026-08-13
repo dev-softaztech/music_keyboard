@@ -10,16 +10,7 @@ import 'package:music_keyboard/src/utils/pdf_exporter.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/bar_number_calculator.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/note_width_calculator.dart';
 
-/// Draws the structural elements of the main music sheet: staff lines,
-/// cursor, curly braces, bar numbers/lines, page breaks, row highlights,
-/// key signatures, and connected-row (piano/grand staff) elements.
-///
-/// This is a plain (non-CustomPainter) helper class used by
-/// [MusicSheetPainter] via composition. All methods take the
-/// [Canvas]/[Paint]/geometry they need as explicit arguments and hold no
-/// mutable state of their own.
 class StaffStructurePainter {
-  /// Draw permanent curly braces from saved groups
   void drawPermanentCurlyBraces(
       Canvas canvas,
       Size size,
@@ -35,9 +26,8 @@ class StaffStructurePainter {
       final lastRow = group.endRow;
       final rowCount = lastRow - firstRow + 1;
 
-      if (rowCount < 2) continue; // Need at least 2 rows for a curly brace
+      if (rowCount < 2) continue;
 
-      // Calculate Y positions for top and bottom of the curly brace
       final int adjustedFirstRow = firstRow - startRow;
       final int adjustedLastRow = lastRow - startRow;
 
@@ -52,24 +42,18 @@ class StaffStructurePainter {
           lastMarginOffset +
           sheetHeight;
 
-      // Draw the curly brace
       drawCurlyBrace(canvas, topY, bottomY, rowCount);
     }
   }
 
-  /// Draw a single curly brace on the left side spanning from topY to bottomY
   void drawCurlyBrace(
       Canvas canvas, double topY, double bottomY, int rowCount) {
-    const double leftX =
-        45.0; // Position to the left of staff lines (which start at x=60)
+    const double leftX = 45.0;
     final double height = bottomY - topY;
 
-    // For 2 rows (piano), draw a single curly brace
-    // For 3-5 rows, repeat curly braces to fill the space
     final int braceCount = rowCount == 2 ? 1 : ((rowCount / 2).ceil());
     final double braceHeight = height / braceCount;
 
-    // Use Bravura font character  for curly brace
     const String braceChar = '';
 
     for (int i = 0; i < braceCount; i++) {
@@ -90,16 +74,13 @@ class StaffStructurePainter {
 
       textPainter.layout();
 
-      // Center the brace vertically
       final double yPos = braceCenterY - (textPainter.height / 2) + 110;
-      // Position slightly to the left
       final double xPos = leftX - (textPainter.width / 2);
 
       textPainter.paint(canvas, Offset(xPos, yPos));
     }
   }
 
-  /// Draw connecting lines and shared bar lines for connected row formats
   void drawConnectedRowElements(
       Canvas canvas,
       Size size,
@@ -113,21 +94,18 @@ class StaffStructurePainter {
       bool showTitleAndComposer,
       double verticalOffset) {
     if (sheetFormat == SheetFormat.single) {
-      return; // No connecting elements needed for single format
+      return;
     }
 
     const double lineSpacing = 10;
     const double sheetHeight = lineSpacing * 4;
 
-    // Determine which rows to render
     final int startRow = renderStartRow ?? 0;
     final int endRow = renderEndRow ?? (sheetNoteRows.length - 1);
 
-    // Calculate page margins - 50px header/footer for non-first pages
     const double pageHeaderMargin = 50.0;
     const double pageFooterMargin = 50.0;
 
-    // Calculate which page we're on for margin adjustments
     final pageBreaks =
         PdfExporter.calculatePageBreaks(sheetNoteRows, rowSpacing, sheetFormat);
     int currentPageIndex = 0;
@@ -139,21 +117,17 @@ class StaffStructurePainter {
       }
     }
 
-    // Adjust vertical offset for partial rendering and page margins
     double adjustedVerticalOffset = verticalOffset;
     if (renderStartRow != null && renderEndRow != null) {
       if (showTitleAndComposer) {
-        // Increased from 200 to 250 to match painter adjustment
         adjustedVerticalOffset = pageHeaderMargin + 350;
       } else {
-        // Increased from 50 to 150 to match painter adjustment
         adjustedVerticalOffset = pageHeaderMargin + 300;
       }
     } else if (currentPageIndex > 0) {
       adjustedVerticalOffset = verticalOffset + pageHeaderMargin;
     }
 
-    // Calculate cumulative margin offsets for all rows
     Map<int, double> cumulativeMarginOffsets = {};
     if (renderStartRow == null || renderEndRow == null) {
       final pageBreaks = PdfExporter.calculatePageBreaks(
@@ -178,17 +152,14 @@ class StaffStructurePainter {
       }
     }
 
-    // Group rows into connected groups based on format
     final int rowsPerGroup = sheetFormat.rowsPerGroup;
 
-    // Draw connecting elements for each group
     for (int groupStartRow = startRow;
         groupStartRow <= endRow;
         groupStartRow += rowsPerGroup) {
       final int groupEndRow =
           math.min(groupStartRow + rowsPerGroup - 1, endRow);
 
-      // Only draw connecting elements if we have a complete group
       if (groupEndRow - groupStartRow + 1 == rowsPerGroup && rowsPerGroup > 1) {
         drawConnectedGroup(
             canvas,
@@ -207,7 +178,6 @@ class StaffStructurePainter {
     }
   }
 
-  /// Draw connecting elements for a specific group of connected rows
   void drawConnectedGroup(
       Canvas canvas,
       Size size,
@@ -225,7 +195,6 @@ class StaffStructurePainter {
       ..color = Colors.black
       ..strokeWidth = 1.0;
 
-    // Calculate positions for the first and last rows in the group
     final int adjustedStartRow = groupStartRow - (renderStartRow ?? 0);
     final int adjustedEndRow = groupEndRow - (renderStartRow ?? 0);
 
@@ -241,7 +210,6 @@ class StaffStructurePainter {
         endMarginOffset;
     final double bottomStaffBottom = bottomStaffTop + sheetHeight;
 
-    // Draw left connecting line (brace/bracket)
     const double leftX = 60;
     canvas.drawLine(
       Offset(leftX, topStaffTop),
@@ -249,7 +217,6 @@ class StaffStructurePainter {
       paint..strokeWidth = 2.0,
     );
 
-    // Draw right connecting line
     final double rightX = size.width - 60;
     canvas.drawLine(
       Offset(rightX, topStaffTop),
@@ -257,14 +224,12 @@ class StaffStructurePainter {
       paint..strokeWidth = 2.0,
     );
 
-    // Draw shared bar lines that connect the rows
     drawSharedBarLines(canvas, groupStartRow, groupEndRow, topStaffTop,
         bottomStaffBottom, sheetNoteRows, rowSpacingList, keyboardType);
 
-    paint..strokeWidth = 1.0; // Reset stroke width
+    paint..strokeWidth = 1.0;
   }
 
-  /// Draw shared bar lines that connect rows only when bars exist at same index
   void drawSharedBarLines(
       Canvas canvas,
       int groupStartRow,
@@ -280,15 +245,12 @@ class StaffStructurePainter {
 
     double currentRowSpacing = rowSpacingList[groupStartRow];
 
-    // Find the maximum number of notes across all rows in the group
     int maxNotes = 0;
     for (int rowIndex = groupStartRow; rowIndex <= groupEndRow; rowIndex++) {
       maxNotes = math.max(maxNotes, sheetNoteRows[rowIndex].chords.length);
     }
 
-    // Check each note index position across all rows
     for (int noteIndex = 0; noteIndex < maxNotes; noteIndex++) {
-      // Track which rows have a bar at this index and their X positions
       Map<int, double> rowsWithBarsAtIndex = {};
 
       for (int rowIndex = groupStartRow; rowIndex <= groupEndRow; rowIndex++) {
@@ -296,20 +258,17 @@ class StaffStructurePainter {
           MusicalNote note = sheetNoteRows[rowIndex].chords[noteIndex];
 
           if (note.type == NoteType.bar) {
-            // Calculate X position for this bar
             double x = keyboardType.startingNoteX;
             for (int i = 0; i < noteIndex; i++) {
               if (i < sheetNoteRows[rowIndex].chords.length) {
                 MusicalNote prevNote = sheetNoteRows[rowIndex].chords[i];
 
-                // Calculate spacing for space notes
                 double spaceNoteSpacing = 0;
                 if (prevNote.type == NoteType.space && i > 0) {
-                  // Check if previous note is also a space note
                   bool prevIsSpace =
                       sheetNoteRows[rowIndex].chords[i - 1].type ==
                           NoteType.space;
-                  // First space note in sequence: no spacing, subsequent: full spacing
+
                   spaceNoteSpacing = prevIsSpace ? currentRowSpacing : 0;
                 }
 
@@ -328,9 +287,7 @@ class StaffStructurePainter {
         }
       }
 
-      // Only draw connecting line if ALL rows in the group have a bar at this index
       if (rowsWithBarsAtIndex.length == (groupEndRow - groupStartRow + 1)) {
-        // All rows have a bar at this index, use the X position from the first row
         double barX =
             rowsWithBarsAtIndex[groupStartRow] ?? keyboardType.startingNoteX;
 
@@ -343,7 +300,6 @@ class StaffStructurePainter {
     }
   }
 
-  /// Draw a warning when there are too many notes in a bar
   void drawTooManyNotesWarning(
       Canvas canvas, double staffTop, double barStartX, double barEndX) {
     final TextPainter textPainter = TextPainter(
@@ -360,12 +316,10 @@ class StaffStructurePainter {
 
     textPainter.layout();
 
-    // Position the warning above the specific bar
     final double barWidth = barEndX - barStartX;
     final double x = barStartX + (barWidth - textPainter.width) / 2;
     final double y = staffTop - 40;
 
-    // Draw a semi-transparent background for better readability
     final Rect backgroundRect = Rect.fromLTWH(
         x - 10, y - 5, textPainter.width + 20, textPainter.height + 10);
 
@@ -374,14 +328,11 @@ class StaffStructurePainter {
       Paint()..color = Colors.white.withOpacity(0.8),
     );
 
-    // Draw the warning text
     textPainter.paint(canvas, Offset(x, y));
   }
 
-  /// Draw bar number above the start of a row
   void drawBarNumber(Canvas canvas, int rowIndex, double staffTop,
       List<SheetRows> sheetNoteRows) {
-    // Calculate the bar number for this row
     int barNumber =
         BarNumberCalculator.calculateBarNumberForRow(sheetNoteRows, rowIndex);
 
@@ -399,17 +350,14 @@ class StaffStructurePainter {
 
     textPainter.layout();
 
-    // Position the bar number above and to the left of the staff start
-    // X position: slightly to the right of the staff start (60 is where staff lines start)
     final double x = 75 - textPainter.width;
-    // Y position: above the staff with some padding
     final double y = staffTop - 35;
 
     textPainter.paint(canvas, Offset(x, y));
   }
 
-  /// Draw tempo above a specific bar note
-  void drawBarTempo(Canvas canvas, MusicalNote barNote, double x, double textY) {
+  void drawBarTempo(
+      Canvas canvas, MusicalNote barNote, double x, double textY) {
     final textPainter = TextPainter(
       text: TextSpan(
         text: 'Tempo = ${barNote.tempoNumber.round()}bpm',
@@ -429,8 +377,8 @@ class StaffStructurePainter {
     textPainter.paint(canvas, Offset(x, textY));
   }
 
-  /// Draw swing below the bar tempo if set
-  void drawBarSwing(Canvas canvas, MusicalNote barNote, double x, double textY) {
+  void drawBarSwing(
+      Canvas canvas, MusicalNote barNote, double x, double textY) {
     final textPainter = TextPainter(
       text: TextSpan(
         text: barNote.swingText,
@@ -448,7 +396,6 @@ class StaffStructurePainter {
     textPainter.paint(canvas, Offset(x, textY));
   }
 
-  /// Draw visual page breaks between A4-sized pages
   void drawPageBreaks(
       Canvas canvas,
       Size size,
@@ -458,16 +405,13 @@ class StaffStructurePainter {
       double rowSpacing,
       SheetFormat sheetFormat,
       double verticalOffset) {
-    // Only draw page breaks if we're not in partial rendering mode
     if (renderStartRow != null || renderEndRow != null) {
       return;
     }
 
-    // Calculate page breaks using the same logic as PDF export
     final pageBreaks =
         PdfExporter.calculatePageBreaks(sheetNoteRows, rowSpacing, sheetFormat);
 
-    // Only draw dividers if there are multiple pages
     if (pageBreaks.length <= 1) {
       return;
     }
@@ -477,14 +421,12 @@ class StaffStructurePainter {
     const double pageHeaderMargin = 50.0;
     const double pageFooterMargin = 50.0;
 
-    // Calculate cumulative margin offsets (same logic as main rendering)
     Map<int, double> cumulativeMarginOffsets = {};
     double cumulativeOffset = 0.0;
 
     for (int rowIndex = 0; rowIndex < sheetNoteRows.length; rowIndex++) {
       cumulativeMarginOffsets[rowIndex] = cumulativeOffset;
 
-      // Check if this row is at the start of a non-first page (add header margin)
       for (int i = 1; i < pageBreaks.length; i++) {
         final pageInfo = pageBreaks[i];
         if (rowIndex == pageInfo.startRow) {
@@ -493,7 +435,6 @@ class StaffStructurePainter {
         }
       }
 
-      // Check if this row is at the end of any page (add footer margin after it)
       for (int i = 0; i < pageBreaks.length - 1; i++) {
         final pageInfo = pageBreaks[i];
         if (rowIndex == pageInfo.endRow) {
@@ -503,15 +444,13 @@ class StaffStructurePainter {
       }
     }
 
-    // Draw grey dividers between pages
     final Paint dividerPaint = Paint()
-      ..color = const Color.fromARGB(255, 199, 199, 199) // Same as background
+      ..color = const Color.fromARGB(255, 199, 199, 199)
       ..strokeWidth = 3.0;
 
     for (int i = 1; i < pageBreaks.length; i++) {
       final pageInfo = pageBreaks[i];
 
-      // Calculate the Y position where this page starts including margins
       final double marginOffset =
           cumulativeMarginOffsets[pageInfo.startRow] ?? 0.0;
       final double pageStartY = verticalOffset +
@@ -519,7 +458,6 @@ class StaffStructurePainter {
           marginOffset -
           (rowSpacing / 2);
 
-      // Draw a horizontal line across the width of the sheet
       canvas.drawLine(
         Offset(0, pageStartY),
         Offset(size.width, pageStartY),
@@ -528,10 +466,14 @@ class StaffStructurePainter {
     }
   }
 
-  void drawStaffLines(Canvas canvas, Paint paint, double staffTop,
-      double lineSpacing, double sheetHeight, Size size,
+  void drawStaffLines(
+      Canvas canvas,
+      Paint paint,
+      double staffTop,
+      double lineSpacing,
+      double sheetHeight,
+      Size size,
       KeyboardType keyboardType) {
-    // Draw horizontal staff lines based on keyboard type
     for (int i = 0; i < keyboardType.lineCount; i++) {
       final y = staffTop + i * lineSpacing;
       canvas.drawLine(
@@ -541,7 +483,6 @@ class StaffStructurePainter {
       );
     }
 
-    // Draw vertical lines at start and end of staff
     canvas.drawLine(Offset(60, staffTop), Offset(60, staffTop + (sheetHeight)),
         paint..strokeWidth = 1.0);
     canvas.drawLine(
@@ -568,7 +509,7 @@ class StaffStructurePainter {
         selectionRow != null) {
       return;
     }
-    // Calculate cursor X position using the new note width calculator
+
     double cursorX = notes.isEmpty
         ? keyboardType.startingNoteX
         : calculateXPositionForIndex(
@@ -586,21 +527,17 @@ class StaffStructurePainter {
         insertionIndex = insertionIndex - 1;
       }
 
-      // Check if the selected note is a space note
       bool isSpaceNote =
           notes.isNotEmpty && notes[insertionIndex].type == NoteType.space;
       bool isFirstSpaceInSequence = false;
 
       if (isSpaceNote && insertionIndex > 0) {
-        // Check if previous note is also a space note
         isFirstSpaceInSequence =
             notes[insertionIndex - 1].type != NoteType.space;
       } else if (isSpaceNote && insertionIndex == 0) {
-        // Space note at index 0 is always first in sequence
         isFirstSpaceInSequence = true;
       }
 
-      // Don't add offset for key signatures or first-in-sequence space notes (which have 0 width)
       if (notes.isNotEmpty &&
           notes[insertionIndex].type == NoteType.keySignature) {
         cursorX += 0;
@@ -618,7 +555,6 @@ class StaffStructurePainter {
     );
   }
 
-  /// Draw highlight for entire row in select rows mode
   void drawRowHighlight(
       Canvas canvas, Size size, double staffTop, double lineSpacing) {
     final double sheetHeight = lineSpacing * 4;
@@ -672,7 +608,6 @@ class StaffStructurePainter {
         end, rowNotes, rowSpacingList[rowIndex], false,
         startingX: keyboardType.startingNoteX);
 
-    // Always cover at minimum the full stave height, then expand for notes outside
     final double staveTop = staffTop;
     final double staveBottom =
         staffTop + (lineSpacing * (keyboardType.lineCount - 1));
@@ -741,14 +676,11 @@ class StaffStructurePainter {
     return keyboardType.startingNoteX + (index * currentRowSpacing);
   }
 
-  /// Draw key signature on the staff
   void drawKeySignature(Canvas canvas, Paint paint, MusicalNote note,
       double lineSpacing, double staffTop, double x, Color noteColour) {
-    // Parse the key signature name to determine symbol count and type
     final keySignatureName = note.keySignatureName;
     if (keySignatureName.isEmpty) return;
 
-    // Map key signature names to their properties
     final Map<String, Map<String, dynamic>> keySignatureMap = {
       'G/Em': {'count': 1, 'isSharp': true},
       'D/Bm': {'count': 2, 'isSharp': true},
@@ -777,9 +709,8 @@ class StaffStructurePainter {
         note.keySignatureClefType, staffTop, lineSpacing);
 
     final positions = isSharp ? sharpPositions : flatPositions;
-    final double symbolSpacing = 12.0; // Horizontal spacing between symbols
+    final double symbolSpacing = 12.0;
 
-    // Draw the symbols
     for (int i = 0; i < symbolCount && i < positions.length; i++) {
       final symbolPainter = TextPainter(
         text: TextSpan(
