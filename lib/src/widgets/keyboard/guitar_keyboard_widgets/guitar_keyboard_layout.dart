@@ -5,8 +5,10 @@ import 'package:music_keyboard/models/sheet_format.dart';
 import 'package:music_keyboard/src/providers/current_selected_note_provider.dart';
 import 'package:music_keyboard/src/providers/selected_string_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/guitar_tab_helpers.dart';
+import 'guitar_technique_buttons.dart';
+import 'guitar_fret_string_buttons.dart';
+import 'guitar_favourites_panel.dart';
 
 class GuitarKeyboardLayout extends StatefulWidget {
   final bool showNotesKeyboard;
@@ -22,8 +24,6 @@ class GuitarKeyboardLayout extends StatefulWidget {
   final void Function(MusicalNote chord)? onFavouriteChordTapped;
   final Future<void> Function(int id)? onFavouriteChordUsed;
 
-  /// Incremented by the parent whenever a favourite is added or removed.
-  /// The widget reloads the panel if it is currently open.
   final int favouritesVersion;
 
   const GuitarKeyboardLayout({
@@ -47,10 +47,8 @@ class GuitarKeyboardLayout extends StatefulWidget {
 }
 
 class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
-  // Overlay entry for the popup
   OverlayEntry? _overlayEntry;
 
-  // Octave pair state - false = Middle+Top pair, true = Bottom+Middle pair
   bool showLowerPair = false;
 
   bool _isBendActive = false;
@@ -68,7 +66,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
   bool _isSlideUpActive = false;
   bool _isSlideDownActive = false;
 
-  // Lock state tracking for three-tap behavior
   bool _isBendLocked = false;
   bool _isPreBendLocked = false;
   bool _isBendReleaseLocked = false;
@@ -79,25 +76,20 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
   bool _isVibratoLocked = false;
   bool _isHammerLeftHandLocked = false;
 
-  // Chord mode — when active, fret taps add to the current fret note
   bool _isChordsActive = false;
 
-  // Favourites panel state
   bool _isFavouritesActive = false;
   bool _favouritesLoading = false;
   List<({int id, MusicalNote chord})> _favouriteChords = [];
 
-  // Track previous selected note to detect changes
   int _previousSelectedRow = -1;
   int _previousSelectedIndex = -1;
 
-  // Flag to indicate if navigation was from Next button (preserve lock state)
   bool _navigatedViaNextButton = false;
 
   @override
   void initState() {
     super.initState();
-    // Register the space press handler and reset handler with the parent after the first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       widget.onRegisterSpaceHandler?.call(_handleSpacePress);
       widget.onRegisterResetHandler?.call(resetTechniqueStates);
@@ -113,7 +105,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     }
   }
 
-  /// Reloads the favourites list in place without toggling panel visibility.
   Future<void> _reloadFavourites() async {
     setState(() => _favouritesLoading = true);
     final favs = widget.loadFavourites != null
@@ -129,7 +120,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
 
   @override
   void dispose() {
-    // Make sure to remove any active overlay when disposing
     if (_overlayEntry != null) {
       _overlayEntry!.remove();
       _overlayEntry = null;
@@ -137,7 +127,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     super.dispose();
   }
 
-  /// Reset all technique button states to not active or locked
   void resetTechniqueStates() {
     setState(() {
       _isBendActive = false;
@@ -175,7 +164,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     final selectedRow = currentSelectedNoteProvider.selectedRow;
     final selectedNoteIndex = currentSelectedNoteProvider.selectedIndex;
 
-    // Guard against invalid state
     if (widget.sheetNoteRows.isEmpty ||
         selectedRow < 0 ||
         selectedRow >= widget.sheetNoteRows.length ||
@@ -190,14 +178,12 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       return;
     }
 
-    // Preserve active/locked technique button states across the insertion
     setState(() {
       _navigatedViaNextButton = true;
     });
 
     _updateTechniqueIndicesForNewNote(selectedRow, selectedNoteIndex);
 
-    // Insert the new fret chord
     widget.onKeyPress(MusicalNote(
       pitch: 'G',
       octave: 4,
@@ -207,9 +193,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     ));
   }
 
-  /// Updates all active/locked technique end-indices to account for the new
-  /// fret note being inserted after [selectedNoteIndex]. Called both from
-  /// [_handleSpacePress] and from the fret button in normal (non-chord) mode.
   void _updateTechniqueIndicesForNewNote(
       int selectedRow, int selectedNoteIndex) {
     final chords = widget.sheetNoteRows[selectedRow].chords;
@@ -340,7 +323,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     }
   }
 
-  // Helper: Get current chord being edited
   MusicalNote? _getCurrentChord(int selectedRow, int selectedNoteIndex) {
     if (widget.sheetNoteRows.isEmpty) return null;
     if (selectedRow >= widget.sheetNoteRows.length) return null;
@@ -352,7 +334,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     return widget.sheetNoteRows[selectedRow].chords[selectedNoteIndex];
   }
 
-  // Helper: Get fret number for a specific string in current chord
   String? _getFretForString(MusicalNote? chord, int stringIndex) {
     if (chord?.childNotes == null) return null;
 
@@ -364,7 +345,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     return null;
   }
 
-  // Helper: Update fret for a specific string
   MusicalNote _updateFretForString(
       int selectedRow, int selectedNoteIndex, int stringIndex, int fretNumber,
       {bool goToNextString = true}) {
@@ -375,70 +355,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       stringIndex,
       fretNumber,
       goToNextString: goToNextString,
-    );
-  }
-
-  // Build a technique button (for top two rows)
-  Widget _buildTechniqueButton(String identifer, String label,
-      {double fontSize = 0,
-      bool isUnicode = true,
-      String? svgAssetPath,
-      VoidCallback? onPressed,
-      bool isActive = false,
-      bool isLocked = false,
-      Offset offset = Offset.zero}) {
-    double buttonWidth = MediaQuery.of(context).size.width * 0.092;
-
-    return SizedBox(
-      width: buttonWidth,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isActive
-              ? (isLocked ? Colors.blue[300] : Colors.blue[100])
-              : Colors.grey[50],
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(5),
-            side: BorderSide(
-                color: isActive ? Colors.blue : Colors.black,
-                width: isActive ? 2 : 1),
-          ),
-          padding: EdgeInsets.zero,
-        ),
-        child: Stack(
-          children: [
-            Center(
-                child: Transform.translate(
-              offset: offset,
-              child: svgAssetPath != null
-                  ? SvgPicture.asset(svgAssetPath,
-                      width: 20,
-                      height: 20,
-                      colorFilter: ColorFilter.linearToSrgbGamma())
-                  : Text(
-                      label,
-                      style: TextStyle(
-                        fontFamily: isUnicode ? 'Bravura' : null,
-                        fontSize: fontSize,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-            )),
-            if (isLocked)
-              Positioned(
-                bottom: 1,
-                right: 1,
-                child: Icon(
-                  Icons.lock,
-                  size: 10,
-                  color: Colors.blue[900],
-                ),
-              ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -496,7 +412,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
         childNote.preBendReleaseEndIndex! >= 0;
   }
 
-  // Helper: Check if current chord has bend start property set for the selected string
   bool _checkIfCurrentChordHasBend(
       String bendType, int selectedRow, int selectedNoteIndex) {
     final chord = _getCurrentChord(selectedRow, selectedNoteIndex);
@@ -506,7 +421,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
         Provider.of<SelectedStringProvider>(context, listen: false);
     final selectedStringIndex = selectedStringProvider.selectedStringIndex;
 
-    // Find the childNote for the currently selected string
     MusicalNote? childNote;
     for (var child in chord.childNotes!) {
       if (child.octave == selectedStringIndex) {
@@ -531,20 +445,17 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     }
   }
 
-  // Helper: Handle bend button press for the selected string
   void _handleBendButtonPress(
       String bendType, int selectedRow, int selectedNoteIndex) {
     final chord = _getCurrentChord(selectedRow, selectedNoteIndex);
     if (chord == null) return;
 
-    // Initialize childNotes if null
     chord.childNotes ??= [];
 
     final selectedStringProvider =
         Provider.of<SelectedStringProvider>(context, listen: false);
     final selectedStringIndex = selectedStringProvider.selectedStringIndex;
 
-    // Find or create the childNote for the currently selected string
     MusicalNote? childNote;
     for (var child in chord.childNotes!) {
       if (child.octave == selectedStringIndex) {
@@ -553,13 +464,11 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       }
     }
 
-    // If no childNote exists for this string, we can't add a bend without a fret
     childNote ??= _updateFretForString(
         selectedRow, selectedNoteIndex, selectedStringIndex, 0,
         goToNextString: false);
 
     setState(() {
-      // Determine current state for this bend type
       bool isCurrentlyActive = false;
       bool isCurrentlyLocked = false;
 
@@ -582,11 +491,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
           break;
       }
 
-      // Three-tap behavior logic
       if (!isCurrentlyActive) {
-        // First tap: set note to active and enter lock state
-        // Before setting the new bend type, update all existing childNotes to have the same bend type
-        // Get the endIndex from existing childNotes before updating them
         int? existingEndIndex = _getExistingBendEndIndex(chord);
         if (existingEndIndex != null) {
           _updateAllChildNotesToSameBendType(chord, bendType, existingEndIndex);
@@ -623,7 +528,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
             break;
         }
       } else if (isCurrentlyActive && isCurrentlyLocked) {
-        // Second tap: switch to active state without lock state
         switch (bendType) {
           case 'bend':
             _isBendLocked = false;
@@ -639,7 +543,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
             break;
         }
       } else {
-        // Third tap: switch active state off and remove bend from note
         switch (bendType) {
           case 'bend':
             _isBendActive = false;
@@ -668,7 +571,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
         }
       }
 
-      // Clear other bend states (mutually exclusive)
       if (bendType != 'bend') {
         _isBendActive = false;
         _isBendLocked = false;
@@ -696,7 +598,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     });
   }
 
-  // Helper: Get the endIndex from existing childNotes with bends
   int? _getExistingBendEndIndex(MusicalNote chord) {
     if (chord.childNotes == null) return null;
 
@@ -719,15 +620,12 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     return null;
   }
 
-  // Helper: Update all childNotes to have the same bend type
   void _updateAllChildNotesToSameBendType(
       MusicalNote chord, String newBendType, int existingEndIndex) {
     if (chord.childNotes == null) return;
 
     for (var childNote in chord.childNotes!) {
-      // Convert any existing bend type to the new bend type
       if (childNote.isBendStart && newBendType != 'bend') {
-        // Convert bend to new type
         childNote.isBendStart = false;
         childNote.bendEndIndex = null;
 
@@ -746,7 +644,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
             break;
         }
       } else if (childNote.isPreBendStart && newBendType != 'pre-bend') {
-        // Convert pre-bend to new type
         childNote.isPreBendStart = false;
         childNote.preBendEndIndex = null;
 
@@ -766,7 +663,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
         }
       } else if (childNote.isBendReleaseStart &&
           newBendType != 'bend-release') {
-        // Convert bend-release to new type
         childNote.isBendReleaseStart = false;
         childNote.bendReleaseEndIndex = null;
 
@@ -786,7 +682,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
         }
       } else if (childNote.isPreBendReleaseStart &&
           newBendType != 'pre-bend-release') {
-        // Convert pre-bend-release to new type
         childNote.isPreBendReleaseStart = false;
         childNote.preBendReleaseEndIndex = null;
 
@@ -808,7 +703,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     }
   }
 
-  // Helper: Check if current childNote for selected string has hammer-left-hand start
   bool _checkIfCurrentChildNoteHasHammerLeftHand(
       int selectedRow, int selectedNoteIndex) {
     final chord = _getCurrentChord(selectedRow, selectedNoteIndex);
@@ -826,20 +720,17 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     return false;
   }
 
-  // Helper: Handle hammer-left-hand button press for the selected string
   void _handleHammerLeftHandButtonPress(
       int selectedRow, int selectedNoteIndex) {
     final chord = _getCurrentChord(selectedRow, selectedNoteIndex);
     if (chord == null) return;
 
-    // Initialize childNotes if null
     chord.childNotes ??= [];
 
     final selectedStringProvider =
         Provider.of<SelectedStringProvider>(context, listen: false);
     final selectedStringIndex = selectedStringProvider.selectedStringIndex;
 
-    // Find or create the childNote for the currently selected string
     MusicalNote? childNote;
     for (var child in chord.childNotes!) {
       if (child.octave == selectedStringIndex) {
@@ -848,7 +739,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       }
     }
 
-    // If no childNote exists for this string, create one with fret 0
     childNote ??= _updateFretForString(
         selectedRow, selectedNoteIndex, selectedStringIndex, 0,
         goToNextString: false);
@@ -858,16 +748,13 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       bool isCurrentlyLocked = _isHammerLeftHandLocked;
 
       if (!isCurrentlyActive) {
-        // First tap: set active and locked, endIndex = selectedNoteIndex
         _isHammerLeftHandActive = true;
         _isHammerLeftHandLocked = true;
         childNote!.isHammerLeftHandStart = true;
         childNote.hammerLeftHandEndIndex = selectedNoteIndex;
       } else if (isCurrentlyActive && isCurrentlyLocked) {
-        // Second tap: active without lock
         _isHammerLeftHandLocked = false;
       } else {
-        // Third tap: turn off and remove from note
         _isHammerLeftHandActive = false;
         _isHammerLeftHandLocked = false;
         childNote!.isHammerLeftHandStart = false;
@@ -876,14 +763,12 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     });
   }
 
-  // Helper: Handle technique button press (mute, pinch-harmonic, harmonic, tap-right-hand)
   void _handleTechniqueButtonPress(
       String techniqueType, int selectedRow, int selectedNoteIndex) {
     final chord = _getCurrentChord(selectedRow, selectedNoteIndex);
     if (chord == null) return;
 
     setState(() {
-      // Determine current state for this technique type
       bool isCurrentlyActive = false;
       bool isCurrentlyLocked = false;
 
@@ -918,10 +803,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
           break;
       }
 
-      // Three-tap behavior logic
       if (!isCurrentlyActive) {
-        // First tap: set note to active and enter lock state
-        // Reset other technique properties if setting one of mute, pinch-harmonic, or harmonic
         if (techniqueType == 'mute' ||
             techniqueType == 'pinch-harmonic' ||
             techniqueType == 'harmonic') {
@@ -1048,10 +930,8 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     });
   }
 
-  // Helper: Reset other technique properties when setting one of mute, pinch-harmonic, or harmonic
   void _resetOtherTechniqueProperties(
       MusicalNote chord, String activeTechnique) {
-    // Reset all three technique properties
     chord.isMuteStart = false;
     chord.muteEndIndex = null;
     chord.isPinchHarmonicStart = false;
@@ -1059,7 +939,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     chord.isHarmonicStart = false;
     chord.harmonicEndIndex = null;
 
-    // Reset lock states for all three techniques
     _isMuteActive = false;
     _isMuteLocked = false;
     _isPinchHarmonicActive = false;
@@ -1068,7 +947,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     _isHarmonicLocked = false;
   }
 
-  // Helper: Check if current chord has technique start property set
   bool _checkIfCurrentChordHasTechnique(
       String techniqueType, int selectedRow, int selectedNoteIndex) {
     final chord = _getCurrentChord(selectedRow, selectedNoteIndex);
@@ -1088,7 +966,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     }
   }
 
-  // Helper: Check if the childNote for the selected string has a slide
   bool _checkIfCurrentChildNoteHasSlide(
       String slideType, int selectedRow, int selectedNoteIndex) {
     final chord = _getCurrentChord(selectedRow, selectedNoteIndex);
@@ -1107,20 +984,17 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     return false;
   }
 
-  // Helper: Handle slide button press for the selected string (toggle, no lock state)
   void _handleSlideButtonPress(
       String slideType, int selectedRow, int selectedNoteIndex) {
     final chord = _getCurrentChord(selectedRow, selectedNoteIndex);
     if (chord == null) return;
 
-    // Initialize childNotes if null
     chord.childNotes ??= [];
 
     final selectedStringProvider =
         Provider.of<SelectedStringProvider>(context, listen: false);
     final selectedStringIndex = selectedStringProvider.selectedStringIndex;
 
-    // Find or create the childNote for the currently selected string
     MusicalNote? childNote;
     for (var child in chord.childNotes!) {
       if (child.octave == selectedStringIndex) {
@@ -1129,7 +1003,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
       }
     }
 
-    // If no childNote exists for this string, create one with fret 0
     childNote ??= _updateFretForString(
         selectedRow, selectedNoteIndex, selectedStringIndex, 0,
         goToNextString: false);
@@ -1137,7 +1010,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     setState(() {
       if (slideType == 'slide-up') {
         childNote!.hasSlideUp = !childNote.hasSlideUp;
-        // Slide up and slide down are mutually exclusive
         if (childNote.hasSlideUp) {
           childNote.hasSlideDown = false;
         }
@@ -1145,7 +1017,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
         _isSlideDownActive = false;
       } else if (slideType == 'slide-down') {
         childNote!.hasSlideDown = !childNote.hasSlideDown;
-        // Slide up and slide down are mutually exclusive
         if (childNote.hasSlideDown) {
           childNote.hasSlideUp = false;
         }
@@ -1153,142 +1024,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
         _isSlideUpActive = false;
       }
     });
-  }
-
-  // Build a string button (E, A, D, G, B, E)
-  Widget _buildStringButton(String note, int stringIndex) {
-    final selectedStringProvider =
-        Provider.of<SelectedStringProvider>(context, listen: false);
-    final selectedStringIndex = selectedStringProvider.selectedStringIndex;
-    bool isSelected = selectedStringIndex == stringIndex;
-    double buttonWidth = MediaQuery.of(context).size.width * 0.14;
-
-    return Container(
-      height: 20,
-      width: buttonWidth,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8), // Match your button's shape
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey,
-            blurRadius: 5,
-            spreadRadius: 0,
-            offset: Offset.zero, // This centers the shadow
-          ),
-        ],
-      ),
-      child: ElevatedButton(
-        onPressed: () {
-          setState(() {
-            selectedStringProvider.setSelectedStringIndex(stringIndex);
-            _updateBendOnlyStatesForCurrentString(
-                Provider.of<CurrentSelectedNoteProvider>(context, listen: false)
-                    .selectedRow,
-                Provider.of<CurrentSelectedNoteProvider>(context, listen: false)
-                    .selectedIndex);
-          });
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isSelected ? Colors.blue[100] : Colors.grey[100],
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(5),
-            side: BorderSide(
-                color: isSelected
-                    ? Colors.blue
-                    : const Color.fromARGB(255, 218, 218, 218),
-                width: isSelected ? 2 : 1),
-          ),
-          padding: EdgeInsets.zero,
-        ),
-        child: Text(
-          note,
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.black,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Build a fret button (numbers 1-24)
-  Widget _buildFretButton(
-      int fretNumber, int selectedRow, int selectedNoteIndex) {
-    // Get current chord and check if this fret is assigned to selected string
-    final currentChord = _getCurrentChord(selectedRow, selectedNoteIndex);
-    final selectedStringProvider =
-        Provider.of<SelectedStringProvider>(context, listen: false);
-    final selectedStringIndex = selectedStringProvider.selectedStringIndex;
-    final currentFret = _getFretForString(currentChord, selectedStringIndex);
-    bool isAssignedToCurrentString = currentFret == fretNumber.toString();
-    double buttonWidth = MediaQuery.of(context).size.width * 0.08;
-    double marginWidth = MediaQuery.of(context).size.width * 0.01;
-
-    return Container(
-      height: 45,
-      width: buttonWidth,
-      margin: EdgeInsets.symmetric(horizontal: marginWidth),
-      child: ElevatedButton(
-        onPressed: () {
-          if (_isChordsActive) {
-            // Chord mode: add/update this fret on the current fret note
-            setState(() {
-              _updateFretForString(selectedRow, selectedNoteIndex,
-                  selectedStringIndex, fretNumber);
-            });
-          } else {
-            // Normal mode: update technique indices, then insert a new fret
-            // note with this fret pre-populated as a child (mirrors the logic
-            // that was previously in the Next button).
-            if (widget.sheetNoteRows.isNotEmpty &&
-                selectedRow >= 0 &&
-                selectedRow < widget.sheetNoteRows.length &&
-                selectedNoteIndex >= 0) {
-              setState(() {
-                _navigatedViaNextButton = true;
-              });
-              _updateTechniqueIndicesForNewNote(selectedRow, selectedNoteIndex);
-            }
-            widget.onKeyPress(MusicalNote(
-              pitch: 'G',
-              octave: 4,
-              type: NoteType.fret,
-              duration: 0.0,
-              childNotes: [
-                MusicalNote(
-                  pitch: 'G',
-                  octave: selectedStringIndex,
-                  type: NoteType.fret,
-                  unicodeCharacter: fretNumber.toString(),
-                  duration: 0.0,
-                ),
-              ],
-            ));
-          }
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor:
-              isAssignedToCurrentString ? Colors.green[200] : Colors.grey[100],
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(5),
-            side: BorderSide(
-                color: isAssignedToCurrentString ? Colors.green : Colors.black,
-                width: isAssignedToCurrentString ? 2 : 1),
-          ),
-          padding: EdgeInsets.zero,
-        ),
-        child: Text(
-          fretNumber.toString(),
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight:
-                isAssignedToCurrentString ? FontWeight.bold : FontWeight.normal,
-            color: Colors.black,
-          ),
-        ),
-      ),
-    );
   }
 
   Future<void> _toggleFavourites() async {
@@ -1309,138 +1044,42 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
     }
   }
 
-  Widget _buildFavouritesToggleButton() {
-    return Container(
-      //width: 44,
-      height: 80,
-      margin: const EdgeInsets.symmetric(horizontal: 3),
-      child: ElevatedButton(
-        onPressed: _toggleFavourites,
-        style: ElevatedButton.styleFrom(
-          backgroundColor:
-              _isFavouritesActive ? Colors.red.shade50 : Colors.grey[100],
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: BorderSide(
-              color: _isFavouritesActive ? Colors.red : Colors.black,
-              width: 1,
-            ),
-          ),
-          padding: EdgeInsets.zero,
-        ),
-        child: Icon(
-          Icons.favorite,
-          color: _isFavouritesActive ? Colors.red : Colors.black,
-          size: 18,
-        ),
-      ),
-    );
-  }
+  void _onFretPressed(int fretNumber, int selectedRow, int selectedNoteIndex) {
+    final selectedStringProvider =
+        Provider.of<SelectedStringProvider>(context, listen: false);
+    final selectedStringIndex = selectedStringProvider.selectedStringIndex;
 
-  Widget _buildFavouritesGrid(BuildContext context) {
-    if (_favouritesLoading) {
-      return const Expanded(
-        child: Center(child: CircularProgressIndicator()),
-      );
+    if (_isChordsActive) {
+      setState(() {
+        _updateFretForString(
+            selectedRow, selectedNoteIndex, selectedStringIndex, fretNumber);
+      });
+    } else {
+      if (widget.sheetNoteRows.isNotEmpty &&
+          selectedRow >= 0 &&
+          selectedRow < widget.sheetNoteRows.length &&
+          selectedNoteIndex >= 0) {
+        setState(() {
+          _navigatedViaNextButton = true;
+        });
+        _updateTechniqueIndicesForNewNote(selectedRow, selectedNoteIndex);
+      }
+      widget.onKeyPress(MusicalNote(
+        pitch: 'G',
+        octave: 4,
+        type: NoteType.fret,
+        duration: 0.0,
+        childNotes: [
+          MusicalNote(
+            pitch: 'G',
+            octave: selectedStringIndex,
+            type: NoteType.fret,
+            unicodeCharacter: fretNumber.toString(),
+            duration: 0.0,
+          ),
+        ],
+      ));
     }
-    if (_favouriteChords.isEmpty) {
-      return const Expanded(
-        child: Center(
-          child: Text(
-            'You have no favourites.',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 11, color: Colors.grey),
-          ),
-        ),
-      );
-    }
-
-    return Expanded(
-      child: Container(
-        decoration: BoxDecoration(
-          color: const Color.fromARGB(255, 255, 222, 228),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        padding: const EdgeInsets.all(4),
-        child: GridView.builder(
-          padding: EdgeInsets.zero,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 9,
-            crossAxisSpacing: 2,
-            mainAxisSpacing: 4,
-            childAspectRatio: 0.55,
-          ),
-          itemCount: _favouriteChords.length,
-          itemBuilder: (context, index) {
-            final fav = _favouriteChords[index];
-            final childNotes = fav.chord.childNotes ?? [];
-
-            return GuitarFavouriteChordKey(
-              childNotes: childNotes,
-              onTap: () {
-                final children = childNotes.map((child) {
-                  return MusicalNote(
-                    pitch: child.pitch,
-                    octave: child.octave,
-                    type: child.type,
-                    unicodeCharacter: child.unicodeCharacter,
-                    accidentalCharacter: child.accidentalCharacter,
-                    duration: child.duration,
-                    isUpsideDown: child.isUpsideDown,
-                    isBeamed: child.isBeamed,
-                  );
-                }).toList();
-
-                final chordNote = MusicalNote(
-                  pitch: fav.chord.pitch,
-                  octave: fav.chord.octave,
-                  type: fav.chord.type,
-                  unicodeCharacter: fav.chord.unicodeCharacter,
-                  duration: fav.chord.duration,
-                  childNotes: children,
-                );
-
-                widget.onFavouriteChordTapped?.call(chordNote);
-                widget.onFavouriteChordUsed?.call(fav.id);
-              },
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildChordsToggleButton() {
-    return Container(
-      //width: 44,
-      height: 80,
-      margin: const EdgeInsets.symmetric(horizontal: 3),
-
-      child: ElevatedButton(
-        onPressed: () {
-          setState(() {
-            _isChordsActive = !_isChordsActive;
-            _isFavouritesActive = false;
-          });
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: _isChordsActive ? Colors.black : Colors.grey[100],
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: const BorderSide(color: Colors.black, width: 1),
-          ),
-          padding: EdgeInsets.zero,
-        ),
-        child: Text(
-          'Chord',
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-            color: _isChordsActive ? Colors.white : Colors.black,
-          ),
-        ),
-      ),
-    );
   }
 
   @override
@@ -1449,36 +1088,21 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
         Provider.of<CurrentSelectedNoteProvider>(context);
     final selectedNoteIndex = currentSelectedNoteProvider.selectedIndex;
     final selectedRow = currentSelectedNoteProvider.selectedRow;
-    final selectedNote = (widget.sheetNoteRows.isNotEmpty &&
-            selectedRow >= 0 &&
-            selectedRow < widget.sheetNoteRows.length &&
-            widget.sheetNoteRows[selectedRow].chords.isNotEmpty &&
-            widget.sheetNoteRows[selectedRow].chords.length >
-                selectedNoteIndex &&
-            selectedNoteIndex != -1)
-        ? widget.sheetNoteRows[selectedRow].chords[selectedNoteIndex]
-        : null;
 
-    // Reset state variables when selected note changes (never auto-lock)
     if (_previousSelectedRow != selectedRow ||
         _previousSelectedIndex != selectedNoteIndex) {
-      // Use post-frame callback to avoid calling setState during build
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           setState(() {
-            // Always update technique states to reflect current note's properties
             final currentChord =
                 _getCurrentChord(selectedRow, selectedNoteIndex);
 
-            // Update pick states
             _isPickUpwardActive = currentChord?.hasPickUpward ?? false;
             _isPickDownwardActive = currentChord?.hasPickDownward ?? false;
 
-            // Update tap-right-hand state
             _isTapRightHandActive =
                 currentChord?.tapRightHandCharacter == '\uEA8B';
 
-            // Update slide states by checking child notes for selected string
             if (currentChord != null && currentChord.childNotes != null) {
               final selectedStringProvider =
                   Provider.of<SelectedStringProvider>(context, listen: false);
@@ -1499,7 +1123,6 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
               _isHammerLeftHandActive = false;
             }
 
-            // Only reset other lock states if NOT navigated via Next button
             if (!_navigatedViaNextButton) {
               _isBendActive = false;
               _isPreBendActive = false;
@@ -1509,7 +1132,7 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
               _isPinchHarmonicActive = false;
               _isHarmonicActive = false;
               _isVibratoActive = false;
-              // Reset all lock states when user selects a different note
+
               _isBendLocked = false;
               _isPreBendLocked = false;
               _isBendReleaseLocked = false;
@@ -1544,179 +1167,104 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 SizedBox(
-                    width: screenWidth * 0.10,
-                    child: _buildChordsToggleButton()),
+                  width: screenWidth * 0.10,
+                  child: GuitarChordsToggleButton(
+                    isChordsActive: _isChordsActive,
+                    onPressed: () {
+                      setState(() {
+                        _isChordsActive = !_isChordsActive;
+                        _isFavouritesActive = false;
+                      });
+                    },
+                  ),
+                ),
                 SizedBox(width: techniqueSpacing / 2),
-                Column(
-                  children: [
-                    SizedBox(
-                      height: 37,
-                      width: screenWidth * 0.75,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _buildTechniqueButton('mute', 'P.M.',
-                              fontSize: 12,
-                              isUnicode: false,
-                              onPressed: () => _handleTechniqueButtonPress(
-                                  'mute', selectedRow, selectedNoteIndex),
-                              isActive: _isMuteActive ||
-                                  _checkIfCurrentChordHasTechnique(
-                                      'mute', selectedRow, selectedNoteIndex),
-                              isLocked: _isMuteLocked),
-                          SizedBox(width: techniqueSpacing),
-                          _buildTechniqueButton('pinch-harmonic', 'P.H.',
-                              fontSize: 12,
-                              isUnicode: false,
-                              onPressed: () => _handleTechniqueButtonPress(
-                                  'pinch-harmonic',
-                                  selectedRow,
-                                  selectedNoteIndex),
-                              isActive: _isPinchHarmonicActive ||
-                                  _checkIfCurrentChordHasTechnique(
-                                      'pinch-harmonic',
-                                      selectedRow,
-                                      selectedNoteIndex),
-                              isLocked: _isPinchHarmonicLocked),
-                          SizedBox(width: techniqueSpacing),
-                          _buildTechniqueButton('vibrato', '\uE56E',
-                              fontSize: 20,
-                              offset: Offset(0, 4),
-                              onPressed: () => _handleTechniqueButtonPress(
-                                  'vibrato', selectedRow, selectedNoteIndex),
-                              isActive: _isVibratoActive ||
-                                  _checkIfCurrentChordHasTechnique('vibrato',
-                                      selectedRow, selectedNoteIndex),
-                              isLocked: _isVibratoLocked),
-                          SizedBox(width: techniqueSpacing),
-                          _buildTechniqueButton('hammer-left-hand', '\uE4BA',
-                              fontSize: 38,
-                              offset: Offset(0, -6),
-                              onPressed: () => _handleHammerLeftHandButtonPress(
-                                  selectedRow, selectedNoteIndex),
-                              isActive: _isHammerLeftHandActive ||
-                                  _checkIfCurrentChildNoteHasHammerLeftHand(
-                                      selectedRow, selectedNoteIndex),
-                              isLocked: _isHammerLeftHandLocked),
-                          SizedBox(width: techniqueSpacing),
-                          _buildTechniqueButton('bend', 'bend',
-                              svgAssetPath: 'assets/svgs/bend.svg',
-                              onPressed: () => _handleBendButtonPress(
-                                  'bend', selectedRow, selectedNoteIndex),
-                              isActive: _isBendActive ||
-                                  _checkIfCurrentChordHasBend(
-                                      'bend', selectedRow, selectedNoteIndex),
-                              isLocked: _isBendLocked),
-                          SizedBox(width: techniqueSpacing),
-                          _buildTechniqueButton('pre-bend', 'pre-bend',
-                              svgAssetPath: 'assets/svgs/pre-bend.svg',
-                              onPressed: () => _handleBendButtonPress(
-                                  'pre-bend', selectedRow, selectedNoteIndex),
-                              isActive: _isPreBendActive ||
-                                  _checkIfCurrentChordHasBend('pre-bend',
-                                      selectedRow, selectedNoteIndex),
-                              isLocked: _isPreBendLocked),
-                          SizedBox(width: techniqueSpacing),
-                          _buildTechniqueButton('pick-downward', '\uE610',
-                              fontSize: 30,
-                              offset: Offset(0, 3),
-                              onPressed: () => _handleTechniqueButtonPress(
-                                  'pick-downward',
-                                  selectedRow,
-                                  selectedNoteIndex),
-                              isActive: _isPickDownwardActive,
-                              isLocked: false),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 7),
-                    SizedBox(
-                      height: 37,
-                      width: screenWidth * 0.75,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _buildTechniqueButton('tap-right-hand', '\uEA8B',
-                              fontSize: 16,
-                              offset: Offset(0, 7),
-                              onPressed: () => _handleTechniqueButtonPress(
-                                  'tap-right-hand',
-                                  selectedRow,
-                                  selectedNoteIndex),
-                              isActive: _isTapRightHandActive,
-                              isLocked: false),
-                          SizedBox(width: techniqueSpacing),
-                          _buildTechniqueButton('harmonic', 'Ham.',
-                              fontSize: 12,
-                              isUnicode: false,
-                              onPressed: () => _handleTechniqueButtonPress(
-                                  'harmonic', selectedRow, selectedNoteIndex),
-                              isActive: _isHarmonicActive ||
-                                  _checkIfCurrentChordHasTechnique('harmonic',
-                                      selectedRow, selectedNoteIndex),
-                              isLocked: _isHarmonicLocked),
-                          SizedBox(width: techniqueSpacing),
-                          _buildTechniqueButton('slide-up', '\uEA6D',
-                              fontSize: 40,
-                              offset: Offset(0, -7),
-                              onPressed: () => _handleSlideButtonPress(
-                                  'slide-up', selectedRow, selectedNoteIndex),
-                              isActive: _isSlideUpActive ||
-                                  _checkIfCurrentChildNoteHasSlide('slide-up',
-                                      selectedRow, selectedNoteIndex)),
-                          SizedBox(width: techniqueSpacing),
-                          _buildTechniqueButton('slide-down', '\uEA6E',
-                              fontSize: 40,
-                              offset: Offset(0, -7),
-                              onPressed: () => _handleSlideButtonPress(
-                                  'slide-down', selectedRow, selectedNoteIndex),
-                              isActive: _isSlideDownActive ||
-                                  _checkIfCurrentChildNoteHasSlide('slide-down',
-                                      selectedRow, selectedNoteIndex)),
-                          SizedBox(width: techniqueSpacing),
-                          _buildTechniqueButton('bend-release', 'bend-release',
-                              svgAssetPath: 'assets/svgs/bend-release.svg',
-                              onPressed: () => _handleBendButtonPress(
-                                  'bend-release',
-                                  selectedRow,
-                                  selectedNoteIndex),
-                              isActive: _isBendReleaseActive ||
-                                  _checkIfCurrentChordHasBend('bend-release',
-                                      selectedRow, selectedNoteIndex),
-                              isLocked: _isBendReleaseLocked),
-                          SizedBox(width: techniqueSpacing),
-                          _buildTechniqueButton(
-                              'pre-bend-release', 'pre-bend-release',
-                              svgAssetPath: 'assets/svgs/pre-bend-release.svg',
-                              onPressed: () => _handleBendButtonPress(
-                                  'pre-bend-release',
-                                  selectedRow,
-                                  selectedNoteIndex),
-                              isActive: _isPreBendReleaseActive ||
-                                  _checkIfCurrentChordHasBend(
-                                      'pre-bend-release',
-                                      selectedRow,
-                                      selectedNoteIndex),
-                              isLocked: _isPreBendReleaseLocked),
-                          SizedBox(width: techniqueSpacing),
-                          _buildTechniqueButton('pick-upward', '\uE612',
-                              fontSize: 30,
-                              offset: Offset(0, 5),
-                              onPressed: () => _handleTechniqueButtonPress(
-                                  'pick-upward',
-                                  selectedRow,
-                                  selectedNoteIndex),
-                              isActive: _isPickUpwardActive,
-                              isLocked: false),
-                        ],
-                      ),
-                    ),
-                  ],
+                GuitarTechniqueButtonsPanel(
+                  screenWidth: screenWidth,
+                  techniqueSpacing: techniqueSpacing,
+                  muteActive: _isMuteActive ||
+                      _checkIfCurrentChordHasTechnique(
+                          'mute', selectedRow, selectedNoteIndex),
+                  muteLocked: _isMuteLocked,
+                  onMutePressed: () => _handleTechniqueButtonPress(
+                      'mute', selectedRow, selectedNoteIndex),
+                  pinchHarmonicActive: _isPinchHarmonicActive ||
+                      _checkIfCurrentChordHasTechnique(
+                          'pinch-harmonic', selectedRow, selectedNoteIndex),
+                  pinchHarmonicLocked: _isPinchHarmonicLocked,
+                  onPinchHarmonicPressed: () => _handleTechniqueButtonPress(
+                      'pinch-harmonic', selectedRow, selectedNoteIndex),
+                  vibratoActive: _isVibratoActive ||
+                      _checkIfCurrentChordHasTechnique(
+                          'vibrato', selectedRow, selectedNoteIndex),
+                  vibratoLocked: _isVibratoLocked,
+                  onVibratoPressed: () => _handleTechniqueButtonPress(
+                      'vibrato', selectedRow, selectedNoteIndex),
+                  hammerLeftHandActive: _isHammerLeftHandActive ||
+                      _checkIfCurrentChildNoteHasHammerLeftHand(
+                          selectedRow, selectedNoteIndex),
+                  hammerLeftHandLocked: _isHammerLeftHandLocked,
+                  onHammerLeftHandPressed: () =>
+                      _handleHammerLeftHandButtonPress(
+                          selectedRow, selectedNoteIndex),
+                  bendActive: _isBendActive ||
+                      _checkIfCurrentChordHasBend(
+                          'bend', selectedRow, selectedNoteIndex),
+                  bendLocked: _isBendLocked,
+                  onBendPressed: () => _handleBendButtonPress(
+                      'bend', selectedRow, selectedNoteIndex),
+                  preBendActive: _isPreBendActive ||
+                      _checkIfCurrentChordHasBend(
+                          'pre-bend', selectedRow, selectedNoteIndex),
+                  preBendLocked: _isPreBendLocked,
+                  onPreBendPressed: () => _handleBendButtonPress(
+                      'pre-bend', selectedRow, selectedNoteIndex),
+                  pickDownwardActive: _isPickDownwardActive,
+                  onPickDownwardPressed: () => _handleTechniqueButtonPress(
+                      'pick-downward', selectedRow, selectedNoteIndex),
+                  tapRightHandActive: _isTapRightHandActive,
+                  onTapRightHandPressed: () => _handleTechniqueButtonPress(
+                      'tap-right-hand', selectedRow, selectedNoteIndex),
+                  harmonicActive: _isHarmonicActive ||
+                      _checkIfCurrentChordHasTechnique(
+                          'harmonic', selectedRow, selectedNoteIndex),
+                  harmonicLocked: _isHarmonicLocked,
+                  onHarmonicPressed: () => _handleTechniqueButtonPress(
+                      'harmonic', selectedRow, selectedNoteIndex),
+                  slideUpActive: _isSlideUpActive ||
+                      _checkIfCurrentChildNoteHasSlide(
+                          'slide-up', selectedRow, selectedNoteIndex),
+                  onSlideUpPressed: () => _handleSlideButtonPress(
+                      'slide-up', selectedRow, selectedNoteIndex),
+                  slideDownActive: _isSlideDownActive ||
+                      _checkIfCurrentChildNoteHasSlide(
+                          'slide-down', selectedRow, selectedNoteIndex),
+                  onSlideDownPressed: () => _handleSlideButtonPress(
+                      'slide-down', selectedRow, selectedNoteIndex),
+                  bendReleaseActive: _isBendReleaseActive ||
+                      _checkIfCurrentChordHasBend(
+                          'bend-release', selectedRow, selectedNoteIndex),
+                  bendReleaseLocked: _isBendReleaseLocked,
+                  onBendReleasePressed: () => _handleBendButtonPress(
+                      'bend-release', selectedRow, selectedNoteIndex),
+                  preBendReleaseActive: _isPreBendReleaseActive ||
+                      _checkIfCurrentChordHasBend(
+                          'pre-bend-release', selectedRow, selectedNoteIndex),
+                  preBendReleaseLocked: _isPreBendReleaseLocked,
+                  onPreBendReleasePressed: () => _handleBendButtonPress(
+                      'pre-bend-release', selectedRow, selectedNoteIndex),
+                  pickUpwardActive: _isPickUpwardActive,
+                  onPickUpwardPressed: () => _handleTechniqueButtonPress(
+                      'pick-upward', selectedRow, selectedNoteIndex),
                 ),
                 SizedBox(width: techniqueSpacing / 2),
                 SizedBox(
-                    width: screenWidth * 0.10,
-                    child: _buildFavouritesToggleButton()),
+                  width: screenWidth * 0.10,
+                  child: GuitarFavouritesToggleButton(
+                    isFavouritesActive: _isFavouritesActive,
+                    onPressed: _toggleFavourites,
+                  ),
+                ),
               ],
             )
           ]),
@@ -1727,226 +1275,42 @@ class _GuitarKeyboardLayoutState extends State<GuitarKeyboardLayout> {
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.015),
                 child: _isFavouritesActive
-                    ? Row(children: [_buildFavouritesGrid(context)])
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              _buildStringButton('E', 0),
-                              const SizedBox(height: 7),
-                              _buildStringButton('B', 1),
-                              const SizedBox(height: 7),
-                              _buildStringButton('G', 2),
-                              const SizedBox(height: 7),
-                              _buildStringButton('D', 3),
-                              const SizedBox(height: 7),
-                              _buildStringButton('A', 4),
-                              const SizedBox(height: 7),
-                              _buildStringButton('E', 5),
-                            ],
-                          ),
-                          SizedBox(width: techniqueSpacing),
-                          Column(
-                            children: [
-                              const SizedBox(height: 6),
-                              Row(
-                                //mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  _buildFretButton(
-                                      1, selectedRow, selectedNoteIndex),
-                                  _buildFretButton(
-                                      2, selectedRow, selectedNoteIndex),
-                                  _buildFretButton(
-                                      3, selectedRow, selectedNoteIndex),
-                                  _buildFretButton(
-                                      4, selectedRow, selectedNoteIndex),
-                                  _buildFretButton(
-                                      5, selectedRow, selectedNoteIndex),
-                                  _buildFretButton(
-                                      6, selectedRow, selectedNoteIndex),
-                                  _buildFretButton(
-                                      7, selectedRow, selectedNoteIndex),
-                                  _buildFretButton(
-                                      8, selectedRow, selectedNoteIndex),
-                                ],
-                              ),
-
-                              const SizedBox(height: 10),
-                              // Fret numbers row 2 (9-16)
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  _buildFretButton(
-                                      9, selectedRow, selectedNoteIndex),
-                                  _buildFretButton(
-                                      10, selectedRow, selectedNoteIndex),
-                                  _buildFretButton(
-                                      11, selectedRow, selectedNoteIndex),
-                                  _buildFretButton(
-                                      12, selectedRow, selectedNoteIndex),
-                                  _buildFretButton(
-                                      13, selectedRow, selectedNoteIndex),
-                                  _buildFretButton(
-                                      14, selectedRow, selectedNoteIndex),
-                                  _buildFretButton(
-                                      15, selectedRow, selectedNoteIndex),
-                                  _buildFretButton(
-                                      16, selectedRow, selectedNoteIndex),
-                                ],
-                              ),
-
-                              const SizedBox(height: 10),
-                              // Fret numbers row 3 (17-24)
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  _buildFretButton(
-                                      17, selectedRow, selectedNoteIndex),
-                                  _buildFretButton(
-                                      18, selectedRow, selectedNoteIndex),
-                                  _buildFretButton(
-                                      19, selectedRow, selectedNoteIndex),
-                                  _buildFretButton(
-                                      20, selectedRow, selectedNoteIndex),
-                                  _buildFretButton(
-                                      21, selectedRow, selectedNoteIndex),
-                                  _buildFretButton(
-                                      22, selectedRow, selectedNoteIndex),
-                                  _buildFretButton(
-                                      23, selectedRow, selectedNoteIndex),
-                                  _buildFretButton(
-                                      24, selectedRow, selectedNoteIndex),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ],
+                    ? Row(children: [
+                        GuitarFavouritesGrid(
+                          favouritesLoading: _favouritesLoading,
+                          favouriteChords: _favouriteChords,
+                          onFavouriteChordTapped: (chord) =>
+                              widget.onFavouriteChordTapped?.call(chord),
+                          onFavouriteChordUsed: (id) =>
+                              widget.onFavouriteChordUsed?.call(id),
+                        )
+                      ])
+                    : GuitarFretStringButtons(
+                        selectedStringIndex:
+                            Provider.of<SelectedStringProvider>(context)
+                                .selectedStringIndex,
+                        fretForString: (stringIndex) => _getFretForString(
+                            _getCurrentChord(selectedRow, selectedNoteIndex),
+                            stringIndex),
+                        isChordsActive: _isChordsActive,
+                        techniqueSpacing: techniqueSpacing,
+                        onStringSelected: (stringIndex) {
+                          final selectedStringProvider =
+                              Provider.of<SelectedStringProvider>(context,
+                                  listen: false);
+                          setState(() {
+                            selectedStringProvider
+                                .setSelectedStringIndex(stringIndex);
+                            _updateBendOnlyStatesForCurrentString(
+                                selectedRow, selectedNoteIndex);
+                          });
+                        },
+                        onFretPressed: (fretNumber) => _onFretPressed(
+                            fretNumber, selectedRow, selectedNoteIndex),
                       ),
               ))
         ],
       ),
     );
   }
-}
-
-// ---------------------------------------------------------------------------
-// GuitarFavouriteChordKey – a keyboard key that renders guitar tab frets.
-// ---------------------------------------------------------------------------
-
-class GuitarFavouriteChordKey extends StatefulWidget {
-  final List<MusicalNote> childNotes;
-  final VoidCallback onTap;
-
-  const GuitarFavouriteChordKey({
-    super.key,
-    required this.childNotes,
-    required this.onTap,
-  });
-
-  @override
-  State<GuitarFavouriteChordKey> createState() =>
-      _GuitarFavouriteChordKeyState();
-}
-
-class _GuitarFavouriteChordKeyState extends State<GuitarFavouriteChordKey> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) {
-        setState(() => _pressed = false);
-        widget.onTap();
-      },
-      onTapCancel: () => setState(() => _pressed = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 100),
-        decoration: BoxDecoration(
-          color: _pressed ? Colors.grey[400] : Colors.white,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(
-            color: const Color.fromARGB(255, 130, 130, 130),
-            width: 1.0,
-          ),
-        ),
-        child: CustomPaint(
-          painter: _GuitarChordKeyPainter(childNotes: widget.childNotes),
-        ),
-      ),
-    );
-  }
-}
-
-/// Paints guitar tab fret numbers on a 6-line staff, mirroring the logic
-/// of [drawGuitarTabFrets] in drawing_helpers.dart.
-class _GuitarChordKeyPainter extends CustomPainter {
-  final List<MusicalNote> childNotes;
-
-  _GuitarChordKeyPainter({required this.childNotes});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final linePaint = Paint()
-      ..color = Colors.black
-      ..strokeWidth = 0.7;
-
-    // Zoom in: staff spans most of the tile height with small top/bottom margin.
-    final lineSpacing = size.height / 9;
-    final staffTop = (size.height - 5 * lineSpacing) / 2;
-
-    // Draw 6 string lines (strings 0–5 top to bottom).
-    for (int i = 0; i < 6; i++) {
-      canvas.drawLine(
-        Offset(0, staffTop + i * lineSpacing),
-        Offset(size.width, staffTop + i * lineSpacing),
-        linePaint,
-      );
-    }
-
-    // Draw fret numbers, one per child note.
-    for (final childNote in childNotes) {
-      final fret = childNote.unicodeCharacter;
-      if (fret.isEmpty) continue;
-
-      final stringY = staffTop + (childNote.octave * lineSpacing);
-      final noteX = size.width / 2;
-
-      final textPainter = TextPainter(
-        text: TextSpan(
-          text: fret,
-          style: const TextStyle(
-            fontSize: 9,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-
-      final xPos = noteX - textPainter.width / 2;
-      final yPos = stringY - textPainter.height / 2;
-
-      // White background behind the fret number (mirrors drawGuitarTabFrets).
-      canvas.drawRect(
-        Rect.fromLTRB(
-          xPos - 0.5,
-          yPos + 1.5,
-          xPos + textPainter.width + 0.5,
-          yPos + textPainter.height - 1.5,
-        ),
-        Paint()
-          ..color = Colors.white
-          ..style = PaintingStyle.fill,
-      );
-
-      textPainter.paint(canvas, Offset(xPos, yPos));
-    }
-  }
-
-  @override
-  bool shouldRepaint(_GuitarChordKeyPainter old) =>
-      old.childNotes != childNotes;
 }

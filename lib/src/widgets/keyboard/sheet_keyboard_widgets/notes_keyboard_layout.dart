@@ -6,13 +6,14 @@ import 'package:music_keyboard/models/sheet_format.dart';
 import 'package:music_keyboard/src/providers/current_selected_note_provider.dart';
 import 'package:music_keyboard/src/providers/selected_accidental_provider.dart';
 import 'package:music_keyboard/src/widgets/keyboard/sheet_keyboard_widgets/keyboard_by_symbols.dart';
-import 'package:music_keyboard/src/widgets/keyboard/sheet_keyboard_widgets/favourite_chord_key.dart';
 import 'package:music_keyboard/src/providers/selected_unicode_provider.dart';
 import 'package:music_keyboard/src/widgets/keyboard/sheet_keyboard_widgets/time_signature_popup.dart';
 import 'package:music_keyboard/src/widgets/keyboard/sheet_keyboard_widgets/key_signature_popup.dart';
 import 'package:music_keyboard/src/widgets/shared/popup_theme.dart';
 import 'package:music_keyboard/src/utils/haptic_feedback_utils.dart';
 import 'package:provider/provider.dart';
+import 'notes_favourites_panel.dart';
+import 'modifier_key_button.dart';
 
 class NotesKeyboardLayout extends StatefulWidget {
   final bool showNotesKeyboard;
@@ -149,150 +150,6 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
         _favouritesLoading = false;
       });
     }
-  }
-
-  Widget _buildFavouritesToggleButton() {
-    return SizedBox(
-      width: 44,
-      height: 34,
-      child: ElevatedButton(
-        onPressed: _toggleFavourites,
-        style: ElevatedButton.styleFrom(
-          backgroundColor:
-              _isFavouritesActive ? Colors.red.shade50 : Colors.grey[100],
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: BorderSide(
-              color: _isFavouritesActive ? Colors.red : Colors.black,
-              width: 1,
-            ),
-          ),
-          padding: EdgeInsets.zero,
-        ),
-        child: Icon(
-          Icons.favorite,
-          color: _isFavouritesActive ? Colors.red : Colors.black,
-          size: 18,
-        ),
-      ),
-    );
-  }
-
-  /// Grid of saved favourite chords, shown instead of [KeyboardBySymbols]
-  /// when favourites mode is active.
-  Widget _buildFavouritesGrid(BuildContext context) {
-    final double gridWidth = MediaQuery.of(context).size.width - 105;
-
-    if (_favouritesLoading) {
-      return SizedBox(
-        height: 220,
-        width: gridWidth,
-        child: const Center(child: CircularProgressIndicator()),
-      );
-    }
-    if (_favouriteChords.isEmpty) {
-      return SizedBox(
-        height: 220,
-        width: gridWidth,
-        child: const Center(
-          child: Text(
-            'You have no favourites.',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 11, color: Colors.grey),
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      height: 220,
-      width: gridWidth,
-      //below is the pink background
-      decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 255, 222, 228),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      padding: const EdgeInsets.all(4),
-      child: GridView.builder(
-        padding: EdgeInsets.zero,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 9,
-          crossAxisSpacing: 2,
-          mainAxisSpacing: 5,
-          childAspectRatio: 0.31,
-        ),
-        itemCount: _favouriteChords.length,
-        itemBuilder: (context, index) {
-          final fav = _favouriteChords[index];
-          final childNotes = fav.chord.childNotes ?? [];
-          final isDotted = _dottedRestState == 1;
-
-          return FavouriteChordKey(
-            childNotes: childNotes,
-            isDotted: isDotted,
-            onTap: () {
-              final children = childNotes.map((child) {
-                return MusicalNote(
-                  pitch: child.pitch,
-                  octave: child.octave,
-                  type: child.type,
-                  unicodeCharacter: child.unicodeCharacter,
-                  accidentalCharacter:
-                      isDotted ? 'dotted_rest' : child.accidentalCharacter,
-                  duration: child.duration,
-                  isUpsideDown: child.isUpsideDown,
-                  isBeamed: child.isBeamed,
-                );
-              }).toList();
-
-              final chordNote = MusicalNote(
-                pitch: fav.chord.pitch,
-                octave: fav.chord.octave,
-                type: NoteType.chord,
-                unicodeCharacter: fav.chord.unicodeCharacter,
-                duration: fav.chord.duration,
-                childNotes: children,
-              );
-
-              widget.onFavouriteChordTapped?.call(chordNote);
-
-              widget.onFavouriteChordUsed?.call(fav.id);
-            },
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildChordsToggleButton() {
-    return SizedBox(
-      width: 44,
-      height: 34,
-      child: ElevatedButton(
-        onPressed: () {
-          setState(() {
-            _isChordsActive = !_isChordsActive;
-            _isFavouritesActive = false;
-          });
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: _isChordsActive ? Colors.black : Colors.grey[100],
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: const BorderSide(color: Colors.black, width: 1),
-          ),
-          padding: EdgeInsets.zero,
-        ),
-        child: Text(
-          'Chord',
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-            color: _isChordsActive ? Colors.white : Colors.black,
-          ),
-        ),
-      ),
-    );
   }
 
   @override
@@ -603,231 +460,72 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
     );
   }
 
-  Widget _buildSharpButton(BuildContext context) {
-    String displayUnicode;
-    switch (_sharpState) {
-      case 1:
-        displayUnicode = '\uF4DE'; // Sharp
-        break;
-      case 2:
-        displayUnicode = '\uF4DF'; // Double Sharp
-        break;
-      default:
-        displayUnicode = '\uF4DE'; // Default to sharp
-    }
-
-    return SizedBox(
-      width: 30,
-      height: 40,
-      child: ElevatedButton(
-        onPressed: _isFavouritesActive
-            ? null
-            : () {
-                setState(() {
-                  _sharpState = (_sharpState + 1) % 3;
-                  _flatState = 0;
-                  _naturalState = 0;
-                  _dottedRestState = 0;
-                  String accidental = '';
-                  if (_sharpState == 1) {
-                    accidental = '\uF4DE';
-                  } else if (_sharpState == 2) {
-                    accidental = '\uF4DF';
-                  }
-                  context
-                      .read<SelectedAccidentalProvider>()
-                      .updateSelectedAccidental(accidental);
-                });
-              },
-        style: ElevatedButton.styleFrom(
-          backgroundColor:
-              _sharpState != 0 ? Colors.grey[300] : Colors.grey[100],
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: const BorderSide(color: Colors.black, width: 1),
-          ),
-          padding: EdgeInsets.zero,
-        ),
-        child: Transform.translate(
-          offset: const Offset(0, 10),
-          child: Text(
-            displayUnicode,
-            style: const TextStyle(
-              fontFamily: 'Bravura',
-              fontSize: 28,
-              color: Color(0xFF242038),
-            ),
-          ),
-        ),
-      ),
-    );
+  void _onSharpPressed() {
+    setState(() {
+      _sharpState = (_sharpState + 1) % 3;
+      _flatState = 0;
+      _naturalState = 0;
+      _dottedRestState = 0;
+      String accidental = '';
+      if (_sharpState == 1) {
+        accidental = '\uF4DE';
+      } else if (_sharpState == 2) {
+        accidental = '\uF4DF';
+      }
+      context
+          .read<SelectedAccidentalProvider>()
+          .updateSelectedAccidental(accidental);
+    });
   }
 
-  Widget _buildFlatButton(BuildContext context) {
-    String displayUnicode;
-    switch (_flatState) {
-      case 1:
-        displayUnicode = '\uF4DC'; // Flat
-        break;
-      case 2:
-        displayUnicode = '\uF4E0'; // Double Flat
-        break;
-      default:
-        displayUnicode = '\uF4DC'; // Default to flat
-    }
-
-    return SizedBox(
-      width: 30,
-      height: 40,
-      child: ElevatedButton(
-        onPressed: _isFavouritesActive
-            ? null
-            : () {
-                setState(() {
-                  _flatState = (_flatState + 1) % 3;
-                  _sharpState = 0;
-                  _naturalState = 0;
-                  _dottedRestState = 0;
-                  String accidental = '';
-                  if (_flatState == 1) {
-                    accidental = '\uF4DC';
-                  } else if (_flatState == 2) {
-                    accidental = '\uF4E0';
-                  }
-                  context
-                      .read<SelectedAccidentalProvider>()
-                      .updateSelectedAccidental(accidental);
-                });
-              },
-        style: ElevatedButton.styleFrom(
-          backgroundColor:
-              _flatState != 0 ? Colors.grey[300] : Colors.grey[100],
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: const BorderSide(color: Colors.black, width: 1),
-          ),
-          padding: EdgeInsets.zero,
-        ),
-        child: Transform.translate(
-          offset: const Offset(0, 10),
-          child: Text(
-            displayUnicode,
-            style: const TextStyle(
-              fontFamily: 'Bravura',
-              fontSize: 28,
-              color: Color(0xFF242038),
-            ),
-          ),
-        ),
-      ),
-    );
+  void _onFlatPressed() {
+    setState(() {
+      _flatState = (_flatState + 1) % 3;
+      _sharpState = 0;
+      _naturalState = 0;
+      _dottedRestState = 0;
+      String accidental = '';
+      if (_flatState == 1) {
+        accidental = '\uF4DC';
+      } else if (_flatState == 2) {
+        accidental = '\uF4E0';
+      }
+      context
+          .read<SelectedAccidentalProvider>()
+          .updateSelectedAccidental(accidental);
+    });
   }
 
-  Widget _buildNaturalButton(BuildContext context) {
-    return SizedBox(
-      width: 30,
-      height: 40,
-      child: ElevatedButton(
-        onPressed: _isFavouritesActive
-            ? null
-            : () {
-                setState(() {
-                  _naturalState = (_naturalState + 1) % 2;
-                  _sharpState = 0;
-                  _flatState = 0;
-                  _dottedRestState = 0;
-                  String accidental = '';
-                  if (_naturalState == 1) {
-                    accidental = '\uF4DD';
-                  }
-                  context
-                      .read<SelectedAccidentalProvider>()
-                      .updateSelectedAccidental(accidental);
-                });
-              },
-        style: ElevatedButton.styleFrom(
-          backgroundColor:
-              _naturalState != 0 ? Colors.grey[300] : Colors.grey[100],
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: const BorderSide(color: Colors.black, width: 1),
-          ),
-          padding: EdgeInsets.zero,
-        ),
-        child: Transform.translate(
-          offset: const Offset(0, 10),
-          child: const Text(
-            '\uF4DD',
-            style: TextStyle(
-              fontFamily: 'Bravura',
-              fontSize: 28,
-              color: Color(0xFF242038),
-            ),
-          ),
-        ),
-      ),
-    );
+  void _onNaturalPressed() {
+    setState(() {
+      _naturalState = (_naturalState + 1) % 2;
+      _sharpState = 0;
+      _flatState = 0;
+      _dottedRestState = 0;
+      String accidental = '';
+      if (_naturalState == 1) {
+        accidental = '\uF4DD';
+      }
+      context
+          .read<SelectedAccidentalProvider>()
+          .updateSelectedAccidental(accidental);
+    });
   }
 
-  Widget _buildDottedRestButton(BuildContext context) {
-    return SizedBox(
-      width: 30,
-      height: 40,
-      child: ElevatedButton(
-        onPressed: () {
-          setState(() {
-            _naturalState = 0;
-            _sharpState = 0;
-            _flatState = 0;
-            _dottedRestState = (_dottedRestState + 1) % 2;
-            String accidental = '';
-            if (_dottedRestState == 1) {
-              accidental = 'dotted_rest';
-            }
-            context
-                .read<SelectedAccidentalProvider>()
-                .updateSelectedAccidental(accidental);
-          });
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor:
-              _dottedRestState != 0 ? Colors.grey[300] : Colors.grey[100],
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: const BorderSide(color: Colors.black, width: 1),
-          ),
-          padding: EdgeInsets.zero,
-        ),
-        child: Transform.translate(
-          offset: const Offset(7, 8),
-          child: Row(
-            children: [
-              Text(
-                '\uE1F0 ',
-                style: const TextStyle(
-                  color: Colors.black,
-                  fontSize: 25,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Bravura',
-                ),
-              ),
-              Transform.translate(
-                offset: const Offset(0, -2),
-                child: Text(
-                  '\uE110',
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 8,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Bravura',
-                  ),
-                ),
-              )
-            ],
-          ),
-        ),
-      ),
-    );
+  void _onDottedRestPressed() {
+    setState(() {
+      _naturalState = 0;
+      _sharpState = 0;
+      _flatState = 0;
+      _dottedRestState = (_dottedRestState + 1) % 2;
+      String accidental = '';
+      if (_dottedRestState == 1) {
+        accidental = 'dotted_rest';
+      }
+      context
+          .read<SelectedAccidentalProvider>()
+          .updateSelectedAccidental(accidental);
+    });
   }
 
   @override
@@ -865,7 +563,15 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
             Row(
               children: [
                 const SizedBox(width: 12),
-                _buildChordsToggleButton(),
+                NotesChordsToggleButton(
+                  isChordsActive: _isChordsActive,
+                  onPressed: () {
+                    setState(() {
+                      _isChordsActive = !_isChordsActive;
+                      _isFavouritesActive = false;
+                    });
+                  },
+                ),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Consumer<SelectedUnicodeProvider>(
@@ -931,7 +637,10 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                   ),
                 ),
                 const SizedBox(width: 4),
-                _buildFavouritesToggleButton(),
+                NotesFavouritesToggleButton(
+                  isFavouritesActive: _isFavouritesActive,
+                  onPressed: _toggleFavourites,
+                ),
                 const SizedBox(width: 12),
               ],
             ),
@@ -1085,7 +794,15 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                 ),
               ),
               _isFavouritesActive
-                  ? _buildFavouritesGrid(context)
+                  ? NotesFavouritesGrid(
+                      favouritesLoading: _favouritesLoading,
+                      favouriteChords: _favouriteChords,
+                      isDotted: _dottedRestState == 1,
+                      onFavouriteChordTapped: (chord) =>
+                          widget.onFavouriteChordTapped?.call(chord),
+                      onFavouriteChordUsed: (id) =>
+                          widget.onFavouriteChordUsed?.call(id),
+                    )
                   : KeyboardBySymbols(
                       onKeyPress: _handleKeyPress,
                       showLowerPair: showLowerPair,
@@ -1106,13 +823,78 @@ class _NotesKeyboardLayoutState extends State<NotesKeyboardLayout> {
                   children: [
                     const SizedBox(height: 5),
                     // Shift buttons
-                    _buildSharpButton(context),
+                    ModifierKeyButton(
+                      isActive: _sharpState != 0,
+                      enabled: !_isFavouritesActive,
+                      onPressed: _onSharpPressed,
+                      child: Text(
+                        _sharpState == 2 ? '' : '',
+                        style: const TextStyle(
+                          fontFamily: 'Bravura',
+                          fontSize: 28,
+                          color: Color(0xFF242038),
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 5),
-                    _buildNaturalButton(context),
+                    ModifierKeyButton(
+                      isActive: _naturalState != 0,
+                      enabled: !_isFavouritesActive,
+                      onPressed: _onNaturalPressed,
+                      child: const Text(
+                        '',
+                        style: TextStyle(
+                          fontFamily: 'Bravura',
+                          fontSize: 28,
+                          color: Color(0xFF242038),
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 5),
-                    _buildFlatButton(context),
+                    ModifierKeyButton(
+                      isActive: _flatState != 0,
+                      enabled: !_isFavouritesActive,
+                      onPressed: _onFlatPressed,
+                      child: Text(
+                        _flatState == 2 ? '' : '',
+                        style: const TextStyle(
+                          fontFamily: 'Bravura',
+                          fontSize: 28,
+                          color: Color(0xFF242038),
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 5),
-                    _buildDottedRestButton(context),
+                    ModifierKeyButton(
+                      isActive: _dottedRestState != 0,
+                      onPressed: _onDottedRestPressed,
+                      offset: const Offset(7, 8),
+                      child: Row(
+                        children: [
+                          const Text(
+                            ' ',
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 25,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Bravura',
+                            ),
+                          ),
+                          Transform.translate(
+                            offset: const Offset(0, -2),
+                            child: const Text(
+                              '',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontSize: 8,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Bravura',
+                              ),
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 5),
                     // Octave cycle button
                     Transform.translate(
