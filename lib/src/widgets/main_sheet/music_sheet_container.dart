@@ -1,5 +1,4 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/models/sheet_rows.dart';
 import 'package:music_keyboard/models/sheet_format.dart';
@@ -14,6 +13,7 @@ import 'package:music_keyboard/src/utils/music_sheet_utils/drawing_helpers.dart'
 import 'package:music_keyboard/src/utils/music_sheet_utils/note_width_calculator.dart';
 import 'package:music_keyboard/src/utils/pdf_exporter.dart';
 import 'package:music_keyboard/src/widgets/main_sheet/music_sheet_painter.dart';
+import 'package:music_keyboard/src/widgets/main_sheet/music_sheet_toolbar_buttons.dart';
 import 'package:music_keyboard/src/widgets/keyboard/tempo_popup.dart';
 import 'package:provider/provider.dart';
 import 'package:screenshot/screenshot.dart';
@@ -2703,7 +2703,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                         widget.sheetNoteRows[selectedNoteProvider.selectedRow]
                             .chords.length &&
                     widget.keyboardType != KeyboardType.guitarTab) ...[
-                  _buildNoteFlipButton('Flip Note', () {
+                  buildNoteFlipButton('Flip Note', () {
                     setState(() {
                       if (_dragStart != null &&
                           _dragEnd != null &&
@@ -2993,14 +2993,14 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                   if (_showDynamicRemoveButton &&
                       widget.keyboardType != KeyboardType.guitarTab) ...[
                     const SizedBox(height: 5),
-                    _buildStyledButton(_getDynamicCharacter(), () {
+                    buildStyledButton(_getDynamicCharacter(), () {
                       _removeDynamicCharacter();
                     }, true, false),
                   ],
                   if ((_showHighlightButtons || _showDecrescendoRemoveButton) &&
                       widget.keyboardType != KeyboardType.guitarTab) ...[
                     const SizedBox(height: 5),
-                    _buildStyledButton('\uE53F', () {
+                    buildStyledButton('\uE53F', () {
                       if (_showDecrescendoRemoveButton) {
                         _removeDecrescendo();
                       } else {
@@ -3021,7 +3021,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                   if ((_showHighlightButtons || _showCrescendoRemoveButton) &&
                       widget.keyboardType != KeyboardType.guitarTab) ...[
                     const SizedBox(height: 5),
-                    _buildStyledButton('\uE53E', () {
+                    buildStyledButton('\uE53E', () {
                       if (_showCrescendoRemoveButton) {
                         _removeCrescendo();
                       } else {
@@ -3042,7 +3042,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                   if ((_showHighlightButtons || _showSlurRemoveButton) &&
                       widget.keyboardType != KeyboardType.guitarTab) ...[
                     const SizedBox(height: 5),
-                    _buildStyledButton('SLUR', () {
+                    buildStyledButton('SLUR', () {
                       if (_showSlurRemoveButton) {
                         _removeSlur();
                       } else {
@@ -3063,7 +3063,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                   if ((_showHighlightButtons && _showBeamAddButton) &&
                       widget.keyboardType != KeyboardType.guitarTab) ...[
                     const SizedBox(height: 5),
-                    _buildStyledButton('BEAM', () {
+                    buildStyledButton('BEAM', () {
                       if (_dragRow != null &&
                           _dragStart != null &&
                           _dragEnd != null) {
@@ -3082,14 +3082,14 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                   if (_showBeamRemoveButton &&
                       widget.keyboardType != KeyboardType.guitarTab) ...[
                     const SizedBox(height: 5),
-                    _buildStyledButton('BEAM', () {
+                    buildStyledButton('BEAM', () {
                       _removeBeam();
                     }, false, false),
                   ],
                   if (_showTieButton &&
                       widget.keyboardType != KeyboardType.guitarTab) ...[
                     const SizedBox(height: 5),
-                    _buildStyledButton('TIE', () {
+                    buildStyledButton('TIE', () {
                       if (_showTieRemoveState) {
                         _removeTie();
                       } else {
@@ -3142,7 +3142,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                   ],
                   if (_showTempoEditButton) ...[
                     const SizedBox(height: 5),
-                    _buildStyledButton('TEMPO', () {
+                    buildStyledButton('TEMPO', () {
                       _showTempoPopup();
                     }, false, true),
                   ],
@@ -3152,7 +3152,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                       widget.keyboardType == KeyboardType.guitarTab &&
                       !_showBendsPanel) ...[
                     const SizedBox(height: 5),
-                    _buildStyledButton('P.M.', () {
+                    buildStyledButton('P.M.', () {
                       if (_showMuteRemoveButton) {
                         _removeMute();
                       } else {
@@ -3179,7 +3179,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                       widget.keyboardType == KeyboardType.guitarTab &&
                       !_showBendsPanel) ...[
                     const SizedBox(height: 5),
-                    _buildStyledButton('P.H.', () {
+                    buildStyledButton('P.H.', () {
                       if (_showPinchHarmonicRemoveButton) {
                         _removePinchHarmonic();
                       } else {
@@ -3203,7 +3203,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                       widget.keyboardType == KeyboardType.guitarTab &&
                       !_showBendsPanel) ...[
                     const SizedBox(height: 5),
-                    _buildStyledButton('Ham.', () {
+                    buildStyledButton('Ham.', () {
                       if (_showHarmonicRemoveButton) {
                         _removeHarmonic();
                       } else {
@@ -3227,7 +3227,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                       widget.keyboardType == KeyboardType.guitarTab &&
                       !_showBendsPanel) ...[
                     const SizedBox(height: 5),
-                    _buildStyledButton('\uE56E', () {
+                    buildStyledButton('\uE56E', () {
                       if (_showVibratoRemoveButton) {
                         _removeVibrato();
                       } else {
@@ -3249,7 +3249,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                           _showBendRemoveButton) &&
                       widget.keyboardType == KeyboardType.guitarTab) ...[
                     const SizedBox(height: 5),
-                    _buildStyledButton('', () {
+                    buildStyledButton('', () {
                       if (_showBendRemoveButton) {
                         _removeBend();
                       } else {
@@ -3277,7 +3277,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                           _showPreBendRemoveButton) &&
                       widget.keyboardType == KeyboardType.guitarTab) ...[
                     const SizedBox(height: 5),
-                    _buildStyledButton('', () {
+                    buildStyledButton('', () {
                       if (_showPreBendRemoveButton) {
                         _removePreBend();
                       } else {
@@ -3303,7 +3303,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                           _showBendReleaseRemoveButton) &&
                       widget.keyboardType == KeyboardType.guitarTab) ...[
                     const SizedBox(height: 5),
-                    _buildStyledButton('', () {
+                    buildStyledButton('', () {
                       if (_showBendReleaseRemoveButton) {
                         _removeBendRelease();
                       } else {
@@ -3329,7 +3329,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                           _showPreBendReleaseRemoveButton) &&
                       widget.keyboardType == KeyboardType.guitarTab) ...[
                     const SizedBox(height: 5),
-                    _buildStyledButton('', () {
+                    buildStyledButton('', () {
                       if (_showPreBendReleaseRemoveButton) {
                         _removePreBendRelease();
                       } else {
@@ -3354,7 +3354,7 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
                   if (_showHighlightButtons &&
                       widget.keyboardType == KeyboardType.guitarTab) ...[
                     const SizedBox(height: 5),
-                    _buildBendsToggleButton(_showBendsPanel, () {
+                    buildBendsToggleButton(_showBendsPanel, () {
                       setState(() {
                         _showBendsPanel = !_showBendsPanel;
                       });
@@ -3375,143 +3375,4 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
     );
   }
 
-  Widget _buildStyledButton(
-      String label, VoidCallback onPressed, bool useBravura, bool isAdd,
-      {String? svgAssetPath}) {
-    return Row(
-      children: [
-        Text(
-          isAdd ? '+' : 'x',
-          style: TextStyle(
-            color: isAdd ? Color.fromARGB(255, 63, 63, 63) : Colors.red,
-            fontSize: 21,
-          ),
-        ),
-        const SizedBox(width: 2),
-        Material(
-          color: Colors.transparent,
-          elevation: 5,
-          shadowColor: Colors.black.withOpacity(0.3),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(25),
-          ),
-          child: RawMaterialButton(
-            onPressed: onPressed,
-            fillColor: Colors.white,
-            constraints: const BoxConstraints.tightFor(width: 50, height: 35),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(25),
-              side: BorderSide(
-                  color: isAdd ? Colors.black : Colors.red, width: 1),
-            ),
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            child: useBravura
-                ? Transform.translate(
-                    offset: label == '\uE53F' || label == '\uE53E'
-                        ? const Offset(1, 5)
-                        : const Offset(2, 2),
-                    child: Text(
-                      label,
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize:
-                            label == '\uE53F' || label == '\uE53E' ? 27 : 22,
-                        fontFamily: 'Bravura',
-                      ),
-                    ))
-                : svgAssetPath != null
-                    ? SvgPicture.asset(svgAssetPath,
-                        width: 20,
-                        height: 20,
-                        colorFilter: ColorFilter.linearToSrgbGamma())
-                    : Text(
-                        label,
-                        style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold),
-                      ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBendsToggleButton(bool isOpen, VoidCallback onPressed) {
-    return Row(
-      children: [
-        const SizedBox(width: 13),
-        Material(
-          color: Colors.transparent,
-          elevation: 5,
-          shadowColor: Colors.black.withOpacity(0.3),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(25),
-          ),
-          child: RawMaterialButton(
-            onPressed: onPressed,
-            fillColor: Colors.white,
-            constraints: const BoxConstraints.tightFor(width: 50, height: 35),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(25),
-              side: BorderSide(
-                color: isOpen ? Colors.red : Colors.black,
-                width: 1,
-              ),
-            ),
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            child: Text(
-              isOpen ? 'X' : 'BENDS',
-              style: TextStyle(
-                fontSize: isOpen ? 14 : 10,
-                color: isOpen ? Colors.red : Colors.black,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNoteFlipButton(
-      String label, VoidCallback onPressed, bool? isUpsideDown) {
-    return Material(
-      color: Colors.transparent,
-      elevation: 5,
-      shadowColor: Colors.black.withOpacity(0.3),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(25),
-      ),
-      child: RawMaterialButton(
-        onPressed: onPressed,
-        fillColor: Colors.white,
-        constraints: const BoxConstraints.tightFor(width: 110, height: 25),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(25),
-          side: BorderSide(color: Colors.black, width: 1),
-        ),
-        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Transform.translate(
-              offset: Offset(0, -5),
-              child: Text(
-                isUpsideDown == true ? '↓' : '↑',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 21,
-                ),
-              )),
-          SizedBox(
-            width: 3,
-          ),
-          Text(
-            label,
-            style: const TextStyle(
-                fontSize: 12, color: Colors.black, fontWeight: FontWeight.bold),
-          ),
-        ]),
-      ),
-    );
-  }
 }
