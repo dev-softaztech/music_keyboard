@@ -9,9 +9,9 @@ import 'package:music_keyboard/src/providers/row_spacing_provider.dart';
 import 'package:music_keyboard/src/providers/select_rows_mode_provider.dart';
 import 'package:music_keyboard/src/providers/undo_manager.dart';
 import 'package:music_keyboard/models/sheet_properties.dart';
-import 'package:music_keyboard/src/utils/music_sheet_utils/drawing_helpers.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/note_width_calculator.dart';
 import 'package:music_keyboard/src/utils/pdf_exporter.dart';
+import 'package:music_keyboard/src/widgets/main_sheet/music_sheet_gesture_controller.dart';
 import 'package:music_keyboard/src/widgets/main_sheet/music_sheet_painter.dart';
 import 'package:music_keyboard/src/widgets/main_sheet/music_sheet_toolbar_buttons.dart';
 import 'package:music_keyboard/src/widgets/keyboard/tempo_popup.dart';
@@ -69,7 +69,8 @@ class MusicSheetContainer extends StatefulWidget {
 }
 
 class _MusicSheetContainerState extends State<MusicSheetContainer>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin
+    implements MusicSheetGestureHost {
   late TransformationController _transformationController;
   late double initialScale;
   bool isZoomed = false;
@@ -95,19 +96,142 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
   bool _showBendReleaseRemoveButton = false;
   bool _showPreBendReleaseRemoveButton = false;
   bool _showBendsPanel = false;
-  int? _dragStart;
-  int? _dragEnd;
-  int? _dragRow;
-  bool _isDragging = false;
-  bool _isDraggingLeftHandle = false;
-  bool _isDraggingRightHandle = false;
-  // ignore: unused_field
-  int? _fixedBoundary;
-  int? _editingDynamicIndex;
-  int? _editingDynamicRow;
-  bool _isEditingDynamic = false;
-  Offset _totalDragDelta = Offset.zero;
-  double lineSpacing = 10;
+
+  late final MusicSheetGestureController _gesture =
+      MusicSheetGestureController(host: this);
+
+  int? get _dragStart => _gesture.dragStart;
+  set _dragStart(int? value) => _gesture.dragStart = value;
+  int? get _dragEnd => _gesture.dragEnd;
+  set _dragEnd(int? value) => _gesture.dragEnd = value;
+  int? get _dragRow => _gesture.dragRow;
+  set _dragRow(int? value) => _gesture.dragRow = value;
+  bool get _isDragging => _gesture.isDragging;
+  set _isDragging(bool value) => _gesture.isDragging = value;
+  set _isDraggingLeftHandle(bool value) =>
+      _gesture.isDraggingLeftHandle = value;
+  set _isDraggingRightHandle(bool value) =>
+      _gesture.isDraggingRightHandle = value;
+  set _fixedBoundary(int? value) => _gesture.fixedBoundary = value;
+  int? get _editingDynamicIndex => _gesture.editingDynamicIndex;
+  set _editingDynamicIndex(int? value) =>
+      _gesture.editingDynamicIndex = value;
+  int? get _editingDynamicRow => _gesture.editingDynamicRow;
+  set _editingDynamicRow(int? value) => _gesture.editingDynamicRow = value;
+  bool get _isEditingDynamic => _gesture.isEditingDynamic;
+  set _isEditingDynamic(bool value) => _gesture.isEditingDynamic = value;
+
+  // MusicSheetGestureHost implementation
+  @override
+  TransformationController get transformationController =>
+      _transformationController;
+  @override
+  List<SheetRows> get sheetNoteRows => widget.sheetNoteRows;
+  @override
+  SheetFormat get sheetFormat => widget.sheetFormat;
+  @override
+  KeyboardType get keyboardType => widget.keyboardType;
+  @override
+  bool get isReadOnly => widget.isReadOnly;
+  @override
+  void hostSetState(VoidCallback fn) => setState(fn);
+  @override
+  void zoomToNote(int rowIndex, int noteIndex) =>
+      _zoomToNote(rowIndex, noteIndex);
+
+  @override
+  void onHighlightDismissed() {
+    _showHighlightButtons = false;
+    _showFlipNoteButton = _shouldShowFlipNote();
+  }
+
+  @override
+  void onHighlightStarted() {
+    _showHighlightButtons = true;
+    _showTieButton = false;
+    _showDynamicRemoveButton = false;
+    _showFlipNoteButton = false;
+  }
+
+  @override
+  void onSelectionCancelled() {
+    _showHighlightButtons = false;
+  }
+
+  @override
+  void updateBeamAddButtonDuringDrag() {
+    _showBeamAddButton = _shouldShowBeamAdd();
+  }
+
+  @override
+  void onNoteSelected() {
+    // Reset buttons
+    setState(() {
+      _showHighlightButtons = false;
+      _showBendsPanel = false;
+      _showTieButton = false;
+      _showDynamicRemoveButton = false;
+      _showBeamAddButton = false;
+      _showBeamRemoveButton = false;
+      _showSlurRemoveButton = false;
+      _showTempoEditButton = false;
+      _showDecrescendoRemoveButton = false;
+      _showCrescendoRemoveButton = false;
+
+      _showMuteRemoveButton = false;
+      _showPinchHarmonicRemoveButton = false;
+      _showHarmonicRemoveButton = false;
+      _showVibratoRemoveButton = false;
+      _showBendRemoveButton = false;
+      _showPreBendRemoveButton = false;
+      _showBendReleaseRemoveButton = false;
+      _showPreBendReleaseRemoveButton = false;
+
+      _showFlipNoteButton = _shouldShowFlipNote();
+    });
+
+    var showDynamicRemoveButton = _shouldShowDynamicRemove();
+    var showBeamRemoveButton = _shouldShowBeamRemove();
+    var showBeamAddButton = _shouldShowBeamAdd();
+    var showSlurRemoveButton = _shouldShowSlurRemove();
+    var showDecrescendoRemoveButton = _shouldShowDecrescendoRemove();
+    var showCrescendoRemoveButton = _shouldShowCrescendoRemove();
+    var showTieButton = _shouldShowTieButton();
+    var showTieRemoveState = _shouldShowTieRemove();
+    var showTempoEditButton = _shouldShowTempoEdit();
+    var showFlipNoteButton = _shouldShowFlipNote();
+
+    var showMuteRemoveButton = _shouldShowMuteRemove();
+    var showPinchHarmonicRemoveButton = _shouldShowPinchHarmonicRemove();
+    var showHarmonicRemoveButton = _shouldShowHarmonicRemove();
+    var showVibratoRemoveButton = _shouldShowVibratoRemove();
+    var showBendRemoveButton = _shouldShowBendRemove();
+    var showPreBendRemoveButton = _shouldShowPreBendRemove();
+    var showBendReleaseRemoveButton = _shouldShowBendReleaseRemove();
+    var showPreBendReleaseRemoveButton = _shouldShowPreBendReleaseRemove();
+
+    setState(() {
+      _showDynamicRemoveButton = showDynamicRemoveButton;
+      _showBeamAddButton = showBeamAddButton;
+      _showBeamRemoveButton = showBeamRemoveButton;
+      _showSlurRemoveButton = showSlurRemoveButton;
+      _showDecrescendoRemoveButton = showDecrescendoRemoveButton;
+      _showCrescendoRemoveButton = showCrescendoRemoveButton;
+      _showTieButton = showTieButton;
+      _showTieRemoveState = showTieRemoveState;
+      _showTempoEditButton = showTempoEditButton;
+      _showFlipNoteButton = showFlipNoteButton;
+
+      _showMuteRemoveButton = showMuteRemoveButton;
+      _showPinchHarmonicRemoveButton = showPinchHarmonicRemoveButton;
+      _showHarmonicRemoveButton = showHarmonicRemoveButton;
+      _showVibratoRemoveButton = showVibratoRemoveButton;
+      _showBendRemoveButton = showBendRemoveButton;
+      _showPreBendRemoveButton = showPreBendRemoveButton;
+      _showBendReleaseRemoveButton = showBendReleaseRemoveButton;
+      _showPreBendReleaseRemoveButton = showPreBendReleaseRemoveButton;
+    });
+  }
 
   // Animation controller for smooth zoom transitions
   late AnimationController _zoomAnimationController;
@@ -430,659 +554,19 @@ class _MusicSheetContainerState extends State<MusicSheetContainer>
     super.dispose();
   }
 
-  void _handleDoubleTap(TapDownDetails details) {
-    // Skip if we're in highlight mode
-    if (_dragStart != null && _dragEnd != null && _dragRow != null) {
-      return;
-    }
+  void _handleDoubleTap(TapDownDetails details) =>
+      _gesture.handleDoubleTap(details);
 
-    final RenderBox renderBox = context.findRenderObject() as RenderBox;
-    final Offset localOffset = renderBox.globalToLocal(details.globalPosition);
+  void _handleTap(TapDownDetails details) => _gesture.handleTap(details);
 
-    // Get the TransformationController from InteractiveViewer
-    final Matrix4 transformMatrix = _transformationController.value;
+  void _handleLongPressStart(LongPressStartDetails details) =>
+      _gesture.handleLongPressStart(details);
 
-    // Apply inverse transformation to adjust for zoom/pan
-    final Matrix4 inverseMatrix = Matrix4.inverted(transformMatrix);
-    final vector_math.Vector3 transformedPosition = inverseMatrix
-        .transform3(vector_math.Vector3(localOffset.dx, localOffset.dy, 0));
+  void _handlePointerMove(PointerMoveEvent event) =>
+      _gesture.handlePointerMove(event);
 
-    final double tapX = transformedPosition.x;
-    final double tapY = transformedPosition.y;
-
-    int closestRowIndex = findClosestRow(widget.sheetNoteRows, tapY);
-
-    // Check if we're tapping on a dynamic marking - don't zoom if so
-    for (int i = 0;
-        i < widget.sheetNoteRows[closestRowIndex].chords.length;
-        i++) {
-      final note = widget.sheetNoteRows[closestRowIndex].chords[i];
-      if (note.isCrescendoStart || note.isDecrescendoStart) {
-        var endIndex = note.isCrescendoStart
-            ? (note.crescendoEndIndex! <
-                    widget.sheetNoteRows[closestRowIndex].chords.length - 1
-                ? note.crescendoEndIndex!
-                : widget.sheetNoteRows[closestRowIndex].chords.length - 1)
-            : note.decrescendoEndIndex! <
-                    widget.sheetNoteRows[closestRowIndex].chords.length - 1
-                ? note.decrescendoEndIndex!
-                : widget.sheetNoteRows[closestRowIndex].chords.length - 1;
-
-        final rect = getDynamicMarkingRect(i, endIndex, closestRowIndex);
-        if (rect.contains(Offset(tapX, tapY))) {
-          return; // Don't zoom if tapping on dynamic marking
-        }
-      }
-    }
-
-    int closestNoteIndex = findClosestNoteIndex(
-        widget.sheetNoteRows[closestRowIndex].chords, tapX, closestRowIndex);
-
-    // Zoom to the double-tapped note
-    _zoomToNote(closestRowIndex, closestNoteIndex);
-  }
-
-  void _handleTap(TapDownDetails details) {
-    final RenderBox renderBox = context.findRenderObject() as RenderBox;
-    final Offset localOffset = renderBox.globalToLocal(details.globalPosition);
-
-    final Matrix4 transformMatrix = _transformationController.value;
-    final Matrix4 inverseMatrix = Matrix4.inverted(transformMatrix);
-    final vector_math.Vector3 transformedPosition = inverseMatrix
-        .transform3(vector_math.Vector3(localOffset.dx, localOffset.dy, 0));
-
-    final double tapX = transformedPosition.x;
-    final double tapY = transformedPosition.y;
-
-    // Check if we're in Select Rows mode
-    final selectRowsModeProvider = context.read<SelectRowsModeProvider>();
-    if (selectRowsModeProvider.isSelectRowsMode) {
-      // In select rows mode, only handle row tapping
-      int tappedRow = findClosestRow(widget.sheetNoteRows, tapY);
-      setState(() {
-        selectRowsModeProvider.toggleRowSelection(tappedRow);
-      });
-      return;
-    }
-
-    // First check if tapping outside a selected dynamic marking to deselect it
-    if (_editingDynamicIndex != null && _editingDynamicRow != null) {
-      final note = widget
-          .sheetNoteRows[_editingDynamicRow!].chords[_editingDynamicIndex!];
-      var endIndex = note.isCrescendoStart
-          ? (note.crescendoEndIndex! <
-                  widget.sheetNoteRows[_editingDynamicRow!].chords.length - 1
-              ? note.crescendoEndIndex!
-              : widget.sheetNoteRows[_editingDynamicRow!].chords.length - 1)
-          : note.decrescendoEndIndex! <
-                  widget.sheetNoteRows[_editingDynamicRow!].chords.length - 1
-              ? note.decrescendoEndIndex!
-              : widget.sheetNoteRows[_editingDynamicRow!].chords.length - 1;
-
-      final rect = getDynamicMarkingRect(
-          _editingDynamicIndex!, endIndex, _editingDynamicRow!);
-
-      // If tapping outside the current selected marking, deselect it
-      if (!rect.contains(Offset(tapX, tapY))) {
-        setState(() {
-          _editingDynamicIndex = null;
-          _editingDynamicRow = null;
-          _totalDragDelta = Offset.zero;
-        });
-        // Continue to check if tapping on another marking or note
-      } else {
-        // Tapping inside the same marking, keep it selected
-        return;
-      }
-    }
-
-    // Handle highlight range interactions
-    if (_dragStart != null && _dragEnd != null && _dragRow != null) {
-      final Rect highlightRect = _calculateHighlightRect();
-      final Offset leftHandle =
-          Offset(highlightRect.left, highlightRect.center.dx);
-      final Offset rightHandle =
-          Offset(highlightRect.right, highlightRect.center.dx);
-
-      const double handleRadius =
-          50.0; // Slightly larger than visual handle for easier clicking
-
-      // Check if clicking near left handle
-      if ((Offset(tapX, tapY) - leftHandle).distance <= handleRadius) {
-        setState(() {
-          _isDraggingLeftHandle = true;
-          _isDraggingRightHandle = false;
-          _fixedBoundary = _dragEnd;
-          _totalDragDelta = Offset.zero;
-        });
-        return;
-      }
-
-      // Check if clicking near right handle
-      if ((Offset(tapX, tapY) - rightHandle).distance <= handleRadius) {
-        setState(() {
-          _isDraggingLeftHandle = false;
-          _isDraggingRightHandle = true;
-          _fixedBoundary = _dragStart;
-          _totalDragDelta = Offset.zero;
-        });
-        return;
-      }
-
-      if (!highlightRect.inflate(20).contains(Offset(tapX, tapY))) {
-        setState(() {
-          _dragStart = null;
-          _dragEnd = null;
-          _dragRow = null;
-          _isDraggingLeftHandle = false;
-          _isDraggingRightHandle = false;
-          _fixedBoundary = null;
-          _showHighlightButtons = false;
-
-          _showFlipNoteButton = _shouldShowFlipNote();
-        });
-        return;
-      }
-      return; // Do nothing if tap is inside highlight
-    }
-
-    // IMPORTANT: Check ALL rows for dynamic markings BEFORE determining closest row
-    // This prevents the issue where tapping on a marking selects the row below
-    // because the marking is drawn below the staff
-    for (int rowIndex = 0; rowIndex < widget.sheetNoteRows.length; rowIndex++) {
-      for (int i = 0; i < widget.sheetNoteRows[rowIndex].chords.length; i++) {
-        final note = widget.sheetNoteRows[rowIndex].chords[i];
-        if (note.isCrescendoStart || note.isDecrescendoStart) {
-          var endIndex = note.isCrescendoStart
-              ? (note.crescendoEndIndex! <
-                      widget.sheetNoteRows[rowIndex].chords.length - 1
-                  ? note.crescendoEndIndex!
-                  : widget.sheetNoteRows[rowIndex].chords.length - 1)
-              : note.decrescendoEndIndex! <
-                      widget.sheetNoteRows[rowIndex].chords.length - 1
-                  ? note.decrescendoEndIndex!
-                  : widget.sheetNoteRows[rowIndex].chords.length - 1;
-
-          final rect = getDynamicMarkingRect(i, endIndex, rowIndex);
-          if (rect.contains(Offset(tapX, tapY))) {
-            setState(() {
-              _editingDynamicIndex = i;
-              _editingDynamicRow = rowIndex;
-              _totalDragDelta = Offset.zero;
-            });
-            return;
-          }
-        }
-      }
-    }
-
-    // Only determine closest row AFTER checking for dynamic markings
-    int closestRowIndex = findClosestRow(widget.sheetNoteRows, tapY);
-
-    int closestNoteIndex = findClosestNoteIndex(
-        widget.sheetNoteRows[closestRowIndex].chords, tapX, closestRowIndex);
-
-    final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
-
-    selectedNoteProvider.updateSelectedIndexAndInsertionPoint(
-        closestRowIndex, closestNoteIndex);
-
-    // Reset buttons
-    setState(() {
-      _showHighlightButtons = false;
-      _showBendsPanel = false;
-      _showTieButton = false;
-      _showDynamicRemoveButton = false;
-      _showBeamAddButton = false;
-      _showBeamRemoveButton = false;
-      _showSlurRemoveButton = false;
-      _showTempoEditButton = false;
-      _showDecrescendoRemoveButton = false;
-      _showCrescendoRemoveButton = false;
-      _editingDynamicIndex = null;
-      _editingDynamicRow = null;
-
-      _showMuteRemoveButton = false;
-      _showPinchHarmonicRemoveButton = false;
-      _showHarmonicRemoveButton = false;
-      _showVibratoRemoveButton = false;
-      _showBendRemoveButton = false;
-      _showPreBendRemoveButton = false;
-      _showBendReleaseRemoveButton = false;
-      _showPreBendReleaseRemoveButton = false;
-
-      _showFlipNoteButton = _shouldShowFlipNote();
-    });
-
-    var showDynamicRemoveButton = _shouldShowDynamicRemove();
-    var showBeamRemoveButton = _shouldShowBeamRemove();
-    var showBeamAddButton = _shouldShowBeamAdd();
-    var showSlurRemoveButton = _shouldShowSlurRemove();
-    var showDecrescendoRemoveButton = _shouldShowDecrescendoRemove();
-    var showCrescendoRemoveButton = _shouldShowCrescendoRemove();
-    var showTieButton = _shouldShowTieButton();
-    var showTieRemoveState = _shouldShowTieRemove();
-    var showTempoEditButton = _shouldShowTempoEdit();
-    var showFlipNoteButton = _shouldShowFlipNote();
-
-    var showMuteRemoveButton = _shouldShowMuteRemove();
-    var showPinchHarmonicRemoveButton = _shouldShowPinchHarmonicRemove();
-    var showHarmonicRemoveButton = _shouldShowHarmonicRemove();
-    var showVibratoRemoveButton = _shouldShowVibratoRemove();
-    var showBendRemoveButton = _shouldShowBendRemove();
-    var showPreBendRemoveButton = _shouldShowPreBendRemove();
-    var showBendReleaseRemoveButton = _shouldShowBendReleaseRemove();
-    var showPreBendReleaseRemoveButton = _shouldShowPreBendReleaseRemove();
-
-    setState(() {
-      _showDynamicRemoveButton = showDynamicRemoveButton;
-      _showBeamAddButton = showBeamAddButton;
-      _showBeamRemoveButton = showBeamRemoveButton;
-      _showSlurRemoveButton = showSlurRemoveButton;
-      _showDecrescendoRemoveButton = showDecrescendoRemoveButton;
-      _showCrescendoRemoveButton = showCrescendoRemoveButton;
-      _showTieButton = showTieButton;
-      _showTieRemoveState = showTieRemoveState;
-      _showTempoEditButton = showTempoEditButton;
-      _showFlipNoteButton = showFlipNoteButton;
-
-      _showMuteRemoveButton = showMuteRemoveButton;
-      _showPinchHarmonicRemoveButton = showPinchHarmonicRemoveButton;
-      _showHarmonicRemoveButton = showHarmonicRemoveButton;
-      _showVibratoRemoveButton = showVibratoRemoveButton;
-      _showBendRemoveButton = showBendRemoveButton;
-      _showPreBendRemoveButton = showPreBendRemoveButton;
-      _showBendReleaseRemoveButton = showBendReleaseRemoveButton;
-      _showPreBendReleaseRemoveButton = showPreBendReleaseRemoveButton;
-    });
-  }
-
-  void _handleLongPressStart(LongPressStartDetails details) {
-    // Disable long press highlighting in read-only mode
-    if (widget.isReadOnly) {
-      return;
-    }
-
-    final RenderBox renderBox = context.findRenderObject() as RenderBox;
-    final Offset localOffset = renderBox.globalToLocal(details.globalPosition);
-
-    final Matrix4 transformMatrix = _transformationController.value;
-    final Matrix4 inverseMatrix = Matrix4.inverted(transformMatrix);
-    final vector_math.Vector3 transformedPosition = inverseMatrix
-        .transform3(vector_math.Vector3(localOffset.dx, localOffset.dy, 0));
-
-    final double tapX = transformedPosition.x;
-    final double tapY = transformedPosition.y;
-
-    int closestRowIndex = findClosestRow(widget.sheetNoteRows, tapY);
-    int noteIndex = findClosestNoteIndex(
-        widget.sheetNoteRows[closestRowIndex].chords, tapX, closestRowIndex);
-
-    if (noteIndex != -1) {
-      setState(() {
-        _dragRow = closestRowIndex;
-        _dragStart = noteIndex;
-        _dragEnd = noteIndex;
-        _isDraggingLeftHandle = false;
-        _isDraggingRightHandle = false;
-        _fixedBoundary = null;
-        _showHighlightButtons = true;
-        _showTieButton = false;
-        _showDynamicRemoveButton = false;
-        _totalDragDelta = Offset.zero;
-        _showFlipNoteButton = false;
-      });
-    }
-  }
-
-  void _handlePointerMove(PointerMoveEvent event) {
-    // If a drag is already active, just update its position.
-    if (_isDragging || _isEditingDynamic) {
-      final RenderBox renderBox = context.findRenderObject() as RenderBox;
-      final Offset localOffset = renderBox.globalToLocal(event.position);
-      final Matrix4 transformMatrix = _transformationController.value;
-      final Matrix4 inverseMatrix = Matrix4.inverted(transformMatrix);
-      final vector_math.Vector3 transformedPosition = inverseMatrix
-          .transform3(vector_math.Vector3(localOffset.dx, localOffset.dy, 0));
-      final double tapX = transformedPosition.x;
-
-      if (_isEditingDynamic && _editingDynamicRow != null) {
-        int closestNoteIndex = findClosestNoteIndex(
-            widget.sheetNoteRows[_editingDynamicRow!].chords,
-            tapX,
-            _editingDynamicRow!);
-        setState(() {
-          final note = widget
-              .sheetNoteRows[_editingDynamicRow!].chords[_editingDynamicIndex!];
-          if (note.isCrescendoStart) {
-            note.crescendoEndIndex = closestNoteIndex.clamp(
-                _editingDynamicIndex!,
-                widget.sheetNoteRows[_editingDynamicRow!].chords.length - 1);
-          } else {
-            note.decrescendoEndIndex = closestNoteIndex.clamp(
-                _editingDynamicIndex!,
-                widget.sheetNoteRows[_editingDynamicRow!].chords.length - 1);
-          }
-        });
-      } else if (_isDragging && _dragRow != null) {
-        int closestNoteIndex = findClosestNoteIndex(
-            widget.sheetNoteRows[_dragRow!].chords, tapX, _dragRow!);
-
-        setState(() {
-          // Handle different drag scenarios
-          if (_isDraggingLeftHandle) {
-            // Dragging left handle - update _dragStart, keep _dragEnd fixed
-            _dragStart = closestNoteIndex.clamp(
-                0, widget.sheetNoteRows[_dragRow!].chords.length - 1);
-          } else if (_isDraggingRightHandle) {
-            // Dragging right handle - update _dragEnd, keep _dragStart fixed
-            _dragEnd = closestNoteIndex.clamp(
-                0, widget.sheetNoteRows[_dragRow!].chords.length - 1);
-          } else {
-            // Default behavior for new selections
-            _dragEnd = closestNoteIndex.clamp(
-                0, widget.sheetNoteRows[_dragRow!].chords.length - 1);
-          }
-        });
-      }
-      _showBeamAddButton = _shouldShowBeamAdd();
-      return;
-    }
-
-    // If no drag is active, but a selection is primed, accumulate the delta
-    // and decide whether to start a drag or allow a scroll.
-    if (_dragStart != null ||
-        _editingDynamicIndex != null ||
-        _isDraggingLeftHandle ||
-        _isDraggingRightHandle) {
-      _totalDragDelta += event.delta;
-
-      // Use a threshold to avoid accidental drags from a tap.
-      if (_totalDragDelta.distance < 10.0) return;
-
-      // If movement is clearly horizontal, start a drag.
-      if (_totalDragDelta.dx.abs() > _totalDragDelta.dy.abs() * 2.0) {
-        // Before starting the drag, check if we need to detect which handle is being dragged
-        if (_dragStart != null &&
-            _dragEnd != null &&
-            _dragRow != null &&
-            !_isDraggingLeftHandle &&
-            !_isDraggingRightHandle) {
-          final RenderBox renderBox = context.findRenderObject() as RenderBox;
-          final Offset localOffset = renderBox.globalToLocal(event.position);
-          final Matrix4 transformMatrix = _transformationController.value;
-          final Matrix4 inverseMatrix = Matrix4.inverted(transformMatrix);
-          final vector_math.Vector3 transformedPosition =
-              inverseMatrix.transform3(
-                  vector_math.Vector3(localOffset.dx, localOffset.dy, 0));
-          final double currentX = transformedPosition.x;
-
-          final Rect highlightRect = _calculateHighlightRect();
-
-          // Determine which handle to drag based on which half of the highlight area the user clicked
-          double highlightCenter =
-              (highlightRect.left + highlightRect.right) / 2;
-
-          if (currentX < highlightCenter) {
-            // Dragging from left half - drag left handle
-            _isDraggingLeftHandle = true;
-            _isDraggingRightHandle = false;
-            _fixedBoundary = _dragEnd;
-          } else {
-            // Dragging from right half - drag right handle
-            _isDraggingLeftHandle = false;
-            _isDraggingRightHandle = true;
-            _fixedBoundary = _dragStart;
-          }
-        }
-
-        setState(() {
-          if (_dragStart != null ||
-              _isDraggingLeftHandle ||
-              _isDraggingRightHandle) _isDragging = true;
-          if (_editingDynamicIndex != null) _isEditingDynamic = true;
-        });
-      }
-      // Otherwise (if vertical or diagonal), it's a scroll. Cancel the primed selection.
-      else {
-        setState(() {
-          _dragStart = null;
-          _dragEnd = null;
-          _dragRow = null;
-          _isDraggingLeftHandle = false;
-          _isDraggingRightHandle = false;
-          _fixedBoundary = null;
-          _showHighlightButtons = false;
-          _editingDynamicIndex = null;
-          _editingDynamicRow = null;
-        });
-      }
-    }
-  }
-
-  void _handlePointerUp(PointerUpEvent event) {
-    _totalDragDelta = Offset.zero;
-    // If we were dragging, stop. The selection itself (_dragStart) remains
-    // until the user taps a button or taps away.
-    if (_isDragging || _isEditingDynamic) {
-      setState(() {
-        _isDragging = false;
-        _isEditingDynamic = false;
-        _isDraggingLeftHandle = false;
-        _isDraggingRightHandle = false;
-        _fixedBoundary = null;
-      });
-    }
-  }
-
-  /// **Find the closest row based on the Y position**
-  int findClosestRow(List<SheetRows> rows, double tapY) {
-    final globalRowSpacingProvider =
-        Provider.of<RowSpacingProvider>(context, listen: false);
-    double rowSpacing = globalRowSpacingProvider.rowSpacing;
-    double sheetHeight = 40.0;
-    double rowTotalHeight = rowSpacing + sheetHeight;
-    const double verticalOffset = 250.0;
-
-    // Calculate cumulative margin offsets for all rows (same logic as MusicSheetPainter)
-    Map<int, double> cumulativeMarginOffsets = {};
-    const double pageHeaderMargin = 50.0;
-    const double pageFooterMargin = 50.0;
-
-    final pageBreaks =
-        PdfExporter.calculatePageBreaks(rows, rowSpacing, widget.sheetFormat);
-    double cumulativeOffset = 0.0;
-
-    for (int rowIndex = 0; rowIndex < rows.length; rowIndex++) {
-      cumulativeMarginOffsets[rowIndex] = cumulativeOffset;
-
-      // Check if this row is at the start of a non-first page (add header margin)
-      for (int i = 1; i < pageBreaks.length; i++) {
-        final pageInfo = pageBreaks[i];
-        if (rowIndex == pageInfo.startRow) {
-          cumulativeOffset += pageHeaderMargin;
-          break;
-        }
-      }
-
-      // Check if this row is at the end of any page (add footer margin after it)
-      for (int i = 0; i < pageBreaks.length - 1; i++) {
-        final pageInfo = pageBreaks[i];
-        if (rowIndex == pageInfo.endRow) {
-          cumulativeOffset += pageFooterMargin;
-          break;
-        }
-      }
-    }
-
-    // Find the closest row by checking each row's position including margins
-    double closestDistance = double.infinity;
-    int closestRowIndex = 0;
-
-    for (int rowIndex = 0; rowIndex < rows.length; rowIndex++) {
-      final double marginOffset = cumulativeMarginOffsets[rowIndex] ?? 0.0;
-      final double rowY =
-          verticalOffset + (rowIndex * rowTotalHeight) + marginOffset;
-      final double distance = (tapY - rowY).abs();
-
-      if (distance < closestDistance) {
-        closestDistance = distance;
-        closestRowIndex = rowIndex;
-      }
-    }
-
-    // Ensure the row index is within valid bounds
-    return closestRowIndex.clamp(0, rows.length - 1);
-  }
-
-  int findClosestNoteIndex(
-      List<MusicalNote> notes, double tapX, int selectedRow) {
-    if (notes.isEmpty) return -1;
-
-    var rowSpacingList = context.read<ListOfSpacingForEachRow>().rowSpacingList;
-    var currentRowSpacing = rowSpacingList[selectedRow];
-
-    return calculateInsertionIndex(tapX, notes, currentRowSpacing,
-        startingX: widget.keyboardType.startingNoteX);
-  }
-
-  double _getStaffTop(int rowIndex) {
-    final globalRowSpacingProvider =
-        Provider.of<RowSpacingProvider>(context, listen: false);
-    double rowSpacing = globalRowSpacingProvider.rowSpacing;
-    const double sheetHeight = 40.0;
-    const double verticalOffset = 150.0;
-    return verticalOffset + (rowIndex * (rowSpacing + sheetHeight));
-  }
-
-  Rect _calculateHighlightRect() {
-    final rowNotes = widget.sheetNoteRows[_dragRow!].chords;
-    final rowSpacingList =
-        context.read<ListOfSpacingForEachRow>().rowSpacingList;
-    final currentRowSpacing = rowSpacingList[_dragRow!];
-
-    final int start = _dragStart! < _dragEnd! ? _dragStart! : _dragEnd!;
-    final int end = _dragStart! > _dragEnd! ? _dragStart! : _dragEnd!;
-
-    final double startX =
-        calculateXPositionForIndex(start, rowNotes, currentRowSpacing, true);
-    final double endX =
-        calculateXPositionForIndex(end, rowNotes, currentRowSpacing, false);
-
-    double staffTop = _getStaffTop(_dragRow!);
-    double staffCenter = staffTop + 20;
-
-    double min_y = double.infinity;
-    double max_y = double.negativeInfinity;
-
-    for (int i = start; i <= end; i++) {
-      final note = rowNotes[i];
-      double y = note.noteY;
-      min_y = math.min(min_y, y - 15);
-      max_y = math.max(max_y, y + 15);
-
-      if (note.type == NoteType.rest ||
-          note.type == NoteType.clef ||
-          note.type == NoteType.bar ||
-          note.type == NoteType.accidental ||
-          note.type == NoteType.timeSignature ||
-          note.type == NoteType.keySignature ||
-          note.type == NoteType.accidental ||
-          note.type == NoteType.space) {
-        min_y = staffTop - 25;
-        max_y = staffTop + (lineSpacing * 4) + 25;
-      }
-
-      if (note.type != NoteType.whole &&
-          note.type != NoteType.rest &&
-          note.type != NoteType.clef &&
-          note.type != NoteType.bar &&
-          note.type != NoteType.accidental) {
-        final bool isUpsideDownNote = y < staffCenter;
-        double stemHeight = 35.0;
-        if (note.type == NoteType.thirtySecond ||
-            note.type == NoteType.sixtyFourth) {
-          stemHeight += 10.0;
-        }
-
-        if ((note.type == NoteType.eighth ||
-                note.type == NoteType.sixteenth ||
-                note.type == NoteType.thirtySecond ||
-                note.type == NoteType.sixtyFourth) &&
-            note.isBeamed) {
-          var notesGroup = getBeamedNotesGroup(i, rowNotes);
-          var connectedNotesGroup = notesGroup.notesGroup;
-          if (connectedNotesGroup.isNotEmpty) {
-            var notesGroupYs = getBeamedNotesGroupHighestY(
-                connectedNotesGroup, 10.0, staffTop, staffCenter);
-            double connectedGroupHighestY = notesGroupYs.highestY;
-            double connectedGroupLowestY = notesGroupYs.lowestY;
-            bool firstNoteUpsideDown = notesGroupYs.firstNoteY < staffCenter;
-
-            if (!firstNoteUpsideDown) {
-              stemHeight = (note.noteY - connectedGroupHighestY) + stemHeight;
-            } else {
-              stemHeight = (connectedGroupLowestY - note.noteY) + stemHeight;
-            }
-
-            if (notesGroupYs.doesGroupContain32ndOr64thNote) {
-              stemHeight += 10.0;
-            }
-          }
-        }
-
-        if (isUpsideDownNote) {
-          min_y = math.min(min_y, y - stemHeight);
-        } else {
-          max_y = math.max(max_y, y + stemHeight);
-        }
-      }
-    }
-
-    return Rect.fromLTRB(
-      startX - 20,
-      min_y,
-      endX + 20,
-      max_y,
-    );
-  }
-
-  Rect getDynamicMarkingRect(int startIndex, int endIndex, int rowIndex) {
-    final rowNotes = widget.sheetNoteRows[rowIndex].chords;
-    final rowSpacingList =
-        context.read<ListOfSpacingForEachRow>().rowSpacingList;
-    final currentRowSpacing = rowSpacingList[rowIndex];
-
-    final double startX = calculateXPositionForIndex(
-        startIndex, rowNotes, currentRowSpacing, true);
-    final double endX = calculateXPositionForIndex(
-        endIndex, rowNotes, currentRowSpacing, false);
-
-    double lowestY = double.negativeInfinity;
-    bool hasUpsideDownNoteOnStaff = false;
-    double staffTop = _getStaffTop(rowIndex);
-
-    for (int i = startIndex; i <= endIndex; i++) {
-      if (rowNotes[i].noteY > lowestY) {
-        lowestY = rowNotes[i].noteY;
-      }
-      if (rowNotes[i].isUpsideDown == true && rowNotes[i].noteY >= staffTop) {
-        hasUpsideDownNoteOnStaff = true;
-      }
-    }
-
-    double staffBottomLineY = staffTop + 40; // 4 lines * 10 spacing
-    double minDynamicY = staffBottomLineY + 20;
-    double y = math.max(lowestY + 50, minDynamicY);
-
-    if (hasUpsideDownNoteOnStaff) {
-      y += 20;
-    }
-
-    // Make the hit area larger and more generous for easier tapping
-    // Extend left, right, top, and bottom by extra padding
-    return Rect.fromLTRB(startX - 10, y - 20, endX + 90, y + 50);
-  }
+  void _handlePointerUp(PointerUpEvent event) =>
+      _gesture.handlePointerUp(event);
 
   bool _shouldShowTieButton() {
     final selectedNoteProvider = context.read<CurrentSelectedNoteProvider>();
