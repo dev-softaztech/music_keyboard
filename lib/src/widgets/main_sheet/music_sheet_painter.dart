@@ -3,16 +3,16 @@ import 'package:music_keyboard/models/sheet_rows.dart';
 import 'package:music_keyboard/models/sheet_format.dart';
 import 'package:music_keyboard/models/sheet_properties.dart';
 import 'package:music_keyboard/models/keyboard_type.dart';
-import 'package:music_keyboard/src/utils/music_sheet_utils/key_signature_position_calculator.dart';
 import 'package:music_keyboard/src/utils/pdf_exporter.dart';
-import 'package:vector_math/vector_math.dart' as vec;
-import 'dart:math' as math;
 import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/bar_line_calculator.dart';
-import 'package:music_keyboard/src/utils/music_sheet_utils/bar_number_calculator.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/drawing_helpers.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/note_position_calculator.dart';
 import 'package:music_keyboard/src/utils/music_sheet_utils/note_width_calculator.dart';
+import 'music_sheet_painter/guitar_technique_painter.dart';
+import 'music_sheet_painter/expression_markings_painter.dart';
+import 'music_sheet_painter/staff_structure_painter.dart';
+import 'music_sheet_painter/sheet_header_text_painter.dart';
 
 class MusicSheetPainter extends CustomPainter {
   final String title;
@@ -45,6 +45,13 @@ class MusicSheetPainter extends CustomPainter {
 
   // Read-only mode flag
   final bool isReadOnly;
+
+  // Composed drawing helpers (stateless; see widgets/main_sheet/music_sheet_painter/)
+  final GuitarTechniquePainter _guitarTechnique = GuitarTechniquePainter();
+  final ExpressionMarkingsPainter _expressionMarkings =
+      ExpressionMarkingsPainter();
+  final StaffStructurePainter _staffStructure = StaffStructurePainter();
+  final SheetHeaderTextPainter _sheetHeaderText = SheetHeaderTextPainter();
 
   MusicSheetPainter({
     required this.title,
@@ -87,11 +94,13 @@ class MusicSheetPainter extends CustomPainter {
 
     // Draw title and composer only if showTitleAndComposer is true
     if (showTitleAndComposer) {
-      _drawTitleAndComposer(canvas, size);
+      _sheetHeaderText.drawTitleAndComposer(canvas, size, title, composer,
+          renderStartRow, renderEndRow, showTitleAndComposer);
     }
 
     // Draw visual page breaks if content spans multiple pages
-    _drawPageBreaks(canvas, size);
+    _staffStructure.drawPageBreaks(canvas, size, renderStartRow, renderEndRow,
+        sheetNoteRows, rowSpacing, sheetFormat, verticalOffset);
 
     // Determine which rows to render
     final int startRow = renderStartRow ?? 0;
@@ -175,7 +184,8 @@ class MusicSheetPainter extends CustomPainter {
       final staffTop = adjustedVerticalOffset +
           (adjustedRowIndex * (rowSpacing + sheetHeight)) +
           additionalMarginOffset;
-      drawStaffLines(canvas, paint, staffTop, lineSpacing, sheetHeight, size);
+      _staffStructure.drawStaffLines(
+          canvas, paint, staffTop, lineSpacing, sheetHeight, size, keyboardType);
 
       // Always draw the guitar tab clef symbol at the start of each row
       if (keyboardType == KeyboardType.guitarTab) {
@@ -183,7 +193,7 @@ class MusicSheetPainter extends CustomPainter {
       }
 
       // Draw bar number above the start of this row
-      _drawBarNumber(canvas, rowIndex, staffTop);
+      _staffStructure.drawBarNumber(canvas, rowIndex, staffTop, sheetNoteRows);
 
       var tempoTextY = staffTop - 55;
 
@@ -201,10 +211,12 @@ class MusicSheetPainter extends CustomPainter {
       }
 
       // Draw tempo above the left side of this row if set
-      _drawTempo(canvas, rowIndex, staffTop, tempoTextY);
+      _sheetHeaderText.drawTempo(
+          canvas, rowIndex, staffTop, tempoTextY, sheetNoteRows);
 
       // Draw swing below the tempo if set
-      _drawSwing(canvas, rowIndex, staffTop, tempoTextY);
+      _sheetHeaderText.drawSwing(
+          canvas, rowIndex, staffTop, tempoTextY, sheetNoteRows);
 
       double x = keyboardType.startingNoteX;
       double currentRowSpacing = rowSpacingList[rowIndex];
@@ -345,7 +357,7 @@ class MusicSheetPainter extends CustomPainter {
         }
 
         if (chord.type == NoteType.keySignature) {
-          _drawKeySignature(
+          _staffStructure.drawKeySignature(
               canvas, paint, chord, lineSpacing, staffTop, x, noteColour);
         } else {
           drawNote(
@@ -363,18 +375,18 @@ class MusicSheetPainter extends CustomPainter {
         }
 
         if (chord.isTriplet) {
-          _drawTriplet(canvas, paint, x, staffTop, lineSpacing,
-              sheetNoteRows[rowIndex].chords, i, currentRowSpacing);
+          _expressionMarkings.drawTriplet(canvas, paint, x, staffTop,
+              lineSpacing, sheetNoteRows[rowIndex].chords, i, currentRowSpacing);
         }
 
         if (chord.dynamicCharacter.isNotEmpty) {
-          _drawDynamicCharacter(canvas, chord, noteColour, x, staffTop,
-              lineSpacing, sheetNoteRows[rowIndex].chords, i);
+          _expressionMarkings.drawDynamicCharacter(canvas, chord, noteColour,
+              x, staffTop, lineSpacing, sheetNoteRows[rowIndex].chords, i);
         }
 
         if (chord.accentCharacter.isNotEmpty) {
-          _drawAccentCharacter(canvas, chord, noteColour, x, staffTop,
-              lineSpacing, sheetNoteRows[rowIndex].chords, i);
+          _expressionMarkings.drawAccentCharacter(canvas, chord, noteColour, x,
+              staffTop, lineSpacing, sheetNoteRows[rowIndex].chords, i);
         }
 
         if (chord.rehearsalMarking.isNotEmpty) {
@@ -387,23 +399,23 @@ class MusicSheetPainter extends CustomPainter {
             }
           }
 
-          _drawRehearsalMarking(
+          _expressionMarkings.drawRehearsalMarking(
               canvas, chord, noteColour, x, staffTop, lineSpacing, textY);
         }
 
         if (chord.tapRightHandCharacter.isNotEmpty) {
-          _drawTapRightHand(canvas, chord, noteColour, x, staffTop, lineSpacing,
-              sheetNoteRows[rowIndex].chords, i);
+          _guitarTechnique.drawTapRightHand(canvas, chord, noteColour, x,
+              staffTop, lineSpacing, sheetNoteRows[rowIndex].chords, i);
         }
 
         if (chord.hasPickDownward) {
-          _drawPickDownward(canvas, chord, noteColour, x, staffTop, lineSpacing,
-              sheetNoteRows[rowIndex].chords, i);
+          _guitarTechnique.drawPickDownward(canvas, chord, noteColour, x,
+              staffTop, lineSpacing, sheetNoteRows[rowIndex].chords, i);
         }
 
         if (chord.hasPickUpward) {
-          _drawPickUpward(canvas, chord, noteColour, x, staffTop, lineSpacing,
-              sheetNoteRows[rowIndex].chords, i);
+          _guitarTechnique.drawPickUpward(canvas, chord, noteColour, x,
+              staffTop, lineSpacing, sheetNoteRows[rowIndex].chords, i);
         }
 
         if (chord.type == NoteType.bar) {
@@ -428,12 +440,12 @@ class MusicSheetPainter extends CustomPainter {
 
           // Draw bar-level tempo markings above bar notes
           if (chord.tempoNumber > 0) {
-            _drawBarTempo(canvas, chord, x, textY);
+            _staffStructure.drawBarTempo(canvas, chord, x, textY);
           }
 
           // Draw bar-level swing markings below bar tempo if set
           if (chord.swing) {
-            _drawBarSwing(canvas, chord, x, textY);
+            _staffStructure.drawBarSwing(canvas, chord, x, textY);
           }
         }
 
@@ -463,15 +475,16 @@ class MusicSheetPainter extends CustomPainter {
               if (hasMatch) {
                 final double childY = calculateNoteYMainSheet(
                     childNote.pitch, childNote.octave, lineSpacing, staffTop);
-                drawTie(canvas, paint, x, staffCenter, x + currentRowSpacing,
-                    childY);
+                _expressionMarkings.drawTie(canvas, paint, x, staffCenter,
+                    x + currentRowSpacing, childY);
               }
             }
           } else {
             // Regular (non-chord) note – draw a single tie as before.
             double y = calculateNoteYMainSheet(
                 chord.pitch, chord.octave, lineSpacing, staffTop);
-            drawTie(canvas, paint, x, staffCenter, x + currentRowSpacing, y);
+            _expressionMarkings.drawTie(
+                canvas, paint, x, staffCenter, x + currentRowSpacing, y);
           }
         }
 
@@ -498,7 +511,7 @@ class MusicSheetPainter extends CustomPainter {
 
           // Pre-determine slur direction (mirrors logic inside drawSlurBetweenNotes)
           // so we can pick the correct extremal child note for chord notes.
-          final bool slurIsAbove = _isSlurAboveForRange(
+          final bool slurIsAbove = _expressionMarkings.isSlurAboveForRange(
               sheetNoteRows[rowIndex].chords, i, slurEndIndex, staffCenter);
 
           // For NoteType.chord start note, attach slur to highest child (if
@@ -507,7 +520,8 @@ class MusicSheetPainter extends CustomPainter {
           if (chord.type == NoteType.chord &&
               chord.childNotes != null &&
               chord.childNotes!.isNotEmpty) {
-            startY = _extremalChildY(chord, slurIsAbove, lineSpacing, staffTop);
+            startY = _expressionMarkings.extremalChildY(
+                chord, slurIsAbove, lineSpacing, staffTop);
           } else {
             startY = calculateNoteYMainSheet(
                 chord.pitch, chord.octave, lineSpacing, staffTop);
@@ -520,14 +534,14 @@ class MusicSheetPainter extends CustomPainter {
           if (endChord.type == NoteType.chord &&
               endChord.childNotes != null &&
               endChord.childNotes!.isNotEmpty) {
-            endY =
-                _extremalChildY(endChord, slurIsAbove, lineSpacing, staffTop);
+            endY = _expressionMarkings.extremalChildY(
+                endChord, slurIsAbove, lineSpacing, staffTop);
           } else {
             endY = calculateNoteYMainSheet(
                 endChord.pitch, endChord.octave, lineSpacing, staffTop);
           }
 
-          drawSlurBetweenNotes(
+          _expressionMarkings.drawSlurBetweenNotes(
               canvas,
               paint,
               startX,
@@ -569,8 +583,19 @@ class MusicSheetPainter extends CustomPainter {
             }
           }
 
-          _drawDynamicMarking(canvas, paint, x, crescendoEndX, staffTop, true,
-              i, crescendoEndIndex, sheetNoteRows[rowIndex].chords, rowIndex);
+          _expressionMarkings.drawDynamicMarking(
+              canvas,
+              paint,
+              x,
+              crescendoEndX,
+              staffTop,
+              true,
+              i,
+              crescendoEndIndex,
+              sheetNoteRows[rowIndex].chords,
+              rowIndex,
+              editingDynamicRow,
+              editingDynamicIndex);
         }
 
         if (chord.isDecrescendoStart && chord.decrescendoEndIndex != null) {
@@ -599,7 +624,7 @@ class MusicSheetPainter extends CustomPainter {
             }
           }
 
-          _drawDynamicMarking(
+          _expressionMarkings.drawDynamicMarking(
               canvas,
               paint,
               x,
@@ -609,7 +634,9 @@ class MusicSheetPainter extends CustomPainter {
               i,
               decrescendoEndIndex,
               sheetNoteRows[rowIndex].chords,
-              rowIndex);
+              rowIndex,
+              editingDynamicRow,
+              editingDynamicIndex);
         }
 
         if (keyboardType == KeyboardType.guitarTab &&
@@ -649,8 +676,8 @@ class MusicSheetPainter extends CustomPainter {
                 // Get string Y position from this childNote
                 double stringY = staffTop + (childNote.octave * lineSpacing);
 
-                _drawBend(canvas, paint, x, bendEndX, stringY, staffTop,
-                    lineSpacing, noteColour, currentRowSpacing);
+                _guitarTechnique.drawBend(canvas, paint, x, bendEndX, stringY,
+                    staffTop, lineSpacing, noteColour, currentRowSpacing);
               }
 
               // Check for pre-bend
@@ -672,8 +699,16 @@ class MusicSheetPainter extends CustomPainter {
                 // Get string Y position from this childNote
                 double stringY = staffTop + (childNote.octave * lineSpacing);
 
-                _drawPreBend(canvas, paint, x, preBendEndX, stringY, staffTop,
-                    lineSpacing, noteColour, currentRowSpacing);
+                _guitarTechnique.drawPreBend(
+                    canvas,
+                    paint,
+                    x,
+                    preBendEndX,
+                    stringY,
+                    staffTop,
+                    lineSpacing,
+                    noteColour,
+                    currentRowSpacing);
               }
 
               // Check for bend-release
@@ -701,7 +736,7 @@ class MusicSheetPainter extends CustomPainter {
                 releaseBendCurves
                     .add((startX: x, peakX: peakX, stringY: stringY));
 
-                _drawBendRelease(
+                _guitarTechnique.drawBendRelease(
                     canvas,
                     paint,
                     x,
@@ -734,7 +769,7 @@ class MusicSheetPainter extends CustomPainter {
                 // Get string Y position from this childNote
                 double stringY = staffTop + (childNote.octave * lineSpacing);
 
-                _drawPreBendRelease(
+                _guitarTechnique.drawPreBendRelease(
                     canvas,
                     paint,
                     x,
@@ -764,21 +799,21 @@ class MusicSheetPainter extends CustomPainter {
                 // Get string Y position from this childNote (start and end Y are the same)
                 double stringY = staffTop + (childNote.octave * lineSpacing);
 
-                _drawHammerLeftHand(
+                _guitarTechnique.drawHammerLeftHand(
                     canvas, paint, x, hammerLeftHandEndX, stringY, noteColour);
               }
 
               // Check for slide-up
               if (childNote.hasSlideUp) {
                 double stringY = staffTop + (childNote.octave * lineSpacing);
-                _drawSlideUp(
+                _guitarTechnique.drawSlideUp(
                     canvas, paint, x, stringY, noteColour, currentRowSpacing);
               }
 
               // Check for slide-down
               if (childNote.hasSlideDown) {
                 double stringY = staffTop + (childNote.octave * lineSpacing);
-                _drawSlideDown(
+                _guitarTechnique.drawSlideDown(
                     canvas, paint, x, stringY, noteColour, currentRowSpacing);
               }
             }
@@ -810,11 +845,11 @@ class MusicSheetPainter extends CustomPainter {
 
             // Check if any chord whose bend range overlaps [i, muteEndIndex]
             bool hasBendForMute = hasBend ||
-                _hasBendOverlappingRange(
+                _guitarTechnique.hasBendOverlappingRange(
                     sheetNoteRows[rowIndex].chords, i, muteEndIndex);
 
-            _drawMute(canvas, paint, x, muteEndX, staffTop, lineSpacing,
-                noteColour, hasBendForMute, isSingleChordSpan);
+            _guitarTechnique.drawMute(canvas, paint, x, muteEndX, staffTop,
+                lineSpacing, noteColour, hasBendForMute, isSingleChordSpan);
           }
 
           // Check for pinch harmonic technique
@@ -836,10 +871,10 @@ class MusicSheetPainter extends CustomPainter {
 
             // Check if any chord whose bend range overlaps [i, pinchHarmonicEndIndex]
             bool hasBendForPinchHarmonic = hasBend ||
-                _hasBendOverlappingRange(
+                _guitarTechnique.hasBendOverlappingRange(
                     sheetNoteRows[rowIndex].chords, i, pinchHarmonicEndIndex);
 
-            _drawPinchHarmonic(
+            _guitarTechnique.drawPinchHarmonic(
                 canvas,
                 paint,
                 x,
@@ -869,11 +904,19 @@ class MusicSheetPainter extends CustomPainter {
 
             // Check if any chord whose bend range overlaps [i, harmonicEndIndex]
             bool hasBendForHarmonic = hasBend ||
-                _hasBendOverlappingRange(
+                _guitarTechnique.hasBendOverlappingRange(
                     sheetNoteRows[rowIndex].chords, i, harmonicEndIndex);
 
-            _drawHarmonic(canvas, paint, x, harmonicEndX, staffTop, lineSpacing,
-                noteColour, hasBendForHarmonic, isSingleChordSpan);
+            _guitarTechnique.drawHarmonic(
+                canvas,
+                paint,
+                x,
+                harmonicEndX,
+                staffTop,
+                lineSpacing,
+                noteColour,
+                hasBendForHarmonic,
+                isSingleChordSpan);
           }
 
           // Check for vibrato technique
@@ -893,10 +936,10 @@ class MusicSheetPainter extends CustomPainter {
 
             // Check if any chord whose bend range overlaps [i, vibratoEndIndex]
             bool hasBendForVibrato = hasBend ||
-                _hasBendOverlappingRange(
+                _guitarTechnique.hasBendOverlappingRange(
                     sheetNoteRows[rowIndex].chords, i, vibratoEndIndex);
 
-            _drawVibrato(
+            _guitarTechnique.drawVibrato(
                 canvas,
                 paint,
                 x,
@@ -933,13 +976,24 @@ class MusicSheetPainter extends CustomPainter {
       if (selectionRow == rowIndex &&
           selectionStart != null &&
           selectionEnd != null) {
-        drawHighlight(canvas, size, rowIndex, staffTop, lineSpacing);
+        _staffStructure.drawHighlight(
+            canvas,
+            size,
+            rowIndex,
+            staffTop,
+            lineSpacing,
+            sheetNoteRows,
+            rowSpacingList,
+            keyboardType,
+            selectionStart,
+            selectionEnd,
+            selectionRow);
       }
 
       // Draw row highlight for select rows mode
       if (selectedRowsForCurlyBrace != null &&
           selectedRowsForCurlyBrace!.contains(rowIndex)) {
-        _drawRowHighlight(canvas, size, staffTop, lineSpacing);
+        _staffStructure.drawRowHighlight(canvas, size, staffTop, lineSpacing);
       }
 
       // We no longer add automatic bar lines here as it's now handled in CurrentSelectedNoteProvider
@@ -947,8 +1001,19 @@ class MusicSheetPainter extends CustomPainter {
       if (rowIndex == selectedRow) {
         // Draw the cursor if showCursor is true and not in read-only mode
         if (showCursor && !isReadOnly) {
-          drawInsertionCursor(canvas, paint, staffTop, selectedIndex + 1, size,
-              currentRowSpacing, sheetNoteRows[rowIndex].chords, lineSpacing);
+          _staffStructure.drawInsertionCursor(
+              canvas,
+              paint,
+              staffTop,
+              selectedIndex + 1,
+              size,
+              currentRowSpacing,
+              sheetNoteRows[rowIndex].chords,
+              lineSpacing,
+              keyboardType,
+              selectionStart,
+              selectionEnd,
+              selectionRow);
         }
 
         // Find which bar contains the selected note and check if it's overfilled
@@ -957,7 +1022,8 @@ class MusicSheetPainter extends CustomPainter {
               selectedIndex <= bar.endIndex &&
               bar.isOverfilled) {
             // Draw warning above the specific bar
-            drawTooManyNotesWarning(canvas, staffTop, bar.xStart, bar.xEnd);
+            _staffStructure.drawTooManyNotesWarning(
+                canvas, staffTop, bar.xStart, bar.xEnd);
             break;
           }
         }
@@ -969,589 +1035,31 @@ class MusicSheetPainter extends CustomPainter {
 
     // Draw permanent curly braces from saved groups (after all rows are drawn)
     if (curlyBraceGroups.isNotEmpty) {
-      _drawPermanentCurlyBraces(
+      _staffStructure.drawPermanentCurlyBraces(
           canvas,
           size,
           lineSpacing,
           adjustedVerticalOffset,
           cumulativeMarginOffsets,
           sheetHeight,
-          startRow);
+          startRow,
+          rowSpacing,
+          curlyBraceGroups);
     }
 
     // Draw connecting elements for connected row formats (piano, grand, etc.)
-    _drawConnectedRowElements(canvas, size);
-  }
-
-  /// Draw permanent curly braces from saved groups
-  void _drawPermanentCurlyBraces(
-      Canvas canvas,
-      Size size,
-      double lineSpacing,
-      double adjustedVerticalOffset,
-      Map<int, double> cumulativeMarginOffsets,
-      double sheetHeight,
-      int startRow) {
-    for (final group in curlyBraceGroups) {
-      final firstRow = group.startRow;
-      final lastRow = group.endRow;
-      final rowCount = lastRow - firstRow + 1;
-
-      if (rowCount < 2) continue; // Need at least 2 rows for a curly brace
-
-      // Calculate Y positions for top and bottom of the curly brace
-      final int adjustedFirstRow = firstRow - startRow;
-      final int adjustedLastRow = lastRow - startRow;
-
-      final double firstMarginOffset = cumulativeMarginOffsets[firstRow] ?? 0.0;
-      final double lastMarginOffset = cumulativeMarginOffsets[lastRow] ?? 0.0;
-
-      final double topY = adjustedVerticalOffset +
-          (adjustedFirstRow * (rowSpacing + sheetHeight)) +
-          firstMarginOffset;
-      final double bottomY = adjustedVerticalOffset +
-          (adjustedLastRow * (rowSpacing + sheetHeight)) +
-          lastMarginOffset +
-          sheetHeight;
-
-      // Draw the curly brace
-      _drawCurlyBrace(canvas, topY, bottomY, rowCount);
-    }
-  }
-
-  /// Draw a single curly brace on the left side spanning from topY to bottomY
-  void _drawCurlyBrace(
-      Canvas canvas, double topY, double bottomY, int rowCount) {
-    const double leftX =
-        45.0; // Position to the left of staff lines (which start at x=60)
-    final double height = bottomY - topY;
-
-    // For 2 rows (piano), draw a single curly brace
-    // For 3-5 rows, repeat curly braces to fill the space
-    final int braceCount = rowCount == 2 ? 1 : ((rowCount / 2).ceil());
-    final double braceHeight = height / braceCount;
-
-    // Use Bravura font character \uE000 for curly brace
-    const String braceChar = '\uE000';
-
-    for (int i = 0; i < braceCount; i++) {
-      final double braceTopY = topY + (i * braceHeight);
-      final double braceCenterY = braceTopY + (braceHeight / 2);
-
-      final textPainter = TextPainter(
-        text: TextSpan(
-          text: braceChar,
-          style: TextStyle(
-            fontFamily: 'Bravura',
-            fontSize: braceHeight,
-            color: Colors.black,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      );
-
-      textPainter.layout();
-
-      // Center the brace vertically
-      final double yPos = braceCenterY - (textPainter.height / 2) + 110;
-      // Position slightly to the left
-      final double xPos = leftX - (textPainter.width / 2);
-
-      textPainter.paint(canvas, Offset(xPos, yPos));
-    }
-  }
-
-  /// Draw connecting lines and shared bar lines for connected row formats
-  void _drawConnectedRowElements(Canvas canvas, Size size) {
-    if (sheetFormat == SheetFormat.single) {
-      return; // No connecting elements needed for single format
-    }
-
-    const double lineSpacing = 10;
-    const double sheetHeight = lineSpacing * 4;
-
-    // Determine which rows to render
-    final int startRow = renderStartRow ?? 0;
-    final int endRow = renderEndRow ?? (sheetNoteRows.length - 1);
-
-    // Calculate page margins - 50px header/footer for non-first pages
-    const double pageHeaderMargin = 50.0;
-    const double pageFooterMargin = 50.0;
-
-    // Calculate which page we're on for margin adjustments
-    final pageBreaks =
-        PdfExporter.calculatePageBreaks(sheetNoteRows, rowSpacing, sheetFormat);
-    int currentPageIndex = 0;
-    for (int i = 0; i < pageBreaks.length; i++) {
-      if (startRow >= pageBreaks[i].startRow &&
-          startRow <= pageBreaks[i].endRow) {
-        currentPageIndex = i;
-        break;
-      }
-    }
-
-    // Adjust vertical offset for partial rendering and page margins
-    double adjustedVerticalOffset = verticalOffset;
-    if (renderStartRow != null && renderEndRow != null) {
-      if (showTitleAndComposer) {
-        // Increased from 200 to 250 to match painter adjustment
-        adjustedVerticalOffset = pageHeaderMargin + 350;
-      } else {
-        // Increased from 50 to 150 to match painter adjustment
-        adjustedVerticalOffset = pageHeaderMargin + 300;
-      }
-    } else if (currentPageIndex > 0) {
-      adjustedVerticalOffset = verticalOffset + pageHeaderMargin;
-    }
-
-    // Calculate cumulative margin offsets for all rows
-    Map<int, double> cumulativeMarginOffsets = {};
-    if (renderStartRow == null || renderEndRow == null) {
-      final pageBreaks = PdfExporter.calculatePageBreaks(
-          sheetNoteRows, rowSpacing, sheetFormat);
-      double cumulativeOffset = 0.0;
-      for (int rowIndex = 0; rowIndex < sheetNoteRows.length; rowIndex++) {
-        cumulativeMarginOffsets[rowIndex] = cumulativeOffset;
-        for (int i = 1; i < pageBreaks.length; i++) {
-          final pageInfo = pageBreaks[i];
-          if (rowIndex == pageInfo.startRow - 1) {
-            cumulativeOffset += pageHeaderMargin;
-            break;
-          }
-        }
-        for (int i = 0; i < pageBreaks.length - 1; i++) {
-          final pageInfo = pageBreaks[i];
-          if (rowIndex == pageInfo.endRow) {
-            cumulativeOffset += pageFooterMargin;
-            break;
-          }
-        }
-      }
-    }
-
-    // Group rows into connected groups based on format
-    final int rowsPerGroup = sheetFormat.rowsPerGroup;
-
-    // Draw connecting elements for each group
-    for (int groupStartRow = startRow;
-        groupStartRow <= endRow;
-        groupStartRow += rowsPerGroup) {
-      final int groupEndRow =
-          math.min(groupStartRow + rowsPerGroup - 1, endRow);
-
-      // Only draw connecting elements if we have a complete group
-      if (groupEndRow - groupStartRow + 1 == rowsPerGroup && rowsPerGroup > 1) {
-        _drawConnectedGroup(canvas, size, groupStartRow, groupEndRow,
-            adjustedVerticalOffset, cumulativeMarginOffsets, sheetHeight);
-      }
-    }
-  }
-
-  /// Draw connecting elements for a specific group of connected rows
-  void _drawConnectedGroup(
-      Canvas canvas,
-      Size size,
-      int groupStartRow,
-      int groupEndRow,
-      double adjustedVerticalOffset,
-      Map<int, double> cumulativeMarginOffsets,
-      double sheetHeight) {
-    Paint paint = Paint()
-      ..color = Colors.black
-      ..strokeWidth = 1.0;
-
-    // Calculate positions for the first and last rows in the group
-    final int adjustedStartRow = groupStartRow - (renderStartRow ?? 0);
-    final int adjustedEndRow = groupEndRow - (renderStartRow ?? 0);
-
-    final double startMarginOffset =
-        cumulativeMarginOffsets[groupStartRow] ?? 0.0;
-    final double endMarginOffset = cumulativeMarginOffsets[groupEndRow] ?? 0.0;
-
-    final double topStaffTop = adjustedVerticalOffset +
-        (adjustedStartRow * (rowSpacing + sheetHeight)) +
-        startMarginOffset;
-    final double bottomStaffTop = adjustedVerticalOffset +
-        (adjustedEndRow * (rowSpacing + sheetHeight)) +
-        endMarginOffset;
-    final double bottomStaffBottom = bottomStaffTop + sheetHeight;
-
-    // Draw left connecting line (brace/bracket)
-    const double leftX = 60;
-    canvas.drawLine(
-      Offset(leftX, topStaffTop),
-      Offset(leftX, bottomStaffBottom),
-      paint..strokeWidth = 2.0,
-    );
-
-    // Draw right connecting line
-    final double rightX = size.width - 60;
-    canvas.drawLine(
-      Offset(rightX, topStaffTop),
-      Offset(rightX, bottomStaffBottom),
-      paint..strokeWidth = 2.0,
-    );
-
-    // Draw shared bar lines that connect the rows
-    _drawSharedBarLines(
-        canvas, groupStartRow, groupEndRow, topStaffTop, bottomStaffBottom);
-
-    paint..strokeWidth = 1.0; // Reset stroke width
-  }
-
-  /// Draw shared bar lines that connect rows only when bars exist at same index
-  void _drawSharedBarLines(Canvas canvas, int groupStartRow, int groupEndRow,
-      double topStaffTop, double bottomStaffBottom) {
-    Paint paint = Paint()
-      ..color = Colors.black
-      ..strokeWidth = 2.0;
-
-    double currentRowSpacing = rowSpacingList[groupStartRow];
-
-    // Find the maximum number of notes across all rows in the group
-    int maxNotes = 0;
-    for (int rowIndex = groupStartRow; rowIndex <= groupEndRow; rowIndex++) {
-      maxNotes = math.max(maxNotes, sheetNoteRows[rowIndex].chords.length);
-    }
-
-    // Check each note index position across all rows
-    for (int noteIndex = 0; noteIndex < maxNotes; noteIndex++) {
-      // Track which rows have a bar at this index and their X positions
-      Map<int, double> rowsWithBarsAtIndex = {};
-
-      for (int rowIndex = groupStartRow; rowIndex <= groupEndRow; rowIndex++) {
-        if (noteIndex < sheetNoteRows[rowIndex].chords.length) {
-          MusicalNote note = sheetNoteRows[rowIndex].chords[noteIndex];
-
-          if (note.type == NoteType.bar) {
-            // Calculate X position for this bar
-            double x = keyboardType.startingNoteX;
-            for (int i = 0; i < noteIndex; i++) {
-              if (i < sheetNoteRows[rowIndex].chords.length) {
-                MusicalNote prevNote = sheetNoteRows[rowIndex].chords[i];
-
-                // Calculate spacing for space notes
-                double spaceNoteSpacing = 0;
-                if (prevNote.type == NoteType.space && i > 0) {
-                  // Check if previous note is also a space note
-                  bool prevIsSpace =
-                      sheetNoteRows[rowIndex].chords[i - 1].type ==
-                          NoteType.space;
-                  // First space note in sequence: no spacing, subsequent: full spacing
-                  spaceNoteSpacing = prevIsSpace ? currentRowSpacing : 0;
-                }
-
-                x += prevNote.type == NoteType.clef ||
-                        prevNote.type == NoteType.timeSignature
-                    ? getNoteWidth(prevNote)
-                    : prevNote.type == NoteType.keySignature
-                        ? getNoteWidth(prevNote) + 10
-                        : prevNote.type == NoteType.space
-                            ? spaceNoteSpacing
-                            : currentRowSpacing;
-              }
-            }
-            rowsWithBarsAtIndex[rowIndex] = x;
-          }
-        }
-      }
-
-      // Only draw connecting line if ALL rows in the group have a bar at this index
-      if (rowsWithBarsAtIndex.length == (groupEndRow - groupStartRow + 1)) {
-        // All rows have a bar at this index, use the X position from the first row
-        double barX =
-            rowsWithBarsAtIndex[groupStartRow] ?? keyboardType.startingNoteX;
-
-        canvas.drawLine(
-          Offset(barX, topStaffTop),
-          Offset(barX, bottomStaffBottom),
-          paint,
-        );
-      }
-    }
-  }
-
-  /// Draw a warning when there are too many notes in a bar
-  void drawTooManyNotesWarning(
-      Canvas canvas, double staffTop, double barStartX, double barEndX) {
-    final TextPainter textPainter = TextPainter(
-      text: const TextSpan(
-        text: 'Too many notes for bar',
-        style: TextStyle(
-          color: Colors.red,
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    );
-
-    textPainter.layout();
-
-    // Position the warning above the specific bar
-    final double barWidth = barEndX - barStartX;
-    final double x = barStartX + (barWidth - textPainter.width) / 2;
-    final double y = staffTop - 40;
-
-    // Draw a semi-transparent background for better readability
-    final Rect backgroundRect = Rect.fromLTWH(
-        x - 10, y - 5, textPainter.width + 20, textPainter.height + 10);
-
-    canvas.drawRect(
-      backgroundRect,
-      Paint()..color = Colors.white.withOpacity(0.8),
-    );
-
-    // Draw the warning text
-    textPainter.paint(canvas, Offset(x, y));
-  }
-
-  /// Draw bar number above the start of a row
-  void _drawBarNumber(Canvas canvas, int rowIndex, double staffTop) {
-    // Calculate the bar number for this row
-    int barNumber =
-        BarNumberCalculator.calculateBarNumberForRow(sheetNoteRows, rowIndex);
-
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: barNumber.toString(),
-        style: const TextStyle(
-          color: Colors.black,
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    );
-
-    textPainter.layout();
-
-    // Position the bar number above and to the left of the staff start
-    // X position: slightly to the right of the staff start (60 is where staff lines start)
-    final double x = 75 - textPainter.width;
-    // Y position: above the staff with some padding
-    final double y = staffTop - 35;
-
-    textPainter.paint(canvas, Offset(x, y));
-  }
-
-  /// Draw tempo above the left side of a row if set
-  void _drawTempo(
-      Canvas canvas, int rowIndex, double staffTop, double tempoTextY) {
-    // Check if this row has a tempo set
-    final tempo = sheetNoteRows[rowIndex].rowProperties.tempoNumber;
-    if (tempo <= 0) {
-      return; // Don't draw tempo if it's 0 or negative
-    }
-
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: 'Tempo = ${tempo.round()}bpm',
-        style: const TextStyle(
-          color: Colors.black,
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    );
-
-    textPainter.layout();
-
-    final double x = 85;
-
-    textPainter.paint(canvas, Offset(x, tempoTextY));
-  }
-
-  /// Draw swing below the tempo if set
-  void _drawSwing(
-      Canvas canvas, int rowIndex, double staffTop, double tempoTextY) {
-    // Check if this row has swing set
-    final swing = sheetNoteRows[rowIndex].rowProperties.swing;
-    if (!swing) {
-      return; // Don't draw swing if it's false
-    }
-
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: sheetNoteRows[rowIndex].rowProperties.swingText,
-        style: TextStyle(
-          color: Colors.black,
-          fontSize: 16,
-          fontWeight: FontWeight.w900,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    );
-
-    textPainter.layout();
-
-    final double x = 85;
-
-    textPainter.paint(canvas, Offset(x, tempoTextY + 15));
-  }
-
-  /// Draw tempo above a specific bar note
-  void _drawBarTempo(
-      Canvas canvas, MusicalNote barNote, double x, double textY) {
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: 'Tempo = ${barNote.tempoNumber.round()}bpm',
-        style: const TextStyle(
-          color: Colors.black,
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    );
-
-    textPainter.layout();
-
-    textY = textY - 15;
-
-    textPainter.paint(canvas, Offset(x, textY));
-  }
-
-  /// Draw swing below the bar tempo if set
-  void _drawBarSwing(
-      Canvas canvas, MusicalNote barNote, double x, double textY) {
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: barNote.swingText,
-        style: const TextStyle(
-          color: Colors.black,
-          fontSize: 16,
-          fontWeight: FontWeight.w900,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    );
-
-    textPainter.layout();
-
-    textPainter.paint(canvas, Offset(x, textY));
-  }
-
-  /// Draw visual page breaks between A4-sized pages
-  void _drawPageBreaks(Canvas canvas, Size size) {
-    // Only draw page breaks if we're not in partial rendering mode
-    if (renderStartRow != null || renderEndRow != null) {
-      return;
-    }
-
-    // Calculate page breaks using the same logic as PDF export
-    final pageBreaks =
-        PdfExporter.calculatePageBreaks(sheetNoteRows, rowSpacing, sheetFormat);
-
-    // Only draw dividers if there are multiple pages
-    if (pageBreaks.length <= 1) {
-      return;
-    }
-
-    const double lineSpacing = 10;
-    const double sheetHeight = lineSpacing * 4;
-    const double pageHeaderMargin = 50.0;
-    const double pageFooterMargin = 50.0;
-
-    // Calculate cumulative margin offsets (same logic as main rendering)
-    Map<int, double> cumulativeMarginOffsets = {};
-    double cumulativeOffset = 0.0;
-
-    for (int rowIndex = 0; rowIndex < sheetNoteRows.length; rowIndex++) {
-      cumulativeMarginOffsets[rowIndex] = cumulativeOffset;
-
-      // Check if this row is at the start of a non-first page (add header margin)
-      for (int i = 1; i < pageBreaks.length; i++) {
-        final pageInfo = pageBreaks[i];
-        if (rowIndex == pageInfo.startRow) {
-          cumulativeOffset += pageHeaderMargin;
-          break;
-        }
-      }
-
-      // Check if this row is at the end of any page (add footer margin after it)
-      for (int i = 0; i < pageBreaks.length - 1; i++) {
-        final pageInfo = pageBreaks[i];
-        if (rowIndex == pageInfo.endRow) {
-          cumulativeOffset += pageFooterMargin;
-          break;
-        }
-      }
-    }
-
-    // Draw grey dividers between pages
-    final Paint dividerPaint = Paint()
-      ..color = const Color.fromARGB(255, 199, 199, 199) // Same as background
-      ..strokeWidth = 3.0;
-
-    for (int i = 1; i < pageBreaks.length; i++) {
-      final pageInfo = pageBreaks[i];
-
-      // Calculate the Y position where this page starts including margins
-      final double marginOffset =
-          cumulativeMarginOffsets[pageInfo.startRow] ?? 0.0;
-      final double pageStartY = verticalOffset +
-          (pageInfo.startRow * (rowSpacing + sheetHeight)) +
-          marginOffset -
-          (rowSpacing / 2);
-
-      // Draw a horizontal line across the width of the sheet
-      canvas.drawLine(
-        Offset(0, pageStartY),
-        Offset(size.width, pageStartY),
-        dividerPaint,
-      );
-    }
-  }
-
-  void _drawTitleAndComposer(Canvas canvas, Size size) {
-    // Calculate title and composer Y positions based on whether we're in PDF export mode
-    double titleY = 50;
-    double composerY = 90;
-
-    // During PDF export with partial rendering, coordinate title position with staff content
-    if (renderStartRow != null &&
-        renderEndRow != null &&
-        showTitleAndComposer) {
-      // Position title and composer relative to where the staff content will start
-      // Leave space at the top, then title, then composer, then space before first staff
-      titleY = 140; // Position same as normal rendering
-      composerY = 175; // Position same as normal rendering
-    }
-
-    if (title.isNotEmpty) {
-      final titlePainter = TextPainter(
-        text: TextSpan(
-          text: title,
-          style: const TextStyle(
-            color: Colors.black,
-            fontSize: 30,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      );
-      titlePainter.layout(minWidth: 0, maxWidth: size.width);
-      final titleX = (size.width - titlePainter.width) / 2;
-      titlePainter.paint(canvas, Offset(titleX, titleY));
-    }
-
-    if (composer.isNotEmpty) {
-      final composerPainter = TextPainter(
-        text: TextSpan(
-          text: 'By $composer',
-          style: const TextStyle(
-            color: Colors.black,
-            fontSize: 20,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      );
-      composerPainter.layout(minWidth: 0, maxWidth: size.width);
-      final composerX = (size.width - composerPainter.width) / 2;
-      composerPainter.paint(canvas, Offset(composerX, composerY));
-    }
+    _staffStructure.drawConnectedRowElements(
+        canvas,
+        size,
+        sheetFormat,
+        sheetNoteRows,
+        rowSpacing,
+        keyboardType,
+        rowSpacingList,
+        renderStartRow,
+        renderEndRow,
+        showTitleAndComposer,
+        verticalOffset);
   }
 
   /// Calculate the required background height based on page breaks
@@ -1580,1969 +1088,4 @@ class MusicSheetPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(CustomPainter oldDelegate) => true;
-
-  void drawStaffLines(Canvas canvas, Paint paint, double staffTop,
-      double lineSpacing, double sheetHeight, Size size) {
-    // Draw horizontal staff lines based on keyboard type
-    for (int i = 0; i < keyboardType.lineCount; i++) {
-      final y = staffTop + i * lineSpacing;
-      canvas.drawLine(
-        Offset(60, y),
-        Offset(size.width - 60, y),
-        paint..strokeWidth = 1.0,
-      );
-    }
-
-    // Draw vertical lines at start and end of staff
-    canvas.drawLine(Offset(60, staffTop), Offset(60, staffTop + (sheetHeight)),
-        paint..strokeWidth = 1.0);
-    canvas.drawLine(
-        Offset(size.width - 60, staffTop),
-        Offset(size.width - 60, staffTop + (sheetHeight)),
-        paint..strokeWidth = 1.0);
-  }
-
-  void drawInsertionCursor(
-      Canvas canvas,
-      Paint paint,
-      double staffTop,
-      int insertionIndex,
-      Size size,
-      double rowSpacing,
-      List<MusicalNote> notes,
-      double lineSpacing) {
-    if (selectionStart != null &&
-        selectionEnd != null &&
-        selectionRow != null) {
-      return;
-    }
-    // Calculate cursor X position using the new note width calculator
-    double cursorX = notes.isEmpty
-        ? keyboardType.startingNoteX
-        : calculateXPositionForIndex(
-            insertionIndex - 1, notes, rowSpacing, false,
-            startingX: keyboardType.startingNoteX);
-
-    double cursorY = staffTop + (lineSpacing * 2);
-
-    final Paint cursorPaint = Paint()..color = Colors.blue.withOpacity(0.8);
-
-    if (insertionIndex > 0) {
-      if (insertionIndex >= notes.length) {
-        insertionIndex = notes.length - 1;
-      } else {
-        insertionIndex = insertionIndex - 1;
-      }
-
-      // Check if the selected note is a space note
-      bool isSpaceNote =
-          notes.isNotEmpty && notes[insertionIndex].type == NoteType.space;
-      bool isFirstSpaceInSequence = false;
-
-      if (isSpaceNote && insertionIndex > 0) {
-        // Check if previous note is also a space note
-        isFirstSpaceInSequence =
-            notes[insertionIndex - 1].type != NoteType.space;
-      } else if (isSpaceNote && insertionIndex == 0) {
-        // Space note at index 0 is always first in sequence
-        isFirstSpaceInSequence = true;
-      }
-
-      // Don't add offset for key signatures or first-in-sequence space notes (which have 0 width)
-      if (notes.isNotEmpty &&
-          notes[insertionIndex].type == NoteType.keySignature) {
-        cursorX += 0;
-      } else if (isFirstSpaceInSequence) {
-        cursorX += 0; // First space note has no width, so no offset
-      } else {
-        cursorX += 20; // Standard offset for other notes
-      }
-    }
-
-    canvas.drawLine(
-      Offset(cursorX, cursorY - 60),
-      Offset(cursorX, cursorY + 60),
-      cursorPaint..strokeWidth = 3.5,
-    );
-  }
-
-  void drawTie(Canvas canvas, Paint paint, double startX, double staffCentre,
-      double endX, double y) {
-    Path path = Path();
-    double controlY = y >= staffCentre ? y + 25 : y - 25;
-    y = y >= staffCentre ? y + 5 : y - 5;
-
-    path.moveTo(startX + 6, y);
-    path.quadraticBezierTo((startX + endX) / 2, controlY, endX - 6, y);
-
-    paint.style = PaintingStyle.stroke;
-    paint.strokeWidth = 2.0;
-
-    canvas.drawPath(path, paint);
-  }
-
-  void drawSlur(Canvas canvas, Paint paint, double startX, double startY,
-      double endX, double endY, double staffCentre) {
-    Path path = Path();
-    //pass in start index and end index so I can work out how large to make the curve.
-
-    double controlY = (startY < endY) ? startY - 40 : startY + 40;
-    startY = startY >= staffCentre ? startY + 10 : startY - 10;
-    endY = startY >= staffCentre ? endY + 10 : endY - 10;
-
-    path.moveTo(startX + 5, startY);
-    path.quadraticBezierTo((startX + endX) / 2, controlY, endX - 5, endY);
-
-    paint.style = PaintingStyle.stroke;
-    paint.strokeWidth = 2.0;
-
-    canvas.drawPath(path, paint);
-  }
-
-  void drawSlurBetweenNotes(
-      Canvas canvas,
-      Paint paint,
-      double startX,
-      double startY,
-      double endX,
-      double endY,
-      double staffTop,
-      double staffCentre,
-      int startIndex,
-      int endIndex,
-      Color color,
-      List<MusicalNote> rowNotes,
-      int spaceNotesCount) {
-    // Ensure left-to-right direction
-    final int minIndex = startIndex < endIndex ? startIndex : endIndex;
-    final int maxIndex = startIndex > endIndex ? startIndex : endIndex;
-
-    // Determine if the slur should be above or below based on note positions
-    // If most notes are above the staff center, slur should be below, and vice versa
-    int notesAboveCenter = 0;
-    int notesBelowCenter = 0;
-
-    for (int i = minIndex; i <= maxIndex; i++) {
-      final note = rowNotes[i];
-      if (note.type != NoteType.space) {
-        if (note.noteY > staffCentre) {
-          notesAboveCenter++;
-        } else {
-          notesBelowCenter++;
-        }
-      }
-    }
-
-    final bool isSlurAbove = notesBelowCenter >= notesAboveCenter;
-
-    // Apply vertical offset based on slur position - increase for better clearance
-    startY = isSlurAbove ? startY - 12 : startY + 12;
-    endY = isSlurAbove ? endY - 12 : endY + 12;
-
-    final Offset start = Offset(startX, startY);
-    final Offset end = Offset(endX, endY);
-
-    // Start with a moderate base curve height
-    double curveHeight = 30;
-
-    int noteSpan = ((maxIndex - minIndex) - spaceNotesCount)
-        .clamp(1, rowNotes.length - spaceNotesCount);
-    double horizontalDistance = (endX - startX).abs();
-
-    // Define note head size (approximate)
-    const double noteHeadHeight = 10.0;
-    const double noteHeadWidth = 12.0;
-
-    // Track obstacles for optimal control point placement
-    List<
-        ({
-          double x,
-          double y,
-          double width,
-          double height,
-          bool? isUpsideDown,
-          bool isStem,
-          double obstacleTop,
-          double obstacleBottom
-        })> obstacles = [];
-
-    bool hasUpsideDownStems = false;
-    bool hasDownwardStems = false;
-
-    // Find the extreme Y positions of all intermediate notes to ensure proper clearance
-    double highestNoteY = double.infinity;
-    double lowestNoteY = double.negativeInfinity;
-    double highestStemY = double.infinity;
-    double lowestStemY = double.negativeInfinity;
-
-    // First pass: identify all obstacles (note heads and stems) and find extremes
-    for (int i = minIndex; i <= maxIndex; i++) {
-      final note = rowNotes[i];
-      if (note.type != NoteType.space) {
-        var spaceCount = 0;
-
-        for (int index = minIndex; index <= i; index++) {
-          final noteCurrent = rowNotes[index];
-          if (noteCurrent.type == NoteType.space) {
-            spaceCount++;
-          }
-        }
-
-        // Calculate note X position more accurately
-        double noteX = startX +
-            ((i - minIndex - spaceCount) / noteSpan) * horizontalDistance;
-
-        // Track extreme note positions
-        highestNoteY = math.min(highestNoteY, note.noteY);
-        lowestNoteY = math.max(lowestNoteY, note.noteY);
-
-        // Add note head as an obstacle (all notes have heads)
-        double noteHeadTop = note.noteY - (noteHeadHeight / 2);
-        double noteHeadBottom = note.noteY + (noteHeadHeight / 2);
-
-        obstacles.add((
-          x: noteX,
-          y: note.noteY,
-          width: noteHeadWidth,
-          height: noteHeadHeight,
-          isUpsideDown: false,
-          isStem: false,
-          obstacleTop: noteHeadTop,
-          obstacleBottom: noteHeadBottom
-        ));
-
-        // Skip stem calculation for notes that don't have stems
-        if (note.type == NoteType.whole ||
-            note.type == NoteType.rest ||
-            note.type == NoteType.clef ||
-            note.type == NoteType.bar ||
-            note.type == NoteType.accidental ||
-            note.type == NoteType.timeSignature ||
-            note.type == NoteType.keySignature ||
-            note.type == NoteType.accidental ||
-            note.type == NoteType.space) {
-          continue;
-        }
-
-        // Determine if the note's stem is upside down (pointing up)
-        if (note.isUpsideDown == true) {
-          hasUpsideDownStems = true;
-        } else {
-          hasDownwardStems = true;
-        }
-
-        // Calculate stem height based on note type and connected status
-        double stemHeight = 35.0; // Base stem height
-
-        // Adjust stem height for 32nd or 64th notes
-        if (note.type == NoteType.thirtySecond ||
-            note.type == NoteType.sixtyFourth) {
-          stemHeight += 10.0;
-        }
-
-        // For connected notes, calculate more accurate stem height
-        if ((note.type == NoteType.eighth ||
-                note.type == NoteType.sixteenth ||
-                note.type == NoteType.thirtySecond ||
-                note.type == NoteType.sixtyFourth) &&
-            note.isBeamed) {
-          // Get the connected notes group to determine actual stem height
-          var notesGroup = getBeamedNotesGroup(i, rowNotes);
-          var connectedNotesGroup = notesGroup.notesGroup;
-          bool firstNoteUpsideDown = false;
-
-          if (connectedNotesGroup.isNotEmpty) {
-            var notesGroupYs = getBeamedNotesGroupHighestY(
-                connectedNotesGroup, 10.0, staffTop, staffCentre);
-
-            double connectedGroupHighestY = notesGroupYs.highestY;
-            double connectedGroupLowestY = notesGroupYs.lowestY;
-            firstNoteUpsideDown = notesGroupYs.firstNoteY < staffCentre;
-
-            // Adjust stem height based on the connected group
-            if (!firstNoteUpsideDown) {
-              stemHeight = (note.noteY - connectedGroupHighestY) + stemHeight;
-            } else {
-              stemHeight = (connectedGroupLowestY - note.noteY) + stemHeight;
-            }
-
-            // Add buffer for complex connected notes
-            if (notesGroupYs.doesGroupContain32ndOr64thNote) {
-              stemHeight += 30.0;
-            }
-          }
-        }
-
-        // Add a safety buffer to stem height
-        stemHeight += 30.0;
-
-        // Calculate stem position and dimensions
-        double stemX = note.isUpsideDown == true ? noteX - 5.0 : noteX + 5.0;
-        double stemWidth = 1.5; // Stem width
-        double stemTop, stemBottom;
-
-        if (note.isUpsideDown == true) {
-          // Stem points up
-          stemTop = note.noteY - stemHeight;
-          stemBottom = note.noteY;
-          // Track extreme stem positions
-          highestStemY = math.min(highestStemY, stemTop);
-        } else {
-          // Stem points down
-          stemTop = note.noteY;
-          stemBottom = note.noteY + stemHeight;
-          // Track extreme stem positions
-          lowestStemY = math.max(lowestStemY, stemBottom);
-        }
-
-        // Add stem as an obstacle
-        obstacles.add((
-          x: stemX,
-          y: note.noteY,
-          width: stemWidth,
-          height: stemHeight,
-          isUpsideDown: note.isUpsideDown,
-          isStem: true,
-          obstacleTop: stemTop,
-          obstacleBottom: stemBottom
-        ));
-      }
-    }
-
-    // Calculate minimum curve height to clear ALL intermediate notes and stems
-    double minRequiredCurveHeight = 60.0; // Increased base minimum
-
-    if (isSlurAbove) {
-      // Slur goes above notes - find the highest point (lowest Y value) and add clearance
-      double highestPoint = highestNoteY;
-      if (highestStemY != double.infinity) {
-        highestPoint = math.min(highestPoint, highestStemY);
-      }
-
-      // For slurs above, we need to ensure the control point is well above the highest obstacle
-      // The control point should be at least 40px above the highest point
-      double requiredControlY = highestPoint - 40.0;
-      double slurMidY = (start.dy + end.dy) / 2;
-
-      // Calculate how much curve height we need to reach that control point
-      minRequiredCurveHeight =
-          math.max(minRequiredCurveHeight, slurMidY - requiredControlY);
-
-      // Additional clearance for upward stems
-      if (hasUpsideDownStems) {
-        minRequiredCurveHeight += 20.0;
-      }
-    } else {
-      // Slur goes below notes - find the lowest point (highest Y value) and add clearance
-      double lowestPoint = lowestNoteY;
-      if (lowestStemY != double.negativeInfinity) {
-        lowestPoint = math.max(lowestPoint, lowestStemY);
-      }
-
-      // For slurs below, we need to ensure the control point is well below the lowest obstacle
-      // The control point should be at least 40px below the lowest point
-      double requiredControlY = lowestPoint + 40.0;
-      double slurMidY = (start.dy + end.dy) / 2;
-
-      // Calculate how much curve height we need to reach that control point
-      minRequiredCurveHeight =
-          math.max(minRequiredCurveHeight, requiredControlY - slurMidY);
-
-      // Additional clearance for downward stems
-      if (hasDownwardStems) {
-        minRequiredCurveHeight += 20.0;
-      }
-    }
-
-    // Set curve height to at least the minimum required
-    curveHeight = math.max(curveHeight, minRequiredCurveHeight);
-
-    // Find the most problematic obstacle for control point positioning
-    double maxObstacleImpact = 0;
-    double obstaclePositionRatio = 0.5; // Default to center
-
-    for (var obstacle in obstacles) {
-      // Calculate where this obstacle is along the x-axis (0.0 = start, 1.0 = end)
-      double positionRatio = (obstacle.x - startX) / horizontalDistance;
-      positionRatio = positionRatio.clamp(0.0, 1.0);
-
-      // Calculate the impact of this obstacle
-      double impact = 0;
-
-      if (obstacle.isStem) {
-        // Stems have higher impact when they're in the slur's path
-        if (isSlurAbove && obstacle.isUpsideDown == true) {
-          // For upward stems when slur is above
-          impact = obstacle.height * 1.5;
-        } else if (!isSlurAbove && obstacle.isUpsideDown == false) {
-          // For downward stems when slur is below
-          impact = obstacle.height * 1.5;
-        }
-      } else {
-        // Note heads have impact regardless of slur position
-        impact = obstacle.height;
-      }
-
-      // If this obstacle has more impact than previous ones
-      if (impact > maxObstacleImpact) {
-        maxObstacleImpact = impact;
-        // Shift control point slightly away from the obstacle
-        obstaclePositionRatio =
-            positionRatio > 0.5 ? positionRatio - 0.2 : positionRatio + 0.2;
-        obstaclePositionRatio = obstaclePositionRatio.clamp(
-            0.3, 0.7); // Keep within reasonable bounds
-      }
-    }
-
-    // Calculate control point for the Bezier curve
-    double controlX = startX + (horizontalDistance * obstaclePositionRatio);
-    double controlY = (start.dy + end.dy) / 2;
-
-    // Apply curve height with height multiplier for longer distances
-    double heightMultiplier = 1.0 + (horizontalDistance / 500);
-    heightMultiplier = heightMultiplier.clamp(1.0, 1.5);
-
-    controlY += isSlurAbove
-        ? -curveHeight * heightMultiplier
-        : curveHeight * heightMultiplier;
-
-    // Configurable parameters for slur appearance
-    const double minBufferSpace = 25.0; // Minimum space above/below notes
-    const double maxSlurHeight =
-        180.0; // Maximum slur height to prevent overlap with other rows
-
-    // Force the slur to have proper clearance above or below ALL obstacles
-    if (isSlurAbove) {
-      // Force the slur to be well above ALL obstacles
-      double highestObstacle = highestNoteY;
-      if (highestStemY != double.infinity) {
-        highestObstacle = math.min(highestObstacle, highestStemY);
-      }
-
-      // Force control point to be at least minBufferSpace above the highest obstacle
-      double forcedControlY = highestObstacle - minBufferSpace;
-      controlY = math.min(controlY, forcedControlY);
-
-      // Apply maximum height limit to prevent overlap with other rows
-      double maxAllowedY = staffCentre - maxSlurHeight;
-      controlY = math.max(controlY, maxAllowedY);
-    } else {
-      // Force the slur to be well below ALL obstacles
-      double lowestObstacle = lowestNoteY;
-      if (lowestStemY != double.negativeInfinity) {
-        lowestObstacle = math.max(lowestObstacle, lowestStemY);
-      }
-
-      // Force control point to be at least minBufferSpace below the lowest obstacle
-      double forcedControlY = lowestObstacle + minBufferSpace;
-      controlY = math.max(controlY, forcedControlY);
-
-      // Apply maximum height limit to prevent overlap with other rows
-      double maxAllowedY = staffCentre + maxSlurHeight;
-      controlY = math.min(controlY, maxAllowedY);
-    }
-
-    Offset control = Offset(controlX, controlY);
-
-    // Final validation: Generate curve points and verify clearance
-    List<Offset> bezierPoints = [];
-    const int segments = 100;
-
-    // Generate points along the curve for validation
-    for (int i = 0; i <= segments; i++) {
-      double t = i / segments;
-      double x = (1 - t) * (1 - t) * start.dx +
-          2 * (1 - t) * t * control.dx +
-          t * t * end.dx;
-      double y = (1 - t) * (1 - t) * start.dy +
-          2 * (1 - t) * t * control.dy +
-          t * t * end.dy;
-      bezierPoints.add(Offset(x, y));
-    }
-
-    // Final check for intersections and adjust if needed
-    bool hasIntersection;
-    int maxIterations =
-        5; // Reduced iterations since we pre-calculated clearance
-    int iteration = 0;
-
-    do {
-      hasIntersection = false;
-      iteration++;
-
-      // Check each obstacle against the curve
-      for (var obstacle in obstacles) {
-        // For stems, check if the curve intersects the stem line
-        if (obstacle.isStem) {
-          double stemX = obstacle.x;
-          double stemTop = obstacle.obstacleTop;
-          double stemBottom = obstacle.obstacleBottom;
-
-          // Find the closest point on the curve to this stem's x-coordinate
-          Offset? closestPoint;
-          double minDistance = double.infinity;
-
-          for (var point in bezierPoints) {
-            double distance = (point.dx - stemX).abs();
-            if (distance < minDistance) {
-              minDistance = distance;
-              closestPoint = point;
-            }
-          }
-
-          if (closestPoint != null && minDistance < 5.0) {
-            // Check if this point intersects with the stem
-            bool intersects = false;
-
-            if (isSlurAbove && obstacle.isUpsideDown == true) {
-              // For upward stems when slur is above
-              intersects =
-                  closestPoint.dy > stemTop && closestPoint.dy < stemBottom;
-            } else if (!isSlurAbove && obstacle.isUpsideDown == false) {
-              // For downward stems when slur is below
-              intersects =
-                  closestPoint.dy > stemTop && closestPoint.dy < stemBottom;
-            }
-
-            if (intersects) {
-              hasIntersection = true;
-              // Increase curve height to avoid this stem
-              curveHeight += 10.0;
-              break;
-            }
-          }
-        }
-        // For note heads, check if the curve passes through the note head
-        else {
-          double noteHeadLeft = obstacle.x - (obstacle.width / 2);
-          double noteHeadRight = obstacle.x + (obstacle.width / 2);
-          double noteHeadTop = obstacle.obstacleTop;
-          double noteHeadBottom = obstacle.obstacleBottom;
-
-          // Check if any point on the curve intersects with this note head
-          for (var point in bezierPoints) {
-            if (point.dx >= noteHeadLeft &&
-                point.dx <= noteHeadRight &&
-                point.dy >= noteHeadTop &&
-                point.dy <= noteHeadBottom) {
-              hasIntersection = true;
-              // Increase curve height to avoid this note head
-              curveHeight += 8.0;
-              break;
-            }
-          }
-
-          if (hasIntersection) break;
-        }
-      }
-
-      if (hasIntersection) {
-        // Recalculate control point with new curve height
-        controlY = (start.dy + end.dy) / 2;
-        controlY += isSlurAbove
-            ? -curveHeight * heightMultiplier
-            : curveHeight * heightMultiplier;
-
-        // Re-apply our forced positioning to maintain buffer space
-        if (isSlurAbove) {
-          double highestObstacle = highestNoteY;
-          if (highestStemY != double.infinity) {
-            highestObstacle = math.min(highestObstacle, highestStemY);
-          }
-          double forcedControlY = highestObstacle - minBufferSpace;
-          controlY = math.min(controlY, forcedControlY);
-
-          // Apply maximum height limit
-          double maxAllowedY = staffCentre - maxSlurHeight;
-          controlY = math.max(controlY, maxAllowedY);
-        } else {
-          double lowestObstacle = lowestNoteY;
-          if (lowestStemY != double.negativeInfinity) {
-            lowestObstacle = math.max(lowestObstacle, lowestStemY);
-          }
-          double forcedControlY = lowestObstacle + minBufferSpace;
-          controlY = math.max(controlY, forcedControlY);
-
-          // Apply maximum height limit
-          double maxAllowedY = staffCentre + maxSlurHeight;
-          controlY = math.min(controlY, maxAllowedY);
-        }
-
-        control = Offset(controlX, controlY);
-
-        // Regenerate bezier points
-        bezierPoints.clear();
-        for (int i = 0; i <= segments; i++) {
-          double t = i / segments;
-          double x = (1 - t) * (1 - t) * start.dx +
-              2 * (1 - t) * t * control.dx +
-              t * t * end.dx;
-          double y = (1 - t) * (1 - t) * start.dy +
-              2 * (1 - t) * t * control.dy +
-              t * t * end.dy;
-          bezierPoints.add(Offset(x, y));
-        }
-      }
-    } while (hasIntersection && iteration < maxIterations);
-
-    // Draw the slur
-    drawVariableThicknessBezier(
-      canvas: canvas,
-      start: start,
-      control: control,
-      end: end,
-      maxThickness: 3,
-      color: color,
-    );
-  }
-
-  /// Draw highlight for entire row in select rows mode
-  void _drawRowHighlight(
-      Canvas canvas, Size size, double staffTop, double lineSpacing) {
-    final double sheetHeight = lineSpacing * 4;
-
-    final Rect rowRect = Rect.fromLTRB(
-      60, // Start from left edge of staff
-      staffTop - 20, // A bit above the staff
-      size.width - 60, // End at right edge of staff
-      staffTop + sheetHeight + 20, // A bit below the staff
-    );
-
-    final Paint highlightPaint = Paint()
-      ..color = Colors.blue.withOpacity(0.15)
-      ..style = PaintingStyle.fill;
-
-    canvas.drawRect(rowRect, highlightPaint);
-  }
-
-  void drawHighlight(Canvas canvas, Size size, int rowIndex, double staffTop,
-      double lineSpacing) {
-    if (selectionStart == null ||
-        selectionEnd == null ||
-        selectionRow == null) {
-      return;
-    }
-
-    final rowNotes = sheetNoteRows[selectionRow!].chords;
-    if (rowNotes.isEmpty) {
-      return;
-    }
-
-    final int start =
-        selectionStart! < selectionEnd! ? selectionStart! : selectionEnd!;
-    final int end =
-        selectionStart! > selectionEnd! ? selectionStart! : selectionEnd!;
-
-    final double startX = calculateXPositionForIndex(
-        start, rowNotes, rowSpacingList[rowIndex], true,
-        startingX: keyboardType.startingNoteX);
-    final double endX = calculateXPositionForIndex(
-        end, rowNotes, rowSpacingList[rowIndex], false,
-        startingX: keyboardType.startingNoteX);
-
-    // Always cover at minimum the full stave height, then expand for notes outside
-    final double staveTop = staffTop;
-    final double staveBottom =
-        staffTop + (lineSpacing * (keyboardType.lineCount - 1));
-    double min_y = staveTop;
-    double max_y = staveBottom;
-
-    for (int i = start; i <= end; i++) {
-      final note = rowNotes[i];
-      double y = note.noteY;
-      min_y = math.min(min_y, y - 15);
-      max_y = math.max(max_y, y + 15);
-
-      if (note.type != NoteType.whole &&
-          note.type != NoteType.rest &&
-          note.type != NoteType.clef &&
-          note.type != NoteType.bar &&
-          note.type != NoteType.accidental &&
-          note.type != NoteType.timeSignature &&
-          note.type != NoteType.keySignature &&
-          note.type != NoteType.space) {
-        final bool isUpsideDownNote = y < staffTop + 20;
-        double stemHeight = 35.0;
-        if (note.type == NoteType.thirtySecond ||
-            note.type == NoteType.sixtyFourth) {
-          stemHeight += 20.0;
-        }
-        if (isUpsideDownNote) {
-          min_y = math.min(min_y, y - stemHeight);
-        } else {
-          max_y = math.max(max_y, y + stemHeight);
-        }
-      }
-    }
-
-    final Rect highlightRect = Rect.fromLTRB(
-      startX - 10,
-      min_y - 20,
-      endX + 20,
-      max_y,
-    );
-
-    final Paint highlightPaint = Paint()
-      ..color = Colors.blue.withOpacity(0.15)
-      ..style = PaintingStyle.fill;
-
-    final Paint borderPaint = Paint()
-      ..color = Colors.blue.withOpacity(0.5)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-
-    canvas.drawRect(highlightRect, highlightPaint);
-    canvas.drawRect(highlightRect, borderPaint);
-
-    final Paint handlePaint = Paint()
-      ..color = Colors.blue
-      ..style = PaintingStyle.fill;
-
-    canvas.drawCircle(
-        Offset(highlightRect.left, highlightRect.center.dy), 7, handlePaint);
-    canvas.drawCircle(
-        Offset(highlightRect.right, highlightRect.center.dy), 7, handlePaint);
-  }
-
-  void drawVariableThicknessBezier({
-    required Canvas canvas,
-    required Offset start,
-    required Offset control,
-    required Offset end,
-    required double maxThickness,
-    required Color color,
-  }) {
-    const int segments = 300; // More segments = smoother curve
-    final path = Path();
-
-    // Store left and right edge of the stroke
-    List<Offset> leftPoints = [];
-    List<Offset> rightPoints = [];
-
-    for (int i = 0; i <= segments; i++) {
-      double t = i / segments;
-
-      // Bézier curve formula
-      double x = (1 - t) * (1 - t) * start.dx +
-          2 * (1 - t) * t * control.dx +
-          t * t * end.dx;
-      double y = (1 - t) * (1 - t) * start.dy +
-          2 * (1 - t) * t * control.dy +
-          t * t * end.dy;
-      Offset point = Offset(x, y);
-
-      // Tangent vector
-      double dx =
-          2 * (1 - t) * (control.dx - start.dx) + 2 * t * (end.dx - control.dx);
-      double dy =
-          2 * (1 - t) * (control.dy - start.dy) + 2 * t * (end.dy - control.dy);
-      vec.Vector2 tangent = vec.Vector2(dx, dy).normalized();
-
-      // Normal vector (perpendicular to tangent)
-      vec.Vector2 normal = vec.Vector2(-tangent.y, tangent.x);
-
-      // Thickness tapers in and out toward center
-      double thickness =
-          maxThickness * (1 - ((t - 0.5) * 2).abs()); // triangle shape taper
-
-      vec.Vector2 offset = normal.scaled(thickness / 2);
-      Offset left = point + Offset(offset.x, offset.y);
-      Offset right = point - Offset(offset.x, offset.y);
-
-      leftPoints.add(left);
-      rightPoints.add(right);
-    }
-
-    // Draw thick curve as a filled path
-    path.addPolygon(leftPoints, false);
-    path.addPolygon(rightPoints.reversed.toList(), true); // Close the shape
-
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = color
-        ..style = PaintingStyle.fill
-        ..isAntiAlias = true
-        ..strokeWidth = 1.0,
-    );
-  }
-
-  double endXForIndex(int index, double currentRowSpacing) {
-    return keyboardType.startingNoteX + (index * currentRowSpacing);
-  }
-
-  void _drawDynamicCharacter(
-      Canvas canvas,
-      MusicalNote note,
-      Color noteColour,
-      double x,
-      double staffTop,
-      double lineSpacing,
-      List<MusicalNote> notes,
-      int noteIndex) {
-    final textStyle = TextStyle(
-      color: noteColour,
-      fontSize: 30,
-      fontFamily: 'Bravura',
-    );
-    final textSpan = TextSpan(
-      text: note.dynamicCharacter,
-      style: textStyle,
-    );
-    final textPainter = TextPainter(
-      text: textSpan,
-      textDirection: TextDirection.ltr,
-    );
-    textPainter.layout();
-
-    double lowestY = double.negativeInfinity;
-    bool hasUpsideDownNoteOnStaff = false;
-
-    if (note.noteY > lowestY) {
-      lowestY = note.noteY;
-    }
-    if (note.isUpsideDown == true && note.noteY >= staffTop) {
-      hasUpsideDownNoteOnStaff = true;
-    }
-
-    double staffBottomLineY = staffTop + 40; // 4 lines * 10 spacing
-    double minDynamicY = staffBottomLineY + 20;
-    double yPos = math.max(lowestY + 50, minDynamicY);
-
-    if (hasUpsideDownNoteOnStaff) {
-      yPos += 30;
-    }
-
-    double xPos = x - (textPainter.width / 2);
-
-    if (note.accentCharacter != "" && note.isUpsideDown == false) {
-      yPos = yPos + 10;
-    }
-
-    textPainter.paint(canvas, Offset(xPos, yPos - 60));
-  }
-
-  void _drawAccentCharacter(
-      Canvas canvas,
-      MusicalNote note,
-      Color noteColour,
-      double x,
-      double staffTop,
-      double lineSpacing,
-      List<MusicalNote> notes,
-      int noteIndex) {
-    final textStyle = TextStyle(
-      color: noteColour,
-      fontSize: 30,
-      fontFamily: 'Bravura',
-    );
-    final textSpan = TextSpan(
-      text: note.accentCharacter,
-      style: textStyle,
-    );
-    final textPainter = TextPainter(
-      text: textSpan,
-      textDirection: TextDirection.ltr,
-    );
-    textPainter.layout();
-
-    double yPos;
-    double xPos = x - (textPainter.width / 2);
-    bool isUpsideDownNote = note.isUpsideDown == true;
-
-    // Handle beamed notes special case
-    if (note.isBeamed) {
-      var notesGroup = getBeamedNotesGroup(noteIndex, notes);
-      var connectedNotesGroup = notesGroup.notesGroup;
-
-      if (connectedNotesGroup.isNotEmpty) {
-        isUpsideDownNote = connectedNotesGroup.first.isUpsideDown == true;
-      }
-
-      double staffBottomLineY = staffTop + (lineSpacing * 4);
-      double distanceFromStaff = isUpsideDownNote
-          ? (staffTop - note.noteY).abs()
-          : (note.noteY - staffBottomLineY).abs();
-
-      if (distanceFromStaff > 30) {
-        // Position accent at ~30 pixels from note, between staff lines
-        if (isUpsideDownNote) {
-          // For upside-down notes, accent goes above
-          yPos = note.noteY - 85;
-          // Adjust to position between staff lines (staff lines are at 0, 10, 20, 30, 40)
-
-          double relativeToStaff = yPos - staffTop;
-          double nearestStaffLine =
-              (relativeToStaff / lineSpacing).round() * lineSpacing;
-          if ((relativeToStaff - nearestStaffLine).abs() < 3) {
-            yPos = staffTop + nearestStaffLine; // Move between lines
-          }
-        } else {
-          // For normal notes, accent goes below
-          yPos = note.noteY - 45;
-          // Adjust to position between staff lines
-
-          double relativeToStaff = yPos - staffTop;
-          double nearestStaffLine =
-              (relativeToStaff / lineSpacing).round() * lineSpacing;
-          if ((relativeToStaff - nearestStaffLine).abs() < 3) {
-            yPos = staffTop + nearestStaffLine; // Move between lines
-          }
-        }
-
-        textPainter.paint(canvas, Offset(xPos, yPos + 0.5));
-        return;
-      }
-    }
-
-    if (isUpsideDownNote) {
-      double maxAccentY = staffTop;
-      double baseYPos = note.noteY - 1;
-
-      if (note.noteY <= staffTop - 10) {
-        baseYPos -= 5;
-      }
-
-      yPos = math.min(baseYPos, maxAccentY);
-
-      yPos = yPos - 75;
-    } else {
-      double staffBottomLineY = staffTop + 40; // 4 lines * 10 spacing
-      double minAccentY = staffBottomLineY;
-      double baseYPos = note.noteY + 1;
-
-      if (note.noteY >= staffBottomLineY + 10) {
-        baseYPos += 5;
-      }
-
-      yPos = math.max(baseYPos, minAccentY);
-      yPos = yPos - 55;
-    }
-
-    textPainter.paint(canvas, Offset(xPos, yPos));
-  }
-
-  void _drawDynamicMarking(
-      Canvas canvas,
-      Paint paint,
-      double startX,
-      double endX,
-      double staffTop,
-      bool isCrescendo,
-      int startIndex,
-      int endIndex,
-      List<MusicalNote> notes,
-      int rowIndex) {
-    if (startIndex == endIndex || endX < startX || endIndex >= notes.length) {
-      endX = startX + 10;
-    }
-
-    // Offset logic
-    if (notes[startIndex].dynamicCharacter.isNotEmpty) {
-      startX += 20;
-    }
-    if (notes[startIndex] == notes[endIndex]) {
-      endX += 20;
-    } else if (notes[endIndex].dynamicCharacter.isNotEmpty) {
-      endX -= 20;
-    }
-
-    double lowestY = double.negativeInfinity;
-    bool hasUpsideDownNoteOnStaff = false;
-    bool hasDynamicCharacter = false;
-    for (int i = startIndex; i <= endIndex; i++) {
-      if (notes[i].type != NoteType.space) {
-        if (notes[i].noteY > lowestY) {
-          lowestY = notes[i].noteY;
-        }
-        if (notes[i].isUpsideDown == true && notes[i].noteY >= staffTop) {
-          hasUpsideDownNoteOnStaff = true;
-        }
-        if (notes[i].dynamicCharacter.isNotEmpty) {
-          hasDynamicCharacter = true;
-        }
-      }
-    }
-
-    double staffBottomLineY = staffTop + 40; // 4 lines * 10 spacing
-    double minDynamicY = staffBottomLineY + 20;
-    double y = math.max(lowestY + 50, minDynamicY);
-
-    if (hasUpsideDownNoteOnStaff) {
-      y += 30;
-    }
-
-    if (hasDynamicCharacter) {
-      y += 15;
-    }
-
-    double openWidth = 15.0;
-    Path path = Path();
-
-    if (isCrescendo) {
-      path.moveTo(startX, y);
-      path.lineTo(endX, y - openWidth / 2);
-      path.moveTo(startX, y);
-      path.lineTo(endX, y + openWidth / 2);
-    } else {
-      path.moveTo(startX, y - openWidth / 2);
-      path.lineTo(endX, y);
-      path.moveTo(startX, y + openWidth / 2);
-      path.lineTo(endX, y);
-    }
-
-    paint.style = PaintingStyle.stroke;
-    paint.strokeWidth = 1.5;
-    canvas.drawPath(path, paint);
-
-    if (editingDynamicRow == rowIndex && editingDynamicIndex == startIndex) {
-      final Paint handlePaint = Paint()
-        ..color = Colors.blue
-        ..style = PaintingStyle.fill;
-      canvas.drawCircle(Offset(endX + 10, y), 10, handlePaint);
-    }
-  }
-
-  void _drawArrowHead(Canvas canvas, Paint paint, double peakX, double peakY,
-      String labelText, Color noteColour, bool isUpArrow) {
-    final double arrowWidth = 3.0;
-    final double arrowHeight = 6.0;
-
-    Paint arrowPaint = paint;
-    arrowPaint.style = PaintingStyle.fill;
-    arrowPaint.color = noteColour;
-    arrowPaint.isAntiAlias = true;
-
-    final Path arrowHead = Path();
-    if (isUpArrow) {
-      peakY = peakY - 5;
-      arrowHead.moveTo(peakX, peakY);
-      arrowHead.lineTo(peakX - arrowWidth, peakY + arrowHeight);
-      arrowHead.lineTo(peakX + arrowWidth, peakY + arrowHeight);
-      arrowHead.close();
-    } else {
-      peakY = peakY + 0;
-      arrowHead.moveTo(peakX, peakY);
-      arrowHead.lineTo(peakX - arrowWidth, peakY - arrowHeight);
-      arrowHead.lineTo(peakX + arrowWidth, peakY - arrowHeight);
-      arrowHead.close();
-    }
-
-    canvas.drawPath(arrowHead, arrowPaint);
-
-    if (isUpArrow) {
-      final textPainter = TextPainter(
-        text: TextSpan(
-          text: labelText,
-          style: TextStyle(
-            color: noteColour,
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      );
-      textPainter.layout();
-      textPainter.paint(
-          canvas, Offset(peakX - textPainter.width / 2, peakY - 15));
-    }
-  }
-
-  /// Helper function to draw upward curved line from start to peak
-  void _drawBendCurveUp(
-      Canvas canvas,
-      Paint paint,
-      double startX,
-      double startY,
-      double endX,
-      double endY,
-      double currentRowSpacing,
-      bool isRelease) {
-    final Path path = Path();
-    path.moveTo(startX + 8, startY - 2);
-
-    double bezierEndY = endY;
-    if (isRelease) {
-      startX = startX + (currentRowSpacing * 0.35);
-      bezierEndY = bezierEndY + (currentRowSpacing * 0.35);
-    } else {
-      startX = startX + (currentRowSpacing * 0.8);
-      bezierEndY = bezierEndY + (currentRowSpacing * 0.3);
-    }
-
-    path.quadraticBezierTo(startX, bezierEndY, endX, endY);
-//(startX + endX) / 2
-    paint.style = PaintingStyle.stroke;
-    paint.strokeWidth = 1.2;
-    canvas.drawPath(path, paint);
-  }
-
-  /// Helper function to draw downward curved line from peak to end
-  void _drawBendCurveDown(Canvas canvas, Paint paint, double startX,
-      double startY, double endX, double? endY, double currentRowSpacing) {
-    final Path path = Path();
-    path.moveTo(startX + 5, startY - 4);
-
-    startX = startX + (currentRowSpacing * 0.35);
-    double bezierStartY = startY + (currentRowSpacing * -0.2);
-
-    path.quadraticBezierTo(startX, bezierStartY, endX, endY! - 6);
-
-    paint.style = PaintingStyle.stroke;
-    paint.strokeWidth = 1.2;
-    canvas.drawPath(path, paint);
-  }
-
-  /// Draw bend arrow (single upward arrow with "full" label)
-  void _drawBend(
-      Canvas canvas,
-      Paint paint,
-      double startX,
-      double endX,
-      double stringY,
-      double staffTop,
-      double lineSpacing,
-      Color noteColour,
-      double currentRowSpacing) {
-    final double peakY = staffTop - 20;
-
-    _drawBendCurveUp(
-        canvas, paint, startX, stringY, endX, peakY, currentRowSpacing, false);
-
-    _drawArrowHead(canvas, paint, endX, peakY, 'full', noteColour, true);
-  }
-
-  /// Draw pre-bend arrow (single upward arrow with "1/2" label)
-  void _drawPreBend(
-      Canvas canvas,
-      Paint paint,
-      double startX,
-      double endX,
-      double stringY,
-      double staffTop,
-      double lineSpacing,
-      Color noteColour,
-      double currentRowSpacing) {
-    final double peakY = staffTop - 20;
-    startX = startX + 5;
-
-    _drawBendCurveUp(
-        canvas, paint, startX, stringY, endX, peakY, currentRowSpacing, false);
-
-    _drawArrowHead(canvas, paint, endX, peakY, '1/2', noteColour, true);
-  }
-
-  /// Draw bend-release arrow (up then down with "full" label)
-  void _drawBendRelease(
-      Canvas canvas,
-      Paint paint,
-      double startX,
-      double endX,
-      double stringY,
-      double staffTop,
-      double lineSpacing,
-      Color noteColour,
-      double currentRowSpacing,
-      double? curveDownY) {
-    // Calculate peak position above the staff
-    final double peakY = staffTop - 20;
-
-    double peakX = startX + (currentRowSpacing * 0.4);
-
-    _drawBendCurveUp(
-        canvas, paint, startX, stringY, peakX, peakY, currentRowSpacing, true);
-
-    _drawBendCurveDown(
-        canvas, paint, peakX, peakY, endX, curveDownY, currentRowSpacing);
-
-    _drawArrowHead(canvas, paint, peakX, peakY, 'full', noteColour, true);
-    _drawArrowHead(canvas, paint, endX, curveDownY!, 'full', noteColour, false);
-  }
-
-  /// Draw pre-bend-release arrow (up then down with "1/2" label)
-  void _drawPreBendRelease(
-      Canvas canvas,
-      Paint paint,
-      double startX,
-      double endX,
-      double stringY,
-      double staffTop,
-      double lineSpacing,
-      Color noteColour,
-      double currentRowSpacing,
-      double? curveDownY) {
-    // Calculate peak position above the staff
-    final double peakY = staffTop - 20;
-    double peakX = startX + (currentRowSpacing * 0.4);
-
-    // Draw curved line from start to peak - curve bulges downward under the arrow
-    _drawBendCurveUp(
-        canvas, paint, startX, stringY, peakX, peakY, currentRowSpacing, true);
-
-    // Draw curved line from peak back down to end
-    _drawBendCurveDown(
-        canvas, paint, peakX, peakY, endX, curveDownY, currentRowSpacing);
-
-    // Draw "1/2" label at peak
-    _drawArrowHead(canvas, paint, peakX, peakY, '1/2', noteColour, true);
-    _drawArrowHead(canvas, paint, endX, curveDownY!, '1/2', noteColour, false);
-  }
-
-  /// Draw hammer-left-hand: a quadratic bezier curve along the same string Y
-  void _drawHammerLeftHand(Canvas canvas, Paint paint, double startX,
-      double endX, double stringY, Color noteColour) {
-    final Path path = Path();
-    final double controlX = (startX + endX) / 2;
-    // Arc slightly above the string line
-    stringY = stringY - 5;
-    final double controlY = stringY - 20;
-
-    path.moveTo(startX + 8, stringY);
-    path.quadraticBezierTo(controlX, controlY, endX, stringY);
-
-    paint.style = PaintingStyle.stroke;
-    paint.strokeWidth = 1.2;
-    paint.color = noteColour;
-    canvas.drawPath(path, paint);
-  }
-
-  /// Draw slide-up: diagonal line going from lower-left to upper-right on the string,
-  /// sitting between the current note and the next note position.
-  void _drawSlideUp(Canvas canvas, Paint paint, double x, double stringY,
-      Color noteColour, double rowSpacing) {
-    const double startOffset = 10.0;
-    const double endOffset = 10.0;
-    const double diagonalHeight = 5.0;
-
-    final double startX = x + startOffset;
-    final double endX = x + rowSpacing - endOffset;
-    final double startY = stringY + diagonalHeight;
-    final double endY = stringY - diagonalHeight;
-
-    paint.style = PaintingStyle.stroke;
-    paint.strokeWidth = 1.5;
-    paint.color = noteColour;
-
-    canvas.drawLine(Offset(startX, startY), Offset(endX, endY), paint);
-  }
-
-  /// Draw slide-down: diagonal line going from upper-left to lower-right on the string,
-  /// sitting between the current note and the next note position.
-  void _drawSlideDown(Canvas canvas, Paint paint, double x, double stringY,
-      Color noteColour, double rowSpacing) {
-    const double startOffset = 10.0;
-    const double endOffset = 10.0;
-    const double diagonalHeight = 5.0;
-
-    final double startX = x + startOffset;
-    final double endX = x + rowSpacing - endOffset;
-    final double startY = stringY - diagonalHeight;
-    final double endY = stringY + diagonalHeight;
-
-    paint.style = PaintingStyle.stroke;
-    paint.strokeWidth = 1.5;
-    paint.color = noteColour;
-
-    canvas.drawLine(Offset(startX, startY), Offset(endX, endY), paint);
-  }
-
-  void _drawDottedLine(Canvas canvas, Paint paint, TextPainter textPainter,
-      double startX, double endX, double labelY, Color noteColour) {
-    final double lineStartX = startX + textPainter.width + 2;
-    final double lineY = labelY + (textPainter.height / 2);
-
-    paint.style = PaintingStyle.stroke;
-    paint.strokeWidth = 1.5;
-    paint.color = noteColour;
-
-    // Draw dotted line
-    final double dashWidth = 5;
-    final double dashSpace = 3;
-    double currentX = lineStartX;
-
-    while (currentX < endX) {
-      canvas.drawLine(
-        Offset(currentX, lineY),
-        Offset(currentX + dashWidth, lineY),
-        paint,
-      );
-      currentX += dashWidth + dashSpace;
-    }
-
-    canvas.drawLine(
-      Offset(currentX - dashSpace, lineY - 7.5),
-      Offset(currentX - dashSpace, lineY + 7.5),
-      paint,
-    );
-  }
-
-  /// Draw mute technique (P.M. label with dotted line)
-  void _drawMute(
-      Canvas canvas,
-      Paint paint,
-      double startX,
-      double endX,
-      double staffTop,
-      double lineSpacing,
-      Color noteColour,
-      bool hasBend,
-      bool isSingleChordSpan) {
-    // Position label above staff, higher if there's also a bend
-    final double labelY = hasBend ? staffTop - 60 : staffTop - 30;
-
-    // Draw the "P.M." label
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: 'P.M.',
-        style: TextStyle(
-          color: noteColour,
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    );
-    textPainter.layout();
-    textPainter.paint(canvas, Offset(startX, labelY));
-
-    if (!isSingleChordSpan) {
-      _drawDottedLine(
-          canvas, paint, textPainter, startX, endX, labelY, noteColour);
-    }
-  }
-
-  /// Draw pinch harmonic technique (P.H. label with dotted line)
-  void _drawPinchHarmonic(
-      Canvas canvas,
-      Paint paint,
-      double startX,
-      double endX,
-      double staffTop,
-      double lineSpacing,
-      Color noteColour,
-      bool hasBend,
-      bool isSingleChordSpan) {
-    // Position label above staff, higher if there's also a bend
-    final double labelY = hasBend ? staffTop - 60 : staffTop - 30;
-
-    // Draw the "P.H." label
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: 'P.H.',
-        style: TextStyle(
-          color: noteColour,
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    );
-    textPainter.layout();
-    textPainter.paint(canvas, Offset(startX, labelY));
-
-    if (!isSingleChordSpan) {
-      _drawDottedLine(
-          canvas, paint, textPainter, startX, endX, labelY, noteColour);
-    }
-  }
-
-  /// Draw harmonic technique (Ham. label with dotted line)
-  void _drawHarmonic(
-      Canvas canvas,
-      Paint paint,
-      double startX,
-      double endX,
-      double staffTop,
-      double lineSpacing,
-      Color noteColour,
-      bool hasBend,
-      bool isSingleChordSpan) {
-    // Position label above staff, higher if there's also a bend
-    final double labelY = hasBend ? staffTop - 60 : staffTop - 30;
-
-    // Draw the "Ham." label
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: 'Ham.',
-        style: TextStyle(
-          color: noteColour,
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    );
-    textPainter.layout();
-    textPainter.paint(canvas, Offset(startX, labelY));
-
-    if (!isSingleChordSpan) {
-      _drawDottedLine(
-          canvas, paint, textPainter, startX, endX, labelY, noteColour);
-    }
-  }
-
-  /// Draw vibrato technique (vibrato unicode character with multiple instances)
-  void _drawVibrato(
-      Canvas canvas,
-      Paint paint,
-      double startX,
-      double endX,
-      double staffTop,
-      double lineSpacing,
-      Color noteColour,
-      bool hasBend,
-      bool isSingleChordSpan,
-      double rowSpacing) {
-    final double labelY = hasBend ? staffTop - 70 : staffTop - 40;
-
-    double distance = endX - startX;
-    int symbolCount = 1;
-
-    final double symbolWidth = 10.0;
-
-    symbolCount = (distance / symbolWidth).floor();
-    symbolCount = math.max(1, symbolCount);
-
-    for (int i = 0; i < symbolCount; i++) {
-      double symbolX = startX + (i * symbolWidth);
-
-      final textPainter = TextPainter(
-        text: TextSpan(
-          text: '\uE56E',
-          style: TextStyle(
-            fontFamily: 'Bravura',
-            fontSize: 20,
-            color: noteColour,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      );
-      textPainter.layout();
-      double xPos = symbolX;
-      textPainter.paint(canvas, Offset(xPos, labelY - 10));
-    }
-  }
-
-  /// Draw rehearsal marking above the staff at the note's position
-  void _drawRehearsalMarking(Canvas canvas, MusicalNote note, Color noteColour,
-      double x, double staffTop, double lineSpacing, double yPos) {
-    // Determine if this is a unicode character (from Bravura font)
-    final bool isUnicode =
-        note.rehearsalMarking == '\uE047' || note.rehearsalMarking == '\uE048';
-
-    final textStyle = TextStyle(
-      color: noteColour,
-      fontSize: isUnicode ? 32 : 20,
-      fontFamily: isUnicode ? 'Bravura' : null,
-      fontStyle: isUnicode ? FontStyle.normal : FontStyle.italic,
-      fontWeight: isUnicode ? FontWeight.w200 : FontWeight.w600,
-    );
-
-    final textSpan = TextSpan(
-      text: note.rehearsalMarking,
-      style: textStyle,
-    );
-
-    final textPainter = TextPainter(
-      text: textSpan,
-      textDirection: TextDirection.ltr,
-    );
-    textPainter.layout();
-
-    // Center the text horizontally over the note
-    double xPos = x - (textPainter.width / 2);
-    if (isUnicode) yPos = yPos - 40;
-
-    textPainter.paint(canvas, Offset(xPos, yPos));
-  }
-
-  /// Draw key signature on the staff
-  void _drawKeySignature(Canvas canvas, Paint paint, MusicalNote note,
-      double lineSpacing, double staffTop, double x, Color noteColour) {
-    // Parse the key signature name to determine symbol count and type
-    final keySignatureName = note.keySignatureName;
-    if (keySignatureName.isEmpty) return;
-
-    // Map key signature names to their properties
-    final Map<String, Map<String, dynamic>> keySignatureMap = {
-      'G/Em': {'count': 1, 'isSharp': true},
-      'D/Bm': {'count': 2, 'isSharp': true},
-      'A/F#m': {'count': 3, 'isSharp': true},
-      'E/C#m': {'count': 4, 'isSharp': true},
-      'B/G#m': {'count': 5, 'isSharp': true},
-      'F#/D#m': {'count': 6, 'isSharp': true},
-      'C#/A#m': {'count': 7, 'isSharp': true},
-      'F/Dm': {'count': 1, 'isSharp': false},
-      'Bb/Gm': {'count': 2, 'isSharp': false},
-      'Eb/Cm': {'count': 3, 'isSharp': false},
-      'Ab/Fm': {'count': 4, 'isSharp': false},
-      'Db/Bbm': {'count': 5, 'isSharp': false},
-      'Gb/Ebm': {'count': 6, 'isSharp': false},
-      'Cb/Abm': {'count': 7, 'isSharp': false},
-    };
-
-    final keyData = keySignatureMap[keySignatureName];
-    if (keyData == null) return;
-
-    final int symbolCount = keyData['count'];
-    final bool isSharp = keyData['isSharp'];
-    final String symbol = isSharp ? '\u266F' : '\u266D';
-
-    final (sharpPositions, flatPositions) = getPositionsForClefType(
-        note.keySignatureClefType, staffTop, lineSpacing);
-
-    final positions = isSharp ? sharpPositions : flatPositions;
-    final double symbolSpacing = 12.0; // Horizontal spacing between symbols
-
-    // Draw the symbols
-    for (int i = 0; i < symbolCount && i < positions.length; i++) {
-      final symbolPainter = TextPainter(
-        text: TextSpan(
-          text: symbol,
-          style: TextStyle(
-            fontFamily: 'Bravura',
-            fontSize: 40,
-            color: noteColour,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      );
-      symbolPainter.layout();
-
-      final double symbolX = x + (i * symbolSpacing);
-      final double symbolY = positions[i] - (symbolPainter.height / 2);
-
-      symbolPainter.paint(canvas, Offset(symbolX, symbolY));
-    }
-  }
-
-  void _drawTapRightHand(
-      Canvas canvas,
-      MusicalNote chord,
-      Color noteColour,
-      double x,
-      double staffTop,
-      double lineSpacing,
-      List<MusicalNote> notes,
-      int noteIndex) {
-    double baseOffset = _hasBendOrHarmonicOnChord(chord);
-
-    // Check if this technique needs additional offset due to overlapping with other techniques
-    bool needsAdditionalOffset = false;
-    if (chord.tapRightHandCharacter.isNotEmpty) {
-      // Only tap-right-hand gets the additional offset when overlapping
-      bool hasPickUpward = chord.hasPickUpward;
-      bool hasPickDownward = chord.hasPickDownward;
-
-      if ((hasPickUpward || hasPickDownward) &&
-          chord.tapRightHandCharacter.isNotEmpty) {
-        needsAdditionalOffset = true;
-      }
-    }
-
-    double symbolY = staffTop - 25 - baseOffset;
-    if (needsAdditionalOffset) {
-      symbolY -= 15; // Additional offset for tap-right-hand when overlapping
-    }
-
-    // Adjust position based on note height to avoid overlap
-    if (noteIndex < notes.length) {
-      double noteY = notes[noteIndex].noteY;
-      if (noteY < symbolY + 20) {
-        symbolY = noteY - 40;
-      }
-    }
-
-    final textStyle = TextStyle(
-      color: noteColour,
-      fontSize: 16,
-      fontFamily: 'Bravura',
-    );
-    final textSpan = TextSpan(
-      text: chord.tapRightHandCharacter,
-      style: textStyle,
-    );
-    final textPainter = TextPainter(
-      text: textSpan,
-      textDirection: TextDirection.ltr,
-    );
-    textPainter.layout();
-
-    // Center the symbol horizontally over the note
-    double xPos = x - (textPainter.width / 2);
-    double yPos = symbolY - 20;
-
-    textPainter.paint(canvas, Offset(xPos, yPos));
-  }
-
-  void _drawPickDownward(
-      Canvas canvas,
-      MusicalNote chord,
-      Color noteColour,
-      double x,
-      double staffTop,
-      double lineSpacing,
-      List<MusicalNote> notes,
-      int noteIndex) {
-    double baseOffset = _hasBendOrHarmonicOnChord(chord);
-
-    double symbolY = staffTop - 25 - baseOffset;
-
-    // Adjust position based on note height to avoid overlap
-    if (noteIndex < notes.length) {
-      double noteY = notes[noteIndex].noteY;
-      if (noteY < symbolY + 20) {
-        symbolY = noteY - 40;
-      }
-    }
-
-    final textStyle = TextStyle(
-      color: noteColour,
-      fontSize: 24,
-      fontFamily: 'Bravura',
-    );
-    final textSpan = TextSpan(
-      text: '\uE610',
-      style: textStyle,
-    );
-    final textPainter = TextPainter(
-      text: textSpan,
-      textDirection: TextDirection.ltr,
-    );
-    textPainter.layout();
-
-    // Center the symbol horizontally over the note
-    double xPos = x - (textPainter.width / 2);
-    double yPos = symbolY - 35;
-
-    textPainter.paint(canvas, Offset(xPos, yPos));
-  }
-
-  void _drawPickUpward(
-      Canvas canvas,
-      MusicalNote chord,
-      Color noteColour,
-      double x,
-      double staffTop,
-      double lineSpacing,
-      List<MusicalNote> notes,
-      int noteIndex) {
-    double baseOffset = _hasBendOrHarmonicOnChord(chord);
-
-    double symbolY = staffTop - 25 - baseOffset;
-
-    // Adjust position based on note height to avoid overlap
-    if (noteIndex < notes.length) {
-      double noteY = notes[noteIndex].noteY;
-      if (noteY < symbolY + 20) {
-        symbolY = noteY - 40;
-      }
-    }
-
-    final textStyle = TextStyle(
-      color: noteColour,
-      fontSize: 24,
-      fontFamily: 'Bravura',
-    );
-    final textSpan = TextSpan(
-      text: '\uE612',
-      style: textStyle,
-    );
-    final textPainter = TextPainter(
-      text: textSpan,
-      textDirection: TextDirection.ltr,
-    );
-    textPainter.layout();
-
-    // Center the symbol horizontally over the note
-    double xPos = x - (textPainter.width / 2);
-    double yPos = symbolY - 35;
-
-    textPainter.paint(canvas, Offset(xPos, yPos));
-  }
-
-  /// Checks whether any chord in [chords] has a bend (on any childNote) whose
-  /// normalized index range [j, normalizedBendEnd] overlaps with [startIndex, endIndex].
-  /// Two ranges [a, b] and [c, d] overlap when a <= d && c <= b.
-  bool _hasBendOverlappingRange(
-      List<MusicalNote> chords, int startIndex, int endIndex) {
-    for (int j = 0; j < chords.length; j++) {
-      final chord = chords[j];
-      if (chord.childNotes == null) continue;
-
-      for (var childNote in chord.childNotes!) {
-        int? rawBendEnd;
-
-        if (childNote.isBendStart && childNote.bendEndIndex != null) {
-          rawBendEnd = childNote.bendEndIndex;
-        } else if (childNote.isPreBendStart &&
-            childNote.preBendEndIndex != null) {
-          rawBendEnd = childNote.preBendEndIndex;
-        } else if (childNote.isBendReleaseStart &&
-            childNote.bendReleaseEndIndex != null) {
-          rawBendEnd = childNote.bendReleaseEndIndex;
-        } else if (childNote.isPreBendReleaseStart &&
-            childNote.preBendReleaseEndIndex != null) {
-          rawBendEnd = childNote.preBendReleaseEndIndex;
-        }
-
-        if (rawBendEnd != null) {
-          // Normalize the bend end index the same way the painter does
-          final int normalizedBendEnd = rawBendEnd == (j - 1)
-              ? j
-              : rawBendEnd < chords.length - 1
-                  ? rawBendEnd
-                  : chords.length - 1;
-
-          // Check if bend range [j, normalizedBendEnd] overlaps technique range
-          // [startIndex, endIndex]
-          if (j <= endIndex && normalizedBendEnd >= startIndex) {
-            return true;
-          }
-        }
-      }
-    }
-    return false;
-  }
-
-  double _hasBendOrHarmonicOnChord(MusicalNote chord) {
-    bool hasBend = chord.isBendStart ||
-        chord.isPreBendStart ||
-        chord.isBendReleaseStart ||
-        chord.isPreBendReleaseStart;
-
-    bool hasHarmonic = chord.isMuteStart ||
-        chord.isPinchHarmonicStart ||
-        chord.isHarmonicStart;
-
-    bool hasVibrato = chord.isVibratoStart;
-
-    // Check for the three techniques that can overlap
-    bool hasTapRightHand = chord.tapRightHandCharacter.isNotEmpty;
-    bool hasPickUpward = chord.hasPickUpward;
-    bool hasPickDownward = chord.hasPickDownward;
-
-    if (chord.childNotes != null) {
-      for (var childNote in chord.childNotes!) {
-        hasBend = hasBend ||
-            childNote.isBendStart ||
-            childNote.isPreBendStart ||
-            childNote.isBendReleaseStart ||
-            childNote.isPreBendReleaseStart;
-
-        hasHarmonic = hasHarmonic ||
-            childNote.isMuteStart ||
-            childNote.isPinchHarmonicStart ||
-            childNote.isHarmonicStart;
-      }
-    }
-
-    var returnOffset = 0.0;
-
-    if (hasBend) returnOffset += 30;
-    if (hasHarmonic) returnOffset += 25;
-    if (hasVibrato) returnOffset += 15;
-
-    return returnOffset;
-  }
-
-  void _drawTriplet(
-      Canvas canvas,
-      Paint paint,
-      double x,
-      double staffTop,
-      double lineSpacing,
-      List<MusicalNote> notes,
-      int noteIndex,
-      double currentRowSpacing) {
-    if (noteIndex + 2 >= notes.length) {
-      double y = calculateNoteYMainSheet(notes[noteIndex].pitch,
-          notes[noteIndex].octave, lineSpacing, staffTop);
-      double tripletPlaceholderY = y - 50;
-
-      if (notes[noteIndex].noteY < tripletPlaceholderY + 10) {
-        tripletPlaceholderY = notes[noteIndex].noteY - 20;
-      }
-
-      if (staffTop + 20 < tripletPlaceholderY) {
-        tripletPlaceholderY = staffTop - 20;
-      }
-      if (staffTop - 40 > tripletPlaceholderY) {
-        tripletPlaceholderY = tripletPlaceholderY + 30;
-      }
-
-      final textStyle = TextStyle(
-        color: paint.color,
-        fontSize: 40,
-        fontFamily: 'Bravura',
-      );
-      final textSpan = TextSpan(
-        text: '\uE202', // Triplet '3'
-        style: textStyle,
-      );
-      final textPainter = TextPainter(
-        text: textSpan,
-        textDirection: TextDirection.ltr,
-      );
-      textPainter.layout();
-
-      double x1 = x;
-      double x2 = x + currentRowSpacing;
-      double x3 = x + (2 * currentRowSpacing);
-
-      double middleX = x2;
-      double textX = middleX - (textPainter.width / 2);
-
-      textPainter.paint(canvas, Offset(textX, tripletPlaceholderY - 33));
-
-      paint.strokeWidth = 1.0;
-      canvas.drawLine(Offset(x1, tripletPlaceholderY),
-          Offset(textX - 4, tripletPlaceholderY), paint);
-      canvas.drawLine(
-          Offset(textX + textPainter.width + 4, tripletPlaceholderY),
-          Offset(x3, tripletPlaceholderY),
-          paint);
-
-      canvas.drawLine(Offset(x1, tripletPlaceholderY),
-          Offset(x1, tripletPlaceholderY + 7), paint);
-      canvas.drawLine(Offset(x3, tripletPlaceholderY),
-          Offset(x3, tripletPlaceholderY + 7), paint);
-      return;
-    }
-
-    MusicalNote note1 = notes[noteIndex];
-    MusicalNote note2 = notes[noteIndex + 1];
-    MusicalNote note3 = notes[noteIndex + 2];
-
-    double x1 = x;
-    double x2 = x + currentRowSpacing;
-    double x3 = x + (2 * currentRowSpacing);
-
-    double y1 = calculateNoteYMainSheet(
-        note1.pitch, note1.octave, lineSpacing, staffTop);
-    double y2 = calculateNoteYMainSheet(
-        note2.pitch, note2.octave, lineSpacing, staffTop);
-    double y3 = calculateNoteYMainSheet(
-        note3.pitch, note3.octave, lineSpacing, staffTop);
-
-    double highestNoteY = math.min(y1, math.min(y2, y3));
-    double tripletY = highestNoteY - 50;
-
-    // Adjust Y to avoid overlap with notes above
-    for (int i = noteIndex; i <= noteIndex + 2; i++) {
-      if (notes[i].noteY < tripletY + 10) {
-        tripletY = notes[i].noteY - 20;
-      }
-    }
-
-    if (staffTop + 20 < tripletY) tripletY = staffTop - 20;
-    if (staffTop - 40 > tripletY) tripletY = tripletY + 30;
-
-    bool isAnyNoteInTripletBeamed =
-        note1.isBeamed || note2.isBeamed || note3.isBeamed;
-
-    if (isAnyNoteInTripletBeamed) {
-      int beamStartIndex = noteIndex;
-      // Find the actual start of the beamed group by looking backwards
-      while (beamStartIndex > 0 && notes[beamStartIndex - 1].isBeamed) {
-        beamStartIndex--;
-      }
-      MusicalNote firstNoteOfBeam = notes[beamStartIndex];
-
-      // Apply the condition using the first note of the entire beamed group
-      if (firstNoteOfBeam.isUpsideDown == true && y1 < staffTop - 20) {
-        tripletY = tripletY - 40;
-      }
-    }
-
-    final textStyle = TextStyle(
-      color: paint.color,
-      fontSize: 40,
-      fontFamily: 'Bravura',
-    );
-    final textSpan = TextSpan(
-      text: '\uE202', // Triplet '3'
-      style: textStyle,
-    );
-    final textPainter = TextPainter(
-      text: textSpan,
-      textDirection: TextDirection.ltr,
-    );
-    textPainter.layout();
-
-    double middleX = x2;
-    double textX = middleX - (textPainter.width / 2);
-
-    textPainter.paint(canvas, Offset(textX, tripletY - 33));
-
-    paint.strokeWidth = 1.0;
-    canvas.drawLine(Offset(x1, tripletY), Offset(textX - 4, tripletY), paint);
-    canvas.drawLine(Offset(textX + textPainter.width + 4, tripletY),
-        Offset(x3, tripletY), paint);
-
-    canvas.drawLine(Offset(x1, tripletY), Offset(x1, tripletY + 7), paint);
-    canvas.drawLine(Offset(x3, tripletY), Offset(x3, tripletY + 7), paint);
-  }
-
-  /// Returns true when the slur should arc **above** the notes in the range
-  /// [startIndex..endIndex].  Mirrors the identical logic inside
-  /// [drawSlurBetweenNotes] so the call-site can pre-determine direction
-  /// before selecting the extremal child note of a chord.
-  bool _isSlurAboveForRange(List<MusicalNote> rowNotes, int startIndex,
-      int endIndex, double staffCentre) {
-    final int minIndex = startIndex < endIndex ? startIndex : endIndex;
-    final int maxIndex = startIndex > endIndex ? startIndex : endIndex;
-
-    int notesAboveCenter = 0;
-    int notesBelowCenter = 0;
-
-    for (int i = minIndex; i <= maxIndex; i++) {
-      final note = rowNotes[i];
-      if (note.type != NoteType.space) {
-        if (note.noteY > staffCentre) {
-          notesAboveCenter++;
-        } else {
-          notesBelowCenter++;
-        }
-      }
-    }
-
-    return notesBelowCenter >= notesAboveCenter;
-  }
-
-  /// Returns the canvas Y coordinate of the extremal child note of [chord]
-  /// that a slur should attach to.
-  ///
-  /// * [slurIsAbove] == true  → slur curves **over** the chord → attach to the
-  ///   **highest** child note (smallest canvas Y).
-  /// * [slurIsAbove] == false → slur curves **under** the chord → attach to
-  ///   the **lowest** child note (largest canvas Y).
-  ///
-  /// Falls back to [calculateNoteYMainSheet] on the parent chord if there are
-  /// no children.
-  double _extremalChildY(MusicalNote chord, bool slurIsAbove,
-      double lineSpacing, double staffTop) {
-    final children = chord.childNotes;
-    if (children == null || children.isEmpty) {
-      return calculateNoteYMainSheet(
-          chord.pitch, chord.octave, lineSpacing, staffTop);
-    }
-
-    double extremalY = calculateNoteYMainSheet(
-        children.first.pitch, children.first.octave, lineSpacing, staffTop);
-
-    for (int i = 1; i < children.length; i++) {
-      final double y = calculateNoteYMainSheet(
-          children[i].pitch, children[i].octave, lineSpacing, staffTop);
-      if (slurIsAbove) {
-        // Slur above → want highest note (smallest Y on canvas)
-        if (y < extremalY) extremalY = y;
-      } else {
-        // Slur below → want lowest note (largest Y on canvas)
-        if (y > extremalY) extremalY = y;
-      }
-    }
-
-    return extremalY;
-  }
 }
