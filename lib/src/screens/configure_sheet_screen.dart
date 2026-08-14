@@ -146,23 +146,24 @@ class _ConfigureSheetScreenState extends State<ConfigureSheetScreen> {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: KeyboardTypeCard(
-                                  keyboardType: KeyboardType.drumTab,
-                                  icon: Icons.audiotrack,
-                                  isSelected: _selectedKeyboardType ==
-                                      KeyboardType.drumTab,
-                                  onTap: () => _selectKeyboardType(
-                                      KeyboardType.drumTab),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: KeyboardTypeCard(
                                   keyboardType: KeyboardType.guitarTab,
                                   icon: Icons.piano,
                                   isSelected: _selectedKeyboardType ==
                                       KeyboardType.guitarTab,
                                   onTap: () => _selectKeyboardType(
                                       KeyboardType.guitarTab),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: KeyboardTypeCard(
+                                  keyboardType: KeyboardType.drumTab,
+                                  icon: Icons.audiotrack,
+                                  isSelected: _selectedKeyboardType ==
+                                      KeyboardType.drumTab,
+                                  onTap: () => _selectKeyboardType(
+                                      KeyboardType.drumTab),
+                                  isDisabled: true,
                                 ),
                               ),
                             ],
