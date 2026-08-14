@@ -101,9 +101,13 @@ class _HomeScreenState extends State<HomeScreen> implements HomeScreenHost {
                     ),
                   ),
                   child: SafeArea(
+                    top: !showVerificationBanner,
                     child: Padding(
-                      padding: const EdgeInsets.only(
-                          left: 32.0, top: 77, right: 32.0, bottom: 27.0),
+                      padding: EdgeInsets.only(
+                          left: 32.0,
+                          top: showVerificationBanner ? 24 : 77,
+                          right: 32.0,
+                          bottom: 27.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
