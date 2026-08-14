@@ -2,7 +2,7 @@ class MusicalNote {
   final String pitch; // e.g., C, D, E
   final int octave; // e.g., 4 (Middle C is in octave 4)
   final NoteType type; // e.g., Whole, Half, Quarter, Eighth, Sixteenth
-  bool isBeamed; // Whether this note is connected to others
+  bool isBeamed;
   bool isTiedToNext;
   bool isCrescendoStart;
   bool isDecrescendoStart;

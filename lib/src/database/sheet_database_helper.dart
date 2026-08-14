@@ -7,10 +7,6 @@ import 'package:music_keyboard/models/music_note.dart';
 import 'package:music_keyboard/models/sheet_rows.dart';
 import 'package:uuid/uuid.dart';
 
-/// Local-storage-only persistence for sheets, clipboard items, and favourite
-/// chords. Never talks to Firestore directly — remote sync is [SyncService]'s
-/// job; callers that need a local write mirrored remotely call
-/// `FirestoreService` themselves after the local write succeeds.
 class SheetDatabaseHelper {
   static Database? _database;
   final String? _userId;

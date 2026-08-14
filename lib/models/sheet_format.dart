@@ -56,7 +56,6 @@ extension SheetFormatExtension on SheetFormat {
     }
   }
 
-  /// Default clefs for each row in a group (in order) for the given keyboard type
   List<String> defaultClefsFor(KeyboardType keyboardType) {
     switch (this) {
       case SheetFormat.single:

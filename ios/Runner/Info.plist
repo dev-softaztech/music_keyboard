@@ -5,7 +5,7 @@
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
 		<key>CFBundleDisplayName</key>
-		<string>Notation</string>
+		<string>Mote'z Notes</string>
 		<key>CFBundleExecutable</key>
 		<string>$(EXECUTABLE_NAME)</string>
 		<key>CFBundleIdentifier</key>
@@ -13,7 +13,7 @@
 		<key>CFBundleInfoDictionaryVersion</key>
 		<string>6.0</string>
 		<key>CFBundleName</key>
-		<string>Notation</string>
+		<string>Mote'z Notes</string>
 		<key>CFBundlePackageType</key>
 		<string>APPL</string>
 		<key>CFBundleShortVersionString</key>
@@ -51,15 +51,15 @@
 			</dict>
 		</array>
 		<key>GADApplicationIdentifier</key>
-	<string>ca-app-pub-8367855162702897~9398434327</string>
-	<key>SKAdNetworkItems</key>
-	<array>
-		<dict>
-			<key>SKAdNetworkIdentifier</key>
-			<string>cstr6suwn9.skadnetwork</string>
-		</dict>
-	</array>
-	<key>NSPhotoLibraryAddUsageDescription</key>
+		<string>ca-app-pub-8367855162702897~9398434327</string>
+		<key>SKAdNetworkItems</key>
+		<array>
+			<dict>
+				<key>SKAdNetworkIdentifier</key>
+				<string>cstr6suwn9.skadnetwork</string>
+			</dict>
+		</array>
+		<key>NSPhotoLibraryAddUsageDescription</key>
 		<string>We need permission to save images to your photo library</string>
 		<key>UIStatusBarHidden</key>
 		<false/>

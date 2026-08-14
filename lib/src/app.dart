@@ -21,14 +21,11 @@ class MyApp extends StatelessWidget {
 
   final SettingsController settingsController;
 
-  // Global navigator key for deep linking navigation
   static final GlobalKey<NavigatorState> navigatorKey =
       GlobalKey<NavigatorState>();
 
   @override
   Widget build(BuildContext context) {
-    // Register the deep-link navigation callback so DeepLinkHandler never
-    // needs to import screen widgets directly.
     DeepLinkHandler.onNavigateToSheet = (BuildContext navContext, sheet) {
       Navigator.pushNamed(
         navContext,
@@ -79,6 +76,18 @@ class MyApp extends StatelessWidget {
           // SettingsController to display the correct theme.
           theme: ThemeData(
             primaryColor: const Color(0xFF242038),
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: Colors.black,
+              brightness: Brightness.light,
+              primary: Colors.black,
+              onPrimary: Colors.white,
+              secondary: Colors.black87,
+              onSecondary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+              error: Colors.red,
+            ),
+            scaffoldBackgroundColor: Colors.white,
             // Customize AppBar color
             appBarTheme: const AppBarTheme(
               backgroundColor:
@@ -94,6 +103,18 @@ class MyApp extends StatelessWidget {
           darkTheme: //ThemeData.dark(),
               ThemeData(
             primaryColor: const Color(0xFF242038),
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: Colors.black,
+              brightness: Brightness.light,
+              primary: Colors.black,
+              onPrimary: Colors.white,
+              secondary: Colors.black87,
+              onSecondary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+              error: Colors.red,
+            ),
+            scaffoldBackgroundColor: Colors.white,
             // Customize AppBar color
             appBarTheme: const AppBarTheme(
               backgroundColor:

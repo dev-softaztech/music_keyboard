@@ -329,7 +329,6 @@ class _NoteInputScreenState extends State<NoteInputScreen>
       final authProvider =
           Provider.of<app.AuthProvider>(context, listen: false);
       final currentUserId = authProvider.user?.uid;
-      final currentUserName = authProvider.user?.displayName;
 
       if (currentUserId == null) {
         ToastUtils.showToast("You must be logged in to save a copy",
@@ -391,7 +390,7 @@ class _NoteInputScreenState extends State<NoteInputScreen>
         keyboardType: sheet.keyboardType,
       );
 
-      final newSheetId = await _dbHelper.insertSheet(copiedSheet);
+      await _dbHelper.insertSheet(copiedSheet);
       if (_syncUserId != null) {
         await _firestoreService.addSheet(copiedSheet, _syncUserId!);
       }
