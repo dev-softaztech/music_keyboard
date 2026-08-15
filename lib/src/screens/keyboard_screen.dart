@@ -473,21 +473,6 @@ class _NoteInputScreenState extends State<NoteInputScreen>
     }
   }
 
-  Future<void> handleSavePress() async {
-    try {
-      final image = await screenshotController.capture();
-      if (image != null) {
-        await saveImageToGallery(image);
-        ToastUtils.showToast("Saved to Camera Roll!");
-      } else {
-        ToastUtils.showToast("Screenshot capture failed!", isError: true);
-      }
-    } catch (e) {
-      print("Screenshot error: $e");
-      ToastUtils.showToast("Screenshot failed: ${e.toString()}", isError: true);
-    }
-  }
-
   Future<void> handleExportPress() async {
     try {
       _loadingOverlay.show(context);
@@ -984,28 +969,6 @@ class _NoteInputScreenState extends State<NoteInputScreen>
                                 Container(
                                   height: 1,
                                   color: Colors.grey[300],
-                                ),
-                                // Save Button
-                                InkWell(
-                                  onTap: () {
-                                    setState(() {
-                                      showMenu = false;
-                                    });
-                                    handleSavePress();
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 12, horizontal: 16),
-                                    child: const Row(
-                                      children: [
-                                        Icon(Icons.save,
-                                            size: 20, color: Colors.black),
-                                        SizedBox(width: 8),
-                                        Text('Save',
-                                            style: TextStyle(fontSize: 14)),
-                                      ],
-                                    ),
-                                  ),
                                 ),
                                 // Divider
                                 Container(
